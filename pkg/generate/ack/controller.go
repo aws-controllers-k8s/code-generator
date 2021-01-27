@@ -153,6 +153,11 @@ func Controller(
 		return nil, err
 	}
 
+	// Next add the template for pkg/version/version.go file
+	if err = ts.Add("pkg/version/version.go", "pkg/version/version.go.tpl", nil); err != nil {
+		return nil, err
+	}
+
 	// Next add the template for the main.go file
 	snakeCasedCRDNames := make([]string, 0)
 	for _, crd := range crds {
