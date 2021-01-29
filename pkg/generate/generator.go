@@ -66,6 +66,11 @@ func (g *Generator) crdNames() []string {
 	return crdConfigs
 }
 
+// GetGoModuleConfig returns go.mod configuration
+func (g *Generator) GetGoModuleConfig() ackgenconfig.GoModule {
+	return g.cfg.GoModule
+}
+
 // GetCRDs returns a slice of `ackmodel.CRD` structs that describe the
 // top-level resources discovered by the code generator for an AWS service API
 func (g *Generator) GetCRDs() ([]*ackmodel.CRD, error) {

@@ -39,6 +39,8 @@ type Config struct {
 	// SetManyOutput function fails with NotFound error.
 	// Default is "return nil, ackerr.NotFound"
 	SetManyOutputNotFoundErrReturn string `json:"set_many_output_notfound_err_return,omitempty"`
+	// GoModule let you describe the controller module information and it dependencies
+	GoModule GoModule `json:"go_module"`
 }
 
 // IgnoreSpec represents instructions to the ACK code generator to

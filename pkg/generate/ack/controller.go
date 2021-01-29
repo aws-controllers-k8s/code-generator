@@ -20,6 +20,7 @@ import (
 
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate"
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate/code"
+	"github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate/templateset"
 	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
 )
@@ -171,6 +172,15 @@ func Controller(
 		return nil, err
 	}
 
+	// Next add the template for the go.mod file
+	goModulesVars := &templateGoModuleVars{
+		metaVars,
+		g.GetGoModuleConfig(),
+	}
+	if err = ts.Add("go.mod", "go.mod.tpl", goModulesVars); err != nil {
+		return nil, err
+	}
+
 	// Finally, add the configuration YAML file templates
 	for _, path := range controllerConfigTemplatePaths {
 		outPath := strings.TrimSuffix(path, ".tpl")
@@ -186,4 +196,11 @@ func Controller(
 type templateCmdVars struct {
 	templateset.MetaVars
 	SnakeCasedCRDNames []string
+}
+
+// templateGoModuleVars contains template variables for the template that generates
+// go.mod file
+type templateGoModuleVars struct {
+	templateset.MetaVars
+	GoModule config.GoModule
 }

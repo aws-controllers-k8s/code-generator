@@ -23,4 +23,15 @@ var DefaultConfig = config.Config{
 	},
 	IncludeACKMetadata:             true,
 	SetManyOutputNotFoundErrReturn: "return nil, ackerr.NotFound",
+	GoModule: config.GoModule{
+		CompilerVersion: "1.15",
+		RequiredModulesVersions: config.RequiredModulesVersions{
+			AWSSDKGo:             "v1.35.5",
+			ACKCore:              "v0.0.2",
+			K8sAPI:               "v0.18.2",
+			K8sAPIMachinery:      "v0.18.6",
+			K8sClientGo:          "v0.18.2",
+			K8sControllerRuntime: "v0.6.0",
+		},
+	},
 }
