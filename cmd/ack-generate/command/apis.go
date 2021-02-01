@@ -66,7 +66,7 @@ func generateAPIs(cmd *cobra.Command, args []string) error {
 	}
 	svcAlias := strings.ToLower(args[0])
 	if optAPIsOutputPath == "" {
-		optAPIsOutputPath = filepath.Join(optServicesDir)
+		optAPIsOutputPath = filepath.Join(optServicesDir, svcAlias)
 	}
 	if err := ensureSDKRepo(optCacheDir); err != nil {
 		return err
@@ -98,7 +98,7 @@ func generateAPIs(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	apisVersionPath = filepath.Join(optAPIsOutputPath, svcAlias, "apis", optGenVersion)
+	apisVersionPath = filepath.Join(optAPIsOutputPath, "apis", optGenVersion)
 	for path, contents := range ts.Executed() {
 		if optDryRun {
 			fmt.Printf("============================= %s ======================================\n", path)

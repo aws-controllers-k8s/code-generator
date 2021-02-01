@@ -13,10 +13,10 @@ import (
 	ctrlrt "sigs.k8s.io/controller-runtime"
 	ctrlrtmetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
 
-	svcresource "github.com/aws/aws-controllers-k8s/services/{{ .ServiceIDClean }}/pkg/resource"
-	svctypes "github.com/aws/aws-controllers-k8s/services/{{ .ServiceIDClean }}/apis/{{ .APIVersion }}"
+	svcresource "github.com/aws-controllers-k8s/{{ .ServiceIDClean }}-controller/pkg/resource"
+	svctypes "github.com/aws-controllers-k8s/{{ .ServiceIDClean }}-controller/apis/{{ .APIVersion }}"
 
-	{{ $serviceIDClean := .ServiceIDClean }} {{range $crdName := .SnakeCasedCRDNames }}_ "github.com/aws/aws-controllers-k8s/services/{{ $serviceIDClean }}/pkg/resource/{{ $crdName }}"
+	{{ $serviceIDClean := .ServiceIDClean }} {{range $crdName := .SnakeCasedCRDNames }}_ "github.com/aws-controllers-k8s/{{ $serviceIDClean }}-controller/pkg/resource/{{ $crdName }}"
 	{{end}}
 )
 
