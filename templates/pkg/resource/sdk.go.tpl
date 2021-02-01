@@ -14,7 +14,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	svcapitypes "github.com/aws/aws-controllers-k8s/services/{{ .ServiceIDClean }}/apis/{{ .APIVersion }}"
+	svcapitypes "github.com/aws-controllers-k8s/{{.ServiceIDClean }}-controller/apis/{{ .APIVersion }}"
 )
 
 // Hack to avoid import errors during build...
