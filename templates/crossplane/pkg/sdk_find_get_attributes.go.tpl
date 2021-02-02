@@ -13,4 +13,10 @@ func Generate{{ .CRD.Names.Camel }}(resp *svcsdk.{{ .CRD.Ops.GetAttributes.Outpu
 {{ GoCodeGetAttributesSetOutput .CRD "resp" "cr" 1 }}
 return cr
 }
+
+func lateInitialize(cr *svcapitypes.{{ .CRD.Names.Camel }}, resp *svcsdk.{{ .CRD.Ops.GetAttributes.OutputRef.Shape.ShapeName }}) error {
+{{ GoCodeLateInitializeGetAttributes .CRD  "resp" "cr" 1 false }}
+	return nil
+}
+
 {{- end -}}

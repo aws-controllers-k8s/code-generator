@@ -14,6 +14,7 @@ import (
 	svcsdk "github.com/aws/aws-sdk-go/service/{{ .ServiceIDClean }}"
 
 	svcapitypes "github.com/crossplane/provider-aws/apis/{{ .ServiceIDClean }}/{{ .APIVersion}}"
+	awsclients "github.com/crossplane/provider-aws/pkg/clients"
 )
 
 // NOTE(muvaf): We return pointers in case the function needs to start with an
