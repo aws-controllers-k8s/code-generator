@@ -35,10 +35,9 @@ const (
 )
 
 var (
-	optGenVersion     string
-	optAPIsInputPath  string
-	optAPIsOutputPath string
-	apisVersionPath   string
+	optGenVersion    string
+	optAPIsInputPath string
+	apisVersionPath  string
 )
 
 // apiCmd is the command that generates service API types
@@ -52,9 +51,6 @@ func init() {
 	apisCmd.PersistentFlags().StringVar(
 		&optGenVersion, "version", "v1alpha1", "the resource API Version to use when generating API infrastructure and type definitions",
 	)
-	apisCmd.PersistentFlags().StringVarP(
-		&optAPIsOutputPath, "output", "o", "", "path to directory for service controller to create generated files. Defaults to "+optServicesDir+"/$service",
-	)
 	rootCmd.AddCommand(apisCmd)
 }
 
@@ -65,8 +61,8 @@ func generateAPIs(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("please specify the service alias for the AWS service API to generate")
 	}
 	svcAlias := strings.ToLower(args[0])
-	if optAPIsOutputPath == "" {
-		optAPIsOutputPath = filepath.Join(optServicesDir, svcAlias)
+	if optOutputPath == "" {
+		optOutputPath = filepath.Join(optServicesDir, svcAlias)
 	}
 	if err := ensureSDKRepo(optCacheDir); err != nil {
 		return err
@@ -98,7 +94,7 @@ func generateAPIs(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	apisVersionPath = filepath.Join(optAPIsOutputPath, "apis", optGenVersion)
+	apisVersionPath = filepath.Join(optOutputPath, "apis", optGenVersion)
 	for path, contents := range ts.Executed() {
 		if optDryRun {
 			fmt.Printf("============================= %s ======================================\n", path)

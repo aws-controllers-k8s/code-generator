@@ -32,10 +32,9 @@ import (
 )
 
 var (
-	optControllerOutputPath string
-	cmdControllerPath       string
-	pkgResourcePath         string
-	latestAPIVersion        string
+	cmdControllerPath string
+	pkgResourcePath   string
+	latestAPIVersion  string
 )
 
 var controllerCmd = &cobra.Command{
@@ -45,9 +44,6 @@ var controllerCmd = &cobra.Command{
 }
 
 func init() {
-	controllerCmd.PersistentFlags().StringVarP(
-		&optControllerOutputPath, "output", "o", "", "path to root directory to create generated files. Defaults to "+optServicesDir+"/$service",
-	)
 	rootCmd.AddCommand(controllerCmd)
 }
 
@@ -57,8 +53,8 @@ func generateController(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("please specify the service alias for the AWS service API to generate")
 	}
 	svcAlias := strings.ToLower(args[0])
-	if optControllerOutputPath == "" {
-		optControllerOutputPath = filepath.Join(optServicesDir, svcAlias)
+	if optOutputPath == "" {
+		optOutputPath = filepath.Join(optServicesDir, svcAlias)
 	}
 
 	if err := ensureSDKRepo(optCacheDir); err != nil {
@@ -101,7 +97,7 @@ func generateController(cmd *cobra.Command, args []string) error {
 			fmt.Println(strings.TrimSpace(contents.String()))
 			continue
 		}
-		outPath := filepath.Join(optControllerOutputPath, path)
+		outPath := filepath.Join(optOutputPath, path)
 		outDir := filepath.Dir(outPath)
 		if _, err := ensureDir(outDir); err != nil {
 			return err
@@ -117,7 +113,7 @@ func generateController(cmd *cobra.Command, args []string) error {
 // latest Kubernetes API version for CRDs exposed by the generated service
 // controller.
 func getLatestAPIVersion() (string, error) {
-	apisPath := filepath.Join(optControllerOutputPath, "apis")
+	apisPath := filepath.Join(optOutputPath, "apis")
 	versions := []string{}
 	subdirs, err := ioutil.ReadDir(apisPath)
 	if err != nil {
