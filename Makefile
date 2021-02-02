@@ -26,7 +26,7 @@ build-ack-generate:	## Build ack-generate binary
 	@go build ${GO_TAGS} ${GO_LDFLAGS} -o bin/ack-generate cmd/ack-generate/main.go
 	@echo "ok."
 
-build-controller: build-ack-generate ## Generate controller code for SERVICE
+build-controller:   ## Generate controller code for SERVICE
 	@./scripts/install-controller-gen.sh 
 	@./scripts/build-controller.sh $(AWS_SERVICE)
 

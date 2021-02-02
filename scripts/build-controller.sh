@@ -51,6 +51,8 @@ Environment variables:
   ACK_GENERATE_CONFIG_PATH: Specify a path to the generator config YAML file to
                             instruct the code generator for the service.
                             Default: services/{SERVICE}/generator.yaml
+  TEMPLATES_DIR:            Overrides the directory containg ack-generate templates
+                            Default: $TEMPLATES_DIR
   K8S_RBAC_ROLE_NAME:       Name of the Kubernetes Role to use when generating
                             the RBAC manifests for the custom resource
                             definitions.
@@ -75,7 +77,7 @@ run:
  
 from the root directory or install ack-generate using:
 
-   go get -u github.com/aws-controllers-k8s/code-generator/cmd/ack-generate" 1>&2
+   go get -u -tags codegen github.com/aws-controllers-k8s/code-generator/cmd/ack-generate" 1>&2
         exit 1;
     fi
 fi
