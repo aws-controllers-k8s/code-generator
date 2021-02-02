@@ -100,9 +100,33 @@ func cloneSDKRepo(srcPath string) (string, error) {
 	return clonePath, nil
 }
 
-// getSDKVersion parses the go.mod file and returns aws-sdk-go version
+// getSDKVersion returns the github.com/aws/aws-sdk-go version to use. It
+// first tries to get return version from the --aws-sdk-go-version flag, then
+// look for the service controller and local go.mod files.
 func getSDKVersion() (string, error) {
-	b, err := ioutil.ReadFile("./go.mod")
+	// First try to get the version from --aws-sdk-go-version flag
+	if optAWSSDKGoVersion != "" {
+		return optAWSSDKGoVersion, nil
+	}
+
+	// then, try to parse the service controller go.mod file
+	sdkVersion, err := getSDKVersionFromGoMod(filepath.Join(optOutputPath, "go.mod"))
+	if err == nil {
+		return sdkVersion, nil
+	}
+
+	// then try to parse a local go.mod
+	sdkVersion, err = getSDKVersionFromGoMod("go.mod")
+	if err != nil {
+		return "", err
+	}
+	return sdkVersion, nil
+}
+
+// getSDKVersionFromGoMod parses a given go.mod file and returns
+// the aws-sdk-go version in the required modules.
+func getSDKVersionFromGoMod(goModPath string) (string, error) {
+	b, err := ioutil.ReadFile(goModPath)
 	if err != nil {
 		return "", err
 	}

@@ -37,6 +37,7 @@ var (
 	defaultCacheDir        string
 	optCacheDir            string
 	optRefreshCache        bool
+	optAWSSDKGoVersion     string
 	defaultTemplatesDir    string
 	optTemplatesDir        string
 	defaultServicesDir     string
@@ -116,6 +117,9 @@ func init() {
 	)
 	rootCmd.PersistentFlags().StringVarP(
 		&optOutputPath, "output", "o", "", "Path to directory to output generated files.",
+	)
+	rootCmd.PersistentFlags().StringVar(
+		&optAWSSDKGoVersion, "aws-sdk-go-version", "", "Version of github.com/aws/aws-sdk-go used to generate apis and controllers files",
 	)
 }
 
