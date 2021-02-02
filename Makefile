@@ -3,6 +3,8 @@ SHELL := /bin/bash # Use bash syntax
 # Set up variables
 GO111MODULE=on
 
+AWS_SERVICE=$(shell echo $(SERVICE) | tr '[:upper:]' '[:lower:]')
+
 # Build ldflags
 VERSION ?= "v0.0.0"
 GITCOMMIT=$(shell git rev-parse HEAD)
@@ -15,7 +17,7 @@ GO_LDFLAGS=-ldflags "-X main.version=$(VERSION) \
 # aws-sdk-go/private/model/api package is gated behind a build tag "codegen"...
 GO_TAGS=-tags codegen
 
-.PHONY: all build-ack-generate test
+.PHONY: all build-ack-generate build-controller test
 
 all: test
 
@@ -23,6 +25,10 @@ build-ack-generate:	## Build ack-generate binary
 	@echo -n "building ack-generate ... "
 	@go build ${GO_TAGS} ${GO_LDFLAGS} -o bin/ack-generate cmd/ack-generate/main.go
 	@echo "ok."
+
+build-controller: build-ack-generate ## Generate controller code for SERVICE
+	@./scripts/install-controller-gen.sh 
+	@./scripts/build-controller.sh $(AWS_SERVICE)
 
 test: 				## Run code tests
 	go test ${GO_TAGS} ./...
