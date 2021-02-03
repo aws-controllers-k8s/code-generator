@@ -37,6 +37,7 @@ var (
 	defaultCacheDir        string
 	optCacheDir            string
 	optRefreshCache        bool
+	optAWSSDKGoVersion     string
 	defaultTemplatesDir    string
 	optTemplatesDir        string
 	defaultServicesDir     string
@@ -44,6 +45,7 @@ var (
 	optDryRun              bool
 	sdkDir                 string
 	optGeneratorConfigPath string
+	optOutputPath          string
 )
 
 var rootCmd = &cobra.Command{
@@ -112,6 +114,12 @@ func init() {
 	)
 	rootCmd.PersistentFlags().StringVar(
 		&optGeneratorConfigPath, "generator-config-path", "", "Path to file containing instructions for code generation to use",
+	)
+	rootCmd.PersistentFlags().StringVarP(
+		&optOutputPath, "output", "o", "", "Path to directory to output generated files.",
+	)
+	rootCmd.PersistentFlags().StringVar(
+		&optAWSSDKGoVersion, "aws-sdk-go-version", "", "Version of github.com/aws/aws-sdk-go used to generate apis and controllers files",
 	)
 }
 
