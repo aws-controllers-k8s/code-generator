@@ -11,9 +11,10 @@ import (
 {{ end }}
 
 {{- end }}
-	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+
+	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 )
 
 // {{ .CRD.Kind }}Parameters defines the desired state of {{ .CRD.Kind }}
@@ -21,14 +22,32 @@ type {{ .CRD.Kind }}Parameters struct {
 	// Region is which region the {{ .CRD.Kind }} will be created.
 	// +kubebuilder:validation:Required
 	Region string `json:"region"`
-	{{- range $fieldName, $field := .CRD.SpecFields }}
-	{{- if $field.ShapeRef }}
+{{- range $fieldName, $field := .CRD.SpecFields }}
+	{{ if $field.ShapeRef }}
 	{{ $field.ShapeRef.Documentation }}
 	{{- end }}
-	{{ if $field.IsRequired }} // +kubebuilder:validation:Required
+	{{- if $field.ReferencedType}}
+	{{ $field.Names.Camel }} {{ $field.GoType }} `json:"{{ $field.Names.CamelLower }},omitempty"`
+
+	// {{ $field.Names.Camel }}Ref is a reference to an {{ $field.ReferencedType }} used
+	// to set the {{ $field.Names.Camel }} field.
+	// +optional
+	{{ $field.Names.Camel }}Ref {{if Contains $field.GoType "[]" -}}[]xpv1.Reference{{- else -}}*xpv1.Reference{{- end -}} `json:"{{ $field.Names.CamelLower }}Ref,omitempty"`
+
+	// {{ $field.Names.Camel }}Selector selects references to {{ $field.ReferencedType }}
+	// used to set the {{ $field.Names.Camel }}.
+	// +optional
+	{{ $field.Names.Camel }}Selector *xpv1.Selector `json:"{{ $field.Names.CamelLower }}Selector,omitempty"`
+	{{- else if $field.IsRequired }}
+	// +kubebuilder:validation:Required
 	{{ $field.Names.Camel }} {{ $field.GoType }} `json:"{{ $field.Names.CamelLower }}"`
-	{{- else }} {{ $field.Names.Camel }} {{ $field.GoType }} `json:"{{ $field.Names.CamelLower }},omitempty"` {{ end }}
+	{{- else }}
+	{{ $field.Names.Camel }} {{ $field.GoType }} `json:"{{ $field.Names.CamelLower }},omitempty"`
+	{{- end }}
 {{- end }}
+
+	// Custom{{ .CRD.Kind }}Parameters includes the additional fields on top of
+	// the generated ones.
 	Custom{{ .CRD.Kind }}Parameters `json:",inline"`
 }
 

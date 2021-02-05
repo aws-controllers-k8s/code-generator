@@ -88,6 +88,7 @@ var (
 		"Empty": func(subject string) bool {
 			return strings.TrimSpace(subject) == ""
 		},
+		"Contains": strings.Contains,
 	}
 )
 
