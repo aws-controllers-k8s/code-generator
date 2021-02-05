@@ -3,8 +3,8 @@
 package resource
 
 import (
-	ackrt "github.com/aws/aws-controllers-k8s/pkg/runtime"
-	acktypes "github.com/aws/aws-controllers-k8s/pkg/types"
+	ackrt "github.com/aws-controllers-k8s/runtime/pkg/runtime"
+	acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
 )
 
 var (

@@ -3,8 +3,8 @@
 package {{ .CRD.Names.Snake }}
 
 import (
-	acktypes "github.com/aws/aws-controllers-k8s/pkg/types"
-	ackcompare "github.com/aws/aws-controllers-k8s/pkg/compare"
+	acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
+	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
