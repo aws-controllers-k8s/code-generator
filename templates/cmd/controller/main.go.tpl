@@ -5,8 +5,8 @@ package main
 import (
 	"os"
 
-	ackcfg "github.com/aws/aws-controllers-k8s/pkg/config"
-	ackrt "github.com/aws/aws-controllers-k8s/pkg/runtime"
+	ackcfg "github.com/aws-controllers-k8s/runtime/pkg/config"
+	ackrt "github.com/aws-controllers-k8s/runtime/pkg/runtime"
 	flag "github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -69,6 +69,7 @@ func main() {
 	)
 	sc := ackrt.NewServiceController(
 		awsServiceAlias, awsServiceAPIGroup,
+		ackrt.VersionInfo{},	// TODO: populate version info
 	).WithLogger(
 		ctrlrt.Log,
 	).WithResourceManagerFactories(

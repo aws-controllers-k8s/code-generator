@@ -5,14 +5,14 @@ package {{ .CRD.Names.Snake }}
 import (
 	"context"
 	"fmt"
-	ackerr "github.com/aws/aws-controllers-k8s/pkg/errors"
+	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 
-	ackv1alpha1 "github.com/aws/aws-controllers-k8s/apis/core/v1alpha1"
-	ackcfg "github.com/aws/aws-controllers-k8s/pkg/config"
-	ackcompare "github.com/aws/aws-controllers-k8s/pkg/compare"
-	ackmetrics "github.com/aws/aws-controllers-k8s/pkg/metrics"
-	acktypes "github.com/aws/aws-controllers-k8s/pkg/types"
+	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
+	ackcfg "github.com/aws-controllers-k8s/runtime/pkg/config"
+	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
+	ackmetrics "github.com/aws-controllers-k8s/runtime/pkg/metrics"
+	acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/go-logr/logr"
 

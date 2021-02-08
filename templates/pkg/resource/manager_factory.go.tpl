@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"sync"
 
-	ackv1alpha1 "github.com/aws/aws-controllers-k8s/apis/core/v1alpha1"
-	ackcfg "github.com/aws/aws-controllers-k8s/pkg/config"
-	ackmetrics "github.com/aws/aws-controllers-k8s/pkg/metrics"
-	acktypes "github.com/aws/aws-controllers-k8s/pkg/types"
+	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
+	ackcfg "github.com/aws-controllers-k8s/runtime/pkg/config"
+	ackmetrics "github.com/aws-controllers-k8s/runtime/pkg/metrics"
+	acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/go-logr/logr"
 
