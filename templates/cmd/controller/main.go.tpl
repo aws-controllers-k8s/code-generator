@@ -13,6 +13,7 @@ import (
 	ctrlrt "sigs.k8s.io/controller-runtime"
 	ctrlrtmetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
 
+	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
 	svcresource "github.com/aws-controllers-k8s/{{ .ServiceIDClean }}-controller/pkg/resource"
 	svctypes "github.com/aws-controllers-k8s/{{ .ServiceIDClean }}-controller/apis/{{ .APIVersion }}"
 
@@ -30,6 +31,7 @@ var (
 func init() {
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = svctypes.AddToScheme(scheme)
+	_ = ackv1alpha1.AddToScheme(scheme)
 }
 
 func main() {

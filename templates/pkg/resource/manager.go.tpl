@@ -22,8 +22,6 @@ import (
 
 // +kubebuilder:rbac:groups={{ .APIGroup }},resources={{ ToLower .CRD.Plural }},verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups={{ .APIGroup }},resources={{ ToLower .CRD.Plural }}/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch
-// +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch
 
 // resourceManager is responsible for providing a consistent way to perform
 // CRUD operations in a backend AWS service API for Book custom resources.
@@ -37,9 +35,9 @@ type resourceManager struct {
 	// metrics contains a collection of Prometheus metric objects that the
 	// service controller and its reconcilers track
 	metrics *ackmetrics.Metrics
-	// rr is the AWSResourceReconciler which can be used for various utility
+	// rr is the Reconciler which can be used for various utility
 	// functions such as querying for Secret values given a SecretReference
-	rr acktypes.AWSResourceReconciler
+	rr acktypes.Reconciler
 	// awsAccountID is the AWS account identifier that contains the resources
 	// managed by this resource manager
 	awsAccountID ackv1alpha1.AWSAccountID
@@ -160,7 +158,7 @@ func newResourceManager(
 	cfg ackcfg.Config,
 	log logr.Logger,
 	metrics *ackmetrics.Metrics,
-	rr acktypes.AWSResourceReconciler,
+	rr acktypes.Reconciler,
 	sess *session.Session,
 	id ackv1alpha1.AWSAccountID,
 	region ackv1alpha1.AWSRegion,
