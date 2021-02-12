@@ -69,7 +69,7 @@ func (e *external) Observe(ctx context.Context, mg cpresource.Managed) (managed.
 	}
 	resp, err := e.client.{{ .CRD.Ops.ReadOne.Name }}WithContext(ctx, input)
 	if err != nil {
-		return managed.ExternalObservation{ResourceExists: false}, errors.Wrap(cpresource.Ignore(IsNotFound, err), errDescribe)
+		return managed.ExternalObservation{ResourceExists: false}, awsclient.Wrap(cpresource.Ignore(IsNotFound, err), errDescribe)
 	}
 {{- else if .CRD.Ops.GetAttributes }}
 	input := Generate{{ .CRD.Ops.GetAttributes.InputRef.Shape.ShapeName }}(cr)
@@ -78,7 +78,7 @@ func (e *external) Observe(ctx context.Context, mg cpresource.Managed) (managed.
 	}
 	resp, err := e.client.{{ .CRD.Ops.GetAttributes.Name }}WithContext(ctx, input)
 	if err != nil {
-		return managed.ExternalObservation{ResourceExists: false}, errors.Wrap(cpresource.Ignore(IsNotFound, err), errDescribe)
+		return managed.ExternalObservation{ResourceExists: false}, awsclient.Wrap(cpresource.Ignore(IsNotFound, err), errDescribe)
 	}
 {{- else if .CRD.Ops.ReadMany }}
 	input := Generate{{ .CRD.Ops.ReadMany.InputRef.Shape.ShapeName }}(cr)
@@ -87,7 +87,7 @@ func (e *external) Observe(ctx context.Context, mg cpresource.Managed) (managed.
 	}
 	resp, err := e.client.{{ .CRD.Ops.ReadMany.Name }}WithContext(ctx, input)
 	if err != nil {
-		return managed.ExternalObservation{ResourceExists: false}, errors.Wrap(cpresource.Ignore(IsNotFound, err), errDescribe)
+		return managed.ExternalObservation{ResourceExists: false}, awsclient.Wrap(cpresource.Ignore(IsNotFound, err), errDescribe)
 	}
 	resp = e.filterList(cr, resp)
 	if len(resp.{{ ListMemberNameInReadManyOutput .CRD }}) == 0 {
@@ -126,7 +126,7 @@ func (e *external) Create(ctx context.Context, mg cpresource.Managed) (managed.E
 	}
 	resp, err := e.client.{{ .CRD.Ops.Create.Name }}WithContext(ctx, input)
 	if err != nil {
-		return managed.ExternalCreation{}, errors.Wrap(err, errCreate)
+		return managed.ExternalCreation{}, awsclient.Wrap(err, errCreate)
 	}
 {{ GoCodeSetCreateOutput .CRD "resp" "cr" 1 false }}
 	return e.postCreate(ctx, cr, resp, managed.ExternalCreation{}, err)
@@ -144,7 +144,7 @@ func (e *external) Update(ctx context.Context, mg cpresource.Managed) (managed.E
 	}
 	resp, err := e.client.{{ .CRD.Ops.Update.Name }}WithContext(ctx, input)
 	if err != nil {
-		return managed.ExternalUpdate{}, errors.Wrap(err, errUpdate)
+		return managed.ExternalUpdate{}, awsclient.Wrap(err, errUpdate)
 	}
 	return e.postUpdate(ctx, cr, resp, managed.ExternalUpdate{}, err)
 	{{- else }}
@@ -164,7 +164,7 @@ func (e *external) Delete(ctx context.Context, mg cpresource.Managed) error {
 		return errors.Wrap(err, "pre-delete failed")
 	}
 	_, err := e.client.{{ .CRD.Ops.Delete.Name }}WithContext(ctx, input)
-	return errors.Wrap(cpresource.Ignore(IsNotFound, err), errDelete)
+	return awsclient.Wrap(cpresource.Ignore(IsNotFound, err), errDelete)
 	{{- else }}
 	return e.delete(ctx, mg)
 	{{ end }}
