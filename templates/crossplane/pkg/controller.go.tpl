@@ -167,8 +167,8 @@ func (e *external) Delete(ctx context.Context, mg cpresource.Managed) error {
 	if ignore {
 		return nil
 	}
-	_, err = e.client.{{ .CRD.Ops.Delete.Name }}WithContext(ctx, input)
-	return awsclient.Wrap(cpresource.Ignore(IsNotFound, err), errDelete)
+	resp, err := e.client.{{ .CRD.Ops.Delete.Name }}WithContext(ctx, input)
+	return e.postDelete(ctx, cr, resp, awsclient.Wrap(cpresource.Ignore(IsNotFound, err), errDelete))
 	{{- else }}
 	return e.delete(ctx, mg)
 	{{ end }}
@@ -192,6 +192,7 @@ func newExternal(kube client.Client, client svcsdkapi.{{ .SDKAPIInterfaceTypeNam
 		postCreate:     nopPostCreate,
 		{{- if .CRD.Ops.Delete }}
 		preDelete:      nopPreDelete,
+		postDelete:      nopPostDelete,
 		{{- else }}
 		delete:         nopDelete,
 		{{- end }}
@@ -234,6 +235,7 @@ type external struct {
 	postCreate  func(context.Context, *svcapitypes.{{ .CRD.Names.Camel }}, *svcsdk.{{ .CRD.Ops.Create.OutputRef.Shape.ShapeName }}, managed.ExternalCreation, error) (managed.ExternalCreation, error)
 	{{- if .CRD.Ops.Delete }}
 	preDelete   func(context.Context, *svcapitypes.{{ .CRD.Names.Camel }}, *svcsdk.{{ .CRD.Ops.Delete.InputRef.Shape.ShapeName }}) (bool, error)
+	postDelete  func(context.Context, *svcapitypes.{{ .CRD.Names.Camel }}, *svcsdk.{{ .CRD.Ops.Delete.OutputRef.Shape.ShapeName }}, error) error
 	{{- else }}
 	delete      func(context.Context, cpresource.Managed) error
 	{{- end }}
@@ -305,6 +307,9 @@ func nopPostCreate(_ context.Context, _ *svcapitypes.{{ .CRD.Names.Camel }}, _ *
 {{- if .CRD.Ops.Delete }}
 func nopPreDelete(context.Context, *svcapitypes.{{ .CRD.Names.Camel }}, *svcsdk.{{ .CRD.Ops.Delete.InputRef.Shape.ShapeName }}) (bool, error) {
 	return false, nil
+}
+func nopPostDelete(_ context.Context, _ *svcapitypes.{{ .CRD.Names.Camel }}, _ *svcsdk.{{ .CRD.Ops.Delete.OutputRef.Shape.ShapeName }}, err error) error {
+	return err
 }
 {{- else }}
 func nopDelete(context.Context, cpresource.Managed) error {
