@@ -13,4 +13,9 @@ func Generate{{ .CRD.Names.Camel }}(resp *svcsdk.{{ .CRD.Ops.ReadMany.OutputRef.
 {{ GoCodeSetReadManyOutput .CRD "resp" "cr" 1 false }}
 return cr
 }
+
+func isUpToDate(cr *svcapitypes.{{ .CRD.Names.Camel }}, resp *svcsdk.{{ .CRD.Ops.ReadMany.OutputRef.Shape.ShapeName }}) bool {
+{{ GoCodeIsUpToDateReadMany .CRD "resp" "cr" 1 false }}
+	return true
+}
 {{- end -}}

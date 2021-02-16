@@ -88,6 +88,12 @@ var (
 		"GoCodeSetDeleteInput": func(r *ackmodel.CRD, sourceVarName string, targetVarName string, indentLevel int) string {
 			return code.SetSDK(r.Config(), r, ackmodel.OpTypeDelete, sourceVarName, targetVarName, indentLevel)
 		},
+		"GoCodeIsUpToDateReadOne": func(r *ackmodel.CRD, sourceVarName string, targetVarName string, indentLevel int, performSpecUpdate bool) string {
+			return code.IsUpToDateReadOne(r.Config(), r, sourceVarName, targetVarName)
+		},
+		"GoCodeIsUpToDateReadMany": func(r *ackmodel.CRD, sourceVarName string, targetVarName string, indentLevel int, performSpecUpdate bool) string {
+			return code.IsUpToDateReadMany(r.Config(), r, sourceVarName, targetVarName)
+		},
 		"Empty": func(subject string) bool {
 			return strings.TrimSpace(subject) == ""
 		},

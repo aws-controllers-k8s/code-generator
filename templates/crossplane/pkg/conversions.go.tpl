@@ -13,11 +13,9 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	svcsdk "github.com/aws/aws-sdk-go/service/{{ .ServiceIDClean }}"
 
+	awsclients "github.com/crossplane/provider-aws/pkg/clients"
 	svcapitypes "github.com/crossplane/provider-aws/apis/{{ .ServiceIDClean }}/{{ .APIVersion}}"
 )
-
-// NOTE(muvaf): We return pointers in case the function needs to start with an
-// empty object, hence need to return a new pointer.
 
 {{ if .CRD.Ops.ReadOne }}
     {{- template "sdk_find_read_one" . }}
