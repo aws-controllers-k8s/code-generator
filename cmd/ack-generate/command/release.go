@@ -80,12 +80,8 @@ func generateRelease(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("service %s not found", svcAlias)
 		}
 	}
-	latestAPIVersion, err = getLatestAPIVersion()
-	if err != nil {
-		return err
-	}
 	g, err := generate.New(
-		sdkAPI, latestAPIVersion, optGeneratorConfigPath, ackgenerate.DefaultConfig,
+		sdkAPI, "", optGeneratorConfigPath, ackgenerate.DefaultConfig,
 	)
 	if err != nil {
 		return err
