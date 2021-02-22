@@ -3,7 +3,8 @@ module github.com/aws-controllers-k8s/code-generator
 go 1.14
 
 require (
-	github.com/aws/aws-sdk-go v1.35.5
+	github.com/aws-controllers-k8s/runtime v0.0.3
+	github.com/aws/aws-sdk-go v1.37.4
 	github.com/dlclark/regexp2 v1.4.0
 	// pin to v0.1.1 due to release problem with v0.1.2
 	github.com/gertd/go-pluralize v0.1.1
@@ -14,5 +15,5 @@ require (
 	github.com/spf13/cobra v1.1.1
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/mod v0.4.1
-	k8s.io/apimachinery v0.20.2
+	k8s.io/apimachinery v0.18.6
 )
