@@ -15,7 +15,6 @@ var (
 	csvTemplatePaths = []string{
 		"config/controller/user-env.yaml.tpl",
 		"config/samples/sample.yaml.tpl",
-		"Makefile.tpl", // this is a subset of the operator-sdk makefile
 	}
 
 	csvIncludePaths = []string{
