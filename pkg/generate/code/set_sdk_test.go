@@ -896,7 +896,13 @@ func TestSetSDK_Elasticache_ReplicationGroup_Update_Override_Values(t *testing.T
 	expected := `
 	res.SetApplyImmediately(true)
 	if r.ko.Spec.AuthToken != nil {
-		res.SetAuthToken(*r.ko.Spec.AuthToken)
+		tmpSecret, err := rm.rr.SecretValueFromReference(ctx, r.ko.Spec.AuthToken)
+		if err != nil {
+			return nil, err
+		}
+		if tmpSecret != "" {
+			res.SetAuthToken(tmpSecret)
+		}
 	}
 	if r.ko.Spec.AutoMinorVersionUpgrade != nil {
 		res.SetAutoMinorVersionUpgrade(*r.ko.Spec.AutoMinorVersionUpgrade)

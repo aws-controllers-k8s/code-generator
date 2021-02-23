@@ -165,7 +165,7 @@ func SetSDK(
 	}
 
 	opConfig, override := cfg.OverrideValues(op.Name)
-
+	fieldConfigs := cfg.ResourceFields(r.Names.Original)
 	for memberIndex, memberName := range inputShape.MemberNames() {
 		if r.UnpacksAttributesMap() && memberName == "Attributes" {
 			continue
@@ -188,6 +188,22 @@ func SetSDK(
 				out += fmt.Sprintf("%s%s.Set%s(%s)\n", indent, targetVarName, memberName, value)
 				continue
 			}
+		}
+
+		fc, ok := fieldConfigs[memberName]
+		if ok && fc.IsSecret {
+			out += fmt.Sprintf("%sif %s.Spec.%s != nil {\n", indent, sourceVarName, memberName)
+			out += fmt.Sprintf("%s%stmpSecret, err := rm.rr.SecretValueFromReference(ctx, %s.Spec.%s)\n", indent,
+				indent, sourceVarName, memberName)
+			out += fmt.Sprintf("%s%sif err != nil {\n", indent, indent)
+			out += fmt.Sprintf("%s%s%sreturn nil, err\n", indent, indent, indent)
+			out += fmt.Sprintf("%s%s}\n", indent, indent)
+			out += fmt.Sprintf("%s%sif tmpSecret != \"\" {\n", indent, indent)
+			out += fmt.Sprintf("%s%s%s%s.Set%s(%s)\n", indent, indent, indent,
+				targetVarName, memberName, "tmpSecret")
+			out += fmt.Sprintf("%s%s}\n", indent, indent)
+			out += fmt.Sprintf("%s}\n", indent)
+			continue
 		}
 
 		if r.IsPrimaryARNField(memberName) {
