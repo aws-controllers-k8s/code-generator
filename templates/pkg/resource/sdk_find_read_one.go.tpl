@@ -29,6 +29,13 @@ func (rm *resourceManager) sdkFind(
 	ko := r.ko.DeepCopy()
 {{ $setCode }}
 	rm.setStatusDefaults(ko)
+{{ if $setOutputCustomMethodName := .CRD.SetOutputCustomMethodName .CRD.Ops.ReadOne }}
+	// custom set output from response
+	ko, err = rm.{{ $setOutputCustomMethodName }}(ctx, r, resp, ko)
+	if err != nil {
+		return nil, err
+	}
+{{ end }}
 	return &resource{ko}, nil
 }
 

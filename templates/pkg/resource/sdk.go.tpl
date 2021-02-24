@@ -105,6 +105,13 @@ func (rm *resourceManager) sdkDelete(
 	r *resource,
 ) error {
 {{- if .CRD.Ops.Delete }}
+{{ $customMethod := .CRD.GetCustomImplementation .CRD.Ops.Delete }}
+{{ if $customMethod }}
+	customRespErr := rm.{{ $customMethod }}(ctx, r)
+	if customRespErr != nil {
+		return customRespErr
+	}
+{{ end }}
 	input, err := rm.newDeleteRequestPayload(r)
 	if err != nil {
 		return err
