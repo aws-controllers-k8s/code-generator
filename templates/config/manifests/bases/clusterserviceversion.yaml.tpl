@@ -26,24 +26,22 @@ spec:
       description: {{.Kind}} represents the state of an AWS {{$.ServiceID}} {{.Kind}} resource.
     {{- end}}
   description: |
-    {{ .ProjectLongDescription }}
+    {{ .Description }}
   displayName: {{ .DisplayName}}
   icon:
-  - base64data: {{ .Icon.Base64Data}}
-    mediatype: {{.Icon.MediaType}}
+  {{- range .Icon}}
+  - base64Data: {{ .Data }}
+    medatype: {{ .MediaType }}
+  {{- end}}
   install:
     spec:
       deployments: null
     strategy: ""
   installModes:
-  - supported: {{.InstallModes.OwnNamespaceSupported}}
-    type: OwnNamespace
-  - supported: {{.InstallModes.SingleNamespaceSupported}}
-    type: SingleNamespace
-  - supported: {{.InstallModes.MultiNamespaceSupported}}
-    type: MultiNamespace
-  - supported: {{.InstallModes.AllNamespacesSupported}}
-    type: AllNamespaces
+  {{- range .InstallModes}}
+  - supported: {{ .Supported }}
+    type: {{ .Type }}
+  {{- end}}
   keywords:
   - {{.ServiceIDClean}}
   {{- range .Common.Keywords}}

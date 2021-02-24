@@ -121,24 +121,24 @@ func generateOLMAssets(cmd *cobra.Command, args []string) error {
 
 	// set the base metadata and then override values as
 	// defined by the service config.
-	svcMeta := ackmodel.NewOLMMetadata() // TODO this can take in variables
-	if err = yaml.Unmarshal(svcConfigYAML, &svcMeta); err != nil {
+	svcConf := olmgenerate.DefaultServiceConfig()
+	if err = yaml.Unmarshal(svcConfigYAML, &svcConf); err != nil {
 		fmt.Println("unable to convert olm configuration file to data instance")
 		return err
 	}
 
 	// prepare the common metadata
-	commonMeta := ackmodel.OLMCommonMetadata{}
+	commonMeta := olmgenerate.CommonMetadata{}
 	if !optDisableCommonLinks {
-		commonMeta.Links = ackmodel.CommonLinks
+		commonMeta.Links = olmgenerate.CommonLinks
 	}
 
 	if !optDisableCommonKeywords {
-		commonMeta.Keywords = ackmodel.CommonKeywords
+		commonMeta.Keywords = olmgenerate.CommonKeywords
 	}
 
 	// generate templates
-	ts, err := olmgenerate.BundleAssets(g, commonMeta, svcMeta, version, optTemplatesDir)
+	ts, err := olmgenerate.BundleAssets(g, commonMeta, svcConf, version, optTemplatesDir)
 	if err != nil {
 		return err
 	}
