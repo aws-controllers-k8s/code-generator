@@ -188,7 +188,7 @@ func newExternal(kube client.Client, client svcsdkapi.{{ .SDKAPIInterfaceTypeNam
 		{{- else }}
 		observe:        nopObserve,
 		{{- end }}
-		{{- if .CRD.Ops.ReadMany }}
+		{{- if and .CRD.Ops.ReadMany (not .CRD.Ops.ReadOne) }}
 		filterList:     nopFilterList,
 		{{- end}}
 		preCreate:      nopPreCreate,
