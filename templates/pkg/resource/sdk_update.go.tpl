@@ -5,6 +5,9 @@ func (rm *resourceManager) sdkUpdate(
 	latest *resource,
 	delta *ackcompare.Delta,
 ) (*resource, error) {
+{{- if $hookCode := Hook .CRD "sdk_update_pre_build_request" }}
+{{ $hookCode }}
+{{- end }}
 {{ $customMethod := .CRD.GetCustomImplementation .CRD.Ops.Update }}
 {{ if $customMethod }}
 	customResp, customRespErr := rm.{{ $customMethod }}(ctx, desired, latest, delta)
@@ -20,6 +23,9 @@ func (rm *resourceManager) sdkUpdate(
 
 {{ $setCode := GoCodeSetUpdateOutput .CRD "resp" "ko" 1 false }}
 	{{ if not ( Empty $setCode ) }}resp{{ else }}_{{ end }}, respErr := rm.sdkapi.{{ .CRD.Ops.Update.Name }}WithContext(ctx, input)
+{{- if $hookCode := Hook .CRD "sdk_update_post_request" }}
+{{ $hookCode }}
+{{- end }}
 	rm.metrics.RecordAPICall("UPDATE", "{{ .CRD.Ops.Update.Name }}", respErr)
 	if respErr != nil {
 		return nil, respErr
@@ -27,6 +33,9 @@ func (rm *resourceManager) sdkUpdate(
 	// Merge in the information we read from the API call above to the copy of
 	// the original Kubernetes object we passed to the function
 	ko := desired.ko.DeepCopy()
+{{- if $hookCode := Hook .CRD "sdk_update_pre_set_output" }}
+{{ $hookCode }}
+{{- end }}
 {{ $setCode }}
 	rm.setStatusDefaults(ko)
 {{ if $setOutputCustomMethodName := .CRD.SetOutputCustomMethodName .CRD.Ops.Update }}

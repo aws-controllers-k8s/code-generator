@@ -1,0 +1,11 @@
+ignore:
+  resources:
+    - Configuration
+    - User
+resources:
+  Broker:
+    hooks:
+      sdk_update_pre_build_request:
+        code: if err := rm.requeueIfNotRunning(latest); err != nil { return nil, err }
+      sdk_delete_pre_build_request:
+        template_path: sdk_delete_pre_build_request.go.tpl

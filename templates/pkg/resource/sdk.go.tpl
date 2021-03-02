@@ -45,6 +45,9 @@ func (rm *resourceManager) sdkCreate(
 	ctx context.Context,
 	r *resource,
 ) (*resource, error) {
+{{- if $hookCode := Hook .CRD "sdk_create_pre_build_request" }}
+{{ $hookCode }}
+{{- end }}
 {{- $customMethod := .CRD.GetCustomImplementation .CRD.Ops.Create -}}
 {{- if $customMethod }}
 	customResp, customRespErr := rm.{{ $customMethod }}(ctx, r)
@@ -58,6 +61,9 @@ func (rm *resourceManager) sdkCreate(
 	}
 {{ $createCode := GoCodeSetCreateOutput .CRD "resp" "ko" 1 false }}
 	{{ if not ( Empty $createCode ) }}resp{{ else }}_{{ end }}, respErr := rm.sdkapi.{{ .CRD.Ops.Create.Name }}WithContext(ctx, input)
+{{- if $hookCode := Hook .CRD "sdk_create_post_request" }}
+{{ $hookCode }}
+{{- end }}
 	rm.metrics.RecordAPICall("CREATE", "{{ .CRD.Ops.Create.Name }}", respErr)
 	if respErr != nil {
 		return nil, respErr
@@ -65,6 +71,9 @@ func (rm *resourceManager) sdkCreate(
 	// Merge in the information we read from the API call above to the copy of
 	// the original Kubernetes object we passed to the function
 	ko := r.ko.DeepCopy()
+{{- if $hookCode := Hook .CRD "sdk_create_pre_set_output" }}
+{{ $hookCode }}
+{{- end }}
 {{ $createCode }}
 	rm.setStatusDefaults(ko)
 	{{ if $setOutputCustomMethodName := .CRD.SetOutputCustomMethodName .CRD.Ops.Create }}
@@ -106,6 +115,9 @@ func (rm *resourceManager) sdkDelete(
 	r *resource,
 ) error {
 {{- if .CRD.Ops.Delete }}
+{{- if $hookCode := Hook .CRD "sdk_delete_pre_build_request" }}
+{{ $hookCode }}
+{{- end }}
 {{ $customMethod := .CRD.GetCustomImplementation .CRD.Ops.Delete }}
 {{ if $customMethod }}
 	customRespErr := rm.{{ $customMethod }}(ctx, r)
@@ -119,6 +131,9 @@ func (rm *resourceManager) sdkDelete(
 	}
 	_, respErr := rm.sdkapi.{{ .CRD.Ops.Delete.Name }}WithContext(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "{{ .CRD.Ops.Delete.Name }}", respErr)
+{{- if $hookCode := Hook .CRD "sdk_delete_post_request" }}
+{{ $hookCode }}
+{{- end }}
 	return respErr
 {{- else }}
 	// TODO(jaypipes): Figure this out...

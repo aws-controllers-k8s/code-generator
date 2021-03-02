@@ -122,6 +122,17 @@ func Controller(
 		return nil, err
 	}
 
+	// Hook code can reference a template path, and we can look up the template
+	// in any of our base paths...
+	controllerFuncMap["Hook"] = func(r *ackmodel.CRD, hookID string) string {
+		code, err := ResourceHookCode(templateBasePaths, r, hookID)
+		if err != nil {
+			// It's a compile-time error, so just panic...
+			panic(err)
+		}
+		return code
+	}
+
 	ts := templateset.New(
 		templateBasePaths,
 		controllerIncludePaths,
