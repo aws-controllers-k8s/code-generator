@@ -14,11 +14,10 @@
 package model
 
 import (
-	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
-
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/names"
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
+	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
 )
 
 // Field represents a single field in the CRD's Spec or Status objects
@@ -58,7 +57,12 @@ func newField(
 	if shapeRef != nil {
 		shape = shapeRef.Shape
 	}
-	if shape != nil {
+
+	if cfg != nil && cfg.IsSecret {
+		gt = "*ackv1alpha1.SecretKeyReference"
+		gte = "ackv1alpha1.SecretKeyReference"
+		gtwp = "*ackv1alpha1.SecretKeyReference"
+	} else if shape != nil {
 		gte, gt, gtwp = cleanGoType(crd.sdkAPI, crd.cfg, shape)
 	} else {
 		gte = "string"

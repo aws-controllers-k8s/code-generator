@@ -58,6 +58,8 @@ resources:
         from:
           operation: DescribeEvents
           path: Events
+      AuthToken:
+        is_secret: true
 operations:
   ModifyReplicationGroup:
     override_values:

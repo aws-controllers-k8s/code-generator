@@ -262,3 +262,20 @@ func TestElasticache_Additional_ReplicationGroup_Status_RenameField(t *testing.T
 	assert.Contains(crd.StatusFields, "AllowedScaleUpModifications")
 	assert.Contains(crd.StatusFields, "AllowedScaleDownModifications")
 }
+
+func TestElasticache_ValidateAuthTokenIsSecret(t *testing.T) {
+	require := require.New(t)
+
+	g := testutil.NewGeneratorForService(t, "elasticache")
+	crds, err := g.GetCRDs()
+
+	require.Nil(err)
+
+	crd := getCRDByName("ReplicationGroup", crds)
+	require.NotNil(crd)
+
+	assert := assert.New(t)
+	assert.Equal("*ackv1alpha1.SecretKeyReference", crd.SpecFields["AuthToken"].GoType)
+	assert.Equal("ackv1alpha1.SecretKeyReference", crd.SpecFields["AuthToken"].GoTypeElem)
+	assert.Equal("*ackv1alpha1.SecretKeyReference", crd.SpecFields["AuthToken"].GoTypeWithPkgName)
+}
