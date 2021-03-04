@@ -37,6 +37,7 @@ var (
 		"config/crd/kustomization.yaml.tpl",
 	}
 	controllerIncludePaths = []string{
+		"config/controller/kustomization_def.yaml.tpl",
 		"boilerplate.go.tpl",
 		"pkg/resource/sdk_find_read_one.go.tpl",
 		"pkg/resource/sdk_find_get_attributes.go.tpl",
