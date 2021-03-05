@@ -46,7 +46,7 @@ var (
 // generating ACK service controller's apis/ contents
 func APIs(
 	g *generate.Generator,
-	templateBasePath string,
+	templateBasePaths []string,
 ) (*templateset.TemplateSet, error) {
 	enumDefs, err := g.GetEnumDefs()
 	if err != nil {
@@ -62,7 +62,7 @@ func APIs(
 	}
 
 	ts := templateset.New(
-		templateBasePath,
+		templateBasePaths,
 		apisIncludePaths,
 		apisCopyPaths,
 		apisFuncMap,

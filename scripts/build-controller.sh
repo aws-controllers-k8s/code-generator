@@ -27,8 +27,6 @@ ACK_GENERATE_BIN_PATH=${ACK_GENERATE_BIN_PATH:-$DEFAULT_ACK_GENERATE_BIN_PATH}
 ACK_GENERATE_API_VERSION=${ACK_GENERATE_API_VERSION:-"v1alpha1"}
 ACK_GENERATE_CONFIG_PATH=${ACK_GENERATE_CONFIG_PATH:-""}
 AWS_SDK_GO_VERSION=${AWS_SDK_GO_VERSION:-""}
-DEFAULT_TEMPLATES_DIR="$ROOT_DIR/templates"
-TEMPLATES_DIR=${TEMPLATES_DIR:-$DEFAULT_TEMPLATES_DIR}
 
 USAGE="
 Usage:
@@ -98,6 +96,25 @@ if [[ ! -d $SERVICE_CONTROLLER_SOURCE_PATH ]]; then
     exit 1
 fi
 
+BOILERPLATE_TXT_PATH="$ROOT_DIR/templates/boilerplate.txt"
+DEFAULT_TEMPLATE_DIRS="$ROOT_DIR/templates"
+# If the service controller source repository has a templates/ directory, add
+# that as a template base directory to search for templates in.
+# Note that ack-generate accepts multiple template paths for its
+# `--template-dirs` CLI flag. The order of these template directories is
+# important, as it indicates the order in which the code generator will search
+# for template files to use. Developers of a service controller can essentially
+# "override" the default template used for various things by adding a
+# same-named template file into a templates/ directory in their service
+# controller.
+if [[ -d "$SERVICE_CONTROLLER_SOURCE_PATH/templates" ]]; then
+    DEFAULT_TEMPLATE_DIRS="$SERVICE_CONTROLLER_SOURCE_PATH/templates,$DEFAULT_TEMPLATE_DIRS"
+    if [[ -f "$SERVICE_CONTROLLER_SOURCE_PATH/templates/boilerplate.txt" ]]; then
+        BOILERPLATE_TXT_PATH="$SERVICE_CONTROLLER_SOURCE_PATH/templates/boilerplate.txt"
+    fi
+fi
+TEMPLATE_DIRS=${TEMPLATE_DIRS:-$DEFAULT_TEMPLATE_DIRS}
+
 K8S_RBAC_ROLE_NAME=${K8S_RBAC_ROLE_NAME:-"ack-$SERVICE-controller"}
 
 # If there's a generator.yaml in the service's directory and the caller hasn't
@@ -108,7 +125,7 @@ if [ -z "$ACK_GENERATE_CONFIG_PATH" ]; then
     fi
 fi
 
-ag_args="$SERVICE -o $SERVICE_CONTROLLER_SOURCE_PATH --templates-dir $TEMPLATES_DIR"
+ag_args="$SERVICE -o $SERVICE_CONTROLLER_SOURCE_PATH --template-dirs $TEMPLATE_DIRS"
 if [ -n "$ACK_GENERATE_CACHE_DIR" ]; then
     ag_args="$ag_args --cache-dir $ACK_GENERATE_CACHE_DIR"
 fi
@@ -138,7 +155,7 @@ config_output_dir="$SERVICE_CONTROLLER_SOURCE_PATH/config/"
 pushd $SERVICE_CONTROLLER_SOURCE_PATH/apis/$ACK_GENERATE_API_VERSION 1>/dev/null
 
 echo "Generating deepcopy code for $SERVICE"
-controller-gen object:headerFile=$TEMPLATES_DIR/boilerplate.txt paths=./...
+controller-gen object:headerFile=$BOILERPLATE_TXT_PATH paths=./...
 
 echo "Generating custom resource definitions for $SERVICE"
 # Latest version of controller-gen (master) is required for following two reasons

@@ -112,7 +112,7 @@ var (
 // for generating ACK service controller implementations
 func Controller(
 	g *generate.Generator,
-	templateBasePath string,
+	templateBasePaths []string,
 ) (*templateset.TemplateSet, error) {
 	crds, err := g.GetCRDs()
 	if err != nil {
@@ -120,7 +120,7 @@ func Controller(
 	}
 
 	ts := templateset.New(
-		templateBasePath,
+		templateBasePaths,
 		controllerIncludePaths,
 		controllerCopyPaths,
 		controllerFuncMap,
