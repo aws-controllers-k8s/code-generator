@@ -3,8 +3,8 @@ func (rm *resourceManager) sdkUpdate(
 	ctx context.Context,
 	desired *resource,
 	latest *resource,
-	diffReporter *ackcompare.Reporter,
+	delta *ackcompare.Delta,
 ) (*resource, error) {
-	return rm.{{ .CRD.CustomUpdateMethodName }}(ctx, desired, latest, diffReporter)
+	return rm.{{ .CRD.CustomUpdateMethodName }}(ctx, desired, latest, delta)
 }
 {{- end -}}

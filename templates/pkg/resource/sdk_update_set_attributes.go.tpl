@@ -3,7 +3,7 @@ func (rm *resourceManager) sdkUpdate(
 	ctx context.Context,
 	desired *resource,
 	latest *resource,
-	diffReporter *ackcompare.Reporter,
+	delta *ackcompare.Delta,
 ) (*resource, error) {
 	// If any required fields in the input shape are missing, AWS resource is
 	// not created yet. And sdkUpdate should never be called if this is the

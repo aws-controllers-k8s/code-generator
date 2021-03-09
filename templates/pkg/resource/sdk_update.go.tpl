@@ -3,11 +3,11 @@ func (rm *resourceManager) sdkUpdate(
 	ctx context.Context,
 	desired *resource,
 	latest *resource,
-	diffReporter *ackcompare.Reporter,
+	delta *ackcompare.Delta,
 ) (*resource, error) {
 {{ $customMethod := .CRD.GetCustomImplementation .CRD.Ops.Update }}
 {{ if $customMethod }}
-	customResp, customRespErr := rm.{{ $customMethod }}(ctx, desired, latest, diffReporter)
+	customResp, customRespErr := rm.{{ $customMethod }}(ctx, desired, latest, delta)
 	if customResp != nil || customRespErr != nil {
 		return customResp, customRespErr
 	}

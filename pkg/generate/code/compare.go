@@ -107,8 +107,11 @@ func CompareResource(
 		)
 
 		if nilCode != "" {
-			// else {
-			out += nilCode + " else {\n"
+			// else if a.ko.Spec.Name != nil && b.ko.Spec.Name != nil {
+			out += fmt.Sprintf(
+				"%s else if %s != nil && %s != nil {\n",
+				nilCode, firstResAdaptedVarName, secondResAdaptedVarName,
+			)
 			indentLevel++
 		} else {
 			out += "\n"
@@ -518,8 +521,11 @@ func compareStruct(
 		)
 
 		if nilCode != "" {
-			// else {
-			out += nilCode + " else {\n"
+			// else if a.ko.Spec.Name != nil && b.ko.Spec.Name != nil {
+			out += fmt.Sprintf(
+				"%s else if %s != nil && %s != nil {\n",
+				nilCode, firstResAdaptedVarName, secondResAdaptedVarName,
+			)
 			indentLevel++
 		} else {
 			out += "\n"

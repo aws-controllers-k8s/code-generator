@@ -112,7 +112,7 @@ func (rm *resourceManager) Update(
 	ctx context.Context,
 	resDesired acktypes.AWSResource,
 	resLatest acktypes.AWSResource,
-	diffReporter *ackcompare.Reporter,
+	delta *ackcompare.Delta,
 ) (acktypes.AWSResource, error) {
 	desired := rm.concreteResource(resDesired)
 	latest := rm.concreteResource(resLatest)
@@ -120,7 +120,7 @@ func (rm *resourceManager) Update(
 		// Should never happen... if it does, it's buggy code.
 		panic("resource manager's Update() method received resource with nil CR object")
 	}
-	updated, err := rm.sdkUpdate(ctx, desired, latest, diffReporter)
+	updated, err := rm.sdkUpdate(ctx, desired, latest, delta)
 	if err != nil {
 		return rm.onError(latest, err)
 	}

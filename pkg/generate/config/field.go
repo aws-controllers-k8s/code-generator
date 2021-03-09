@@ -111,9 +111,9 @@ type CompareFieldConfig struct {
 	// IsIgnored indicates the field should be ignored when comparing a
 	// resource
 	IsIgnored bool `json:"is_ignored"`
-	// NilEqualsEmptyString indicates a nil string pointer and empty string
-	// should be considered equal for the purposes of comparison
-	NilEqualsEmptyString bool `json:"nil_equals_empty_string"`
+	// NilEqualsZeroValue indicates a nil pointer and zero-value pointed-to
+	// value should be considered equal for the purposes of comparison
+	NilEqualsZeroValue bool `json:"nil_equals_zero_value"`
 }
 
 // FieldConfig contains instructions to the code generator about how
