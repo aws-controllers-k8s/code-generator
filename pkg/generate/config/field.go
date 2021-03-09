@@ -105,6 +105,17 @@ type SourceFieldConfig struct {
 	Path string `json:"path"`
 }
 
+// CompareFieldConfig informs the code generator how to compare two values of a
+// field
+type CompareFieldConfig struct {
+	// IsIgnored indicates the field should be ignored when comparing a
+	// resource
+	IsIgnored bool `json:"is_ignored"`
+	// NilEqualsEmptyString indicates a nil string pointer and empty string
+	// should be considered equal for the purposes of comparison
+	NilEqualsEmptyString bool `json:"nil_equals_empty_string"`
+}
+
 // FieldConfig contains instructions to the code generator about how
 // to interpret the value of an Attribute and how to map it to a CRD's Spec or
 // Status field
@@ -142,4 +153,7 @@ type FieldConfig struct {
 	// From instructs the code generator that the value of the field should
 	// be retrieved from the specified operation and member path
 	From *SourceFieldConfig `json:"from,omitempty"`
+	// Compare instructs the code generator how to produce code that compares
+	// the value of the field in two resources
+	Compare *CompareFieldConfig `json:"compare,omitempty"`
 }
