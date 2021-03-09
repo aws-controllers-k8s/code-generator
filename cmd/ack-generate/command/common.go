@@ -89,7 +89,11 @@ func cloneSDKRepo(srcPath string) (string, error) {
 	clonePath := filepath.Join(srcPath, "aws-sdk-go")
 	if optRefreshCache {
 		if _, err := os.Stat(filepath.Join(clonePath, ".git")); !os.IsNotExist(err) {
-			cmd := exec.Command("git", "-C", clonePath, "checkout", "tags/"+sdkVersion)
+			cmd := exec.Command("git", "-C", clonePath, "fetch", "--all", "--tags")
+			if err = cmd.Run(); err != nil {
+				return "", err
+			}
+			cmd = exec.Command("git", "-C", clonePath, "checkout", "tags/"+sdkVersion)
 			return clonePath, cmd.Run()
 		}
 	}
