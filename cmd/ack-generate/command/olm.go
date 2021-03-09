@@ -138,7 +138,7 @@ func generateOLMAssets(cmd *cobra.Command, args []string) error {
 	}
 
 	// generate templates
-	ts, err := olmgenerate.BundleAssets(g, commonMeta, svcConf, version, optTemplatesDir)
+	ts, err := olmgenerate.BundleAssets(g, commonMeta, svcConf, version, optTemplateDirs)
 	if err != nil {
 		return err
 	}

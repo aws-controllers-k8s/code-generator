@@ -47,7 +47,7 @@ var (
 // generating an ACK service controller release (Helm artifacts, etc)
 func Release(
 	g *generate.Generator,
-	templateBasePath string,
+	templateBasePaths []string,
 	// releaseVersion is the SemVer string describing the release that the Helm
 	// chart will install
 	releaseVersion string,
@@ -59,7 +59,7 @@ func Release(
 	serviceAccountName string,
 ) (*templateset.TemplateSet, error) {
 	ts := templateset.New(
-		templateBasePath,
+		templateBasePaths,
 		releaseIncludePaths,
 		releaseCopyPaths,
 		releaseFuncMap,

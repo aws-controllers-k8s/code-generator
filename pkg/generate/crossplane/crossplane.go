@@ -27,18 +27,18 @@ import (
 
 var (
 	apisTemplatePaths = []string{
-		"apis/doc.go.tpl",
-		"apis/enums.go.tpl",
-		"apis/groupversion_info.go.tpl",
-		"apis/types.go.tpl",
+		"crossplane/apis/doc.go.tpl",
+		"crossplane/apis/enums.go.tpl",
+		"crossplane/apis/groupversion_info.go.tpl",
+		"crossplane/apis/types.go.tpl",
 	}
 	includePaths = []string{
-		"boilerplate.go.tpl",
-		"apis/enum_def.go.tpl",
-		"apis/type_def.go.tpl",
-		"pkg/sdk_find_read_one.go.tpl",
-		"pkg/sdk_find_read_many.go.tpl",
-		"pkg/sdk_find_get_attributes.go.tpl",
+		"crossplane/boilerplate.go.tpl",
+		"crossplane/apis/enum_def.go.tpl",
+		"crossplane/apis/type_def.go.tpl",
+		"crossplane/pkg/sdk_find_read_one.go.tpl",
+		"crossplane/pkg/sdk_find_read_many.go.tpl",
+		"crossplane/pkg/sdk_find_get_attributes.go.tpl",
 	}
 	copyPaths = []string{}
 	funcMap   = ttpl.FuncMap{
@@ -111,7 +111,7 @@ type templateCRDVars struct {
 // generating Crossplane API types and controller code for an AWS service API
 func Crossplane(
 	g *generate.Generator,
-	templateBasePath string,
+	templateBasePaths []string,
 ) (*templateset.TemplateSet, error) {
 	enumDefs, err := g.GetEnumDefs()
 	if err != nil {
@@ -127,7 +127,7 @@ func Crossplane(
 	}
 
 	ts := templateset.New(
-		templateBasePath,
+		templateBasePaths,
 		includePaths,
 		copyPaths,
 		funcMap,

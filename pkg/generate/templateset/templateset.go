@@ -15,11 +15,28 @@ package templateset
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	ttpl "text/template"
+
+	"github.com/pkg/errors"
 )
+
+var (
+	// ErrTemplateNotFound is returned when a template path couldn't be located
+	// in any base search path
+	ErrTemplateNotFound    = errors.New("Template Not Found")
+	errMsgTemplateNotFound = "template %s not found in any base search path"
+)
+
+func errTemplateNotFound(templatePath string) error {
+	return errors.WithMessage(
+		ErrTemplateNotFound,
+		fmt.Sprintf(errMsgTemplateNotFound, templatePath),
+	)
+}
 
 // templateWithVars contains a template and the variables injected during execution
 type templateWithVars struct {
@@ -30,28 +47,30 @@ type templateWithVars struct {
 // TemplateSet contains a set of templates and copy files for a particular
 // target
 type TemplateSet struct {
-	basePath     string
-	includePaths []string
-	copyPaths    []string
-	templates    map[string]templateWithVars
-	funcMap      ttpl.FuncMap
-	executed     map[string]*bytes.Buffer
+	// baseSearchPaths is a set of directories from which templates will be
+	// searched
+	baseSearchPaths []string
+	includePaths    []string
+	copyPaths       []string
+	templates       map[string]templateWithVars
+	funcMap         ttpl.FuncMap
+	executed        map[string]*bytes.Buffer
 }
 
 // New returns a pointer to a TemplateSet
 func New(
-	templateBasePath string,
+	baseSearchPaths []string,
 	includePaths []string,
 	copyPaths []string,
 	funcMap ttpl.FuncMap,
 ) *TemplateSet {
 	return &TemplateSet{
-		basePath:     templateBasePath,
-		includePaths: includePaths,
-		copyPaths:    copyPaths,
-		funcMap:      funcMap,
-		templates:    map[string]templateWithVars{},
-		executed:     map[string]*bytes.Buffer{},
+		baseSearchPaths: baseSearchPaths,
+		includePaths:    includePaths,
+		copyPaths:       copyPaths,
+		funcMap:         funcMap,
+		templates:       map[string]templateWithVars{},
+		executed:        map[string]*bytes.Buffer{},
 	}
 }
 
@@ -61,24 +80,50 @@ func (ts *TemplateSet) Add(
 	templatePath string,
 	vars interface{},
 ) error {
-	path := filepath.Join(ts.basePath, templatePath)
-	tplContents, err := ioutil.ReadFile(path)
+	var foundPath string
+	for _, basePath := range ts.baseSearchPaths {
+		path := filepath.Join(basePath, templatePath)
+		if fileExists(path) {
+			foundPath = path
+			break
+		}
+	}
+
+	if foundPath == "" {
+		return errTemplateNotFound(templatePath)
+	}
+
+	tplContents, err := ioutil.ReadFile(foundPath)
 	if err != nil {
 		return err
 	}
-	t := ttpl.New(path)
+	t := ttpl.New(foundPath)
 	t = t.Funcs(ts.funcMap)
 	t, err = t.Parse(string(tplContents))
 	if err != nil {
 		return err
 	}
-	for _, includePath := range ts.includePaths {
-		tplPath := filepath.Join(ts.basePath, includePath)
-		if t, err = includeTemplate(t, tplPath); err != nil {
-			return err
-		}
+	if err = ts.joinIncludes(t); err != nil {
+		return err
 	}
 	ts.templates[outPath] = templateWithVars{t, vars}
+	return nil
+}
+
+// joinIncludes adds all include templates to the supplied template
+func (ts *TemplateSet) joinIncludes(t *ttpl.Template) error {
+	var err error
+	for _, basePath := range ts.baseSearchPaths {
+		for _, includePath := range ts.includePaths {
+			tplPath := filepath.Join(basePath, includePath)
+			if !fileExists(tplPath) {
+				continue
+			}
+			if t, err = includeTemplate(t, tplPath); err != nil {
+				return err
+			}
+		}
+	}
 	return nil
 }
 
@@ -94,13 +139,18 @@ func (ts *TemplateSet) Execute() error {
 		}
 		ts.executed[path] = &b
 	}
-	for _, path := range ts.copyPaths {
-		copyPath := filepath.Join(ts.basePath, path)
-		b, err := byteBufferFromFile(copyPath)
-		if err != nil {
-			return err
+	for _, basePath := range ts.baseSearchPaths {
+		for _, path := range ts.copyPaths {
+			copyPath := filepath.Join(basePath, path)
+			if !fileExists(copyPath) {
+				continue
+			}
+			b, err := byteBufferFromFile(copyPath)
+			if err != nil {
+				return err
+			}
+			ts.executed[path] = b
 		}
-		ts.executed[path] = b
 	}
 	return nil
 }
@@ -143,4 +193,10 @@ func includeTemplate(t *ttpl.Template, tplPath string) (*ttpl.Template, error) {
 		return nil, err
 	}
 	return t, nil
+}
+
+// fileExists returns tTrue if the supplied file path exists, false otherwise
+func fileExists(path string) bool {
+	_, err := os.Stat(path)
+	return !os.IsNotExist(err)
 }

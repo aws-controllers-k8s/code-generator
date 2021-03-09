@@ -38,8 +38,8 @@ var (
 	optCacheDir            string
 	optRefreshCache        bool
 	optAWSSDKGoVersion     string
-	defaultTemplatesDir    string
-	optTemplatesDir        string
+	defaultTemplateDirs    []string
+	optTemplateDirs        []string
 	defaultServicesDir     string
 	optServicesDir         string
 	optDryRun              bool
@@ -80,7 +80,7 @@ func init() {
 	for _, tryPath := range tryPaths {
 		if fi, err := os.Stat(tryPath); err == nil {
 			if fi.IsDir() {
-				defaultTemplatesDir = tryPath
+				defaultTemplateDirs = append(defaultTemplateDirs, tryPath)
 				break
 			}
 		}
@@ -100,8 +100,8 @@ func init() {
 	rootCmd.PersistentFlags().BoolVar(
 		&optDryRun, "dry-run", false, "If true, outputs all files to stdout",
 	)
-	rootCmd.PersistentFlags().StringVar(
-		&optTemplatesDir, "templates-dir", defaultTemplatesDir, "Path to directory with templates to use in code generation",
+	rootCmd.PersistentFlags().StringSliceVar(
+		&optTemplateDirs, "template-dirs", defaultTemplateDirs, "Paths to directories with templates to use in code generation. Note that the order in which directories is specified will be used to provide override functionality.",
 	)
 	rootCmd.PersistentFlags().StringVar(
 		&optServicesDir, "services-dir", defaultServicesDir, "Path to directory to output service-specific code",

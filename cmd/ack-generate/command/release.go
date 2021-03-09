@@ -87,7 +87,7 @@ func generateRelease(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	ts, err := ackgenerate.Release(
-		g, optTemplatesDir,
+		g, optTemplateDirs,
 		releaseVersion, optImageRepository, optServiceAccountName,
 	)
 	if err != nil {

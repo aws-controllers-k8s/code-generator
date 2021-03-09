@@ -53,7 +53,6 @@ func generateCrossplane(_ *cobra.Command, args []string) error {
 	if err := ensureSDKRepo(optCacheDir); err != nil {
 		return err
 	}
-	optTemplatesDir = filepath.Join(optTemplatesDir, "crossplane")
 	svcAlias := strings.ToLower(args[0])
 	sdkHelper := model.NewSDKHelper(sdkDir)
 	sdkHelper.APIGroupSuffix = "aws.crossplane.io"
@@ -83,7 +82,7 @@ func generateCrossplane(_ *cobra.Command, args []string) error {
 		return err
 	}
 
-	ts, err := cpgenerate.Crossplane(g, optTemplatesDir)
+	ts, err := cpgenerate.Crossplane(g, optTemplateDirs)
 	if err != nil {
 		return err
 	}

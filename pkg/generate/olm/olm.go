@@ -43,11 +43,11 @@ func BundleAssets(
 	commonMeta CommonMetadata,
 	serviceConfig ServiceConfig,
 	vers string,
-	templateBasePath string,
+	templateBasePaths []string,
 ) (*templateset.TemplateSet, error) {
 
 	ts := templateset.New(
-		templateBasePath,
+		templateBasePaths,
 		csvIncludePaths,
 		csvCopyPaths,
 		csvFuncMap,
