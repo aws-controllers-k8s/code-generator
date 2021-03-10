@@ -26,12 +26,15 @@ import (
 )
 
 var (
-	apisTemplatePaths = []string{
+	apisGenericTemplatesPaths = []string{
 		"crossplane/apis/doc.go.tpl",
 		"crossplane/apis/enums.go.tpl",
 		"crossplane/apis/groupversion_info.go.tpl",
 		"crossplane/apis/types.go.tpl",
 	}
+	crdTemplatePath = "crossplane/apis/crd.go.tpl"
+	controllerTmplPath = "crossplane/pkg/controller.go.tpl"
+	conversionsTmplPath = "crossplane/pkg/conversions.go.tpl"
 	includePaths = []string{
 		"crossplane/boilerplate.go.tpl",
 		"crossplane/apis/enum_def.go.tpl",
@@ -142,7 +145,7 @@ func Crossplane(
 		typeDefs,
 		typeImports,
 	}
-	for _, path := range apisTemplatePaths {
+	for _, path := range apisGenericTemplatesPaths {
 		outPath := filepath.Join(
 			"apis",
 			metaVars.ServiceIDClean,
@@ -162,29 +165,34 @@ func Crossplane(
 			metaVars,
 			crd,
 		}
-		if err = ts.Add(crdFileName, "apis/crd.go.tpl", crdVars); err != nil {
+		if err = ts.Add(crdFileName, crdTemplatePath, crdVars); err != nil {
 			return nil, err
 		}
 	}
 
 	// Next add the controller package for each CRD
-	targets := []string{
-		"controller.go.tpl",
-		"conversions.go.tpl",
-	}
 	for _, crd := range crds {
-		for _, target := range targets {
-			outPath := filepath.Join(
-				"pkg", "controller", metaVars.ServiceIDClean, crd.Names.Lower,
-				"zz_"+strings.TrimSuffix(filepath.Base(target), ".tpl"),
-			)
-			crdVars := &templateCRDVars{
-				metaVars,
-				crd,
-			}
-			if err = ts.Add(outPath, "pkg/"+target, crdVars); err != nil {
-				return nil, err
-			}
+		outPath := filepath.Join(
+			"pkg", "controller", metaVars.ServiceIDClean, crd.Names.Lower,
+			"zz_controller.go",
+		)
+		crdVars := &templateCRDVars{
+			metaVars,
+			crd,
+		}
+		if err = ts.Add(outPath, controllerTmplPath, crdVars); err != nil {
+			return nil, err
+		}
+		outPath = filepath.Join(
+			"pkg", "controller", metaVars.ServiceIDClean, crd.Names.Lower,
+			"zz_conversions.go",
+		)
+		crdVars = &templateCRDVars{
+			metaVars,
+			crd,
+		}
+		if err = ts.Add(outPath, conversionsTmplPath, crdVars); err != nil {
+			return nil, err
 		}
 	}
 
