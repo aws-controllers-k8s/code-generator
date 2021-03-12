@@ -180,22 +180,30 @@ func newExternal(kube client.Client, client svcsdkapi.{{ .SDKAPIInterfaceTypeNam
 	e := &external{
 		kube:           kube,
 		client:         client,
-		{{- if or .CRD.Ops.ReadOne .CRD.Ops.GetAttributes .CRD.Ops.ReadMany }}
+		{{- if .CRD.Ops.ReadOne }}
 		preObserve:     nopPreObserve,
 		postObserve:    nopPostObserve,
 		lateInitialize: nopLateInitialize,
 		isUpToDate:     alwaysUpToDate,
+		{{- else if .CRD.Ops.GetAttributes }}
+		preObserve:     nopPreObserve,
+		postObserve:    nopPostObserve,
+		lateInitialize: nopLateInitialize,
+		isUpToDate:     alwaysUpToDate,
+		{{- else if .CRD.Ops.ReadMany }}
+		preObserve:     nopPreObserve,
+		postObserve:    nopPostObserve,
+		lateInitialize: nopLateInitialize,
+		isUpToDate:     alwaysUpToDate,
+		filterList:     nopFilterList,
 		{{- else }}
 		observe:        nopObserve,
 		{{- end }}
-		{{- if and .CRD.Ops.ReadMany (not .CRD.Ops.ReadOne) }}
-		filterList:     nopFilterList,
-		{{- end}}
 		preCreate:      nopPreCreate,
 		postCreate:     nopPostCreate,
 		{{- if .CRD.Ops.Delete }}
 		preDelete:      nopPreDelete,
-		postDelete:      nopPostDelete,
+		postDelete:     nopPostDelete,
 		{{- else }}
 		delete:         nopDelete,
 		{{- end }}
