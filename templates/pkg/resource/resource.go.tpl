@@ -11,7 +11,7 @@ import (
 	svcapitypes "github.com/aws-controllers-k8s/{{ .ServiceIDClean }}-controller/apis/{{ .APIVersion}}"
 )
 
-// resource implements the `aws-service-operator-k8s/pkg/types.AWSResource`
+// resource implements the `aws-controller-k8s/runtime/pkg/types.AWSResource`
 // interface
 type resource struct {
 	// The Kubernetes-native CR representing the resource

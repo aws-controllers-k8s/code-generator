@@ -93,6 +93,9 @@ var (
 		"GoCodeSetDeleteInput": func(r *ackmodel.CRD, sourceVarName string, targetVarName string, indentLevel int) string {
 			return code.SetSDK(r.Config(), r, ackmodel.OpTypeDelete, sourceVarName, targetVarName, indentLevel)
 		},
+		"GoCodeCompare": func(r *ackmodel.CRD, deltaVarName string, sourceVarName string, targetVarName string, indentLevel int) string {
+			return code.CompareResource(r.Config(), r, deltaVarName, sourceVarName, targetVarName, indentLevel)
+		},
 		"Empty": func(subject string) bool {
 			return strings.TrimSpace(subject) == ""
 		},
@@ -130,6 +133,7 @@ func Controller(
 
 	// First add all the CRD pkg/resource templates
 	targets := []string{
+		"delta.go.tpl",
 		"descriptor.go.tpl",
 		"identifiers.go.tpl",
 		"manager.go.tpl",
