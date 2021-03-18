@@ -142,6 +142,7 @@ fi
 
 if [ -n "$AWS_SDK_GO_VERSION" ]; then
     ag_args="$ag_args --aws-sdk-go-version $AWS_SDK_GO_VERSION"
+    apis_args="$apis_args --aws-sdk-go-version $AWS_SDK_GO_VERSION"
 fi
 
 echo "Building Kubernetes API objects for $SERVICE"
