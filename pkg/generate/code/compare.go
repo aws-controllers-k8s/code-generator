@@ -169,11 +169,13 @@ func CompareResource(
 				indentLevel,
 			)
 		}
-		// }
-		out += fmt.Sprintf(
-			"%s}\n", indent,
-		)
-		indentLevel--
+		if nilCode != "" {
+			// }
+			out += fmt.Sprintf(
+				"%s}\n", indent,
+			)
+			indentLevel--
+		}
 	}
 	return out
 }
@@ -218,7 +220,6 @@ func compareNil(
 	case "list", "blob":
 		// for slice types, there is no nilability test. Instead, the normal
 		// value test checks length of slices.
-		return ""
 	case "boolean", "string", "character", "byte", "short", "integer", "long",
 		"float", "double", "timestamp", "structure", "map", "jsonvalue":
 		// if ackcompare.HasNilDifference(a.ko.Spec.Name, b.ko.Spec.Name) {
@@ -431,6 +432,7 @@ func compareSlice(
 		// TODO(jaypipes): Implement this by walking the slice of struct values
 		// and comparing each struct individually, building up the fieldPath
 		// appropriately...
+		return ""
 	default:
 		panic("Unsupported shape type in generate.code.compareSlice: " + shape.Type)
 	}
@@ -582,11 +584,13 @@ func compareStruct(
 				indentLevel,
 			)
 		}
-		// }
-		out += fmt.Sprintf(
-			"%s}\n", indent,
-		)
-		indentLevel--
+		if nilCode != "" {
+			// }
+			out += fmt.Sprintf(
+				"%s}\n", indent,
+			)
+			indentLevel--
+		}
 	}
 	return out
 }
