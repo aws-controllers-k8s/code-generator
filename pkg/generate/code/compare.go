@@ -169,11 +169,13 @@ func CompareResource(
 				indentLevel,
 			)
 		}
-		// }
-		out += fmt.Sprintf(
-			"%s}\n", indent,
-		)
-		indentLevel--
+		if nilCode != "" {
+			// }
+			out += fmt.Sprintf(
+				"%s}\n", indent,
+			)
+			indentLevel--
+		}
 	}
 	return out
 }
@@ -364,6 +366,7 @@ func compareMap(
 		// TODO(jaypipes): Implement this by walking the keys and struct values
 		// and comparing each struct individually, building up the fieldPath
 		// appropriately...
+		return ""
 	default:
 		panic("Unsupported shape type in generate.code.compareMap: " + shape.Type)
 	}
@@ -431,6 +434,7 @@ func compareSlice(
 		// TODO(jaypipes): Implement this by walking the slice of struct values
 		// and comparing each struct individually, building up the fieldPath
 		// appropriately...
+		return ""
 	default:
 		panic("Unsupported shape type in generate.code.compareSlice: " + shape.Type)
 	}
@@ -582,11 +586,13 @@ func compareStruct(
 				indentLevel,
 			)
 		}
-		// }
-		out += fmt.Sprintf(
-			"%s}\n", indent,
-		)
-		indentLevel--
+		if nilCode != "" {
+			// }
+			out += fmt.Sprintf(
+				"%s}\n", indent,
+			)
+			indentLevel--
+		}
 	}
 	return out
 }
