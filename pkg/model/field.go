@@ -42,7 +42,7 @@ func (f *Field) IsRequired() bool {
 	if f.FieldConfig != nil && f.FieldConfig.IsRequired != nil {
 		return *f.FieldConfig.IsRequired
 	}
-	return util.InStrings(f.Names.ModelOrginal, f.CRD.Ops.Create.InputRef.Shape.Required)
+	return util.InStrings(f.Names.ModelOriginal, f.CRD.Ops.Create.InputRef.Shape.Required)
 }
 
 // newField returns a pointer to a new Field object

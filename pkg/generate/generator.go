@@ -116,7 +116,7 @@ func (g *Generator) GetCRDs() ([]*ackmodel.CRD, error) {
 				createOp.Name, memberName,
 			)
 			memberNames := names.New(renamedName)
-			memberNames.ModelOrginal = memberName
+			memberNames.ModelOriginal = memberName
 			if memberName == "Attributes" && g.cfg.UnpacksAttributesMap(crdName) {
 				crd.UnpackAttributes()
 				continue

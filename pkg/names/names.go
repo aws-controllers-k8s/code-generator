@@ -147,12 +147,12 @@ var goKeywords = []string{
 }
 
 type Names struct {
-	ModelOrginal string
-	Original     string
-	Camel        string
-	CamelLower   string
-	Lower        string
-	Snake        string
+	ModelOriginal string
+	Original      string
+	Camel         string
+	CamelLower    string
+	Lower         string
+	Snake         string
 }
 
 func New(original string) Names {
