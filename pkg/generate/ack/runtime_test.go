@@ -15,11 +15,14 @@ package ack
 
 import (
 	"testing"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8srt "k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/stretchr/testify/require"
 
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
 	acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
+	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 )
 
 type fakeIdentifiers struct{}
@@ -34,6 +37,38 @@ func (ids *fakeIdentifiers) OwnerAccountID() *ackv1alpha1.AWSAccountID {
 	return &owner
 }
 
+type fakeDescriptor struct{}
+
+func (fd *fakeDescriptor) GroupKind() *metav1.GroupKind {
+	return nil
+}
+
+func (fd *fakeDescriptor) EmptyRuntimeObject() k8srt.Object {
+	return nil
+}
+
+func (fd *fakeDescriptor) ResourceFromRuntimeObject(o k8srt.Object) acktypes.AWSResource {
+	return nil
+}
+
+func (fd *fakeDescriptor) Delta(a, b acktypes.AWSResource) *ackcompare.Delta {
+ 	return nil
+}
+
+func (fd *fakeDescriptor) UpdateCRStatus(acktypes.AWSResource) (bool, error) {
+	return false, nil
+}
+
+func (fd *fakeDescriptor) IsManaged(acktypes.AWSResource) bool {
+	return false
+}
+
+func (fd *fakeDescriptor) MarkManaged(acktypes.AWSResource) {
+}
+
+func (fd *fakeDescriptor) MarkUnmanaged(acktypes.AWSResource) {
+}
+
 // This test is mostly just a hack to introduce a Go module dependency between
 // the ACK runtime library and the code generator. The code generator doesn't
 // actually depend on Go code in the ACK runtime, but it *produces* templated
@@ -42,4 +77,5 @@ func TestRuntimeDependency(t *testing.T) {
 	require := require.New(t)
 
 	require.Implements((*acktypes.AWSResourceIdentifiers)(nil), new(fakeIdentifiers))
+	require.Implements((*acktypes.AWSResourceDescriptor)(nil), new(fakeDescriptor))
 }
