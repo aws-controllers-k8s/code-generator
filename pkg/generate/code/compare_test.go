@@ -103,3 +103,48 @@ func TestCompareResource_S3_Bucket(t *testing.T) {
 		),
 	)
 }
+
+func TestCompareResource_Lambda_CodeSigningConfig(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewGeneratorForService(t, "lambda")
+
+	crd := testutil.GetCRDByName(t, g, "CodeSigningConfig")
+	require.NotNil(crd)
+
+	expected := `
+	if ackcompare.HasNilDifference(a.ko.Spec.AllowedPublishers, b.ko.Spec.AllowedPublishers) {
+		delta.Add("Spec.AllowedPublishers", a.ko.Spec.AllowedPublishers, b.ko.Spec.AllowedPublishers)
+	} else if a.ko.Spec.AllowedPublishers != nil && b.ko.Spec.AllowedPublishers != nil {
+
+		if !ackcompare.SliceStringPEqual(a.ko.Spec.AllowedPublishers.SigningProfileVersionARNs, b.ko.Spec.AllowedPublishers.SigningProfileVersionARNs) {
+			delta.Add("Spec.AllowedPublishers.SigningProfileVersionARNs", a.ko.Spec.AllowedPublishers.SigningProfileVersionARNs, b.ko.Spec.AllowedPublishers.SigningProfileVersionARNs)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.CodeSigningPolicies, b.ko.Spec.CodeSigningPolicies) {
+		delta.Add("Spec.CodeSigningPolicies", a.ko.Spec.CodeSigningPolicies, b.ko.Spec.CodeSigningPolicies)
+	} else if a.ko.Spec.CodeSigningPolicies != nil && b.ko.Spec.CodeSigningPolicies != nil {
+		if ackcompare.HasNilDifference(a.ko.Spec.CodeSigningPolicies.UntrustedArtifactOnDeployment, b.ko.Spec.CodeSigningPolicies.UntrustedArtifactOnDeployment) {
+			delta.Add("Spec.CodeSigningPolicies.UntrustedArtifactOnDeployment", a.ko.Spec.CodeSigningPolicies.UntrustedArtifactOnDeployment, b.ko.Spec.CodeSigningPolicies.UntrustedArtifactOnDeployment)
+		} else if a.ko.Spec.CodeSigningPolicies.UntrustedArtifactOnDeployment != nil && b.ko.Spec.CodeSigningPolicies.UntrustedArtifactOnDeployment != nil {
+			if *a.ko.Spec.CodeSigningPolicies.UntrustedArtifactOnDeployment != *b.ko.Spec.CodeSigningPolicies.UntrustedArtifactOnDeployment {
+				delta.Add("Spec.CodeSigningPolicies.UntrustedArtifactOnDeployment", a.ko.Spec.CodeSigningPolicies.UntrustedArtifactOnDeployment, b.ko.Spec.CodeSigningPolicies.UntrustedArtifactOnDeployment)
+			}
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.Description, b.ko.Spec.Description) {
+		delta.Add("Spec.Description", a.ko.Spec.Description, b.ko.Spec.Description)
+	} else if a.ko.Spec.Description != nil && b.ko.Spec.Description != nil {
+		if *a.ko.Spec.Description != *b.ko.Spec.Description {
+			delta.Add("Spec.Description", a.ko.Spec.Description, b.ko.Spec.Description)
+		}
+	}
+`
+	assert.Equal(
+		expected,
+		code.CompareResource(
+			crd.Config(), crd, "delta", "a.ko", "b.ko", 1,
+		),
+	)
+}

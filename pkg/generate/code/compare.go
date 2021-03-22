@@ -543,9 +543,9 @@ func compareStruct(
 				compareConfig,
 				memberShape,
 				deltaVarName,
-				memberFieldPath,
 				firstResAdaptedVarName,
 				secondResAdaptedVarName,
+				memberFieldPath,
 				indentLevel,
 			)
 		case "list":
@@ -555,9 +555,9 @@ func compareStruct(
 				compareConfig,
 				memberShape,
 				deltaVarName,
-				memberFieldPath,
 				firstResAdaptedVarName,
 				secondResAdaptedVarName,
+				memberFieldPath,
 				indentLevel,
 			)
 		case "map":
@@ -567,9 +567,9 @@ func compareStruct(
 				compareConfig,
 				memberShape,
 				deltaVarName,
-				memberFieldPath,
 				firstResAdaptedVarName,
 				secondResAdaptedVarName,
+				memberFieldPath,
 				indentLevel,
 			)
 		default:
