@@ -1,3 +1,18 @@
 ignore:
   shape_names:
     - DBSecurityGroupMembershipList
+resources:
+  DBSubnetGroup:
+    renames:
+      operations:
+        DescribeDBSubnetGroups:
+          input_fields:
+            DBSubnetGroupName: Name
+            DBSubnetGroupDescription: Description
+        CreateDBSubnetGroup:
+          input_fields:
+            DBSubnetGroupName: Name
+            DBSubnetGroupDescription: Description
+        DeleteDBSubnetGroup:
+          input_fields:
+            DBSubnetGroupName: Name

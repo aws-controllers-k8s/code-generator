@@ -1945,3 +1945,79 @@ func TestSetResource_SQS_Queue_GetAttributes(t *testing.T) {
 		code.SetResourceGetAttributes(crd.Config(), crd, "resp", "ko", 1),
 	)
 }
+
+func TestSetResource_RDS_DBSubnetGroup_ReadMany(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewGeneratorForService(t, "rds")
+
+	crd := testutil.GetCRDByName(t, g, "DBSubnetGroup")
+	require.NotNil(crd)
+
+	// There are renamed fields for Name and Description in order to
+	// "de-stutter" the field names. We want to verify that the SetResource for
+	// the DescribeDBSubnetGroups API operation sets these fields in the Spec
+	// properly
+	expected := `
+	found := false
+	for _, elem := range resp.DBSubnetGroups {
+		if elem.DBSubnetGroupArn != nil {
+			if ko.Status.ACKResourceMetadata == nil {
+				ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
+			}
+			tmpARN := ackv1alpha1.AWSResourceName(*elem.DBSubnetGroupArn)
+			ko.Status.ACKResourceMetadata.ARN = &tmpARN
+		}
+		if elem.DBSubnetGroupDescription != nil {
+			ko.Spec.Description = elem.DBSubnetGroupDescription
+		}
+		if elem.DBSubnetGroupName != nil {
+			ko.Spec.Name = elem.DBSubnetGroupName
+		}
+		if elem.SubnetGroupStatus != nil {
+			ko.Status.SubnetGroupStatus = elem.SubnetGroupStatus
+		}
+		if elem.Subnets != nil {
+			f4 := []*svcapitypes.Subnet{}
+			for _, f4iter := range elem.Subnets {
+				f4elem := &svcapitypes.Subnet{}
+				if f4iter.SubnetAvailabilityZone != nil {
+					f4elemf0 := &svcapitypes.AvailabilityZone{}
+					if f4iter.SubnetAvailabilityZone.Name != nil {
+						f4elemf0.Name = f4iter.SubnetAvailabilityZone.Name
+					}
+					f4elem.SubnetAvailabilityZone = f4elemf0
+				}
+				if f4iter.SubnetIdentifier != nil {
+					f4elem.SubnetIdentifier = f4iter.SubnetIdentifier
+				}
+				if f4iter.SubnetOutpost != nil {
+					f4elemf2 := &svcapitypes.Outpost{}
+					if f4iter.SubnetOutpost.Arn != nil {
+						f4elemf2.ARN = f4iter.SubnetOutpost.Arn
+					}
+					f4elem.SubnetOutpost = f4elemf2
+				}
+				if f4iter.SubnetStatus != nil {
+					f4elem.SubnetStatus = f4iter.SubnetStatus
+				}
+				f4 = append(f4, f4elem)
+			}
+			ko.Status.Subnets = f4
+		}
+		if elem.VpcId != nil {
+			ko.Status.VPCID = elem.VpcId
+		}
+		found = true
+		break
+	}
+	if !found {
+		return nil, ackerr.NotFound
+	}
+`
+	assert.Equal(
+		expected,
+		code.SetResource(crd.Config(), crd, model.OpTypeList, "resp", "ko", 1, false),
+	)
+}

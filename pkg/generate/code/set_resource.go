@@ -197,7 +197,12 @@ func SetResource(
 		var found bool
 		var targetMemberShapeRef *awssdkmodel.ShapeRef
 		targetAdaptedVarName := targetVarName
-		f, found = r.SpecFields[memberName]
+
+		// Check that the field has potentially been renamed
+		renamedName, _ := r.InputFieldRename(
+			op.Name, memberName,
+		)
+		f, found = r.SpecFields[renamedName]
 		if found {
 			targetAdaptedVarName += cfg.PrefixConfig.SpecField
 			if !performSpecUpdate {
@@ -452,7 +457,11 @@ func setResourceReadMany(
 		var found bool
 		var targetMemberShapeRef *awssdkmodel.ShapeRef
 		targetAdaptedVarName := targetVarName
-		f, found = r.SpecFields[memberName]
+		// Check that the field has potentially been renamed
+		renamedName, _ := r.InputFieldRename(
+			op.Name, memberName,
+		)
+		f, found = r.SpecFields[renamedName]
 		if found {
 			targetAdaptedVarName += cfg.PrefixConfig.SpecField
 		} else {
