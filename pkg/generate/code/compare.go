@@ -315,7 +315,7 @@ func compareScalar(
 //
 // Output code will look something like this:
 //
-//   if !ackcompare.MapStringStringEqual(a.ko.Spec.Tags, b.ko.Spec.Tags) {
+//   if !ackcompare.MapStringStringPEqual(a.ko.Spec.Tags, b.ko.Spec.Tags) {
 //     delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
 //   }
 func compareMap(
@@ -357,9 +357,9 @@ func compareMap(
 
 	switch valType {
 	case "string":
-		// if !ackcompare.MapStringStringEqual(a.ko.Spec.Tags, b.ko.Spec.Tags) {
+		// if !ackcompare.MapStringStringPEqual(a.ko.Spec.Tags, b.ko.Spec.Tags) {
 		out += fmt.Sprintf(
-			"%sif !ackcompare.MapStringStringEqual(%s, %s) {\n",
+			"%sif !ackcompare.MapStringStringPEqual(%s, %s) {\n",
 			indent, firstResVarName, secondResVarName,
 		)
 	case "structure":
