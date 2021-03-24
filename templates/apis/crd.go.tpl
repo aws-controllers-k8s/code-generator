@@ -16,6 +16,9 @@ import (
 // {{ .CRD.Kind }}Spec defines the desired state of {{ .CRD.Kind }}
 type {{ .CRD.Kind }}Spec struct {
 	{{- range $fieldName, $field := .CRD.SpecFields }}
+	{{- if $field.ShapeRef }}
+	{{ $field.ShapeRef.Documentation }}
+	{{- end }}
 	{{ if $field.IsRequired }} // +kubebuilder:validation:Required
 	{{ $field.Names.Camel }} {{ $field.GoType }} `json:"{{ $field.Names.CamelLower }}"`
 	{{- else }} {{ $field.Names.Camel }} {{ $field.GoType }} `json:"{{ $field.Names.CamelLower }},omitempty"` {{ end }}
@@ -34,6 +37,9 @@ type {{ .CRD.Kind }}Status struct {
 	// resource
 	Conditions []*ackv1alpha1.Condition `json:"conditions"`
 	{{- range $fieldName, $field := .CRD.StatusFields }}
+	{{- if $field.ShapeRef }}
+	{{ $field.ShapeRef.Documentation }}
+	{{- end }}
 	{{ $field.Names.Camel }} {{ $field.GoType }} `json:"{{ $field.Names.CamelLower }},omitempty"`
 {{- end }}
 }
