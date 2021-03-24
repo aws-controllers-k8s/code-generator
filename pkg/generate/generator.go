@@ -116,7 +116,7 @@ func (g *Generator) GetCRDs() ([]*ackmodel.CRD, error) {
 				createOp.Name, memberName,
 			)
 			memberNames := names.New(renamedName)
-			memberNames.ModelOrginal = memberName
+			memberNames.ModelOriginal = memberName
 			if memberName == "Attributes" && g.cfg.UnpacksAttributesMap(crdName) {
 				crd.UnpackAttributes()
 				continue
@@ -174,8 +174,14 @@ func (g *Generator) GetCRDs() ([]*ackmodel.CRD, error) {
 			if memberShapeRef.Shape == nil {
 				return nil, ErrNilShapePointer
 			}
-			memberNames := names.New(memberName)
-			if _, found := crd.SpecFields[memberName]; found {
+			// Check that the field in the output shape isn't the same as
+			// fields in the input shape (where the input shape has potentially
+			// been renamed)
+			renamedName, _ := crd.InputFieldRename(
+				createOp.Name, memberName,
+			)
+			memberNames := names.New(renamedName)
+			if _, found := crd.SpecFields[renamedName]; found {
 				// We don't put fields that are already in the Spec struct into
 				// the Status struct
 				continue
