@@ -36,9 +36,13 @@ func TestSetResource_APIGWv2_Route_Create(t *testing.T) {
 	expected := `
 	if resp.ApiGatewayManaged != nil {
 		ko.Status.APIGatewayManaged = resp.ApiGatewayManaged
+	} else {
+		ko.Status.APIGatewayManaged = nil
 	}
 	if resp.RouteId != nil {
 		ko.Status.RouteID = resp.RouteId
+	} else {
+		ko.Status.RouteID = nil
 	}
 `
 	assert.Equal(
@@ -59,9 +63,13 @@ func TestSetResource_APIGWv2_Route_ReadOne(t *testing.T) {
 	expected := `
 	if resp.ApiGatewayManaged != nil {
 		ko.Status.APIGatewayManaged = resp.ApiGatewayManaged
+	} else {
+		ko.Status.APIGatewayManaged = nil
 	}
 	if resp.ApiKeyRequired != nil {
 		ko.Spec.APIKeyRequired = resp.ApiKeyRequired
+	} else {
+		ko.Spec.APIKeyRequired = nil
 	}
 	if resp.AuthorizationScopes != nil {
 		f2 := []*string{}
@@ -71,18 +79,28 @@ func TestSetResource_APIGWv2_Route_ReadOne(t *testing.T) {
 			f2 = append(f2, &f2elem)
 		}
 		ko.Spec.AuthorizationScopes = f2
+	} else {
+		ko.Spec.AuthorizationScopes = nil
 	}
 	if resp.AuthorizationType != nil {
 		ko.Spec.AuthorizationType = resp.AuthorizationType
+	} else {
+		ko.Spec.AuthorizationType = nil
 	}
 	if resp.AuthorizerId != nil {
 		ko.Spec.AuthorizerID = resp.AuthorizerId
+	} else {
+		ko.Spec.AuthorizerID = nil
 	}
 	if resp.ModelSelectionExpression != nil {
 		ko.Spec.ModelSelectionExpression = resp.ModelSelectionExpression
+	} else {
+		ko.Spec.ModelSelectionExpression = nil
 	}
 	if resp.OperationName != nil {
 		ko.Spec.OperationName = resp.OperationName
+	} else {
+		ko.Spec.OperationName = nil
 	}
 	if resp.RequestModels != nil {
 		f7 := map[string]*string{}
@@ -92,6 +110,8 @@ func TestSetResource_APIGWv2_Route_ReadOne(t *testing.T) {
 			f7[f7key] = &f7val
 		}
 		ko.Spec.RequestModels = f7
+	} else {
+		ko.Spec.RequestModels = nil
 	}
 	if resp.RequestParameters != nil {
 		f8 := map[string]*svcapitypes.ParameterConstraints{}
@@ -103,18 +123,28 @@ func TestSetResource_APIGWv2_Route_ReadOne(t *testing.T) {
 			f8[f8key] = f8val
 		}
 		ko.Spec.RequestParameters = f8
+	} else {
+		ko.Spec.RequestParameters = nil
 	}
 	if resp.RouteId != nil {
 		ko.Status.RouteID = resp.RouteId
+	} else {
+		ko.Status.RouteID = nil
 	}
 	if resp.RouteKey != nil {
 		ko.Spec.RouteKey = resp.RouteKey
+	} else {
+		ko.Spec.RouteKey = nil
 	}
 	if resp.RouteResponseSelectionExpression != nil {
 		ko.Spec.RouteResponseSelectionExpression = resp.RouteResponseSelectionExpression
+	} else {
+		ko.Spec.RouteResponseSelectionExpression = nil
 	}
 	if resp.Target != nil {
 		ko.Spec.Target = resp.Target
+	} else {
+		ko.Spec.Target = nil
 	}
 `
 	assert.Equal(
@@ -139,6 +169,8 @@ func TestSetResource_CodeDeploy_Deployment_Create(t *testing.T) {
 	expected := `
 	if resp.DeploymentId != nil {
 		ko.Status.DeploymentID = resp.DeploymentId
+	} else {
+		ko.Status.DeploymentID = nil
 	}
 `
 	assert.Equal(
@@ -183,6 +215,8 @@ func TestSetResource_DynamoDB_Table_ReadOne(t *testing.T) {
 			f0.ArchivalReason = resp.Table.ArchivalSummary.ArchivalReason
 		}
 		ko.Status.ArchivalSummary = f0
+	} else {
+		ko.Status.ArchivalSummary = nil
 	}
 	if resp.Table.AttributeDefinitions != nil {
 		f1 := []*svcapitypes.AttributeDefinition{}
@@ -197,6 +231,8 @@ func TestSetResource_DynamoDB_Table_ReadOne(t *testing.T) {
 			f1 = append(f1, f1elem)
 		}
 		ko.Spec.AttributeDefinitions = f1
+	} else {
+		ko.Spec.AttributeDefinitions = nil
 	}
 	if resp.Table.BillingModeSummary != nil {
 		f2 := &svcapitypes.BillingModeSummary{}
@@ -207,9 +243,13 @@ func TestSetResource_DynamoDB_Table_ReadOne(t *testing.T) {
 			f2.LastUpdateToPayPerRequestDateTime = &metav1.Time{*resp.Table.BillingModeSummary.LastUpdateToPayPerRequestDateTime}
 		}
 		ko.Status.BillingModeSummary = f2
+	} else {
+		ko.Status.BillingModeSummary = nil
 	}
 	if resp.Table.CreationDateTime != nil {
 		ko.Status.CreationDateTime = &metav1.Time{*resp.Table.CreationDateTime}
+	} else {
+		ko.Status.CreationDateTime = nil
 	}
 	if resp.Table.GlobalSecondaryIndexes != nil {
 		f4 := []*svcapitypes.GlobalSecondaryIndex{}
@@ -261,12 +301,18 @@ func TestSetResource_DynamoDB_Table_ReadOne(t *testing.T) {
 			f4 = append(f4, f4elem)
 		}
 		ko.Spec.GlobalSecondaryIndexes = f4
+	} else {
+		ko.Spec.GlobalSecondaryIndexes = nil
 	}
 	if resp.Table.GlobalTableVersion != nil {
 		ko.Status.GlobalTableVersion = resp.Table.GlobalTableVersion
+	} else {
+		ko.Status.GlobalTableVersion = nil
 	}
 	if resp.Table.ItemCount != nil {
 		ko.Status.ItemCount = resp.Table.ItemCount
+	} else {
+		ko.Status.ItemCount = nil
 	}
 	if resp.Table.KeySchema != nil {
 		f7 := []*svcapitypes.KeySchemaElement{}
@@ -281,12 +327,18 @@ func TestSetResource_DynamoDB_Table_ReadOne(t *testing.T) {
 			f7 = append(f7, f7elem)
 		}
 		ko.Spec.KeySchema = f7
+	} else {
+		ko.Spec.KeySchema = nil
 	}
 	if resp.Table.LatestStreamArn != nil {
 		ko.Status.LatestStreamARN = resp.Table.LatestStreamArn
+	} else {
+		ko.Status.LatestStreamARN = nil
 	}
 	if resp.Table.LatestStreamLabel != nil {
 		ko.Status.LatestStreamLabel = resp.Table.LatestStreamLabel
+	} else {
+		ko.Status.LatestStreamLabel = nil
 	}
 	if resp.Table.LocalSecondaryIndexes != nil {
 		f10 := []*svcapitypes.LocalSecondaryIndex{}
@@ -328,6 +380,8 @@ func TestSetResource_DynamoDB_Table_ReadOne(t *testing.T) {
 			f10 = append(f10, f10elem)
 		}
 		ko.Spec.LocalSecondaryIndexes = f10
+	} else {
+		ko.Spec.LocalSecondaryIndexes = nil
 	}
 	if resp.Table.ProvisionedThroughput != nil {
 		f11 := &svcapitypes.ProvisionedThroughput{}
@@ -338,6 +392,8 @@ func TestSetResource_DynamoDB_Table_ReadOne(t *testing.T) {
 			f11.WriteCapacityUnits = resp.Table.ProvisionedThroughput.WriteCapacityUnits
 		}
 		ko.Spec.ProvisionedThroughput = f11
+	} else {
+		ko.Spec.ProvisionedThroughput = nil
 	}
 	if resp.Table.Replicas != nil {
 		f12 := []*svcapitypes.ReplicaDescription{}
@@ -386,6 +442,8 @@ func TestSetResource_DynamoDB_Table_ReadOne(t *testing.T) {
 			f12 = append(f12, f12elem)
 		}
 		ko.Status.Replicas = f12
+	} else {
+		ko.Status.Replicas = nil
 	}
 	if resp.Table.RestoreSummary != nil {
 		f13 := &svcapitypes.RestoreSummary{}
@@ -402,6 +460,8 @@ func TestSetResource_DynamoDB_Table_ReadOne(t *testing.T) {
 			f13.SourceTableARN = resp.Table.RestoreSummary.SourceTableArn
 		}
 		ko.Status.RestoreSummary = f13
+	} else {
+		ko.Status.RestoreSummary = nil
 	}
 	if resp.Table.SSEDescription != nil {
 		f14 := &svcapitypes.SSEDescription{}
@@ -418,6 +478,8 @@ func TestSetResource_DynamoDB_Table_ReadOne(t *testing.T) {
 			f14.Status = resp.Table.SSEDescription.Status
 		}
 		ko.Status.SSEDescription = f14
+	} else {
+		ko.Status.SSEDescription = nil
 	}
 	if resp.Table.StreamSpecification != nil {
 		f15 := &svcapitypes.StreamSpecification{}
@@ -428,6 +490,8 @@ func TestSetResource_DynamoDB_Table_ReadOne(t *testing.T) {
 			f15.StreamViewType = resp.Table.StreamSpecification.StreamViewType
 		}
 		ko.Spec.StreamSpecification = f15
+	} else {
+		ko.Spec.StreamSpecification = nil
 	}
 	if ko.Status.ACKResourceMetadata == nil {
 		ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
@@ -438,15 +502,23 @@ func TestSetResource_DynamoDB_Table_ReadOne(t *testing.T) {
 	}
 	if resp.Table.TableId != nil {
 		ko.Status.TableID = resp.Table.TableId
+	} else {
+		ko.Status.TableID = nil
 	}
 	if resp.Table.TableName != nil {
 		ko.Spec.TableName = resp.Table.TableName
+	} else {
+		ko.Spec.TableName = nil
 	}
 	if resp.Table.TableSizeBytes != nil {
 		ko.Status.TableSizeBytes = resp.Table.TableSizeBytes
+	} else {
+		ko.Status.TableSizeBytes = nil
 	}
 	if resp.Table.TableStatus != nil {
 		ko.Status.TableStatus = resp.Table.TableStatus
+	} else {
+		ko.Status.TableStatus = nil
 	}
 `
 	assert.Equal(
@@ -470,18 +542,28 @@ func TestSetResource_EC2_LaunchTemplate_Create(t *testing.T) {
 	expected := `
 	if resp.LaunchTemplate.CreateTime != nil {
 		ko.Status.CreateTime = &metav1.Time{*resp.LaunchTemplate.CreateTime}
+	} else {
+		ko.Status.CreateTime = nil
 	}
 	if resp.LaunchTemplate.CreatedBy != nil {
 		ko.Status.CreatedBy = resp.LaunchTemplate.CreatedBy
+	} else {
+		ko.Status.CreatedBy = nil
 	}
 	if resp.LaunchTemplate.DefaultVersionNumber != nil {
 		ko.Status.DefaultVersionNumber = resp.LaunchTemplate.DefaultVersionNumber
+	} else {
+		ko.Status.DefaultVersionNumber = nil
 	}
 	if resp.LaunchTemplate.LatestVersionNumber != nil {
 		ko.Status.LatestVersionNumber = resp.LaunchTemplate.LatestVersionNumber
+	} else {
+		ko.Status.LatestVersionNumber = nil
 	}
 	if resp.LaunchTemplate.LaunchTemplateId != nil {
 		ko.Status.LaunchTemplateID = resp.LaunchTemplate.LaunchTemplateId
+	} else {
+		ko.Status.LaunchTemplateID = nil
 	}
 	if resp.LaunchTemplate.Tags != nil {
 		f6 := []*svcapitypes.Tag{}
@@ -496,6 +578,8 @@ func TestSetResource_EC2_LaunchTemplate_Create(t *testing.T) {
 			f6 = append(f6, f6elem)
 		}
 		ko.Status.Tags = f6
+	} else {
+		ko.Status.Tags = nil
 	}
 `
 	assert.Equal(
@@ -519,9 +603,13 @@ func TestSetResource_ECR_Repository_Create(t *testing.T) {
 	expected := `
 	if resp.Repository.CreatedAt != nil {
 		ko.Status.CreatedAt = &metav1.Time{*resp.Repository.CreatedAt}
+	} else {
+		ko.Status.CreatedAt = nil
 	}
 	if resp.Repository.RegistryId != nil {
 		ko.Status.RegistryID = resp.Repository.RegistryId
+	} else {
+		ko.Status.RegistryID = nil
 	}
 	if ko.Status.ACKResourceMetadata == nil {
 		ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
@@ -532,6 +620,8 @@ func TestSetResource_ECR_Repository_Create(t *testing.T) {
 	}
 	if resp.Repository.RepositoryUri != nil {
 		ko.Status.RepositoryURI = resp.Repository.RepositoryUri
+	} else {
+		ko.Status.RepositoryURI = nil
 	}
 `
 	assert.Equal(
@@ -559,6 +649,8 @@ func TestSetResource_ECR_Repository_ReadMany(t *testing.T) {
 	for _, elem := range resp.Repositories {
 		if elem.CreatedAt != nil {
 			ko.Status.CreatedAt = &metav1.Time{*elem.CreatedAt}
+		} else {
+			ko.Status.CreatedAt = nil
 		}
 		if elem.ImageScanningConfiguration != nil {
 			f1 := &svcapitypes.ImageScanningConfiguration{}
@@ -566,12 +658,18 @@ func TestSetResource_ECR_Repository_ReadMany(t *testing.T) {
 				f1.ScanOnPush = elem.ImageScanningConfiguration.ScanOnPush
 			}
 			ko.Spec.ImageScanningConfiguration = f1
+		} else {
+			ko.Spec.ImageScanningConfiguration = nil
 		}
 		if elem.ImageTagMutability != nil {
 			ko.Spec.ImageTagMutability = elem.ImageTagMutability
+		} else {
+			ko.Spec.ImageTagMutability = nil
 		}
 		if elem.RegistryId != nil {
 			ko.Status.RegistryID = elem.RegistryId
+		} else {
+			ko.Status.RegistryID = nil
 		}
 		if elem.RepositoryArn != nil {
 			if ko.Status.ACKResourceMetadata == nil {
@@ -587,9 +685,13 @@ func TestSetResource_ECR_Repository_ReadMany(t *testing.T) {
 				}
 			}
 			ko.Spec.RepositoryName = elem.RepositoryName
+		} else {
+			ko.Spec.RepositoryName = nil
 		}
 		if elem.RepositoryUri != nil {
 			ko.Status.RepositoryURI = elem.RepositoryUri
+		} else {
+			ko.Status.RepositoryURI = nil
 		}
 		found = true
 		break
@@ -623,18 +725,28 @@ func TestSetResource_Elasticache_CacheCluster_Create(t *testing.T) {
 	}
 	if resp.CacheCluster.AtRestEncryptionEnabled != nil {
 		ko.Status.AtRestEncryptionEnabled = resp.CacheCluster.AtRestEncryptionEnabled
+	} else {
+		ko.Status.AtRestEncryptionEnabled = nil
 	}
 	if resp.CacheCluster.AuthTokenEnabled != nil {
 		ko.Status.AuthTokenEnabled = resp.CacheCluster.AuthTokenEnabled
+	} else {
+		ko.Status.AuthTokenEnabled = nil
 	}
 	if resp.CacheCluster.AuthTokenLastModifiedDate != nil {
 		ko.Status.AuthTokenLastModifiedDate = &metav1.Time{*resp.CacheCluster.AuthTokenLastModifiedDate}
+	} else {
+		ko.Status.AuthTokenLastModifiedDate = nil
 	}
 	if resp.CacheCluster.CacheClusterCreateTime != nil {
 		ko.Status.CacheClusterCreateTime = &metav1.Time{*resp.CacheCluster.CacheClusterCreateTime}
+	} else {
+		ko.Status.CacheClusterCreateTime = nil
 	}
 	if resp.CacheCluster.CacheClusterStatus != nil {
 		ko.Status.CacheClusterStatus = resp.CacheCluster.CacheClusterStatus
+	} else {
+		ko.Status.CacheClusterStatus = nil
 	}
 	if resp.CacheCluster.CacheNodes != nil {
 		f9 := []*svcapitypes.CacheNode{}
@@ -671,6 +783,8 @@ func TestSetResource_Elasticache_CacheCluster_Create(t *testing.T) {
 			f9 = append(f9, f9elem)
 		}
 		ko.Status.CacheNodes = f9
+	} else {
+		ko.Status.CacheNodes = nil
 	}
 	if resp.CacheCluster.CacheParameterGroup != nil {
 		f10 := &svcapitypes.CacheParameterGroupStatus_SDK{}
@@ -690,6 +804,8 @@ func TestSetResource_Elasticache_CacheCluster_Create(t *testing.T) {
 			f10.ParameterApplyStatus = resp.CacheCluster.CacheParameterGroup.ParameterApplyStatus
 		}
 		ko.Status.CacheParameterGroup = f10
+	} else {
+		ko.Status.CacheParameterGroup = nil
 	}
 	if resp.CacheCluster.CacheSecurityGroups != nil {
 		f11 := []*svcapitypes.CacheSecurityGroupMembership{}
@@ -704,9 +820,13 @@ func TestSetResource_Elasticache_CacheCluster_Create(t *testing.T) {
 			f11 = append(f11, f11elem)
 		}
 		ko.Status.CacheSecurityGroups = f11
+	} else {
+		ko.Status.CacheSecurityGroups = nil
 	}
 	if resp.CacheCluster.ClientDownloadLandingPage != nil {
 		ko.Status.ClientDownloadLandingPage = resp.CacheCluster.ClientDownloadLandingPage
+	} else {
+		ko.Status.ClientDownloadLandingPage = nil
 	}
 	if resp.CacheCluster.ConfigurationEndpoint != nil {
 		f14 := &svcapitypes.Endpoint{}
@@ -717,6 +837,8 @@ func TestSetResource_Elasticache_CacheCluster_Create(t *testing.T) {
 			f14.Port = resp.CacheCluster.ConfigurationEndpoint.Port
 		}
 		ko.Status.ConfigurationEndpoint = f14
+	} else {
+		ko.Status.ConfigurationEndpoint = nil
 	}
 	if resp.CacheCluster.NotificationConfiguration != nil {
 		f17 := &svcapitypes.NotificationConfiguration{}
@@ -727,6 +849,8 @@ func TestSetResource_Elasticache_CacheCluster_Create(t *testing.T) {
 			f17.TopicStatus = resp.CacheCluster.NotificationConfiguration.TopicStatus
 		}
 		ko.Status.NotificationConfiguration = f17
+	} else {
+		ko.Status.NotificationConfiguration = nil
 	}
 	if resp.CacheCluster.PendingModifiedValues != nil {
 		f19 := &svcapitypes.PendingModifiedValues{}
@@ -752,6 +876,8 @@ func TestSetResource_Elasticache_CacheCluster_Create(t *testing.T) {
 			f19.NumCacheNodes = resp.CacheCluster.PendingModifiedValues.NumCacheNodes
 		}
 		ko.Status.PendingModifiedValues = f19
+	} else {
+		ko.Status.PendingModifiedValues = nil
 	}
 	if resp.CacheCluster.SecurityGroups != nil {
 		f23 := []*svcapitypes.SecurityGroupMembership{}
@@ -766,9 +892,13 @@ func TestSetResource_Elasticache_CacheCluster_Create(t *testing.T) {
 			f23 = append(f23, f23elem)
 		}
 		ko.Status.SecurityGroups = f23
+	} else {
+		ko.Status.SecurityGroups = nil
 	}
 	if resp.CacheCluster.TransitEncryptionEnabled != nil {
 		ko.Status.TransitEncryptionEnabled = resp.CacheCluster.TransitEncryptionEnabled
+	} else {
+		ko.Status.TransitEncryptionEnabled = nil
 	}
 `
 	assert.Equal(
@@ -798,27 +928,43 @@ func TestSetResource_Elasticache_CacheCluster_ReadMany(t *testing.T) {
 		}
 		if elem.AtRestEncryptionEnabled != nil {
 			ko.Status.AtRestEncryptionEnabled = elem.AtRestEncryptionEnabled
+		} else {
+			ko.Status.AtRestEncryptionEnabled = nil
 		}
 		if elem.AuthTokenEnabled != nil {
 			ko.Status.AuthTokenEnabled = elem.AuthTokenEnabled
+		} else {
+			ko.Status.AuthTokenEnabled = nil
 		}
 		if elem.AuthTokenLastModifiedDate != nil {
 			ko.Status.AuthTokenLastModifiedDate = &metav1.Time{*elem.AuthTokenLastModifiedDate}
+		} else {
+			ko.Status.AuthTokenLastModifiedDate = nil
 		}
 		if elem.AutoMinorVersionUpgrade != nil {
 			ko.Spec.AutoMinorVersionUpgrade = elem.AutoMinorVersionUpgrade
+		} else {
+			ko.Spec.AutoMinorVersionUpgrade = nil
 		}
 		if elem.CacheClusterCreateTime != nil {
 			ko.Status.CacheClusterCreateTime = &metav1.Time{*elem.CacheClusterCreateTime}
+		} else {
+			ko.Status.CacheClusterCreateTime = nil
 		}
 		if elem.CacheClusterId != nil {
 			ko.Spec.CacheClusterID = elem.CacheClusterId
+		} else {
+			ko.Spec.CacheClusterID = nil
 		}
 		if elem.CacheClusterStatus != nil {
 			ko.Status.CacheClusterStatus = elem.CacheClusterStatus
+		} else {
+			ko.Status.CacheClusterStatus = nil
 		}
 		if elem.CacheNodeType != nil {
 			ko.Spec.CacheNodeType = elem.CacheNodeType
+		} else {
+			ko.Spec.CacheNodeType = nil
 		}
 		if elem.CacheNodes != nil {
 			f9 := []*svcapitypes.CacheNode{}
@@ -855,6 +1001,8 @@ func TestSetResource_Elasticache_CacheCluster_ReadMany(t *testing.T) {
 				f9 = append(f9, f9elem)
 			}
 			ko.Status.CacheNodes = f9
+		} else {
+			ko.Status.CacheNodes = nil
 		}
 		if elem.CacheParameterGroup != nil {
 			f10 := &svcapitypes.CacheParameterGroupStatus_SDK{}
@@ -874,6 +1022,8 @@ func TestSetResource_Elasticache_CacheCluster_ReadMany(t *testing.T) {
 				f10.ParameterApplyStatus = elem.CacheParameterGroup.ParameterApplyStatus
 			}
 			ko.Status.CacheParameterGroup = f10
+		} else {
+			ko.Status.CacheParameterGroup = nil
 		}
 		if elem.CacheSecurityGroups != nil {
 			f11 := []*svcapitypes.CacheSecurityGroupMembership{}
@@ -888,12 +1038,18 @@ func TestSetResource_Elasticache_CacheCluster_ReadMany(t *testing.T) {
 				f11 = append(f11, f11elem)
 			}
 			ko.Status.CacheSecurityGroups = f11
+		} else {
+			ko.Status.CacheSecurityGroups = nil
 		}
 		if elem.CacheSubnetGroupName != nil {
 			ko.Spec.CacheSubnetGroupName = elem.CacheSubnetGroupName
+		} else {
+			ko.Spec.CacheSubnetGroupName = nil
 		}
 		if elem.ClientDownloadLandingPage != nil {
 			ko.Status.ClientDownloadLandingPage = elem.ClientDownloadLandingPage
+		} else {
+			ko.Status.ClientDownloadLandingPage = nil
 		}
 		if elem.ConfigurationEndpoint != nil {
 			f14 := &svcapitypes.Endpoint{}
@@ -904,12 +1060,18 @@ func TestSetResource_Elasticache_CacheCluster_ReadMany(t *testing.T) {
 				f14.Port = elem.ConfigurationEndpoint.Port
 			}
 			ko.Status.ConfigurationEndpoint = f14
+		} else {
+			ko.Status.ConfigurationEndpoint = nil
 		}
 		if elem.Engine != nil {
 			ko.Spec.Engine = elem.Engine
+		} else {
+			ko.Spec.Engine = nil
 		}
 		if elem.EngineVersion != nil {
 			ko.Spec.EngineVersion = elem.EngineVersion
+		} else {
+			ko.Spec.EngineVersion = nil
 		}
 		if elem.NotificationConfiguration != nil {
 			f17 := &svcapitypes.NotificationConfiguration{}
@@ -920,9 +1082,13 @@ func TestSetResource_Elasticache_CacheCluster_ReadMany(t *testing.T) {
 				f17.TopicStatus = elem.NotificationConfiguration.TopicStatus
 			}
 			ko.Status.NotificationConfiguration = f17
+		} else {
+			ko.Status.NotificationConfiguration = nil
 		}
 		if elem.NumCacheNodes != nil {
 			ko.Spec.NumCacheNodes = elem.NumCacheNodes
+		} else {
+			ko.Spec.NumCacheNodes = nil
 		}
 		if elem.PendingModifiedValues != nil {
 			f19 := &svcapitypes.PendingModifiedValues{}
@@ -948,15 +1114,23 @@ func TestSetResource_Elasticache_CacheCluster_ReadMany(t *testing.T) {
 				f19.NumCacheNodes = elem.PendingModifiedValues.NumCacheNodes
 			}
 			ko.Status.PendingModifiedValues = f19
+		} else {
+			ko.Status.PendingModifiedValues = nil
 		}
 		if elem.PreferredAvailabilityZone != nil {
 			ko.Spec.PreferredAvailabilityZone = elem.PreferredAvailabilityZone
+		} else {
+			ko.Spec.PreferredAvailabilityZone = nil
 		}
 		if elem.PreferredMaintenanceWindow != nil {
 			ko.Spec.PreferredMaintenanceWindow = elem.PreferredMaintenanceWindow
+		} else {
+			ko.Spec.PreferredMaintenanceWindow = nil
 		}
 		if elem.ReplicationGroupId != nil {
 			ko.Spec.ReplicationGroupID = elem.ReplicationGroupId
+		} else {
+			ko.Spec.ReplicationGroupID = nil
 		}
 		if elem.SecurityGroups != nil {
 			f23 := []*svcapitypes.SecurityGroupMembership{}
@@ -971,15 +1145,23 @@ func TestSetResource_Elasticache_CacheCluster_ReadMany(t *testing.T) {
 				f23 = append(f23, f23elem)
 			}
 			ko.Status.SecurityGroups = f23
+		} else {
+			ko.Status.SecurityGroups = nil
 		}
 		if elem.SnapshotRetentionLimit != nil {
 			ko.Spec.SnapshotRetentionLimit = elem.SnapshotRetentionLimit
+		} else {
+			ko.Spec.SnapshotRetentionLimit = nil
 		}
 		if elem.SnapshotWindow != nil {
 			ko.Spec.SnapshotWindow = elem.SnapshotWindow
+		} else {
+			ko.Spec.SnapshotWindow = nil
 		}
 		if elem.TransitEncryptionEnabled != nil {
 			ko.Status.TransitEncryptionEnabled = elem.TransitEncryptionEnabled
+		} else {
+			ko.Status.TransitEncryptionEnabled = nil
 		}
 		found = true
 		break
@@ -1020,9 +1202,13 @@ func TestSetResource_RDS_DBInstance_Create(t *testing.T) {
 			f1 = append(f1, f1elem)
 		}
 		ko.Status.AssociatedRoles = f1
+	} else {
+		ko.Status.AssociatedRoles = nil
 	}
 	if resp.DBInstance.CACertificateIdentifier != nil {
 		ko.Status.CACertificateIdentifier = resp.DBInstance.CACertificateIdentifier
+	} else {
+		ko.Status.CACertificateIdentifier = nil
 	}
 	if ko.Status.ACKResourceMetadata == nil {
 		ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
@@ -1033,6 +1219,8 @@ func TestSetResource_RDS_DBInstance_Create(t *testing.T) {
 	}
 	if resp.DBInstance.DBInstanceStatus != nil {
 		ko.Status.DBInstanceStatus = resp.DBInstance.DBInstanceStatus
+	} else {
+		ko.Status.DBInstanceStatus = nil
 	}
 	if resp.DBInstance.DBParameterGroups != nil {
 		f14 := []*svcapitypes.DBParameterGroupStatus_SDK{}
@@ -1047,6 +1235,8 @@ func TestSetResource_RDS_DBInstance_Create(t *testing.T) {
 			f14 = append(f14, f14elem)
 		}
 		ko.Status.DBParameterGroups = f14
+	} else {
+		ko.Status.DBParameterGroups = nil
 	}
 	if resp.DBInstance.DBSubnetGroup != nil {
 		f15 := &svcapitypes.DBSubnetGroup_SDK{}
@@ -1094,12 +1284,18 @@ func TestSetResource_RDS_DBInstance_Create(t *testing.T) {
 			f15.VPCID = resp.DBInstance.DBSubnetGroup.VpcId
 		}
 		ko.Status.DBSubnetGroup = f15
+	} else {
+		ko.Status.DBSubnetGroup = nil
 	}
 	if resp.DBInstance.DbInstancePort != nil {
 		ko.Status.DBInstancePort = resp.DBInstance.DbInstancePort
+	} else {
+		ko.Status.DBInstancePort = nil
 	}
 	if resp.DBInstance.DbiResourceId != nil {
 		ko.Status.DBIResourceID = resp.DBInstance.DbiResourceId
+	} else {
+		ko.Status.DBIResourceID = nil
 	}
 	if resp.DBInstance.DomainMemberships != nil {
 		f19 := []*svcapitypes.DomainMembership{}
@@ -1120,6 +1316,8 @@ func TestSetResource_RDS_DBInstance_Create(t *testing.T) {
 			f19 = append(f19, f19elem)
 		}
 		ko.Status.DomainMemberships = f19
+	} else {
+		ko.Status.DomainMemberships = nil
 	}
 	if resp.DBInstance.EnabledCloudwatchLogsExports != nil {
 		f20 := []*string{}
@@ -1129,6 +1327,8 @@ func TestSetResource_RDS_DBInstance_Create(t *testing.T) {
 			f20 = append(f20, &f20elem)
 		}
 		ko.Status.EnabledCloudwatchLogsExports = f20
+	} else {
+		ko.Status.EnabledCloudwatchLogsExports = nil
 	}
 	if resp.DBInstance.Endpoint != nil {
 		f21 := &svcapitypes.Endpoint{}
@@ -1142,18 +1342,28 @@ func TestSetResource_RDS_DBInstance_Create(t *testing.T) {
 			f21.Port = resp.DBInstance.Endpoint.Port
 		}
 		ko.Status.Endpoint = f21
+	} else {
+		ko.Status.Endpoint = nil
 	}
 	if resp.DBInstance.EnhancedMonitoringResourceArn != nil {
 		ko.Status.EnhancedMonitoringResourceARN = resp.DBInstance.EnhancedMonitoringResourceArn
+	} else {
+		ko.Status.EnhancedMonitoringResourceARN = nil
 	}
 	if resp.DBInstance.IAMDatabaseAuthenticationEnabled != nil {
 		ko.Status.IAMDatabaseAuthenticationEnabled = resp.DBInstance.IAMDatabaseAuthenticationEnabled
+	} else {
+		ko.Status.IAMDatabaseAuthenticationEnabled = nil
 	}
 	if resp.DBInstance.InstanceCreateTime != nil {
 		ko.Status.InstanceCreateTime = &metav1.Time{*resp.DBInstance.InstanceCreateTime}
+	} else {
+		ko.Status.InstanceCreateTime = nil
 	}
 	if resp.DBInstance.LatestRestorableTime != nil {
 		ko.Status.LatestRestorableTime = &metav1.Time{*resp.DBInstance.LatestRestorableTime}
+	} else {
+		ko.Status.LatestRestorableTime = nil
 	}
 	if resp.DBInstance.ListenerEndpoint != nil {
 		f31 := &svcapitypes.Endpoint{}
@@ -1167,6 +1377,8 @@ func TestSetResource_RDS_DBInstance_Create(t *testing.T) {
 			f31.Port = resp.DBInstance.ListenerEndpoint.Port
 		}
 		ko.Status.ListenerEndpoint = f31
+	} else {
+		ko.Status.ListenerEndpoint = nil
 	}
 	if resp.DBInstance.OptionGroupMemberships != nil {
 		f37 := []*svcapitypes.OptionGroupMembership{}
@@ -1181,6 +1393,8 @@ func TestSetResource_RDS_DBInstance_Create(t *testing.T) {
 			f37 = append(f37, f37elem)
 		}
 		ko.Status.OptionGroupMemberships = f37
+	} else {
+		ko.Status.OptionGroupMemberships = nil
 	}
 	if resp.DBInstance.PendingModifiedValues != nil {
 		f38 := &svcapitypes.PendingModifiedValues{}
@@ -1260,9 +1474,13 @@ func TestSetResource_RDS_DBInstance_Create(t *testing.T) {
 			f38.StorageType = resp.DBInstance.PendingModifiedValues.StorageType
 		}
 		ko.Status.PendingModifiedValues = f38
+	} else {
+		ko.Status.PendingModifiedValues = nil
 	}
 	if resp.DBInstance.PerformanceInsightsEnabled != nil {
 		ko.Status.PerformanceInsightsEnabled = resp.DBInstance.PerformanceInsightsEnabled
+	} else {
+		ko.Status.PerformanceInsightsEnabled = nil
 	}
 	if resp.DBInstance.ReadReplicaDBClusterIdentifiers != nil {
 		f47 := []*string{}
@@ -1272,6 +1490,8 @@ func TestSetResource_RDS_DBInstance_Create(t *testing.T) {
 			f47 = append(f47, &f47elem)
 		}
 		ko.Status.ReadReplicaDBClusterIdentifiers = f47
+	} else {
+		ko.Status.ReadReplicaDBClusterIdentifiers = nil
 	}
 	if resp.DBInstance.ReadReplicaDBInstanceIdentifiers != nil {
 		f48 := []*string{}
@@ -1281,12 +1501,18 @@ func TestSetResource_RDS_DBInstance_Create(t *testing.T) {
 			f48 = append(f48, &f48elem)
 		}
 		ko.Status.ReadReplicaDBInstanceIdentifiers = f48
+	} else {
+		ko.Status.ReadReplicaDBInstanceIdentifiers = nil
 	}
 	if resp.DBInstance.ReadReplicaSourceDBInstanceIdentifier != nil {
 		ko.Status.ReadReplicaSourceDBInstanceIdentifier = resp.DBInstance.ReadReplicaSourceDBInstanceIdentifier
+	} else {
+		ko.Status.ReadReplicaSourceDBInstanceIdentifier = nil
 	}
 	if resp.DBInstance.SecondaryAvailabilityZone != nil {
 		ko.Status.SecondaryAvailabilityZone = resp.DBInstance.SecondaryAvailabilityZone
+	} else {
+		ko.Status.SecondaryAvailabilityZone = nil
 	}
 	if resp.DBInstance.StatusInfos != nil {
 		f51 := []*svcapitypes.DBInstanceStatusInfo{}
@@ -1307,6 +1533,8 @@ func TestSetResource_RDS_DBInstance_Create(t *testing.T) {
 			f51 = append(f51, f51elem)
 		}
 		ko.Status.StatusInfos = f51
+	} else {
+		ko.Status.StatusInfos = nil
 	}
 	if resp.DBInstance.VpcSecurityGroups != nil {
 		f56 := []*svcapitypes.VPCSecurityGroupMembership{}
@@ -1321,6 +1549,8 @@ func TestSetResource_RDS_DBInstance_Create(t *testing.T) {
 			f56 = append(f56, f56elem)
 		}
 		ko.Status.VPCSecurityGroups = f56
+	} else {
+		ko.Status.VPCSecurityGroups = nil
 	}
 `
 	assert.Equal(
@@ -1346,6 +1576,8 @@ func TestSetResource_RDS_DBInstance_ReadMany(t *testing.T) {
 	for _, elem := range resp.DBInstances {
 		if elem.AllocatedStorage != nil {
 			ko.Spec.AllocatedStorage = elem.AllocatedStorage
+		} else {
+			ko.Spec.AllocatedStorage = nil
 		}
 		if elem.AssociatedRoles != nil {
 			f1 := []*svcapitypes.DBInstanceRole{}
@@ -1363,27 +1595,43 @@ func TestSetResource_RDS_DBInstance_ReadMany(t *testing.T) {
 				f1 = append(f1, f1elem)
 			}
 			ko.Status.AssociatedRoles = f1
+		} else {
+			ko.Status.AssociatedRoles = nil
 		}
 		if elem.AutoMinorVersionUpgrade != nil {
 			ko.Spec.AutoMinorVersionUpgrade = elem.AutoMinorVersionUpgrade
+		} else {
+			ko.Spec.AutoMinorVersionUpgrade = nil
 		}
 		if elem.AvailabilityZone != nil {
 			ko.Spec.AvailabilityZone = elem.AvailabilityZone
+		} else {
+			ko.Spec.AvailabilityZone = nil
 		}
 		if elem.BackupRetentionPeriod != nil {
 			ko.Spec.BackupRetentionPeriod = elem.BackupRetentionPeriod
+		} else {
+			ko.Spec.BackupRetentionPeriod = nil
 		}
 		if elem.CACertificateIdentifier != nil {
 			ko.Status.CACertificateIdentifier = elem.CACertificateIdentifier
+		} else {
+			ko.Status.CACertificateIdentifier = nil
 		}
 		if elem.CharacterSetName != nil {
 			ko.Spec.CharacterSetName = elem.CharacterSetName
+		} else {
+			ko.Spec.CharacterSetName = nil
 		}
 		if elem.CopyTagsToSnapshot != nil {
 			ko.Spec.CopyTagsToSnapshot = elem.CopyTagsToSnapshot
+		} else {
+			ko.Spec.CopyTagsToSnapshot = nil
 		}
 		if elem.DBClusterIdentifier != nil {
 			ko.Spec.DBClusterIdentifier = elem.DBClusterIdentifier
+		} else {
+			ko.Spec.DBClusterIdentifier = nil
 		}
 		if elem.DBInstanceArn != nil {
 			if ko.Status.ACKResourceMetadata == nil {
@@ -1394,15 +1642,23 @@ func TestSetResource_RDS_DBInstance_ReadMany(t *testing.T) {
 		}
 		if elem.DBInstanceClass != nil {
 			ko.Spec.DBInstanceClass = elem.DBInstanceClass
+		} else {
+			ko.Spec.DBInstanceClass = nil
 		}
 		if elem.DBInstanceIdentifier != nil {
 			ko.Spec.DBInstanceIdentifier = elem.DBInstanceIdentifier
+		} else {
+			ko.Spec.DBInstanceIdentifier = nil
 		}
 		if elem.DBInstanceStatus != nil {
 			ko.Status.DBInstanceStatus = elem.DBInstanceStatus
+		} else {
+			ko.Status.DBInstanceStatus = nil
 		}
 		if elem.DBName != nil {
 			ko.Spec.DBName = elem.DBName
+		} else {
+			ko.Spec.DBName = nil
 		}
 		if elem.DBParameterGroups != nil {
 			f14 := []*svcapitypes.DBParameterGroupStatus_SDK{}
@@ -1417,6 +1673,8 @@ func TestSetResource_RDS_DBInstance_ReadMany(t *testing.T) {
 				f14 = append(f14, f14elem)
 			}
 			ko.Status.DBParameterGroups = f14
+		} else {
+			ko.Status.DBParameterGroups = nil
 		}
 		if elem.DBSubnetGroup != nil {
 			f15 := &svcapitypes.DBSubnetGroup_SDK{}
@@ -1464,15 +1722,23 @@ func TestSetResource_RDS_DBInstance_ReadMany(t *testing.T) {
 				f15.VPCID = elem.DBSubnetGroup.VpcId
 			}
 			ko.Status.DBSubnetGroup = f15
+		} else {
+			ko.Status.DBSubnetGroup = nil
 		}
 		if elem.DbInstancePort != nil {
 			ko.Status.DBInstancePort = elem.DbInstancePort
+		} else {
+			ko.Status.DBInstancePort = nil
 		}
 		if elem.DbiResourceId != nil {
 			ko.Status.DBIResourceID = elem.DbiResourceId
+		} else {
+			ko.Status.DBIResourceID = nil
 		}
 		if elem.DeletionProtection != nil {
 			ko.Spec.DeletionProtection = elem.DeletionProtection
+		} else {
+			ko.Spec.DeletionProtection = nil
 		}
 		if elem.DomainMemberships != nil {
 			f19 := []*svcapitypes.DomainMembership{}
@@ -1493,6 +1759,8 @@ func TestSetResource_RDS_DBInstance_ReadMany(t *testing.T) {
 				f19 = append(f19, f19elem)
 			}
 			ko.Status.DomainMemberships = f19
+		} else {
+			ko.Status.DomainMemberships = nil
 		}
 		if elem.EnabledCloudwatchLogsExports != nil {
 			f20 := []*string{}
@@ -1502,6 +1770,8 @@ func TestSetResource_RDS_DBInstance_ReadMany(t *testing.T) {
 				f20 = append(f20, &f20elem)
 			}
 			ko.Status.EnabledCloudwatchLogsExports = f20
+		} else {
+			ko.Status.EnabledCloudwatchLogsExports = nil
 		}
 		if elem.Endpoint != nil {
 			f21 := &svcapitypes.Endpoint{}
@@ -1515,33 +1785,53 @@ func TestSetResource_RDS_DBInstance_ReadMany(t *testing.T) {
 				f21.Port = elem.Endpoint.Port
 			}
 			ko.Status.Endpoint = f21
+		} else {
+			ko.Status.Endpoint = nil
 		}
 		if elem.Engine != nil {
 			ko.Spec.Engine = elem.Engine
+		} else {
+			ko.Spec.Engine = nil
 		}
 		if elem.EngineVersion != nil {
 			ko.Spec.EngineVersion = elem.EngineVersion
+		} else {
+			ko.Spec.EngineVersion = nil
 		}
 		if elem.EnhancedMonitoringResourceArn != nil {
 			ko.Status.EnhancedMonitoringResourceARN = elem.EnhancedMonitoringResourceArn
+		} else {
+			ko.Status.EnhancedMonitoringResourceARN = nil
 		}
 		if elem.IAMDatabaseAuthenticationEnabled != nil {
 			ko.Status.IAMDatabaseAuthenticationEnabled = elem.IAMDatabaseAuthenticationEnabled
+		} else {
+			ko.Status.IAMDatabaseAuthenticationEnabled = nil
 		}
 		if elem.InstanceCreateTime != nil {
 			ko.Status.InstanceCreateTime = &metav1.Time{*elem.InstanceCreateTime}
+		} else {
+			ko.Status.InstanceCreateTime = nil
 		}
 		if elem.Iops != nil {
 			ko.Spec.IOPS = elem.Iops
+		} else {
+			ko.Spec.IOPS = nil
 		}
 		if elem.KmsKeyId != nil {
 			ko.Spec.KMSKeyID = elem.KmsKeyId
+		} else {
+			ko.Spec.KMSKeyID = nil
 		}
 		if elem.LatestRestorableTime != nil {
 			ko.Status.LatestRestorableTime = &metav1.Time{*elem.LatestRestorableTime}
+		} else {
+			ko.Status.LatestRestorableTime = nil
 		}
 		if elem.LicenseModel != nil {
 			ko.Spec.LicenseModel = elem.LicenseModel
+		} else {
+			ko.Spec.LicenseModel = nil
 		}
 		if elem.ListenerEndpoint != nil {
 			f31 := &svcapitypes.Endpoint{}
@@ -1555,21 +1845,33 @@ func TestSetResource_RDS_DBInstance_ReadMany(t *testing.T) {
 				f31.Port = elem.ListenerEndpoint.Port
 			}
 			ko.Status.ListenerEndpoint = f31
+		} else {
+			ko.Status.ListenerEndpoint = nil
 		}
 		if elem.MasterUsername != nil {
 			ko.Spec.MasterUsername = elem.MasterUsername
+		} else {
+			ko.Spec.MasterUsername = nil
 		}
 		if elem.MaxAllocatedStorage != nil {
 			ko.Spec.MaxAllocatedStorage = elem.MaxAllocatedStorage
+		} else {
+			ko.Spec.MaxAllocatedStorage = nil
 		}
 		if elem.MonitoringInterval != nil {
 			ko.Spec.MonitoringInterval = elem.MonitoringInterval
+		} else {
+			ko.Spec.MonitoringInterval = nil
 		}
 		if elem.MonitoringRoleArn != nil {
 			ko.Spec.MonitoringRoleARN = elem.MonitoringRoleArn
+		} else {
+			ko.Spec.MonitoringRoleARN = nil
 		}
 		if elem.MultiAZ != nil {
 			ko.Spec.MultiAZ = elem.MultiAZ
+		} else {
+			ko.Spec.MultiAZ = nil
 		}
 		if elem.OptionGroupMemberships != nil {
 			f37 := []*svcapitypes.OptionGroupMembership{}
@@ -1584,6 +1886,8 @@ func TestSetResource_RDS_DBInstance_ReadMany(t *testing.T) {
 				f37 = append(f37, f37elem)
 			}
 			ko.Status.OptionGroupMemberships = f37
+		} else {
+			ko.Status.OptionGroupMemberships = nil
 		}
 		if elem.PendingModifiedValues != nil {
 			f38 := &svcapitypes.PendingModifiedValues{}
@@ -1663,21 +1967,33 @@ func TestSetResource_RDS_DBInstance_ReadMany(t *testing.T) {
 				f38.StorageType = elem.PendingModifiedValues.StorageType
 			}
 			ko.Status.PendingModifiedValues = f38
+		} else {
+			ko.Status.PendingModifiedValues = nil
 		}
 		if elem.PerformanceInsightsEnabled != nil {
 			ko.Status.PerformanceInsightsEnabled = elem.PerformanceInsightsEnabled
+		} else {
+			ko.Status.PerformanceInsightsEnabled = nil
 		}
 		if elem.PerformanceInsightsKMSKeyId != nil {
 			ko.Spec.PerformanceInsightsKMSKeyID = elem.PerformanceInsightsKMSKeyId
+		} else {
+			ko.Spec.PerformanceInsightsKMSKeyID = nil
 		}
 		if elem.PerformanceInsightsRetentionPeriod != nil {
 			ko.Spec.PerformanceInsightsRetentionPeriod = elem.PerformanceInsightsRetentionPeriod
+		} else {
+			ko.Spec.PerformanceInsightsRetentionPeriod = nil
 		}
 		if elem.PreferredBackupWindow != nil {
 			ko.Spec.PreferredBackupWindow = elem.PreferredBackupWindow
+		} else {
+			ko.Spec.PreferredBackupWindow = nil
 		}
 		if elem.PreferredMaintenanceWindow != nil {
 			ko.Spec.PreferredMaintenanceWindow = elem.PreferredMaintenanceWindow
+		} else {
+			ko.Spec.PreferredMaintenanceWindow = nil
 		}
 		if elem.ProcessorFeatures != nil {
 			f44 := []*svcapitypes.ProcessorFeature{}
@@ -1692,12 +2008,18 @@ func TestSetResource_RDS_DBInstance_ReadMany(t *testing.T) {
 				f44 = append(f44, f44elem)
 			}
 			ko.Spec.ProcessorFeatures = f44
+		} else {
+			ko.Spec.ProcessorFeatures = nil
 		}
 		if elem.PromotionTier != nil {
 			ko.Spec.PromotionTier = elem.PromotionTier
+		} else {
+			ko.Spec.PromotionTier = nil
 		}
 		if elem.PubliclyAccessible != nil {
 			ko.Spec.PubliclyAccessible = elem.PubliclyAccessible
+		} else {
+			ko.Spec.PubliclyAccessible = nil
 		}
 		if elem.ReadReplicaDBClusterIdentifiers != nil {
 			f47 := []*string{}
@@ -1707,6 +2029,8 @@ func TestSetResource_RDS_DBInstance_ReadMany(t *testing.T) {
 				f47 = append(f47, &f47elem)
 			}
 			ko.Status.ReadReplicaDBClusterIdentifiers = f47
+		} else {
+			ko.Status.ReadReplicaDBClusterIdentifiers = nil
 		}
 		if elem.ReadReplicaDBInstanceIdentifiers != nil {
 			f48 := []*string{}
@@ -1716,12 +2040,18 @@ func TestSetResource_RDS_DBInstance_ReadMany(t *testing.T) {
 				f48 = append(f48, &f48elem)
 			}
 			ko.Status.ReadReplicaDBInstanceIdentifiers = f48
+		} else {
+			ko.Status.ReadReplicaDBInstanceIdentifiers = nil
 		}
 		if elem.ReadReplicaSourceDBInstanceIdentifier != nil {
 			ko.Status.ReadReplicaSourceDBInstanceIdentifier = elem.ReadReplicaSourceDBInstanceIdentifier
+		} else {
+			ko.Status.ReadReplicaSourceDBInstanceIdentifier = nil
 		}
 		if elem.SecondaryAvailabilityZone != nil {
 			ko.Status.SecondaryAvailabilityZone = elem.SecondaryAvailabilityZone
+		} else {
+			ko.Status.SecondaryAvailabilityZone = nil
 		}
 		if elem.StatusInfos != nil {
 			f51 := []*svcapitypes.DBInstanceStatusInfo{}
@@ -1742,18 +2072,28 @@ func TestSetResource_RDS_DBInstance_ReadMany(t *testing.T) {
 				f51 = append(f51, f51elem)
 			}
 			ko.Status.StatusInfos = f51
+		} else {
+			ko.Status.StatusInfos = nil
 		}
 		if elem.StorageEncrypted != nil {
 			ko.Spec.StorageEncrypted = elem.StorageEncrypted
+		} else {
+			ko.Spec.StorageEncrypted = nil
 		}
 		if elem.StorageType != nil {
 			ko.Spec.StorageType = elem.StorageType
+		} else {
+			ko.Spec.StorageType = nil
 		}
 		if elem.TdeCredentialArn != nil {
 			ko.Spec.TDECredentialARN = elem.TdeCredentialArn
+		} else {
+			ko.Spec.TDECredentialARN = nil
 		}
 		if elem.Timezone != nil {
 			ko.Spec.Timezone = elem.Timezone
+		} else {
+			ko.Spec.Timezone = nil
 		}
 		if elem.VpcSecurityGroups != nil {
 			f56 := []*svcapitypes.VPCSecurityGroupMembership{}
@@ -1768,6 +2108,8 @@ func TestSetResource_RDS_DBInstance_ReadMany(t *testing.T) {
 				f56 = append(f56, f56elem)
 			}
 			ko.Status.VPCSecurityGroups = f56
+		} else {
+			ko.Status.VPCSecurityGroups = nil
 		}
 		found = true
 		break
@@ -1794,6 +2136,8 @@ func TestSetResource_S3_Bucket_Create(t *testing.T) {
 	expected := `
 	if resp.Location != nil {
 		ko.Status.Location = resp.Location
+	} else {
+		ko.Status.Location = nil
 	}
 `
 	assert.Equal(
@@ -1821,6 +2165,8 @@ func TestSetResource_S3_Bucket_ReadMany(t *testing.T) {
 				}
 			}
 			ko.Spec.Name = elem.Name
+		} else {
+			ko.Spec.Name = nil
 		}
 		found = true
 		break
@@ -1909,6 +2255,8 @@ func TestSetResource_SQS_Queue_Create(t *testing.T) {
 	expected := `
 	if resp.QueueUrl != nil {
 		ko.Status.QueueURL = resp.QueueUrl
+	} else {
+		ko.Status.QueueURL = nil
 	}
 `
 	assert.Equal(
@@ -1971,12 +2319,18 @@ func TestSetResource_RDS_DBSubnetGroup_ReadMany(t *testing.T) {
 		}
 		if elem.DBSubnetGroupDescription != nil {
 			ko.Spec.Description = elem.DBSubnetGroupDescription
+		} else {
+			ko.Spec.Description = nil
 		}
 		if elem.DBSubnetGroupName != nil {
 			ko.Spec.Name = elem.DBSubnetGroupName
+		} else {
+			ko.Spec.Name = nil
 		}
 		if elem.SubnetGroupStatus != nil {
 			ko.Status.SubnetGroupStatus = elem.SubnetGroupStatus
+		} else {
+			ko.Status.SubnetGroupStatus = nil
 		}
 		if elem.Subnets != nil {
 			f4 := []*svcapitypes.Subnet{}
@@ -2005,9 +2359,13 @@ func TestSetResource_RDS_DBSubnetGroup_ReadMany(t *testing.T) {
 				f4 = append(f4, f4elem)
 			}
 			ko.Status.Subnets = f4
+		} else {
+			ko.Status.Subnets = nil
 		}
 		if elem.VpcId != nil {
 			ko.Status.VPCID = elem.VpcId
+		} else {
+			ko.Status.VPCID = nil
 		}
 		found = true
 		break

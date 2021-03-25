@@ -289,6 +289,13 @@ func SetResource(
 			)
 		}
 		out += fmt.Sprintf(
+			"%s} else {\n", indent,
+		)
+		out += fmt.Sprintf(
+			"%s%s%s.%s = nil\n", indent, indent,
+			targetAdaptedVarName, f.Names.Camel,
+		)
+		out += fmt.Sprintf(
 			"%s}\n", indent,
 		)
 	}
@@ -340,6 +347,8 @@ func ListMemberNameInReadManyOutput(
 //      }
 //      if elem.AtRestEncryptionEnabled != nil {
 //          ko.Status.AtRestEncryptionEnabled = elem.AtRestEncryptionEnabled
+//      } else {
+//          ko.Status.AtRestEncryptionEnabled = nil
 //      }
 //      ...
 //      if elem.CacheClusterId != nil {
@@ -349,6 +358,8 @@ func ListMemberNameInReadManyOutput(
 //              }
 //          }
 //          r.ko.Spec.CacheClusterID = elem.CacheClusterId
+//      } else {
+//          r.ko.Spec.CacheClusterID = nil
 //      }
 //      found = true
 //  }
@@ -545,7 +556,14 @@ func setResourceReadMany(
 			)
 		}
 		out += fmt.Sprintf(
-			"%s\t}\n", indent,
+			"%s%s} else {\n", indent, indent,
+		)
+		out += fmt.Sprintf(
+			"%s%s%s%s.%s = nil\n", indent, indent, indent,
+			targetAdaptedVarName, f.Names.Camel,
+		)
+		out += fmt.Sprintf(
+			"%s%s}\n", indent, indent,
 		)
 	}
 	// When we don't have custom matching/filtering logic for the list
