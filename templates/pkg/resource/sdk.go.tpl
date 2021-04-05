@@ -164,10 +164,16 @@ func (rm *resourceManager) updateConditions (
 
 	// Terminal condition
 	var terminalCondition *ackv1alpha1.Condition = nil
+	var nonTerminalCondition *ackv1alpha1.Condition = nil
 	for _, condition := range ko.Status.Conditions {
+		// If terminal condition exists, other errors will
+		// will not be reported
 		if condition.Type == ackv1alpha1.ConditionTypeTerminal {
 			terminalCondition = condition
 			break
+		}
+		if condition.Type == ackv1alpha1.ConditionTypeNonTerminal {
+			nonTerminalCondition = condition
 		}
 	}
 
@@ -182,19 +188,43 @@ func (rm *resourceManager) updateConditions (
 		awsErr, _ := ackerr.AWSError(err)
 		errorMessage := awsErr.Message()
 		terminalCondition.Message = &errorMessage
-	} else if terminalCondition != nil {
-		terminalCondition.Status = corev1.ConditionFalse
-		terminalCondition.Message = nil
+	} else {
+		// Clear the terminal condition if no longer present
+		if terminalCondition != nil {
+			terminalCondition.Status = corev1.ConditionFalse
+			terminalCondition.Message = nil
+		}
+		// Handling NonTerminal Conditions
+		if err != nil {
+			if nonTerminalCondition == nil {
+				// Add a new Condition containing a non-terminal error
+				nonTerminalCondition = &ackv1alpha1.Condition{
+					Type:   ackv1alpha1.ConditionTypeNonTerminal,
+				}
+				ko.Status.Conditions = append(ko.Status.Conditions, nonTerminalCondition)
+			}
+			nonTerminalCondition.Status = corev1.ConditionTrue
+			awsErr, _ := ackerr.AWSError(err)
+			errorMessage := "Unknown Error"
+			if awsErr != nil {
+				errorMessage = awsErr.Message()
+			}
+			nonTerminalCondition.Message = &errorMessage
+		} else if nonTerminalCondition != nil {
+			nonTerminalCondition.Status = corev1.ConditionFalse
+			nonTerminalCondition.Message = nil
+		}
 	}
+
 
 {{- if $updateConditionsCustomMethodName := .CRD.UpdateConditionsCustomMethodName }}
 	// custom update conditions
 	customUpdate := rm.{{ $updateConditionsCustomMethodName }}(ko, r, err)
-	if terminalCondition != nil || customUpdate {
+	if terminalCondition != nil || nonTerminalCondition != nil || customUpdate {
 		return &resource{ko}, true // updated
 	}
 {{- else }}
-	if terminalCondition != nil {
+	if terminalCondition != nil || nonTerminalCondition != nil {
 		return &resource{ko}, true // updated
 	}
 {{- end }}
