@@ -110,4 +110,21 @@ func TestCodeDeploy_Deployment(t *testing.T) {
 	// But sadly, has no Update or Delete operation :(
 	assert.Nil(crd.Ops.Update)
 	assert.Nil(crd.Ops.Delete)
+
+	// We marked the fields, "ApplicationName", "DeploymentGroupName",
+	// "DeploymentConfigName and "Description" as printer columns in the
+	// generator.yaml. Let's make sure that they are always returned in sorted
+	// order.
+	expPrinterColNames := []string{
+		"ApplicationName",
+		"DeploymentConfigName",
+		"DeploymentGroupName",
+		"Description",
+	}
+	gotPrinterCols := crd.AdditionalPrinterColumns()
+	gotPrinterColNames := []string{}
+	for _, pc := range gotPrinterCols {
+		gotPrinterColNames = append(gotPrinterColNames, pc.Name)
+	}
+	assert.Equal(expPrinterColNames, gotPrinterColNames)
 }

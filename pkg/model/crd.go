@@ -14,7 +14,6 @@
 package model
 
 import (
-	"fmt"
 	"sort"
 	"strings"
 
@@ -58,14 +57,6 @@ func (ops Ops) IterOps() []*awssdkmodel.Operation {
 	return res
 }
 
-// PrinterColumn represents a single field in the CRD's Spec or Status objects
-type PrinterColumn struct {
-	CRD      *CRD
-	Name     string
-	Type     string
-	JSONPath string
-}
-
 // CRD describes a single top-level resource in an AWS service API
 type CRD struct {
 	sdkAPI *SDKAPI
@@ -75,10 +66,9 @@ type CRD struct {
 	Plural string
 	// Ops are the CRUD operations controlling this resource
 	Ops Ops
-	// AdditionalPrinterColumns is an array of PrinterColumn objects
+	// additionalPrinterColumns is an array of PrinterColumn objects
 	// representing the printer column settings for the CRD
-	// AdditionalPrinterColumns field.
-	AdditionalPrinterColumns []*PrinterColumn
+	additionalPrinterColumns []*PrinterColumn
 	// SpecFields is a map, keyed by the **original SDK member name** of
 	// Field objects representing those fields in the CRD's Spec struct
 	// field.
@@ -178,11 +168,14 @@ func (r *CRD) InputFieldRename(
 func (r *CRD) AddSpecField(
 	memberNames names.Names,
 	shapeRef *awssdkmodel.ShapeRef,
-) *Field {
-	fieldConfigs := r.cfg.ResourceFields(r.Names.Original)
-	f := newField(r, memberNames, shapeRef, fieldConfigs[memberNames.Original])
+) {
+	fConfigs := r.cfg.ResourceFields(r.Names.Original)
+	fConfig := fConfigs[memberNames.Original]
+	f := newField(r, memberNames, shapeRef, fConfig)
+	if fConfig != nil && fConfig.IsPrintable {
+		r.addSpecPrintableColumn(f)
+	}
 	r.SpecFields[memberNames.Original] = f
-	return f
 }
 
 // AddStatusField adds a new Field of a given name and shape into the Status
@@ -190,10 +183,14 @@ func (r *CRD) AddSpecField(
 func (r *CRD) AddStatusField(
 	memberNames names.Names,
 	shapeRef *awssdkmodel.ShapeRef,
-) *Field {
-	f := newField(r, memberNames, shapeRef, nil)
+) {
+	fConfigs := r.cfg.ResourceFields(r.Names.Original)
+	fConfig := fConfigs[memberNames.Original]
+	f := newField(r, memberNames, shapeRef, fConfig)
+	if fConfig != nil && fConfig.IsPrintable {
+		r.addStatusPrintableColumn(f)
+	}
 	r.StatusFields[memberNames.Original] = f
-	return f
 }
 
 // AddTypeImport adds an entry in the CRD's TypeImports map for an import line
@@ -216,80 +213,6 @@ func (r *CRD) SpecFieldNames() []string {
 	}
 	sort.Strings(res)
 	return res
-}
-
-// AddPrintableColumn adds an entry to the list of additional printer columns
-// using the given path and field types.
-func (r *CRD) AddPrintableColumn(
-	field *Field,
-	jsonPath string,
-) *PrinterColumn {
-	fieldColumnType := field.GoTypeElem
-
-	// Printable columns must be primitives supported by the OpenAPI list of data
-	// types as defined by
-	// https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md#data-types
-	// This maps Go type to OpenAPI type.
-	acceptableColumnMaps := map[string]string{
-		"string":  "string",
-		"boolean": "boolean",
-		"int":     "integer",
-		"int8":    "integer",
-		"int16":   "integer",
-		"int32":   "integer",
-		"int64":   "integer",
-		"uint":    "integer",
-		"uint8":   "integer",
-		"uint16":  "integer",
-		"uint32":  "integer",
-		"uint64":  "integer",
-		"uintptr": "integer",
-		"float32": "number",
-		"float64": "number",
-	}
-	printColumnType, exists := acceptableColumnMaps[fieldColumnType]
-
-	if !exists {
-		msg := fmt.Sprintf(
-			"GENERATION FAILURE! Unable to generate a printer column for the field %s that has type %s.",
-			field.Names.Camel, fieldColumnType,
-		)
-		panic(msg)
-		return nil
-	}
-
-	column := &PrinterColumn{
-		CRD:      r,
-		Name:     field.Names.Camel,
-		Type:     printColumnType,
-		JSONPath: jsonPath,
-	}
-	r.AdditionalPrinterColumns = append(r.AdditionalPrinterColumns, column)
-	return column
-}
-
-// AddSpecPrintableColumn adds an entry to the list of additional printer columns
-// using the path of the given spec field.
-func (r *CRD) AddSpecPrintableColumn(
-	field *Field,
-) *PrinterColumn {
-	return r.AddPrintableColumn(
-		field,
-		//TODO(nithomso): Ideally we'd use `r.cfg.PrefixConfig.SpecField` but it uses uppercase
-		fmt.Sprintf("%s.%s", ".spec", field.Names.CamelLower),
-	)
-}
-
-// AddStatusPrintableColumn adds an entry to the list of additional printer columns
-// using the path of the given status field.
-func (r *CRD) AddStatusPrintableColumn(
-	field *Field,
-) *PrinterColumn {
-	return r.AddPrintableColumn(
-		field,
-		//TODO(nithomso): Ideally we'd use `r.cfg.PrefixConfig.StatusField` but it uses uppercase
-		fmt.Sprintf("%s.%s", ".status", field.Names.CamelLower),
-	)
 }
 
 // UnpacksAttributesMap returns true if the underlying API has
@@ -470,7 +393,7 @@ func NewCRD(
 		Kind:                     kind,
 		Plural:                   plural,
 		Ops:                      ops,
-		AdditionalPrinterColumns: make([]*PrinterColumn, 0),
+		additionalPrinterColumns: make([]*PrinterColumn, 0),
 		SpecFields:               map[string]*Field{},
 		StatusFields:             map[string]*Field{},
 		ShortNames:               cfg.ResourceShortNames(kind),
