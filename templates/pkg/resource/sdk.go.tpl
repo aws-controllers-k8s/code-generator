@@ -164,16 +164,15 @@ func (rm *resourceManager) updateConditions (
 
 	// Terminal condition
 	var terminalCondition *ackv1alpha1.Condition = nil
-	var nonTerminalCondition *ackv1alpha1.Condition = nil
+	var recoverableCondition *ackv1alpha1.Condition = nil
 	for _, condition := range ko.Status.Conditions {
-		// If terminal condition exists, other errors will
-		// will not be reported
 		if condition.Type == ackv1alpha1.ConditionTypeTerminal {
 			terminalCondition = condition
 			break
 		}
-		if condition.Type == ackv1alpha1.ConditionTypeNonTerminal {
-			nonTerminalCondition = condition
+		// Continue to check if Terminal Condition exists
+		if condition.Type == ackv1alpha1.ConditionTypeRecoverable {
+			recoverableCondition = condition
 		}
 	}
 
@@ -194,25 +193,25 @@ func (rm *resourceManager) updateConditions (
 			terminalCondition.Status = corev1.ConditionFalse
 			terminalCondition.Message = nil
 		}
-		// Handling NonTerminal Conditions
+		// Handling Recoverable Conditions
 		if err != nil {
-			if nonTerminalCondition == nil {
+			if recoverableCondition == nil {
 				// Add a new Condition containing a non-terminal error
-				nonTerminalCondition = &ackv1alpha1.Condition{
-					Type:   ackv1alpha1.ConditionTypeNonTerminal,
+				recoverableCondition = &ackv1alpha1.Condition{
+					Type:   ackv1alpha1.ConditionTypeRecoverable,
 				}
-				ko.Status.Conditions = append(ko.Status.Conditions, nonTerminalCondition)
+				ko.Status.Conditions = append(ko.Status.Conditions, recoverableCondition)
 			}
-			nonTerminalCondition.Status = corev1.ConditionTrue
+			recoverableCondition.Status = corev1.ConditionTrue
 			awsErr, _ := ackerr.AWSError(err)
 			errorMessage := "Unknown Error"
 			if awsErr != nil {
 				errorMessage = awsErr.Message()
 			}
-			nonTerminalCondition.Message = &errorMessage
-		} else if nonTerminalCondition != nil {
-			nonTerminalCondition.Status = corev1.ConditionFalse
-			nonTerminalCondition.Message = nil
+			recoverableCondition.Message = &errorMessage
+		} else if recoverableCondition != nil {
+			recoverableCondition.Status = corev1.ConditionFalse
+			recoverableCondition.Message = nil
 		}
 	}
 
@@ -220,11 +219,11 @@ func (rm *resourceManager) updateConditions (
 {{- if $updateConditionsCustomMethodName := .CRD.UpdateConditionsCustomMethodName }}
 	// custom update conditions
 	customUpdate := rm.{{ $updateConditionsCustomMethodName }}(ko, r, err)
-	if terminalCondition != nil || nonTerminalCondition != nil || customUpdate {
+	if terminalCondition != nil || recoverableCondition != nil || customUpdate {
 		return &resource{ko}, true // updated
 	}
 {{- else }}
-	if terminalCondition != nil || nonTerminalCondition != nil {
+	if terminalCondition != nil || recoverableCondition != nil {
 		return &resource{ko}, true // updated
 	}
 {{- end }}
