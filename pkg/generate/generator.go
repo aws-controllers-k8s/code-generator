@@ -141,11 +141,7 @@ func (g *Generator) GetCRDs() ([]*ackmodel.CRD, error) {
 			)
 			if found {
 				memberNames := names.New(targetFieldName)
-				field := crd.AddSpecField(memberNames, memberShapeRef)
-
-				if fieldConfig.IsPrintable {
-					crd.AddSpecPrintableColumn(field)
-				}
+				crd.AddSpecField(memberNames, memberShapeRef)
 			} else {
 				// This is a compile-time failure, just bomb out...
 				msg := fmt.Sprintf(
@@ -214,11 +210,7 @@ func (g *Generator) GetCRDs() ([]*ackmodel.CRD, error) {
 			)
 			if found {
 				memberNames := names.New(targetFieldName)
-				field := crd.AddStatusField(memberNames, memberShapeRef)
-
-				if fieldConfig.IsPrintable {
-					crd.AddStatusPrintableColumn(field)
-				}
+				crd.AddStatusField(memberNames, memberShapeRef)
 			} else {
 				// This is a compile-time failure, just bomb out...
 				msg := fmt.Sprintf(

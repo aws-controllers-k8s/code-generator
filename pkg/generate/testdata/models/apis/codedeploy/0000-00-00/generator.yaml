@@ -4,3 +4,13 @@ resources:
       errors:
         404:
           code: DeploymentDoesNotExistException
+    # below, we're testing printer columns end up sorted properly in the CRD
+    fields:
+      DeploymentGroupName:
+        is_printable: true
+      ApplicationName:
+        is_printable: true
+      DeploymentConfigName:
+        is_printable: true
+      Description:
+        is_printable: true
