@@ -168,9 +168,7 @@ func (rm *resourceManager) updateConditions (
 	for _, condition := range ko.Status.Conditions {
 		if condition.Type == ackv1alpha1.ConditionTypeTerminal {
 			terminalCondition = condition
-			break
 		}
-		// Continue to check if Terminal Condition exists
 		if condition.Type == ackv1alpha1.ConditionTypeRecoverable {
 			recoverableCondition = condition
 		}
@@ -204,7 +202,7 @@ func (rm *resourceManager) updateConditions (
 			}
 			recoverableCondition.Status = corev1.ConditionTrue
 			awsErr, _ := ackerr.AWSError(err)
-			errorMessage := "Unknown Error"
+			errorMessage := err.Error()
 			if awsErr != nil {
 				errorMessage = awsErr.Message()
 			}
