@@ -11,7 +11,7 @@ maintainers:
   - name: ACK Admins
     url: https://github.com/orgs/aws-controllers-k8s/teams/ack-admin
   - name: {{ .ServiceIDClean }} Admins
-    url:https://github.com/orgs/aws-controllers-k8s/teams/{{ .ServiceIDClean }}-maintainer
+    url: https://github.com/orgs/aws-controllers-k8s/teams/{{ .ServiceIDClean }}-maintainer
 keywords:
   - aws
   - kubernetes
