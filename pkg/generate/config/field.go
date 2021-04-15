@@ -147,6 +147,11 @@ type FieldConfig struct {
 	// that owns the resource. This is a special field that we direct to
 	// storage in the common `Status.ACKResourceMetadata.OwnerAccountID` field.
 	IsOwnerAccountID bool `json:"is_owner_account_id"`
+	// IsARN indicates the field represents the ARN for the resource.
+	// This allows the generator config to override the
+	// default behaviour of considering a field called "Arn" or
+	// "{Resource}Arn" (case in-sensitive) as the "ARN field" for the resource.
+	IsARN bool `json:"is_arn"`
 	// IsSecret instructs the code generator that this field should be a
 	// SecretKeyReference.
 	IsSecret bool `json:"is_secret"`
