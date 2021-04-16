@@ -269,6 +269,15 @@ func (r *CRD) IsPrimaryARNField(fieldName string) bool {
 	if r.cfg != nil && !r.cfg.IncludeACKMetadata {
 		return false
 	}
+	rConfig, found := r.cfg.Resources[r.Names.Original]
+	if found {
+		for fName, fConfig := range rConfig.Fields {
+			if fConfig.IsARN {
+				return strings.EqualFold(fieldName, fName)
+			}
+		}
+	}
+
 	return strings.EqualFold(fieldName, "arn") ||
 		strings.EqualFold(fieldName, r.Names.Original+"arn")
 }

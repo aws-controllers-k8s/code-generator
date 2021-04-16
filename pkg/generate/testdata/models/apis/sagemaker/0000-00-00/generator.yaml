@@ -1,0 +1,57 @@
+resources:
+  DataQualityJobDefinition:
+    exceptions:
+      errors:
+          404:
+            code: ResourceNotFound
+    fields:
+      JobDefinitionArn:
+        is_arn: true
+ignore:
+    resource_names:
+      - Algorithm
+      - App
+      - AutoMLJob
+      - Action
+      - AppImageConfig
+      - Artifact
+      - CodeRepository
+      - CompilationJob
+      - Context
+      # - DataQualityJobDefinition
+      - DeviceFleet
+      - Domain
+      - EdgePackagingJob
+      - EndpointConfig
+      - Endpoint
+      - Experiment
+      - FeatureGroup
+      - FlowDefinition
+      - HumanTaskUi
+      - HyperParameterTuningJob
+      - Image
+      - ImageVersion
+      - LabelingJob
+      - Model
+      - ModelBiasJobDefinition
+      - ModelExplainabilityJobDefinition
+      - ModelPackage
+      - ModelPackageGroup
+      - ModelQualityJobDefinition
+      - MonitoringSchedule
+      - NotebookInstanceLifecycleConfig
+      - NotebookInstance
+      - Pipeline
+      - PresignedDomainUrl
+      - PresignedNotebookInstanceUrl
+      - ProcessingJob
+      - Project
+      - TrainingJob
+      - TransformJob
+      - TrialComponent
+      - Trial
+      - UserProfile
+      - Workforce
+      - Workteam
+    shape_names:
+      - TagList
