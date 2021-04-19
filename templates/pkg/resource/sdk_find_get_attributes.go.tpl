@@ -38,6 +38,9 @@ func (rm *resourceManager) sdkFind(
 {{ $hookCode }}
 {{- end }}
 	rm.setStatusDefaults(ko)
+{{- if $hookCode := Hook .CRD "sdk_get_attributes_post_set_output" }}
+{{ $hookCode }}
+{{- end }}
 	return &resource{ko}, nil
 }
 
