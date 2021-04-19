@@ -22,6 +22,8 @@ import (
 	ttpl "text/template"
 
 	"github.com/pkg/errors"
+
+	ackutil "github.com/aws-controllers-k8s/code-generator/pkg/util"
 )
 
 var (
@@ -83,7 +85,7 @@ func (ts *TemplateSet) Add(
 	var foundPath string
 	for _, basePath := range ts.baseSearchPaths {
 		path := filepath.Join(basePath, templatePath)
-		if fileExists(path) {
+		if ackutil.FileExists(path) {
 			foundPath = path
 			break
 		}
@@ -116,7 +118,7 @@ func (ts *TemplateSet) joinIncludes(t *ttpl.Template) error {
 	for _, basePath := range ts.baseSearchPaths {
 		for _, includePath := range ts.includePaths {
 			tplPath := filepath.Join(basePath, includePath)
-			if !fileExists(tplPath) {
+			if !ackutil.FileExists(tplPath) {
 				continue
 			}
 			if t, err = includeTemplate(t, tplPath); err != nil {
@@ -142,7 +144,7 @@ func (ts *TemplateSet) Execute() error {
 	for _, basePath := range ts.baseSearchPaths {
 		for _, path := range ts.copyPaths {
 			copyPath := filepath.Join(basePath, path)
-			if !fileExists(copyPath) {
+			if !ackutil.FileExists(copyPath) {
 				continue
 			}
 			b, err := byteBufferFromFile(copyPath)
@@ -193,10 +195,4 @@ func includeTemplate(t *ttpl.Template, tplPath string) (*ttpl.Template, error) {
 		return nil, err
 	}
 	return t, nil
-}
-
-// fileExists returns tTrue if the supplied file path exists, false otherwise
-func fileExists(path string) bool {
-	_, err := os.Stat(path)
-	return !os.IsNotExist(err)
 }

@@ -3,6 +3,9 @@ func (rm *resourceManager) sdkFind(
 	ctx context.Context,
 	r *resource,
 ) (*resource, error) {
+{{- if $hookCode := Hook .CRD "sdk_get_attributes_pre_build_request" }}
+{{ $hookCode }}
+{{- end }}
 	// If any required fields in the input shape are missing, AWS resource is
 	// not created yet. Return NotFound here to indicate to callers that the
 	// resource isn't yet created.
@@ -16,6 +19,9 @@ func (rm *resourceManager) sdkFind(
 	}
 {{ $setCode := GoCodeGetAttributesSetOutput .CRD "resp" "ko" 1 }}
 	{{ if not ( Empty $setCode ) }}resp{{ else }}_{{ end }}, respErr := rm.sdkapi.{{ .CRD.Ops.GetAttributes.Name }}WithContext(ctx, input)
+{{- if $hookCode := Hook .CRD "sdk_get_attributes_post_request" }}
+{{ $hookCode }}
+{{- end }}
 	rm.metrics.RecordAPICall("GET_ATTRIBUTES", "{{ .CRD.Ops.GetAttributes.Name }}", respErr)
 	if respErr != nil {
 		if awsErr, ok := ackerr.AWSError(respErr); ok && awsErr.Code() == "{{ ResourceExceptionCode .CRD 404 }}" {{ GoCodeSetExceptionMessagePrefixCheck .CRD 404 }}{
@@ -28,6 +34,9 @@ func (rm *resourceManager) sdkFind(
 	// the original Kubernetes object we passed to the function
 	ko := r.ko.DeepCopy()
 {{ $setCode }}
+{{- if $hookCode := Hook .CRD "sdk_get_attributes_pre_set_output" }}
+{{ $hookCode }}
+{{- end }}
 	rm.setStatusDefaults(ko)
 	return &resource{ko}, nil
 }

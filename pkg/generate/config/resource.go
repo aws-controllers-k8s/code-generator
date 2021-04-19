@@ -29,7 +29,10 @@ type ResourceConfig struct {
 	// Found and other common error types for primary resources, and thus we
 	// need these instructions.
 	Exceptions *ExceptionsConfig `json:"exceptions,omitempty"`
-
+	// Hooks is a map, keyed by the hook identifier, of instructions for the
+	// the code generator about a custom callback hooks that should be injected
+	// into the resource's manager or SDK binding code.
+	Hooks map[string]*HooksConfig `json:"hooks"`
 	// Renames identifies fields in Operations that should be renamed.
 	Renames *RenamesConfig `json:"renames,omitempty"`
 	// ListOperation contains instructions for the code generator to generate
@@ -69,6 +72,37 @@ type ResourceConfig struct {
 	// All ShortNames must be distinct from any other ShortNames installed into the cluster,
 	// otherwise the CRD will fail to install.
 	ShortNames []string `json:"shortNames,omitempty"`
+}
+
+// HooksConfig instructs the code generator how to inject custom callback hooks
+// at various places in the resource manager and SDK linkage code.
+//
+// Example usage from the AmazonMQ generator config:
+//
+// resources:
+//   Broker:
+//     hooks:
+//       sdk_update_pre_build_request:
+//        code: if err := rm.requeueIfNotRunning(latest); err != nil { return nil, err }
+//
+// Note that the implementor of the AmazonMQ service controller for ACK should
+// ensure that there is a `requeueIfNotRunning()` method implementation in
+// `pkg/resource/broker`
+//
+// Instead of placing Go code directly into the generator.yaml file using the
+// `code` field, you can reference a template file containing Go code with the
+// `template_path` field:
+//
+// resources:
+//   Broker:
+//     hooks:
+//       sdk_update_pre_build_update_request:
+//        template_path: templates/sdk_update_pre_build_request.go.tpl
+type HooksConfig struct {
+	// Code is the Go code to be injected at the hook point
+	Code *string `json:"code,omitempty"`
+	// TemplatePath is a path to the template containing the hook code
+	TemplatePath *string `json:"template_path,omitempty"`
 }
 
 // CompareConfig informs instruct the code generator on how to compare two different
