@@ -45,6 +45,11 @@ code paths:
 * sdk_get_attributes_pre_set_output
 * sdk_create_pre_set_output
 * sdk_update_pre_set_output
+* sdk_read_one_post_set_output
+* sdk_read_many_post_set_output
+* sdk_get_attributes_post_set_output
+* sdk_create_post_set_output
+* sdk_update_post_set_output
 
 The "pre_build_request" hooks are called BEFORE the call to construct
 the Input shape that is used in the API operation and therefore BEFORE
@@ -69,6 +74,11 @@ that is supplied to the main method, like so:
 	// the original Kubernetes object we passed to the function
 	ko := r.ko.DeepCopy()
 ```
+
+The "post_set_output" hooks are called AFTER the the information from the API call
+is merged with the copy of the original Kubernetes object. These hooks will
+have access to the updated Kubernetes object `ko`, the response of the API call
+(and the original Kubernetes CR object if its sdkUpdate)
 */
 
 // ResourceHookCode returns a string with custom callback code for a resource

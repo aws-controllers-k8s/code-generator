@@ -83,6 +83,9 @@ func (rm *resourceManager) sdkCreate(
 			return nil, err
 		}
 	{{ end }}
+{{- if $hookCode := Hook .CRD "sdk_create_post_set_output" }}
+{{ $hookCode }}
+{{- end }}
 	return &resource{ko}, nil
 }
 
