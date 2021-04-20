@@ -223,7 +223,7 @@ func SetSDK(
 			out += fmt.Sprintf(
 				"%s} else {\n", indent,
 			)
-			nameField := r.NameField()
+			nameField := *r.SpecIdentifierField()
 			out += fmt.Sprintf(
 				"%s\t%s.Set%s(rm.ARNFromName(*%s.Spec.%s))\n",
 				indent, targetVarName, memberName, sourceVarName, nameField,
@@ -444,7 +444,7 @@ func SetSDKGetAttributes(
 			out += fmt.Sprintf(
 				"%s} else {\n", indent,
 			)
-			nameField := r.NameField()
+			nameField := *r.SpecIdentifierField()
 			out += fmt.Sprintf(
 				"%s\t%s.Set%s(rm.ARNFromName(*%s.Spec.%s))\n",
 				indent, targetVarName, memberName, sourceVarName, nameField,
@@ -617,7 +617,7 @@ func SetSDKSetAttributes(
 			out += fmt.Sprintf(
 				"%s} else {\n", indent,
 			)
-			nameField := r.NameField()
+			nameField := *r.SpecIdentifierField()
 			out += fmt.Sprintf(
 				"%s\t%s.Set%s(rm.ARNFromName(*%s.Spec.%s))\n",
 				indent, targetVarName, memberName, sourceVarName, nameField,

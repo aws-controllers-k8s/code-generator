@@ -336,14 +336,14 @@ func (r *CRD) UpdateConditionsCustomMethodName() string {
 	return resGenConfig.UpdateConditionsCustomMethodName
 }
 
-// NameField returns the name of the "Name" or string identifier field in the Spec
-func (r *CRD) NameField() string {
+// SpecIdentifierField returns the name of the "Name" or string identifier field in the Spec
+func (r *CRD) SpecIdentifierField() *string {
 	if r.cfg != nil {
 		rConfig, found := r.cfg.Resources[r.Names.Original]
 		if found {
 			for fName, fConfig := range rConfig.Fields {
 				if fConfig.IsName {
-					return fName
+					return &fName
 				}
 			}
 		}
@@ -355,10 +355,19 @@ func (r *CRD) NameField() string {
 	}
 	for memberName := range r.SpecFields {
 		if util.InStrings(memberName, lookup) {
-			return memberName
+			return &memberName
 		}
 	}
-	return "???"
+	return nil
+}
+
+// IsAdoptable returns true if the resource can be adopted
+func (r *CRD) IsAdoptable() bool {
+	if r.cfg == nil {
+		// Should never reach this condition
+		return false
+	}
+	return r.cfg.ResourceIsAdoptable(r.Names.Original)
 }
 
 // CustomUpdateMethodName returns the name of the custom resourceManager method

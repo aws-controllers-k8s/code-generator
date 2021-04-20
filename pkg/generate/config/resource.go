@@ -72,6 +72,10 @@ type ResourceConfig struct {
 	// All ShortNames must be distinct from any other ShortNames installed into the cluster,
 	// otherwise the CRD will fail to install.
 	ShortNames []string `json:"shortNames,omitempty"`
+	// IsAdoptable determines whether the CRD should be accepted by the adoption reconciler.
+	// If set to false, the user will be given an error if they attempt to adopt a resource
+	// with this type.
+	IsAdoptable *bool `json:"is_adoptable,omitempty"`
 }
 
 // HooksConfig instructs the code generator how to inject custom callback hooks
@@ -382,4 +386,20 @@ func (c *Config) ResourceShortNames(resourceName string) []string {
 		return nil
 	}
 	return rConfig.ShortNames
+}
+
+// ResourceIsAdoptable returns whether the given CRD is adoptable
+func (c *Config) ResourceIsAdoptable(resourceName string) bool {
+	if c == nil {
+		return true
+	}
+	rConfig, ok := c.Resources[resourceName]
+	if !ok {
+		return true
+	}
+	// Default to True
+	if rConfig.IsAdoptable == nil {
+		return true
+	}
+	return *rConfig.IsAdoptable
 }
