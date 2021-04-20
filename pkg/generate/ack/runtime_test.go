@@ -15,14 +15,15 @@ package ack
 
 import (
 	"testing"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8srt "k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/stretchr/testify/require"
 
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
-	acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
+	acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
 )
 
 type fakeIdentifiers struct{}
@@ -52,7 +53,7 @@ func (fd *fakeDescriptor) ResourceFromRuntimeObject(o k8srt.Object) acktypes.AWS
 }
 
 func (fd *fakeDescriptor) Delta(a, b acktypes.AWSResource) *ackcompare.Delta {
- 	return nil
+	return nil
 }
 
 func (fd *fakeDescriptor) UpdateCRStatus(acktypes.AWSResource) (bool, error) {
@@ -67,6 +68,9 @@ func (fd *fakeDescriptor) MarkManaged(acktypes.AWSResource) {
 }
 
 func (fd *fakeDescriptor) MarkUnmanaged(acktypes.AWSResource) {
+}
+
+func (fd *fakeDescriptor) MarkAdopted(acktypes.AWSResource) {
 }
 
 // This test is mostly just a hack to introduce a Go module dependency between
