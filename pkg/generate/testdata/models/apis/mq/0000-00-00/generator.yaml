@@ -9,3 +9,6 @@ resources:
         code: if err := rm.requeueIfNotRunning(latest); err != nil { return nil, err }
       sdk_delete_pre_build_request:
         template_path: sdk_delete_pre_build_request.go.tpl
+    fields:
+      Users..Password:
+        is_secret: true
