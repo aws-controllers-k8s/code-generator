@@ -1,6 +1,6 @@
 {{- range .Samples -}}
 ---
-apiVersion: s3.services.k8s.aws/v1alpha1
+apiVersion: {{$.APIGroup}}/{{$.APIVersion}}
 kind: {{.Kind}}
 metadata:
   name: example
