@@ -78,6 +78,9 @@ type CRD struct {
 	// field. Note that there are no fields in StatusFields that are also in
 	// SpecFields.
 	StatusFields map[string]*Field
+	// Fields is a map, keyed by the **renamed/normalized field path**, of
+	// Field objects representing a field in the CRD's Spec or Status objects.
+	Fields map[string]*Field
 	// TypeImports is a map, keyed by an import string, with the map value
 	// being the import alias
 	TypeImports map[string]string
@@ -169,13 +172,15 @@ func (r *CRD) AddSpecField(
 	memberNames names.Names,
 	shapeRef *awssdkmodel.ShapeRef,
 ) {
+	fPath := memberNames.Camel
 	fConfigs := r.cfg.ResourceFields(r.Names.Original)
 	fConfig := fConfigs[memberNames.Original]
-	f := newField(r, memberNames, shapeRef, fConfig)
+	f := NewField(r, fPath, memberNames, shapeRef, fConfig)
 	if fConfig != nil && fConfig.IsPrintable {
 		r.addSpecPrintableColumn(f)
 	}
 	r.SpecFields[memberNames.Original] = f
+	r.Fields[fPath] = f
 }
 
 // AddStatusField adds a new Field of a given name and shape into the Status
@@ -184,13 +189,15 @@ func (r *CRD) AddStatusField(
 	memberNames names.Names,
 	shapeRef *awssdkmodel.ShapeRef,
 ) {
+	fPath := memberNames.Camel
 	fConfigs := r.cfg.ResourceFields(r.Names.Original)
 	fConfig := fConfigs[memberNames.Original]
-	f := newField(r, memberNames, shapeRef, fConfig)
+	f := NewField(r, fPath, memberNames, shapeRef, fConfig)
 	if fConfig != nil && fConfig.IsPrintable {
 		r.addStatusPrintableColumn(f)
 	}
 	r.StatusFields[memberNames.Original] = f
+	r.Fields[fPath] = f
 }
 
 // AddTypeImport adds an entry in the CRD's TypeImports map for an import line
@@ -254,12 +261,15 @@ func (r *CRD) UnpackAttributes() {
 			continue
 		}
 		fieldNames := names.New(fieldName)
-		f := newField(r, fieldNames, nil, fieldConfig)
+		fPath := fieldNames.Camel
+
+		f := NewField(r, fPath, fieldNames, nil, fieldConfig)
 		if !fieldConfig.IsReadOnly {
 			r.SpecFields[fieldName] = f
 		} else {
 			r.StatusFields[fieldName] = f
 		}
+		r.Fields[fPath] = f
 	}
 }
 
@@ -414,6 +424,7 @@ func NewCRD(
 		additionalPrinterColumns: make([]*PrinterColumn, 0),
 		SpecFields:               map[string]*Field{},
 		StatusFields:             map[string]*Field{},
+		Fields:                   map[string]*Field{},
 		ShortNames:               cfg.ResourceShortNames(kind),
 	}
 }

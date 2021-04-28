@@ -226,6 +226,10 @@ func (g *Generator) GetCRDs() ([]*ackmodel.CRD, error) {
 	sort.Slice(crds, func(i, j int) bool {
 		return crds[i].Names.Camel < crds[j].Names.Camel
 	})
+	// This is the place that we build out the CRD.Fields map with
+	// `pkg/model.Field` objects that represent the non-top-level Spec and
+	// Status fields.
+	g.processNestedFields(crds)
 	g.crds = crds
 	return crds, nil
 }
@@ -399,6 +403,145 @@ func (g *Generator) GetTypeDefs() ([]*ackmodel.TypeDef, map[string]string, error
 	g.typeImports = timports
 	g.typeRenames = trenames
 	return tdefs, timports, nil
+}
+
+// processNestedFields is responsible for walking all of the CRDs' Spec and
+// Status fields' Shape objects and adding `pkg/model.Field` objects for all
+// nested fields along with that `Field`'s `Config` object that allows us to
+// determine if the TypeDef associated with that nested field should have its
+// data type overridden (e.g. for SecretKeyReferences)
+func (g *Generator) processNestedFields(crds []*ackmodel.CRD) {
+	for _, crd := range crds {
+		for _, field := range crd.SpecFields {
+			g.processNestedField(crd, field)
+		}
+		for _, field := range crd.StatusFields {
+			g.processNestedField(crd, field)
+		}
+	}
+}
+
+// processNestedField processes any nested fields (non-scalar fields associated
+// with the Spec and Status objects)
+func (g *Generator) processNestedField(
+	crd *ackmodel.CRD,
+	field *ackmodel.Field,
+) {
+	if field.ShapeRef == nil && (field.FieldConfig == nil || !field.FieldConfig.IsAttribute) {
+		fmt.Printf(
+			"WARNING: Field %s:%s has nil ShapeRef and is not defined as an Attribute-based Field!\n",
+			crd.Names.Original,
+			field.Names.Original,
+		)
+		return
+	}
+	if field.ShapeRef != nil {
+		fieldShape := field.ShapeRef.Shape
+		fieldType := fieldShape.Type
+		switch fieldType {
+		case "structure":
+			g.processNestedStructField(crd, field.Path+".", field)
+		case "list":
+			g.processNestedListField(crd, field.Path+"..", field)
+		case "map":
+			g.processNestedMapField(crd, field.Path+"..", field)
+		}
+	}
+	// TODO(jaypipes): Handle Attribute-based fields...
+}
+
+// processNestedStructField recurses through the members of a nested field that
+// is a struct type and adds any Field objects to the supplied CRD.
+func (g *Generator) processNestedStructField(
+	crd *ackmodel.CRD,
+	baseFieldPath string,
+	baseField *ackmodel.Field,
+) {
+	fieldConfigs := crd.Config().ResourceFields(crd.Names.Original)
+	baseFieldShape := baseField.ShapeRef.Shape
+	for memberName, memberRef := range baseFieldShape.MemberRefs {
+		memberNames := names.New(memberName)
+		memberShape := memberRef.Shape
+		memberShapeType := memberShape.Type
+		fieldPath := baseFieldPath + memberNames.Camel
+		fieldConfig := fieldConfigs[fieldPath]
+		field := ackmodel.NewField(crd, fieldPath, memberNames, memberRef, fieldConfig)
+		switch memberShapeType {
+		case "structure":
+			g.processNestedStructField(crd, fieldPath+".", field)
+		case "list":
+			g.processNestedListField(crd, fieldPath+"..", field)
+		case "map":
+			g.processNestedMapField(crd, fieldPath+"..", field)
+		}
+		crd.Fields[fieldPath] = field
+	}
+}
+
+// processNestedListField recurses through the members of a nested field that
+// is a list type that has a struct element type and adds any Field objects to
+// the supplied CRD.
+func (g *Generator) processNestedListField(
+	crd *ackmodel.CRD,
+	baseFieldPath string,
+	baseField *ackmodel.Field,
+) {
+	baseFieldShape := baseField.ShapeRef.Shape
+	elementFieldShape := baseFieldShape.MemberRef.Shape
+	if elementFieldShape.Type != "structure" {
+		return
+	}
+	fieldConfigs := crd.Config().ResourceFields(crd.Names.Original)
+	for memberName, memberRef := range elementFieldShape.MemberRefs {
+		memberNames := names.New(memberName)
+		memberShape := memberRef.Shape
+		memberShapeType := memberShape.Type
+		fieldPath := baseFieldPath + memberNames.Camel
+		fieldConfig := fieldConfigs[fieldPath]
+		field := ackmodel.NewField(crd, fieldPath, memberNames, memberRef, fieldConfig)
+		switch memberShapeType {
+		case "structure":
+			g.processNestedStructField(crd, fieldPath+".", field)
+		case "list":
+			g.processNestedListField(crd, fieldPath+"..", field)
+		case "map":
+			g.processNestedMapField(crd, fieldPath+"..", field)
+		}
+		crd.Fields[fieldPath] = field
+	}
+}
+
+// processNestedMapField recurses through the members of a nested field that
+// is a map type that has a struct value type and adds any Field objects to
+// the supplied CRD.
+func (g *Generator) processNestedMapField(
+	crd *ackmodel.CRD,
+	baseFieldPath string,
+	baseField *ackmodel.Field,
+) {
+	baseFieldShape := baseField.ShapeRef.Shape
+	valueFieldShape := baseFieldShape.ValueRef.Shape
+	if valueFieldShape.Type != "structure" {
+		return
+	}
+	fieldConfigs := crd.Config().ResourceFields(crd.Names.Original)
+	for memberName, memberRef := range valueFieldShape.MemberRefs {
+		memberNames := names.New(memberName)
+		memberShape := memberRef.Shape
+		memberShapeType := memberShape.Type
+		fieldPath := baseFieldPath + memberNames.Camel
+		fieldConfig := fieldConfigs[fieldPath]
+		field := ackmodel.NewField(crd, fieldPath, memberNames, memberRef, fieldConfig)
+		switch memberShapeType {
+		case "structure":
+			g.processNestedStructField(crd, fieldPath+".", field)
+		case "list":
+			g.processNestedListField(crd, fieldPath+"..", field)
+		case "map":
+			g.processNestedMapField(crd, fieldPath+"..", field)
+		}
+		crd.Fields[fieldPath] = field
+	}
 }
 
 // GetEnumDefs returns a slice of pointers to `ackmodel.EnumDef` structs which

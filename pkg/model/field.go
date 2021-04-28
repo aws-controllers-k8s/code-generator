@@ -20,11 +20,27 @@ import (
 	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
 )
 
-// Field represents a single field in the CRD's Spec or Status objects
+// Field represents a single field in the CRD's Spec or Status objects. The
+// field may be a direct field of the Spec or Status object or may be a field
+// of a list or struct-type field of the Spec or Status object. We call these
+// latter fields "nested fields" and they are identified by the Field.Path
+// attribute.
 type Field struct {
-	CRD               *CRD
-	Names             names.Names
-	GoType            string
+	// CRD is the a pointer to the top-level custom resource definition
+	// descriptor for the field or field's parent (if a nested field)
+	CRD *CRD
+	// Names is a set of normalized names for the field
+	Names names.Names
+	// Path is a "field path" that indicates where the field is within the CRD.
+	// For example "Spec.Name" or "Status.BrokerInstances..Endpoint". Note for
+	// the latter example, the field path indicates that the field `Endpoint`
+	// is an attribute of the `Status.BrokerInstances` top-level field and the
+	// double dot (`..` indicates that BrokerInstances is a list type).
+	Path string
+	// GoType is a string containing the Go data type for the field
+	GoType string
+	// GoTypeElem indicates the Go data type for the type of list element if
+	// the field is a list type
 	GoTypeElem        string
 	GoTypeWithPkgName string
 	ShapeRef          *awssdkmodel.ShapeRef
@@ -45,9 +61,10 @@ func (f *Field) IsRequired() bool {
 	return util.InStrings(f.Names.ModelOriginal, f.CRD.Ops.Create.InputRef.Shape.Required)
 }
 
-// newField returns a pointer to a new Field object
-func newField(
+// NewField returns a pointer to a new Field object
+func NewField(
 	crd *CRD,
+	path string,
 	fieldNames names.Names,
 	shapeRef *awssdkmodel.ShapeRef,
 	cfg *ackgenconfig.FieldConfig,
@@ -72,6 +89,7 @@ func newField(
 	return &Field{
 		CRD:               crd,
 		Names:             fieldNames,
+		Path:              path,
 		ShapeRef:          shapeRef,
 		GoType:            gt,
 		GoTypeElem:        gte,
