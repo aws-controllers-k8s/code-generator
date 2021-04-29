@@ -399,10 +399,127 @@ func (g *Generator) GetTypeDefs() ([]*ackmodel.TypeDef, map[string]string, error
 	sort.Slice(tdefs, func(i, j int) bool {
 		return tdefs[i].Names.Camel < tdefs[j].Names.Camel
 	})
+	g.processNestedFieldTypeDefs(tdefs)
 	g.typeDefs = tdefs
 	g.typeImports = timports
 	g.typeRenames = trenames
 	return tdefs, timports, nil
+}
+
+// processNestedFieldTypeDefs updates the supplied TypeDef structs' if a nested
+// field has been configured with a type overriding FieldConfig -- such as
+// FieldConfig.IsSecret.
+func (g *Generator) processNestedFieldTypeDefs(
+	tdefs []*ackmodel.TypeDef,
+) {
+	crds, _ := g.GetCRDs()
+	for _, crd := range crds {
+		for fieldPath, field := range crd.Fields {
+			if !strings.Contains(fieldPath, ".") {
+				// top-level fields have already had their structure
+				// transformed during the CRD.AddSpecField and
+				// CRD.AddStatusField methods. All we need to do here is look
+				// at nested fields, which are identifiable as fields with
+				// field paths contains a dot (".")
+				continue
+			}
+			if field.FieldConfig == nil {
+				// Likewise, we don't need to transform any TypeDef if the
+				// nested field doesn't have a FieldConfig instructing us to
+				// treat this field differently.
+				continue
+			}
+			if field.FieldConfig.IsSecret {
+				// Find the TypeDef that was created for the *containing*
+				// secret field struct. For example, assume the nested field
+				// path `Users..Password`, we'd want to find the TypeDef that
+				// was created for the `Users` field's element type (which is a
+				// struct)
+				replaceSecretAttrGoType(crd, field, tdefs)
+			}
+		}
+	}
+}
+
+// replaceSecretAttrGoType replaces a nested field ackmodel.Attr's GoType with
+// `*ackv1alpha1.SecretKeyReference`.
+func replaceSecretAttrGoType(
+	crd *ackmodel.CRD,
+	field *ackmodel.Field,
+	tdefs []*ackmodel.TypeDef,
+) {
+	fieldPath := field.Path
+	parentFieldPath := ackmodel.ParentFieldPath(field.Path)
+	parentField, ok := crd.Fields[parentFieldPath]
+	if !ok {
+		msg := fmt.Sprintf(
+			"Cannot find parent field at parent path %s for %s",
+			parentFieldPath,
+			fieldPath,
+		)
+		panic(msg)
+	}
+	if parentField.ShapeRef == nil {
+		msg := fmt.Sprintf(
+			"parent field at parent path %s has a nil ShapeRef!",
+			parentFieldPath,
+		)
+		panic(msg)
+	}
+	parentFieldShape := parentField.ShapeRef.Shape
+	parentFieldShapeName := parentField.ShapeRef.ShapeName
+	parentFieldShapeType := parentFieldShape.Type
+	// For list and map types, we need to grab the element/value
+	// type, since that's the type def we need to modify.
+	if parentFieldShapeType == "list" {
+		if parentFieldShape.MemberRef.Shape.Type != "structure" {
+			msg := fmt.Sprintf(
+				"parent field at parent path %s is a list type with a non-structure element member shape %s!",
+				parentFieldPath,
+				parentFieldShape.MemberRef.Shape.Type,
+			)
+			panic(msg)
+		}
+		parentFieldShapeName = parentField.ShapeRef.Shape.MemberRef.ShapeName
+	} else if parentFieldShapeType == "map" {
+		if parentFieldShape.ValueRef.Shape.Type != "structure" {
+			msg := fmt.Sprintf(
+				"parent field at parent path %s is a map type with a non-structure value member shape %s!",
+				parentFieldPath,
+				parentFieldShape.ValueRef.Shape.Type,
+			)
+			panic(msg)
+		}
+		parentFieldShapeName = parentField.ShapeRef.Shape.ValueRef.ShapeName
+	}
+	var parentTypeDef *ackmodel.TypeDef
+	for _, tdef := range tdefs {
+		if tdef.Names.Original == parentFieldShapeName {
+			parentTypeDef = tdef
+		}
+	}
+	if parentTypeDef == nil {
+		msg := fmt.Sprintf(
+			"unable to find associated TypeDef for parent field "+
+				"at parent path %s!",
+			parentFieldPath,
+		)
+		panic(msg)
+	}
+	// Now we modify the parent type def's Attr that corresponds to
+	// the secret field...
+	attr, found := parentTypeDef.Attrs[field.Names.Camel]
+	if !found {
+		msg := fmt.Sprintf(
+			"unable to find attr %s in parent TypeDef %s "+
+				"at parent path %s!",
+			field.Names.Camel,
+			parentTypeDef.Names.Original,
+			parentFieldPath,
+		)
+		panic(msg)
+	}
+	attr.GoType = "*ackv1alpha1.SecretKeyReference"
 }
 
 // processNestedFields is responsible for walking all of the CRDs' Spec and
@@ -447,7 +564,6 @@ func (g *Generator) processNestedField(
 			g.processNestedMapField(crd, field.Path+"..", field)
 		}
 	}
-	// TODO(jaypipes): Handle Attribute-based fields...
 }
 
 // processNestedStructField recurses through the members of a nested field that

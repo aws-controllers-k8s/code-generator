@@ -14,6 +14,8 @@
 package model
 
 import (
+	"strings"
+
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/names"
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
@@ -59,6 +61,24 @@ func (f *Field) IsRequired() bool {
 		return *f.FieldConfig.IsRequired
 	}
 	return util.InStrings(f.Names.ModelOriginal, f.CRD.Ops.Create.InputRef.Shape.Required)
+}
+
+// ParentFieldPath takes a field path and returns the field path of the
+// containing "parent" field. For example, if the field path
+// `Users..Credentials.Login` is passed in, this function returns
+// `Users..Credentials`. If `Users..Password` is supplied, this function
+// returns `Users`, etc.
+func ParentFieldPath(path string) string {
+	parts := strings.Split(path, ".")
+	// Pop the last element of the supplied field path
+	parts = parts[0 : len(parts)-1]
+	// If the parent field's type is a list or map, there will be two dots ".."
+	// in the supplied field path. We don't want the returned field path to end
+	// in a dot, since that would be invalid, so we trim it off here
+	if parts[len(parts)-1] == "" {
+		parts = parts[0 : len(parts)-1]
+	}
+	return strings.Join(parts, ".")
 }
 
 // NewField returns a pointer to a new Field object

@@ -40,3 +40,22 @@ func GetCRDByName(
 	}
 	return nil
 }
+
+// GetTypeDefByName returns a TypeDef model with the supplied name
+func GetTypeDefByName(
+	t *testing.T,
+	g *generate.Generator,
+	name string,
+) *model.TypeDef {
+	require := require.New(t)
+
+	tdefs, _, err := g.GetTypeDefs()
+	require.Nil(err)
+
+	for _, tdef := range tdefs {
+		if tdef.Names.Original == name {
+			return tdef
+		}
+	}
+	return nil
+}
