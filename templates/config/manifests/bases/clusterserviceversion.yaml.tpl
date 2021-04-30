@@ -30,8 +30,8 @@ spec:
   displayName: {{ .DisplayName}}
   icon:
   {{- range .Icon}}
-  - base64Data: {{ .Data }}
-    medatype: {{ .MediaType }}
+  - base64data: {{ .Data }}
+    mediatype: {{ .MediaType }}
   {{- end}}
   install:
     spec:
