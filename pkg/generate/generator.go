@@ -273,17 +273,13 @@ func (g *Generator) IsShapeUsedInCRDs(shapeName string) bool {
 	return false
 }
 
-// GetTypeDefs returns a slice of `ackmodel.TypeDef` pointers and a map of
-// package import information
-func (g *Generator) GetTypeDefs() ([]*ackmodel.TypeDef, map[string]string, error) {
+// GetTypeDefs returns a slice of `ackmodel.TypeDef` pointers
+func (g *Generator) GetTypeDefs() ([]*ackmodel.TypeDef, error) {
 	if g.typeDefs != nil {
-		return g.typeDefs, g.typeImports, nil
+		return g.typeDefs, nil
 	}
 
 	tdefs := []*ackmodel.TypeDef{}
-	// Map, keyed by package import path, with the values being an alias to use
-	// for the package
-	timports := map[string]string{}
 	// Map, keyed by original Shape GoTypeElem(), with the values being a
 	// renamed type name (due to conflicting names)
 	trenames := map[string]string{}
@@ -314,38 +310,6 @@ func (g *Generator) GetTypeDefs() ([]*ackmodel.TypeDef, map[string]string, error
 			memberShape := memberRef.Shape
 			if !g.IsShapeUsedInCRDs(memberShape.ShapeName) {
 				continue
-			}
-			goPkgType := memberRef.Shape.GoTypeWithPkgNameElem()
-			if strings.Contains(goPkgType, ".") {
-				if strings.HasPrefix(goPkgType, "[]") {
-					// For slice types, we just want the element type...
-					goPkgType = strings.TrimLeft(goPkgType, "[]")
-				}
-				if strings.HasPrefix(goPkgType, "map[") {
-					// Assuming the map keys are always of type string.
-					goPkgType = strings.TrimLeft(goPkgType, "map[string]")
-				}
-				if strings.HasPrefix(goPkgType, "*") {
-					// For slice and map types, the element type might be a
-					// pointer to a struct...
-					goPkgType = goPkgType[1:]
-				}
-				pkg := strings.Split(goPkgType, ".")[0]
-				if pkg != g.SDKAPI.API.PackageName() {
-					// time.Time needs to be converted to apimachinery/metav1.Time otherwise there is no DeepCopy support
-					if pkg == "time" {
-						timports["k8s.io/apimachinery/pkg/apis/meta/v1"] = "metav1"
-					} else if pkg == "aws" {
-						// The "aws.JSONValue" type needs to be handled
-						// specially.
-						timports["github.com/aws/aws-sdk-go/aws"] = ""
-					} else {
-						// Shape.GoPTypeWithPkgNameElem() always returns the type
-						// as a full package dot-notation name. We only want to add
-						// imports for "normal" packages
-						timports[pkg] = ""
-					}
-				}
 			}
 			// There are shapes that are called things like DBProxyStatus that are
 			// fields in a DBProxy CRD... we need to ensure the type names don't
@@ -401,9 +365,8 @@ func (g *Generator) GetTypeDefs() ([]*ackmodel.TypeDef, map[string]string, error
 	})
 	g.processNestedFieldTypeDefs(tdefs)
 	g.typeDefs = tdefs
-	g.typeImports = timports
 	g.typeRenames = trenames
-	return tdefs, timports, nil
+	return tdefs, nil
 }
 
 // processNestedFieldTypeDefs updates the supplied TypeDef structs' if a nested

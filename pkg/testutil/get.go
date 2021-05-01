@@ -49,7 +49,7 @@ func GetTypeDefByName(
 ) *model.TypeDef {
 	require := require.New(t)
 
-	tdefs, _, err := g.GetTypeDefs()
+	tdefs, err := g.GetTypeDefs()
 	require.Nil(err)
 
 	for _, tdef := range tdefs {
