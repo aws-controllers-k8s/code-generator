@@ -226,7 +226,7 @@ func SetSDK(
 		if found {
 			sourceAdaptedVarName += cfg.PrefixConfig.SpecField
 		} else {
-			f, found = r.StatusFields[memberName]
+			f, found = r.StatusFields[renamedName]
 			if !found {
 				// TODO(jaypipes): check generator config for exceptions?
 				continue
@@ -234,6 +234,7 @@ func SetSDK(
 			sourceAdaptedVarName += cfg.PrefixConfig.StatusField
 		}
 		sourceAdaptedVarName += "." + f.Names.Camel
+		sourceFieldPath := f.Names.Camel
 
 		if r.IsSecretField(memberName) {
 			out += setSDKForSecret(
@@ -321,6 +322,7 @@ func SetSDK(
 					cfg, r,
 					memberName,
 					memberVarName,
+					sourceFieldPath,
 					sourceAdaptedVarName,
 					memberShapeRef,
 					indentLevel+1,
@@ -330,6 +332,7 @@ func SetSDK(
 					memberName,
 					targetVarName,
 					inputShape.Type,
+					sourceFieldPath,
 					memberVarName,
 					memberShapeRef,
 					indentLevel+1,
@@ -341,6 +344,7 @@ func SetSDK(
 				memberName,
 				targetVarName,
 				inputShape.Type,
+				sourceFieldPath,
 				sourceAdaptedVarName,
 				memberShapeRef,
 				indentLevel+1,
@@ -508,6 +512,7 @@ func SetSDKGetAttributes(
 			memberName,
 			targetVarName,
 			inputShape.Type,
+			cleanMemberName,
 			sourceVarPath,
 			field.ShapeRef,
 			indentLevel+1,
@@ -702,6 +707,7 @@ func SetSDKSetAttributes(
 			memberName,
 			targetVarName,
 			inputShape.Type,
+			cleanMemberName,
 			sourceVarPath,
 			field.ShapeRef,
 			indentLevel+1,
@@ -724,6 +730,8 @@ func setSDKForContainer(
 	targetFieldName string,
 	// The variable name that we want to set a value to
 	targetVarName string,
+	// The path to the field that we access our source value from
+	sourceFieldPath string,
 	// The struct or struct field that we access our source value from
 	sourceVarName string,
 	// ShapeRef of the target struct field
@@ -737,6 +745,7 @@ func setSDKForContainer(
 			targetFieldName,
 			targetVarName,
 			targetShapeRef,
+			sourceFieldPath,
 			sourceVarName,
 			indentLevel,
 		)
@@ -746,6 +755,7 @@ func setSDKForContainer(
 			targetFieldName,
 			targetVarName,
 			targetShapeRef,
+			sourceFieldPath,
 			sourceVarName,
 			indentLevel,
 		)
@@ -755,6 +765,7 @@ func setSDKForContainer(
 			targetFieldName,
 			targetVarName,
 			targetShapeRef,
+			sourceFieldPath,
 			sourceVarName,
 			indentLevel,
 		)
@@ -764,6 +775,7 @@ func setSDKForContainer(
 			targetFieldName,
 			targetVarName,
 			targetShapeRef.Shape.Type,
+			sourceFieldPath,
 			sourceVarName,
 			targetShapeRef,
 			indentLevel,
@@ -842,6 +854,8 @@ func setSDKForStruct(
 	targetVarName string,
 	// Shape Ref of the target struct field
 	targetShapeRef *awssdkmodel.ShapeRef,
+	// The path to the field that we access our source value from
+	sourceFieldPath string,
 	// The struct or struct field that we access our source value from
 	sourceVarName string,
 	indentLevel int,
@@ -855,14 +869,28 @@ func setSDKForStruct(
 		memberShape := memberShapeRef.Shape
 		cleanMemberNames := names.New(memberName)
 		cleanMemberName := cleanMemberNames.Camel
-		memberVarName := fmt.Sprintf("%sf%d", targetVarName, memberIndex)
 		sourceAdaptedVarName := sourceVarName + "." + cleanMemberName
+		memberFieldPath := sourceFieldPath + "." + cleanMemberName
+		if r.IsSecretField(memberFieldPath) {
+			out += setSDKForSecret(
+				cfg, r,
+				memberName,
+				targetVarName,
+				sourceAdaptedVarName,
+				indentLevel,
+			)
+			continue
+		}
 		out += fmt.Sprintf(
 			"%sif %s != nil {\n", indent, sourceAdaptedVarName,
 		)
 		switch memberShape.Type {
 		case "list", "structure", "map":
 			{
+				memberVarName := fmt.Sprintf(
+					"%sf%d",
+					targetVarName, memberIndex,
+				)
 				out += varEmptyConstructorSDKType(
 					cfg, r,
 					memberVarName,
@@ -873,6 +901,7 @@ func setSDKForStruct(
 					cfg, r,
 					memberName,
 					memberVarName,
+					memberFieldPath,
 					sourceAdaptedVarName,
 					memberShapeRef,
 					indentLevel+1,
@@ -882,6 +911,7 @@ func setSDKForStruct(
 					memberName,
 					targetVarName,
 					targetShape.Type,
+					memberFieldPath,
 					memberVarName,
 					memberShapeRef,
 					indentLevel+1,
@@ -893,6 +923,7 @@ func setSDKForStruct(
 				memberName,
 				targetVarName,
 				targetShape.Type,
+				memberFieldPath,
 				sourceAdaptedVarName,
 				memberShapeRef,
 				indentLevel+1,
@@ -916,6 +947,8 @@ func setSDKForSlice(
 	targetVarName string,
 	// Shape Ref of the target struct field
 	targetShapeRef *awssdkmodel.ShapeRef,
+	// The path to the field that we access our source value from
+	sourceFieldPath string,
 	// The struct or struct field that we access our source value from
 	sourceVarName string,
 	indentLevel int,
@@ -948,6 +981,7 @@ func setSDKForSlice(
 		cfg, r,
 		containerFieldName,
 		elemVarName,
+		sourceFieldPath+".",
 		iterVarName,
 		&targetShape.MemberRef,
 		indentLevel+1,
@@ -976,6 +1010,8 @@ func setSDKForMap(
 	targetVarName string,
 	// Shape Ref of the target struct field
 	targetShapeRef *awssdkmodel.ShapeRef,
+	// The path to the field that we access our source value from
+	sourceFieldPath string,
 	// The struct or struct field that we access our source value from
 	sourceVarName string,
 	indentLevel int,
@@ -1009,6 +1045,7 @@ func setSDKForMap(
 		cfg, r,
 		containerFieldName,
 		valVarName,
+		sourceFieldPath+".",
 		valIterVarName,
 		&targetShape.ValueRef,
 		indentLevel+1,
@@ -1117,6 +1154,8 @@ func setSDKForScalar(
 	targetVarName string,
 	// The type of shape of the target variable
 	targetVarType string,
+	// The path to the field that we access our source value from
+	sourceFieldPath string,
 	// The struct or struct field that we access our source value from
 	sourceVarName string,
 	shapeRef *awssdkmodel.ShapeRef,
