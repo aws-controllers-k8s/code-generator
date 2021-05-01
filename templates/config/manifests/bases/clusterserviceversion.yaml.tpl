@@ -25,13 +25,12 @@ spec:
       displayName: {{.Kind}}
       description: {{.Kind}} represents the state of an AWS {{$.ServiceID}} {{.Kind}} resource.
     {{- end}}
-  description: |
-    {{ .Description }}
+  description: '{{ .Description }}'
   displayName: {{ .DisplayName}}
   icon:
   {{- range .Icon}}
-  - base64Data: {{ .Data }}
-    medatype: {{ .MediaType }}
+  - base64data: {{ .Data }}
+    mediatype: {{ .MediaType }}
   {{- end}}
   install:
     spec:
