@@ -32,10 +32,10 @@ var (
 		"crossplane/apis/groupversion_info.go.tpl",
 		"crossplane/apis/types.go.tpl",
 	}
-	crdTemplatePath = "crossplane/apis/crd.go.tpl"
-	controllerTmplPath = "crossplane/pkg/controller.go.tpl"
+	crdTemplatePath     = "crossplane/apis/crd.go.tpl"
+	controllerTmplPath  = "crossplane/pkg/controller.go.tpl"
 	conversionsTmplPath = "crossplane/pkg/conversions.go.tpl"
-	includePaths = []string{
+	includePaths        = []string{
 		"crossplane/boilerplate.go.tpl",
 		"crossplane/apis/enum_def.go.tpl",
 		"crossplane/apis/type_def.go.tpl",
@@ -100,7 +100,6 @@ type templateAPIVars struct {
 	templateset.MetaVars
 	EnumDefs []*ackmodel.EnumDef
 	TypeDefs []*ackmodel.TypeDef
-	Imports  map[string]string
 }
 
 // templateCRDVars contains template variables for the template that outputs Go
@@ -120,7 +119,7 @@ func Crossplane(
 	if err != nil {
 		return nil, err
 	}
-	typeDefs, typeImports, err := g.GetTypeDefs()
+	typeDefs, err := g.GetTypeDefs()
 	if err != nil {
 		return nil, err
 	}
@@ -143,7 +142,6 @@ func Crossplane(
 		metaVars,
 		enumDefs,
 		typeDefs,
-		typeImports,
 	}
 	for _, path := range apisGenericTemplatesPaths {
 		outPath := filepath.Join(

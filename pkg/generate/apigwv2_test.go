@@ -28,21 +28,12 @@ func TestAPIGatewayV2_GetTypeDefs(t *testing.T) {
 
 	g := testutil.NewGeneratorForService(t, "apigatewayv2")
 
-	tdefs, timports, err := g.GetTypeDefs()
-	require.Nil(err)
-
-	// APIGatewayV2 shapes have time.Time ("timestamp") types and so
-	// GetTypeDefs() should return the special-cased with apimachinery/metav1
-	// import, aliased as "metav1"
-	expImports := map[string]string{"k8s.io/apimachinery/pkg/apis/meta/v1": "metav1"}
-	assert.Equal(expImports, timports)
-
 	// There is an "Api" Shape that is a struct that is an element of the
 	// GetApis Operation. Its name conflicts with the CRD called API and thus
 	// we need to check that its cleaned name is set to API_SDK (the _SDK
 	// suffix is appended to the type name to avoid the conflict with
 	// CRD-specific structs.
-	tdef := getTypeDefByName("Api", tdefs)
+	tdef := testutil.GetTypeDefByName(t, g, "Api")
 	require.NotNil(tdef)
 
 	assert.Equal("API_SDK", tdef.Names.Camel)

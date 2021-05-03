@@ -165,7 +165,6 @@ func SetSDK(
 	}
 
 	opConfig, override := cfg.OverrideValues(op.Name)
-	fieldConfigs := cfg.ResourceFields(r.Names.Original)
 	for memberIndex, memberName := range inputShape.MemberNames() {
 		if r.UnpacksAttributesMap() && memberName == "Attributes" {
 			continue
@@ -188,22 +187,6 @@ func SetSDK(
 				out += fmt.Sprintf("%s%s.Set%s(%s)\n", indent, targetVarName, memberName, value)
 				continue
 			}
-		}
-
-		fc, ok := fieldConfigs[memberName]
-		if ok && fc.IsSecret {
-			out += fmt.Sprintf("%sif %s.Spec.%s != nil {\n", indent, sourceVarName, memberName)
-			out += fmt.Sprintf("%s%stmpSecret, err := rm.rr.SecretValueFromReference(ctx, %s.Spec.%s)\n", indent,
-				indent, sourceVarName, memberName)
-			out += fmt.Sprintf("%s%sif err != nil {\n", indent, indent)
-			out += fmt.Sprintf("%s%s%sreturn nil, err\n", indent, indent, indent)
-			out += fmt.Sprintf("%s%s}\n", indent, indent)
-			out += fmt.Sprintf("%s%sif tmpSecret != \"\" {\n", indent, indent)
-			out += fmt.Sprintf("%s%s%s%s.Set%s(%s)\n", indent, indent, indent,
-				targetVarName, memberName, "tmpSecret")
-			out += fmt.Sprintf("%s%s}\n", indent, indent)
-			out += fmt.Sprintf("%s}\n", indent)
-			continue
 		}
 
 		if r.IsPrimaryARNField(memberName) {
@@ -243,7 +226,7 @@ func SetSDK(
 		if found {
 			sourceAdaptedVarName += cfg.PrefixConfig.SpecField
 		} else {
-			f, found = r.StatusFields[memberName]
+			f, found = r.StatusFields[renamedName]
 			if !found {
 				// TODO(jaypipes): check generator config for exceptions?
 				continue
@@ -251,6 +234,18 @@ func SetSDK(
 			sourceAdaptedVarName += cfg.PrefixConfig.StatusField
 		}
 		sourceAdaptedVarName += "." + f.Names.Camel
+		sourceFieldPath := f.Names.Camel
+
+		if r.IsSecretField(memberName) {
+			out += setSDKForSecret(
+				cfg, r,
+				memberName,
+				targetVarName,
+				sourceAdaptedVarName,
+				indentLevel,
+			)
+			continue
+		}
 
 		memberShapeRef, _ := inputShape.MemberRefs[memberName]
 		memberShape := memberShapeRef.Shape
@@ -327,6 +322,7 @@ func SetSDK(
 					cfg, r,
 					memberName,
 					memberVarName,
+					sourceFieldPath,
 					sourceAdaptedVarName,
 					memberShapeRef,
 					indentLevel+1,
@@ -336,6 +332,7 @@ func SetSDK(
 					memberName,
 					targetVarName,
 					inputShape.Type,
+					sourceFieldPath,
 					memberVarName,
 					memberShapeRef,
 					indentLevel+1,
@@ -347,6 +344,7 @@ func SetSDK(
 				memberName,
 				targetVarName,
 				inputShape.Type,
+				sourceFieldPath,
 				sourceAdaptedVarName,
 				memberShapeRef,
 				indentLevel+1,
@@ -514,6 +512,7 @@ func SetSDKGetAttributes(
 			memberName,
 			targetVarName,
 			inputShape.Type,
+			cleanMemberName,
 			sourceVarPath,
 			field.ShapeRef,
 			indentLevel+1,
@@ -708,6 +707,7 @@ func SetSDKSetAttributes(
 			memberName,
 			targetVarName,
 			inputShape.Type,
+			cleanMemberName,
 			sourceVarPath,
 			field.ShapeRef,
 			indentLevel+1,
@@ -730,6 +730,8 @@ func setSDKForContainer(
 	targetFieldName string,
 	// The variable name that we want to set a value to
 	targetVarName string,
+	// The path to the field that we access our source value from
+	sourceFieldPath string,
 	// The struct or struct field that we access our source value from
 	sourceVarName string,
 	// ShapeRef of the target struct field
@@ -743,6 +745,7 @@ func setSDKForContainer(
 			targetFieldName,
 			targetVarName,
 			targetShapeRef,
+			sourceFieldPath,
 			sourceVarName,
 			indentLevel,
 		)
@@ -752,6 +755,7 @@ func setSDKForContainer(
 			targetFieldName,
 			targetVarName,
 			targetShapeRef,
+			sourceFieldPath,
 			sourceVarName,
 			indentLevel,
 		)
@@ -761,6 +765,7 @@ func setSDKForContainer(
 			targetFieldName,
 			targetVarName,
 			targetShapeRef,
+			sourceFieldPath,
 			sourceVarName,
 			indentLevel,
 		)
@@ -770,11 +775,72 @@ func setSDKForContainer(
 			targetFieldName,
 			targetVarName,
 			targetShapeRef.Shape.Type,
+			sourceFieldPath,
 			sourceVarName,
 			targetShapeRef,
 			indentLevel,
 		)
 	}
+}
+
+// setSDKForSecret returns a string of Go code that sets a target variable to
+// the value of a Secret when the type of the source variable is a
+// SecretKeyReference.
+//
+// The Go code output from this function looks like this:
+//
+// if ko.Spec.MasterUserPassword != nil {
+//     tmpSecret, err := rm.rr.SecretValueFromReference(ctx, ko.Spec.MasterUserPassword)
+//     if err != nil {
+//         return nil, err
+//     }
+//     if tmpSecret != "" {
+//         res.SetMasterUserPassword(tmpSecret)
+//     }
+// }
+func setSDKForSecret(
+	cfg *ackgenconfig.Config,
+	r *model.CRD,
+	// The name of the SDK Shape field we're setting
+	targetFieldName string,
+	// The variable name that we want to set a value on
+	targetVarName string,
+	// The CR field that we access our source value from
+	sourceVarName string,
+	indentLevel int,
+) string {
+	out := ""
+	indent := strings.Repeat("\t", indentLevel)
+	secVar := "tmpSecret"
+
+	// if ko.Spec.MasterUserPassword != nil {
+	out += fmt.Sprintf(
+		"%sif %s != nil {\n",
+		indent, sourceVarName,
+	)
+	//     tmpSecret, err := rm.rr.SecretValueFromReference(ctx, ko.Spec.MasterUserPassword)
+	out += fmt.Sprintf(
+		"%s\t%s, err := rm.rr.SecretValueFromReference(ctx, %s)\n",
+		indent, secVar, sourceVarName,
+	)
+	//     if err != nil {
+	//         return nil, err
+	//     }
+	out += fmt.Sprintf("%s\tif err != nil {\n", indent)
+	out += fmt.Sprintf("%s\t\treturn nil, err\n", indent)
+	out += fmt.Sprintf("%s\t}\n", indent)
+	//     if tmpSecret != "" {
+	//         res.SetMasterUserPassword(tmpSecret)
+	//     }
+	out += fmt.Sprintf("%s\tif tmpSecret != \"\" {\n", indent)
+	out += fmt.Sprintf(
+		"%s\t\t%s.Set%s(%s)\n",
+		indent, targetVarName, targetFieldName, secVar,
+	)
+	out += fmt.Sprintf("%s\t}\n", indent)
+	// }
+	out += fmt.Sprintf("%s}\n", indent)
+	return out
 }
 
 // setSDKForStruct returns a string of Go code that sets a target variable
@@ -788,6 +854,8 @@ func setSDKForStruct(
 	targetVarName string,
 	// Shape Ref of the target struct field
 	targetShapeRef *awssdkmodel.ShapeRef,
+	// The path to the field that we access our source value from
+	sourceFieldPath string,
 	// The struct or struct field that we access our source value from
 	sourceVarName string,
 	indentLevel int,
@@ -801,14 +869,28 @@ func setSDKForStruct(
 		memberShape := memberShapeRef.Shape
 		cleanMemberNames := names.New(memberName)
 		cleanMemberName := cleanMemberNames.Camel
-		memberVarName := fmt.Sprintf("%sf%d", targetVarName, memberIndex)
 		sourceAdaptedVarName := sourceVarName + "." + cleanMemberName
+		memberFieldPath := sourceFieldPath + "." + cleanMemberName
+		if r.IsSecretField(memberFieldPath) {
+			out += setSDKForSecret(
+				cfg, r,
+				memberName,
+				targetVarName,
+				sourceAdaptedVarName,
+				indentLevel,
+			)
+			continue
+		}
 		out += fmt.Sprintf(
 			"%sif %s != nil {\n", indent, sourceAdaptedVarName,
 		)
 		switch memberShape.Type {
 		case "list", "structure", "map":
 			{
+				memberVarName := fmt.Sprintf(
+					"%sf%d",
+					targetVarName, memberIndex,
+				)
 				out += varEmptyConstructorSDKType(
 					cfg, r,
 					memberVarName,
@@ -819,6 +901,7 @@ func setSDKForStruct(
 					cfg, r,
 					memberName,
 					memberVarName,
+					memberFieldPath,
 					sourceAdaptedVarName,
 					memberShapeRef,
 					indentLevel+1,
@@ -828,6 +911,7 @@ func setSDKForStruct(
 					memberName,
 					targetVarName,
 					targetShape.Type,
+					memberFieldPath,
 					memberVarName,
 					memberShapeRef,
 					indentLevel+1,
@@ -839,6 +923,7 @@ func setSDKForStruct(
 				memberName,
 				targetVarName,
 				targetShape.Type,
+				memberFieldPath,
 				sourceAdaptedVarName,
 				memberShapeRef,
 				indentLevel+1,
@@ -862,6 +947,8 @@ func setSDKForSlice(
 	targetVarName string,
 	// Shape Ref of the target struct field
 	targetShapeRef *awssdkmodel.ShapeRef,
+	// The path to the field that we access our source value from
+	sourceFieldPath string,
 	// The struct or struct field that we access our source value from
 	sourceVarName string,
 	indentLevel int,
@@ -894,6 +981,7 @@ func setSDKForSlice(
 		cfg, r,
 		containerFieldName,
 		elemVarName,
+		sourceFieldPath+".",
 		iterVarName,
 		&targetShape.MemberRef,
 		indentLevel+1,
@@ -922,6 +1010,8 @@ func setSDKForMap(
 	targetVarName string,
 	// Shape Ref of the target struct field
 	targetShapeRef *awssdkmodel.ShapeRef,
+	// The path to the field that we access our source value from
+	sourceFieldPath string,
 	// The struct or struct field that we access our source value from
 	sourceVarName string,
 	indentLevel int,
@@ -955,6 +1045,7 @@ func setSDKForMap(
 		cfg, r,
 		containerFieldName,
 		valVarName,
+		sourceFieldPath+".",
 		valIterVarName,
 		&targetShape.ValueRef,
 		indentLevel+1,
@@ -1063,6 +1154,8 @@ func setSDKForScalar(
 	targetVarName string,
 	// The type of shape of the target variable
 	targetVarType string,
+	// The path to the field that we access our source value from
+	sourceFieldPath string,
 	// The struct or struct field that we access our source value from
 	sourceVarName string,
 	shapeRef *awssdkmodel.ShapeRef,

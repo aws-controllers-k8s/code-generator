@@ -28,10 +28,7 @@ func TestMQ_Broker(t *testing.T) {
 
 	g := testutil.NewGeneratorForService(t, "mq")
 
-	crds, err := g.GetCRDs()
-	require.Nil(err)
-
-	crd := getCRDByName("Broker", crds)
+	crd := testutil.GetCRDByName(t, g, "Broker")
 	require.NotNil(crd)
 
 	// We want to verify that the `Password` field of the `Spec.Users` field
@@ -43,4 +40,14 @@ func TestMQ_Broker(t *testing.T) {
 	require.True(found)
 	require.NotNil(passField.FieldConfig)
 	assert.True(passField.FieldConfig.IsSecret)
+
+	// We now verify that the User TypeDef that is inferred by the code
+	// generator has had its Go type changed from `string` to
+	// `*ackv1alpha1.SecretKeyReference` as part of the nested fields
+	// post-processing of type defs in the GetTypeDefs() method.
+	tdef := testutil.GetTypeDefByName(t, g, "User")
+	require.NotNil(tdef)
+	passAttr, found := tdef.Attrs["Password"]
+	require.True(found)
+	assert.Equal("*ackv1alpha1.SecretKeyReference", passAttr.GoType)
 }

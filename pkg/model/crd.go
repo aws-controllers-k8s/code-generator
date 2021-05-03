@@ -292,6 +292,17 @@ func (r *CRD) IsPrimaryARNField(fieldName string) bool {
 		strings.EqualFold(fieldName, r.Names.Original+"arn")
 }
 
+// IsSecretField returns true if the supplied field *path* refers to a Field
+// that is a SecretKeyReference
+func (r *CRD) IsSecretField(path string) bool {
+	fConfigs := r.cfg.ResourceFields(r.Names.Original)
+	fConfig, found := fConfigs[path]
+	if found {
+		return fConfig.IsSecret
+	}
+	return false
+}
+
 // SetOutputCustomMethodName returns custom set output operation as *string for
 // given operation on custom resource, if specified in generator config
 func (r *CRD) SetOutputCustomMethodName(

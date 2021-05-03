@@ -52,7 +52,7 @@ func APIs(
 	if err != nil {
 		return nil, err
 	}
-	typeDefs, typeImports, err := g.GetTypeDefs()
+	typeDefs, err := g.GetTypeDefs()
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +73,6 @@ func APIs(
 		metaVars,
 		enumDefs,
 		typeDefs,
-		typeImports,
 	}
 	for _, path := range apisTemplatePaths {
 		outPath := strings.TrimSuffix(filepath.Base(path), ".tpl")
@@ -101,7 +100,6 @@ type templateAPIVars struct {
 	templateset.MetaVars
 	EnumDefs []*ackmodel.EnumDef
 	TypeDefs []*ackmodel.TypeDef
-	Imports  map[string]string
 }
 
 // templateCRDVars contains template variables for the template that outputs Go

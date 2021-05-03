@@ -1405,3 +1405,195 @@ func TestSetSDK_SQS_Queue_GetAttributes(t *testing.T) {
 		code.SetSDKGetAttributes(crd.Config(), crd, "r.ko", "res", 1),
 	)
 }
+
+func TestSetSDK_MQ_Broker_Create(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewGeneratorForService(t, "mq")
+
+	crd := testutil.GetCRDByName(t, g, "Broker")
+	require.NotNil(crd)
+
+	expected := `
+	if r.ko.Spec.AuthenticationStrategy != nil {
+		res.SetAuthenticationStrategy(*r.ko.Spec.AuthenticationStrategy)
+	}
+	if r.ko.Spec.AutoMinorVersionUpgrade != nil {
+		res.SetAutoMinorVersionUpgrade(*r.ko.Spec.AutoMinorVersionUpgrade)
+	}
+	if r.ko.Spec.BrokerName != nil {
+		res.SetBrokerName(*r.ko.Spec.BrokerName)
+	}
+	if r.ko.Spec.Configuration != nil {
+		f3 := &svcsdk.ConfigurationId{}
+		if r.ko.Spec.Configuration.ID != nil {
+			f3.SetId(*r.ko.Spec.Configuration.ID)
+		}
+		if r.ko.Spec.Configuration.Revision != nil {
+			f3.SetRevision(*r.ko.Spec.Configuration.Revision)
+		}
+		res.SetConfiguration(f3)
+	}
+	if r.ko.Spec.CreatorRequestID != nil {
+		res.SetCreatorRequestId(*r.ko.Spec.CreatorRequestID)
+	}
+	if r.ko.Spec.DeploymentMode != nil {
+		res.SetDeploymentMode(*r.ko.Spec.DeploymentMode)
+	}
+	if r.ko.Spec.EncryptionOptions != nil {
+		f6 := &svcsdk.EncryptionOptions{}
+		if r.ko.Spec.EncryptionOptions.KMSKeyID != nil {
+			f6.SetKmsKeyId(*r.ko.Spec.EncryptionOptions.KMSKeyID)
+		}
+		if r.ko.Spec.EncryptionOptions.UseAWSOwnedKey != nil {
+			f6.SetUseAwsOwnedKey(*r.ko.Spec.EncryptionOptions.UseAWSOwnedKey)
+		}
+		res.SetEncryptionOptions(f6)
+	}
+	if r.ko.Spec.EngineType != nil {
+		res.SetEngineType(*r.ko.Spec.EngineType)
+	}
+	if r.ko.Spec.EngineVersion != nil {
+		res.SetEngineVersion(*r.ko.Spec.EngineVersion)
+	}
+	if r.ko.Spec.HostInstanceType != nil {
+		res.SetHostInstanceType(*r.ko.Spec.HostInstanceType)
+	}
+	if r.ko.Spec.LdapServerMetadata != nil {
+		f10 := &svcsdk.LdapServerMetadataInput{}
+		if r.ko.Spec.LdapServerMetadata.Hosts != nil {
+			f10f0 := []*string{}
+			for _, f10f0iter := range r.ko.Spec.LdapServerMetadata.Hosts {
+				var f10f0elem string
+				f10f0elem = *f10f0iter
+				f10f0 = append(f10f0, &f10f0elem)
+			}
+			f10.SetHosts(f10f0)
+		}
+		if r.ko.Spec.LdapServerMetadata.RoleBase != nil {
+			f10.SetRoleBase(*r.ko.Spec.LdapServerMetadata.RoleBase)
+		}
+		if r.ko.Spec.LdapServerMetadata.RoleName != nil {
+			f10.SetRoleName(*r.ko.Spec.LdapServerMetadata.RoleName)
+		}
+		if r.ko.Spec.LdapServerMetadata.RoleSearchMatching != nil {
+			f10.SetRoleSearchMatching(*r.ko.Spec.LdapServerMetadata.RoleSearchMatching)
+		}
+		if r.ko.Spec.LdapServerMetadata.RoleSearchSubtree != nil {
+			f10.SetRoleSearchSubtree(*r.ko.Spec.LdapServerMetadata.RoleSearchSubtree)
+		}
+		if r.ko.Spec.LdapServerMetadata.ServiceAccountPassword != nil {
+			f10.SetServiceAccountPassword(*r.ko.Spec.LdapServerMetadata.ServiceAccountPassword)
+		}
+		if r.ko.Spec.LdapServerMetadata.ServiceAccountUsername != nil {
+			f10.SetServiceAccountUsername(*r.ko.Spec.LdapServerMetadata.ServiceAccountUsername)
+		}
+		if r.ko.Spec.LdapServerMetadata.UserBase != nil {
+			f10.SetUserBase(*r.ko.Spec.LdapServerMetadata.UserBase)
+		}
+		if r.ko.Spec.LdapServerMetadata.UserRoleName != nil {
+			f10.SetUserRoleName(*r.ko.Spec.LdapServerMetadata.UserRoleName)
+		}
+		if r.ko.Spec.LdapServerMetadata.UserSearchMatching != nil {
+			f10.SetUserSearchMatching(*r.ko.Spec.LdapServerMetadata.UserSearchMatching)
+		}
+		if r.ko.Spec.LdapServerMetadata.UserSearchSubtree != nil {
+			f10.SetUserSearchSubtree(*r.ko.Spec.LdapServerMetadata.UserSearchSubtree)
+		}
+		res.SetLdapServerMetadata(f10)
+	}
+	if r.ko.Spec.Logs != nil {
+		f11 := &svcsdk.Logs{}
+		if r.ko.Spec.Logs.Audit != nil {
+			f11.SetAudit(*r.ko.Spec.Logs.Audit)
+		}
+		if r.ko.Spec.Logs.General != nil {
+			f11.SetGeneral(*r.ko.Spec.Logs.General)
+		}
+		res.SetLogs(f11)
+	}
+	if r.ko.Spec.MaintenanceWindowStartTime != nil {
+		f12 := &svcsdk.WeeklyStartTime{}
+		if r.ko.Spec.MaintenanceWindowStartTime.DayOfWeek != nil {
+			f12.SetDayOfWeek(*r.ko.Spec.MaintenanceWindowStartTime.DayOfWeek)
+		}
+		if r.ko.Spec.MaintenanceWindowStartTime.TimeOfDay != nil {
+			f12.SetTimeOfDay(*r.ko.Spec.MaintenanceWindowStartTime.TimeOfDay)
+		}
+		if r.ko.Spec.MaintenanceWindowStartTime.TimeZone != nil {
+			f12.SetTimeZone(*r.ko.Spec.MaintenanceWindowStartTime.TimeZone)
+		}
+		res.SetMaintenanceWindowStartTime(f12)
+	}
+	if r.ko.Spec.PubliclyAccessible != nil {
+		res.SetPubliclyAccessible(*r.ko.Spec.PubliclyAccessible)
+	}
+	if r.ko.Spec.SecurityGroups != nil {
+		f14 := []*string{}
+		for _, f14iter := range r.ko.Spec.SecurityGroups {
+			var f14elem string
+			f14elem = *f14iter
+			f14 = append(f14, &f14elem)
+		}
+		res.SetSecurityGroups(f14)
+	}
+	if r.ko.Spec.StorageType != nil {
+		res.SetStorageType(*r.ko.Spec.StorageType)
+	}
+	if r.ko.Spec.SubnetIDs != nil {
+		f16 := []*string{}
+		for _, f16iter := range r.ko.Spec.SubnetIDs {
+			var f16elem string
+			f16elem = *f16iter
+			f16 = append(f16, &f16elem)
+		}
+		res.SetSubnetIds(f16)
+	}
+	if r.ko.Spec.Tags != nil {
+		f17 := map[string]*string{}
+		for f17key, f17valiter := range r.ko.Spec.Tags {
+			var f17val string
+			f17val = *f17valiter
+			f17[f17key] = &f17val
+		}
+		res.SetTags(f17)
+	}
+	if r.ko.Spec.Users != nil {
+		f18 := []*svcsdk.User{}
+		for _, f18iter := range r.ko.Spec.Users {
+			f18elem := &svcsdk.User{}
+			if f18iter.ConsoleAccess != nil {
+				f18elem.SetConsoleAccess(*f18iter.ConsoleAccess)
+			}
+			if f18iter.Groups != nil {
+				f18elemf1 := []*string{}
+				for _, f18elemf1iter := range f18iter.Groups {
+					var f18elemf1elem string
+					f18elemf1elem = *f18elemf1iter
+					f18elemf1 = append(f18elemf1, &f18elemf1elem)
+				}
+				f18elem.SetGroups(f18elemf1)
+			}
+			if f18iter.Password != nil {
+				tmpSecret, err := rm.rr.SecretValueFromReference(ctx, f18iter.Password)
+				if err != nil {
+					return nil, err
+				}
+				if tmpSecret != "" {
+					f18elem.SetPassword(tmpSecret)
+				}
+			}
+			if f18iter.Username != nil {
+				f18elem.SetUsername(*f18iter.Username)
+			}
+			f18 = append(f18, f18elem)
+		}
+		res.SetUsers(f18)
+	}
+`
+	assert.Equal(
+		expected,
+		code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1),
+	)
+}
