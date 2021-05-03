@@ -365,7 +365,7 @@ func (r *CRD) SpecIdentifierField() *string {
 	}
 	for memberName := range r.SpecFields {
 		if util.InStrings(memberName, lookup) {
-			return &memberName
+			return &r.SpecFields[memberName].Names.Camel
 		}
 	}
 	return nil
