@@ -274,6 +274,7 @@ func (a *SDKAPI) HasConflictingTypeName(typeName string, cfg *ackgenconfig.Confi
 	cleanTypeName := names.New(typeName).Camel
 	crdNames := a.CRDNames(cfg)
 	crdResourceNames := []string{}
+	crdListResourceNames := []string{}
 	crdSpecNames := []string{}
 	crdStatusNames := []string{}
 
@@ -282,10 +283,12 @@ func (a *SDKAPI) HasConflictingTypeName(typeName string, cfg *ackgenconfig.Confi
 		crdResourceNames = append(crdResourceNames, cleanResourceName)
 		crdSpecNames = append(crdSpecNames, cleanResourceName+"Spec")
 		crdStatusNames = append(crdStatusNames, cleanResourceName+"Status")
+		crdListResourceNames = append(crdListResourceNames, cleanResourceName+"List")
 	}
 	return util.InStrings(cleanTypeName, crdResourceNames) ||
 		util.InStrings(cleanTypeName, crdSpecNames) ||
-		util.InStrings(cleanTypeName, crdStatusNames)
+		util.InStrings(cleanTypeName, crdStatusNames) ||
+		util.InStrings(cleanTypeName, crdListResourceNames)
 }
 
 // ServiceID returns the exact `metadata.serviceId` attribute for the AWS
