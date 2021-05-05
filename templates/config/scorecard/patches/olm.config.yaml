@@ -18,16 +18,21 @@
     labels:
       suite: olm
       test: olm-crds-have-validation-test
-- op: add
-  path: /stages/0/tests/-
-  value:
-    entrypoint:
-    - scorecard-test
-    - olm-crds-have-resources
-    image: quay.io/operator-framework/scorecard-test:v1.7.1
-    labels:
-      suite: olm
-      test: olm-crds-have-resources-test
+## This test is disabled as the current state of the ACK
+## is such that the controllers themselves don't manage
+## other resources (e.g. pods, deployments) in the cluster
+## where they are deployed.
+## This test is not currently a requirement for certification.
+# - op: add
+#   path: /stages/0/tests/-
+#   value:
+#     entrypoint:
+#     - scorecard-test
+#     - olm-crds-have-resources
+#     image: quay.io/operator-framework/scorecard-test:v1.7.1
+#     labels:
+#       suite: olm
+#       test: olm-crds-have-resources-test
 - op: add
   path: /stages/0/tests/-
   value:
@@ -38,13 +43,18 @@
     labels:
       suite: olm
       test: olm-spec-descriptors-test
-- op: add
-  path: /stages/0/tests/-
-  value:
-    entrypoint:
-    - scorecard-test
-    - olm-status-descriptors
-    image: quay.io/operator-framework/scorecard-test:v1.7.1
-    labels:
-      suite: olm
-      test: olm-status-descriptors-test
+## This test is disabled as the status descriptor annotations are
+## derived from API markers on the *Status type definitions, or scaffolded
+## by the olm generator which cannot currently be done with the 
+## input data provided to the olm generator.
+## This test is not currently a requirement for certification.
+# - op: add
+#   path: /stages/0/tests/-
+#   value:
+#     entrypoint:
+#     - scorecard-test
+#     - olm-status-descriptors
+#     image: quay.io/operator-framework/scorecard-test:v1.7.1
+#     labels:
+#       suite: olm
+#       test: olm-status-descriptors-test
