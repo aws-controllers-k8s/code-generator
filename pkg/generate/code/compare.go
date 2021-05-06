@@ -313,11 +313,17 @@ func compareScalar(
 // fields and, if there is a difference, adds the difference to a variable
 // representing an `ackcompare.Delta`.
 //
-// Output code will look something like this:
+// For string to string maps output code will look something like this:
 //
 //   if !ackcompare.MapStringStringPEqual(a.ko.Spec.Tags, b.ko.Spec.Tags) {
 //     delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
 //   }
+//
+// For string to struct maps output code will look something like this:
+//
+//  if !equalRouteSettingsMap(a.ko.Spec.RouteSettings, b.ko.Spec.RouteSettings) {
+//  	delta.Add("Spec.RouteSettings", a.ko.Spec.RouteSettings, b.ko.Spec.RouteSettings)
+//  }
 func compareMap(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,
@@ -363,10 +369,15 @@ func compareMap(
 			indent, firstResVarName, secondResVarName,
 		)
 	case "structure":
-		// TODO(jaypipes): Implement this by walking the keys and struct values
-		// and comparing each struct individually, building up the fieldPath
-		// appropriately...
-		return ""
+		// if !equalTagsMap(a.ko.Spec.Tags, b.ko.Spec.Tags) {
+		out += fmt.Sprintf(
+			"%sif !equal%s(%s, %s) {\n",
+			indent,
+			shape.ShapeName,
+			firstResVarName,
+			secondResVarName,
+		)
+
 	default:
 		panic("Unsupported shape type in generate.code.compareMap: " + shape.Type)
 	}
@@ -431,10 +442,15 @@ func compareSlice(
 			indent, firstResVarName, secondResVarName,
 		)
 	case "structure":
-		// TODO(jaypipes): Implement this by walking the slice of struct values
-		// and comparing each struct individually, building up the fieldPath
-		// appropriately...
-		return ""
+		// if !equalDomainNameConfigurations(a, b []*svcapitypes.DomainNameConfiguration) {
+		out += fmt.Sprintf(
+			"%sif !equal%s(%s, %s) {\n",
+			indent,
+			shape.ShapeName,
+			firstResVarName,
+			secondResVarName,
+		)
+
 	default:
 		panic("Unsupported shape type in generate.code.compareSlice: " + shape.Type)
 	}

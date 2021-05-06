@@ -3,7 +3,13 @@
 package {{ .CRD.Names.Snake }}
 
 import (
-	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
+    ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
+
+    svcapitypes "github.com/aws-controllers-k8s/{{ .ServiceIDClean }}-controller/apis/v1alpha1"
+)
+
+var (
+    _ = svcapitypes.GroupVersion
 )
 
 // newResourceDelta returns a new `ackcompare.Delta` used to compare two
@@ -21,3 +27,4 @@ func newResourceDelta(
 {{ GoCodeCompare .CRD "delta" "a.ko" "b.ko" 1}}
     return delta
 }
+{{ GoCodeCompareHelpers .CRD 0 -}}

@@ -96,6 +96,9 @@ var (
 		"GoCodeCompare": func(r *ackmodel.CRD, deltaVarName string, sourceVarName string, targetVarName string, indentLevel int) string {
 			return code.CompareResource(r.Config(), r, deltaVarName, sourceVarName, targetVarName, indentLevel)
 		},
+		"GoCodeCompareHelpers": func(r *ackmodel.CRD, indentLevel int) string {
+			return code.CompareResourceHelpers(r.Config(), r, indentLevel)
+		},
 		"Empty": func(subject string) bool {
 			return strings.TrimSpace(subject) == ""
 		},
