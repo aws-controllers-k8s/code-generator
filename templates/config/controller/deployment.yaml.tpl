@@ -36,6 +36,8 @@ spec:
         - "$(ACK_LOG_LEVEL)"
         - --resource-tags
         - "$(ACK_RESOURCE_TAGS)"
+        - --listen-namespace
+        - "$(ACK_LISTEN_NAMESPACE)"
         image: controller:latest
         name: controller
         ports:

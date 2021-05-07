@@ -28,6 +28,8 @@ aws:
   # If specified, use the AWS region for AWS API calls
   region: ""
 
+listenNamespace: ""
+
 resourceTags:
   # Configures the ACK service controller to always set key/value pairs tags on resources that it manages.
   - services.k8s.aws/managed=true
