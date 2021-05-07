@@ -17,6 +17,9 @@ func (rm *resourceManager) sdkFind(
 	if err != nil {
 		return nil, err
 	}
+{{- if $hookCode := Hook .CRD "sdk_read_one_post_build_request" }}
+{{ $hookCode }} (ctx, r, input)
+{{- end }}
 {{ $setCode := GoCodeSetReadOneOutput .CRD "resp" "ko" 1 true }}
 	{{ if not ( Empty $setCode ) }}resp{{ else }}_{{ end }}, respErr := rm.sdkapi.{{ .CRD.Ops.ReadOne.Name }}WithContext(ctx, input)
 {{- if $hookCode := Hook .CRD "sdk_read_one_post_request" }}
@@ -52,7 +55,7 @@ func (rm *resourceManager) sdkFind(
 }
 
 // requiredFieldsMissingFromReadOneInput returns true if there are any fields
-// for the ReadOne Input shape that are required by not present in the
+// for the ReadOne Input shape that are required but not present in the
 // resource's Spec or Status
 func (rm *resourceManager) requiredFieldsMissingFromReadOneInput(
 	r *resource,

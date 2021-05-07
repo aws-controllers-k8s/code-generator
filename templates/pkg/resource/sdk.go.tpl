@@ -59,6 +59,9 @@ func (rm *resourceManager) sdkCreate(
 	if err != nil {
 		return nil, err
 	}
+{{- if $hookCode := Hook .CRD "sdk_create_post_build_request" }}
+{{ $hookCode }} (ctx, r, input)
+{{- end }}	
 {{ $createCode := GoCodeSetCreateOutput .CRD "resp" "ko" 1 false }}
 	{{ if not ( Empty $createCode ) }}resp{{ else }}_{{ end }}, respErr := rm.sdkapi.{{ .CRD.Ops.Create.Name }}WithContext(ctx, input)
 {{- if $hookCode := Hook .CRD "sdk_create_post_request" }}
