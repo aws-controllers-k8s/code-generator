@@ -20,7 +20,9 @@ func (rm *resourceManager) sdkUpdate(
 	if err != nil {
 		return nil, err
 	}
-
+{{- if $hookCode := Hook .CRD "sdk_update_pre_build_request" }}
+{{ $hookCode }} 
+{{- end }}
 {{ $setCode := GoCodeSetUpdateOutput .CRD "resp" "ko" 1 false }}
 	{{ if not ( Empty $setCode ) }}resp{{ else }}_{{ end }}, respErr := rm.sdkapi.{{ .CRD.Ops.Update.Name }}WithContext(ctx, input)
 {{- if $hookCode := Hook .CRD "sdk_update_post_request" }}
