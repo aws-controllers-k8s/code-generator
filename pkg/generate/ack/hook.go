@@ -34,6 +34,12 @@ code paths:
 * sdk_create_pre_build_request
 * sdk_update_pre_build_request
 * sdk_delete_pre_build_request
+* sdk_read_one_post_build_request
+* sdk_read_many_post_build_request
+* sdk_get_attributes_post_build_request
+* sdk_create_post_build_request
+* sdk_update_post_build_request
+* sdk_delete_post_build_request
 * sdk_read_one_post_request
 * sdk_read_many_post_request
 * sdk_get_attributes_post_request
@@ -54,6 +60,9 @@ code paths:
 The "pre_build_request" hooks are called BEFORE the call to construct
 the Input shape that is used in the API operation and therefore BEFORE
 any call to validate that Input shape.
+
+The "post_build_request" hooks are called AFTER the call to construct 
+the Input shape but BEFORE the API operation. 
 
 The "post_request" hooks are called IMMEDIATELY AFTER the API operation
 aws-sdk-go client call.  These hooks will have access to a Go variable
