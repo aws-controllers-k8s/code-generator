@@ -21,8 +21,8 @@ func (rm *resourceManager) sdkUpdate(
 	// contain any useful information. Instead, below, we'll be returning a
 	// DeepCopy of the supplied desired state, which should be fine because
 	// that desired state has been constructed from a call to GetAttributes...
-	_, respErr := rm.sdkapi.{{ .CRD.Ops.SetAttributes.Name }}WithContext(ctx, input)
-	rm.metrics.RecordAPICall("SET_ATTRIBUTES", "{{ .CRD.Ops.SetAttributes.Name }}", respErr)
+	_, respErr := rm.sdkapi.{{ .CRD.Ops.SetAttributes.ExportedName }}WithContext(ctx, input)
+	rm.metrics.RecordAPICall("SET_ATTRIBUTES", "{{ .CRD.Ops.SetAttributes.ExportedName }}", respErr)
 	if respErr != nil {
 		if awsErr, ok := ackerr.AWSError(respErr); ok && awsErr.Code() == "{{ ResourceExceptionCode .CRD 404 }}" {{ GoCodeSetExceptionMessagePrefixCheck .CRD 404 }}{
 			// Technically, this means someone deleted the backend resource in

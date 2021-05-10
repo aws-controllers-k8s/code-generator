@@ -63,11 +63,11 @@ func (rm *resourceManager) sdkCreate(
 {{ $hookCode }} 
 {{- end }}	
 {{ $createCode := GoCodeSetCreateOutput .CRD "resp" "ko" 1 false }}
-	{{ if not ( Empty $createCode ) }}resp{{ else }}_{{ end }}, respErr := rm.sdkapi.{{ .CRD.Ops.Create.Name }}WithContext(ctx, input)
+	{{ if not ( Empty $createCode ) }}resp{{ else }}_{{ end }}, respErr := rm.sdkapi.{{ .CRD.Ops.Create.ExportedName }}WithContext(ctx, input)
 {{- if $hookCode := Hook .CRD "sdk_create_post_request" }}
 {{ $hookCode }}
 {{- end }}
-	rm.metrics.RecordAPICall("CREATE", "{{ .CRD.Ops.Create.Name }}", respErr)
+	rm.metrics.RecordAPICall("CREATE", "{{ .CRD.Ops.Create.ExportedName }}", respErr)
 	if respErr != nil {
 		return nil, respErr
 	}

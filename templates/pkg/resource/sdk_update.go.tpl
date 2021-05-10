@@ -24,11 +24,11 @@ func (rm *resourceManager) sdkUpdate(
 {{ $hookCode }} 
 {{- end }}
 {{ $setCode := GoCodeSetUpdateOutput .CRD "resp" "ko" 1 false }}
-	{{ if not ( Empty $setCode ) }}resp{{ else }}_{{ end }}, respErr := rm.sdkapi.{{ .CRD.Ops.Update.Name }}WithContext(ctx, input)
+	{{ if not ( Empty $setCode ) }}resp{{ else }}_{{ end }}, respErr := rm.sdkapi.{{ .CRD.Ops.Update.ExportedName }}WithContext(ctx, input)
 {{- if $hookCode := Hook .CRD "sdk_update_post_request" }}
 {{ $hookCode }}
 {{- end }}
-	rm.metrics.RecordAPICall("UPDATE", "{{ .CRD.Ops.Update.Name }}", respErr)
+	rm.metrics.RecordAPICall("UPDATE", "{{ .CRD.Ops.Update.ExportedName }}", respErr)
 	if respErr != nil {
 		return nil, respErr
 	}
