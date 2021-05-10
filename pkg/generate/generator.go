@@ -356,6 +356,7 @@ func (g *Generator) GetTypeDefs() ([]*ackmodel.TypeDef, error) {
 			continue
 		}
 		tdefs = append(tdefs, &ackmodel.TypeDef{
+			Shape: shape,
 			Names: tdefNames,
 			Attrs: attrs,
 		})

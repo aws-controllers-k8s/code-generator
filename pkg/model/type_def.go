@@ -14,6 +14,8 @@
 package model
 
 import (
+	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
+
 	"github.com/aws-controllers-k8s/code-generator/pkg/names"
 )
 
@@ -29,4 +31,5 @@ const (
 type TypeDef struct {
 	Names names.Names
 	Attrs map[string]*Attr
+	Shape *awssdkmodel.Shape
 }
