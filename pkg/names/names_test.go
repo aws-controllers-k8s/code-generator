@@ -49,6 +49,7 @@ func TestNames(t *testing.T) {
 		{"Ip", "IP", "ip", "ip"},
 		{"MultipartUpload", "MultipartUpload", "multipartUpload", "multipart_upload"},
 		{"Package", "Package", "package_", "package_"},
+		{"LdapServerMetadata", "LDAPServerMetadata", "ldapServerMetadata", "ldap_server_metadata"},
 	}
 	for _, tc := range testCases {
 		n := names.New(tc.original)
