@@ -67,7 +67,7 @@ func (e *external) Observe(ctx context.Context, mg cpresource.Managed) (managed.
 	if err := e.preObserve(ctx, cr, input); err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(err, "pre-observe failed")
 	}
-	resp, err := e.client.{{ .CRD.Ops.ReadOne.Name }}WithContext(ctx, input)
+	resp, err := e.client.{{ .CRD.Ops.ReadOne.ExportedName }}WithContext(ctx, input)
 	if err != nil {
 		return managed.ExternalObservation{ResourceExists: false}, awsclient.Wrap(cpresource.Ignore(IsNotFound, err), errDescribe)
 	}
@@ -76,7 +76,7 @@ func (e *external) Observe(ctx context.Context, mg cpresource.Managed) (managed.
 	if err := e.preObserve(ctx, cr, input); err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(err, "pre-observe failed")
 	}
-	resp, err := e.client.{{ .CRD.Ops.GetAttributes.Name }}WithContext(ctx, input)
+	resp, err := e.client.{{ .CRD.Ops.GetAttributes.ExportedName }}WithContext(ctx, input)
 	if err != nil {
 		return managed.ExternalObservation{ResourceExists: false}, awsclient.Wrap(cpresource.Ignore(IsNotFound, err), errDescribe)
 	}
@@ -85,7 +85,7 @@ func (e *external) Observe(ctx context.Context, mg cpresource.Managed) (managed.
 	if err := e.preObserve(ctx, cr, input); err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(err, "pre-observe failed")
 	}
-	resp, err := e.client.{{ .CRD.Ops.ReadMany.Name }}WithContext(ctx, input)
+	resp, err := e.client.{{ .CRD.Ops.ReadMany.ExportedName }}WithContext(ctx, input)
 	if err != nil {
 		return managed.ExternalObservation{ResourceExists: false}, awsclient.Wrap(cpresource.Ignore(IsNotFound, err), errDescribe)
 	}
@@ -124,7 +124,7 @@ func (e *external) Create(ctx context.Context, mg cpresource.Managed) (managed.E
 	if err := e.preCreate(ctx, cr, input); err != nil {
 		return managed.ExternalCreation{}, errors.Wrap(err, "pre-create failed")
 	}
-	resp, err := e.client.{{ .CRD.Ops.Create.Name }}WithContext(ctx, input)
+	resp, err := e.client.{{ .CRD.Ops.Create.ExportedName }}WithContext(ctx, input)
 	if err != nil {
 		return managed.ExternalCreation{}, awsclient.Wrap(err, errCreate)
 	}
@@ -142,7 +142,7 @@ func (e *external) Update(ctx context.Context, mg cpresource.Managed) (managed.E
 	if err := e.preUpdate(ctx, cr, input); err != nil {
 		return managed.ExternalUpdate{}, errors.Wrap(err, "pre-update failed")
 	}
-	resp, err := e.client.{{ .CRD.Ops.Update.Name }}WithContext(ctx, input)
+	resp, err := e.client.{{ .CRD.Ops.Update.ExportedName }}WithContext(ctx, input)
 	if err != nil {
 		return managed.ExternalUpdate{}, awsclient.Wrap(err, errUpdate)
 	}
@@ -167,7 +167,7 @@ func (e *external) Delete(ctx context.Context, mg cpresource.Managed) error {
 	if ignore {
 		return nil
 	}
-	resp, err := e.client.{{ .CRD.Ops.Delete.Name }}WithContext(ctx, input)
+	resp, err := e.client.{{ .CRD.Ops.Delete.ExportedName }}WithContext(ctx, input)
 	return e.postDelete(ctx, cr, resp, awsclient.Wrap(cpresource.Ignore(IsNotFound, err), errDelete))
 	{{- else }}
 	return e.delete(ctx, mg)

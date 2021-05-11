@@ -21,11 +21,11 @@ func (rm *resourceManager) sdkFind(
 {{ $hookCode }}
 {{- end }}
 {{ $setCode := GoCodeSetReadOneOutput .CRD "resp" "ko" 1 true }}
-	{{ if not ( Empty $setCode ) }}resp{{ else }}_{{ end }}, respErr := rm.sdkapi.{{ .CRD.Ops.ReadOne.Name }}WithContext(ctx, input)
+	{{ if not ( Empty $setCode ) }}resp{{ else }}_{{ end }}, respErr := rm.sdkapi.{{ .CRD.Ops.ReadOne.ExportedName }}WithContext(ctx, input)
 {{- if $hookCode := Hook .CRD "sdk_read_one_post_request" }}
 {{ $hookCode }}
 {{- end }}
-	rm.metrics.RecordAPICall("READ_ONE", "{{ .CRD.Ops.ReadOne.Name }}", respErr)
+	rm.metrics.RecordAPICall("READ_ONE", "{{ .CRD.Ops.ReadOne.ExportedName }}", respErr)
 	if respErr != nil {
 		if awsErr, ok := ackerr.AWSError(respErr); ok && awsErr.Code() == "{{ ResourceExceptionCode .CRD 404 }}" {{ GoCodeSetExceptionMessagePrefixCheck .CRD 404 }}{
 			return nil, ackerr.NotFound

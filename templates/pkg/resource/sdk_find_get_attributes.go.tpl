@@ -21,11 +21,11 @@ func (rm *resourceManager) sdkFind(
 {{ $hookCode }}
 {{- end }}
 {{ $setCode := GoCodeGetAttributesSetOutput .CRD "resp" "ko" 1 }}
-	{{ if not ( Empty $setCode ) }}resp{{ else }}_{{ end }}, respErr := rm.sdkapi.{{ .CRD.Ops.GetAttributes.Name }}WithContext(ctx, input)
+	{{ if not ( Empty $setCode ) }}resp{{ else }}_{{ end }}, respErr := rm.sdkapi.{{ .CRD.Ops.GetAttributes.ExportedName }}WithContext(ctx, input)
 {{- if $hookCode := Hook .CRD "sdk_get_attributes_post_request" }}
 {{ $hookCode }}
 {{- end }}
-	rm.metrics.RecordAPICall("GET_ATTRIBUTES", "{{ .CRD.Ops.GetAttributes.Name }}", respErr)
+	rm.metrics.RecordAPICall("GET_ATTRIBUTES", "{{ .CRD.Ops.GetAttributes.ExportedName }}", respErr)
 	if respErr != nil {
 		if awsErr, ok := ackerr.AWSError(respErr); ok && awsErr.Code() == "{{ ResourceExceptionCode .CRD 404 }}" {{ GoCodeSetExceptionMessagePrefixCheck .CRD 404 }}{
 			return nil, ackerr.NotFound

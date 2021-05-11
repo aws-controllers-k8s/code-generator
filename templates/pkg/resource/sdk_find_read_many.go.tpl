@@ -14,11 +14,11 @@ func (rm *resourceManager) sdkFind(
 {{ $hookCode }}
 {{- end }}
 {{ $setCode := GoCodeSetReadManyOutput .CRD "resp" "ko" 1 true }}
-	{{ if not ( Empty $setCode ) }}resp{{ else }}_{{ end }}, respErr := rm.sdkapi.{{ .CRD.Ops.ReadMany.Name }}WithContext(ctx, input)
+	{{ if not ( Empty $setCode ) }}resp{{ else }}_{{ end }}, respErr := rm.sdkapi.{{ .CRD.Ops.ReadMany.ExportedName }}WithContext(ctx, input)
 {{- if $hookCode := Hook .CRD "sdk_read_many_post_request" }}
 {{ $hookCode }}
 {{- end }}
-	rm.metrics.RecordAPICall("READ_MANY", "{{ .CRD.Ops.ReadMany.Name }}", respErr)
+	rm.metrics.RecordAPICall("READ_MANY", "{{ .CRD.Ops.ReadMany.ExportedName }}", respErr)
 	if respErr != nil {
 		if awsErr, ok := ackerr.AWSError(respErr); ok && awsErr.Code() == "{{ ResourceExceptionCode .CRD 404 }}" {{ GoCodeSetExceptionMessagePrefixCheck .CRD 404 }}{
 			return nil, ackerr.NotFound
