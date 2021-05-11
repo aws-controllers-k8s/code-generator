@@ -96,6 +96,7 @@ var (
 		{"Json", "JSON", "json", nil},
 		{"Jwt", "JWT", "jwt", nil},
 		{"Kms", "KMS", "kms", nil},
+		{"Ldap", "LDAP", "ldap", nil},
 		{"Mfa", "MFA", "mfa", nil},
 		{"Sdk", "SDK", "sdk", nil},
 		{"Sha256", "SHA256", "sha256", nil},

@@ -1460,46 +1460,46 @@ func TestSetSDK_MQ_Broker_Create(t *testing.T) {
 	if r.ko.Spec.HostInstanceType != nil {
 		res.SetHostInstanceType(*r.ko.Spec.HostInstanceType)
 	}
-	if r.ko.Spec.LdapServerMetadata != nil {
+	if r.ko.Spec.LDAPServerMetadata != nil {
 		f10 := &svcsdk.LdapServerMetadataInput{}
-		if r.ko.Spec.LdapServerMetadata.Hosts != nil {
+		if r.ko.Spec.LDAPServerMetadata.Hosts != nil {
 			f10f0 := []*string{}
-			for _, f10f0iter := range r.ko.Spec.LdapServerMetadata.Hosts {
+			for _, f10f0iter := range r.ko.Spec.LDAPServerMetadata.Hosts {
 				var f10f0elem string
 				f10f0elem = *f10f0iter
 				f10f0 = append(f10f0, &f10f0elem)
 			}
 			f10.SetHosts(f10f0)
 		}
-		if r.ko.Spec.LdapServerMetadata.RoleBase != nil {
-			f10.SetRoleBase(*r.ko.Spec.LdapServerMetadata.RoleBase)
+		if r.ko.Spec.LDAPServerMetadata.RoleBase != nil {
+			f10.SetRoleBase(*r.ko.Spec.LDAPServerMetadata.RoleBase)
 		}
-		if r.ko.Spec.LdapServerMetadata.RoleName != nil {
-			f10.SetRoleName(*r.ko.Spec.LdapServerMetadata.RoleName)
+		if r.ko.Spec.LDAPServerMetadata.RoleName != nil {
+			f10.SetRoleName(*r.ko.Spec.LDAPServerMetadata.RoleName)
 		}
-		if r.ko.Spec.LdapServerMetadata.RoleSearchMatching != nil {
-			f10.SetRoleSearchMatching(*r.ko.Spec.LdapServerMetadata.RoleSearchMatching)
+		if r.ko.Spec.LDAPServerMetadata.RoleSearchMatching != nil {
+			f10.SetRoleSearchMatching(*r.ko.Spec.LDAPServerMetadata.RoleSearchMatching)
 		}
-		if r.ko.Spec.LdapServerMetadata.RoleSearchSubtree != nil {
-			f10.SetRoleSearchSubtree(*r.ko.Spec.LdapServerMetadata.RoleSearchSubtree)
+		if r.ko.Spec.LDAPServerMetadata.RoleSearchSubtree != nil {
+			f10.SetRoleSearchSubtree(*r.ko.Spec.LDAPServerMetadata.RoleSearchSubtree)
 		}
-		if r.ko.Spec.LdapServerMetadata.ServiceAccountPassword != nil {
-			f10.SetServiceAccountPassword(*r.ko.Spec.LdapServerMetadata.ServiceAccountPassword)
+		if r.ko.Spec.LDAPServerMetadata.ServiceAccountPassword != nil {
+			f10.SetServiceAccountPassword(*r.ko.Spec.LDAPServerMetadata.ServiceAccountPassword)
 		}
-		if r.ko.Spec.LdapServerMetadata.ServiceAccountUsername != nil {
-			f10.SetServiceAccountUsername(*r.ko.Spec.LdapServerMetadata.ServiceAccountUsername)
+		if r.ko.Spec.LDAPServerMetadata.ServiceAccountUsername != nil {
+			f10.SetServiceAccountUsername(*r.ko.Spec.LDAPServerMetadata.ServiceAccountUsername)
 		}
-		if r.ko.Spec.LdapServerMetadata.UserBase != nil {
-			f10.SetUserBase(*r.ko.Spec.LdapServerMetadata.UserBase)
+		if r.ko.Spec.LDAPServerMetadata.UserBase != nil {
+			f10.SetUserBase(*r.ko.Spec.LDAPServerMetadata.UserBase)
 		}
-		if r.ko.Spec.LdapServerMetadata.UserRoleName != nil {
-			f10.SetUserRoleName(*r.ko.Spec.LdapServerMetadata.UserRoleName)
+		if r.ko.Spec.LDAPServerMetadata.UserRoleName != nil {
+			f10.SetUserRoleName(*r.ko.Spec.LDAPServerMetadata.UserRoleName)
 		}
-		if r.ko.Spec.LdapServerMetadata.UserSearchMatching != nil {
-			f10.SetUserSearchMatching(*r.ko.Spec.LdapServerMetadata.UserSearchMatching)
+		if r.ko.Spec.LDAPServerMetadata.UserSearchMatching != nil {
+			f10.SetUserSearchMatching(*r.ko.Spec.LDAPServerMetadata.UserSearchMatching)
 		}
-		if r.ko.Spec.LdapServerMetadata.UserSearchSubtree != nil {
-			f10.SetUserSearchSubtree(*r.ko.Spec.LdapServerMetadata.UserSearchSubtree)
+		if r.ko.Spec.LDAPServerMetadata.UserSearchSubtree != nil {
+			f10.SetUserSearchSubtree(*r.ko.Spec.LDAPServerMetadata.UserSearchSubtree)
 		}
 		res.SetLdapServerMetadata(f10)
 	}
