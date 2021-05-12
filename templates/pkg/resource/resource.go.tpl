@@ -12,6 +12,11 @@ import (
 	svcapitypes "github.com/aws-controllers-k8s/{{ .ServiceIDClean }}-controller/apis/{{ .APIVersion}}"
 )
 
+// Hack to avoid import errors during build...
+var (
+	_ = &ackerrors.MissingNameIdentifier
+)
+
 // resource implements the `aws-controller-k8s/runtime/pkg/types.AWSResource`
 // interface
 type resource struct {
