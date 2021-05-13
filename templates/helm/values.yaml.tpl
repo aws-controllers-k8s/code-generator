@@ -28,7 +28,8 @@ aws:
   # If specified, use the AWS region for AWS API calls
   region: ""
 
-listenNamespace: ""
+# If specified, the service controller will watch for object creation only in the provided namespace
+watchNamespace: ""
 
 resourceTags:
   # Configures the ACK service controller to always set key/value pairs tags on resources that it manages.
