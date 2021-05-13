@@ -20,7 +20,7 @@ func (rm *resourceManager) sdkUpdate(
 	if err != nil {
 		return nil, err
 	}
-{{- if $hookCode := Hook .CRD "sdk_update_pre_build_request" }}
+{{- if $hookCode := Hook .CRD "sdk_update_post_build_request" }}
 {{ $hookCode }} 
 {{- end }}
 {{ $setCode := GoCodeSetUpdateOutput .CRD "resp" "ko" 1 false }}
