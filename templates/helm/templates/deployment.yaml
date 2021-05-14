@@ -47,6 +47,8 @@ spec:
         - "$(ACK_LOG_LEVEL)"
         - --resource-tags
         - "$(ACK_RESOURCE_TAGS)"
+        - --watch-namespace
+        - "$(ACK_WATCH_NAMESPACE)"
         image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
         name: controller
         ports:
@@ -60,6 +62,8 @@ spec:
               fieldPath: metadata.namespace
         - name: AWS_REGION
           value: {{ .Values.aws.region }}
+        - name: ACK_WATCH_NAMESPACE
+          value: {{ .Values.watchNamespace }}
         - name: ACK_RESOURCE_TAGS
           value: {{ join "," .Values.resourceTags | quote }}
       terminationGracePeriodSeconds: 10
