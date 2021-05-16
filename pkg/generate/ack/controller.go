@@ -96,6 +96,9 @@ var (
 		"GoCodeCompare": func(r *ackmodel.CRD, deltaVarName string, sourceVarName string, targetVarName string, indentLevel int) string {
 			return code.CompareResource(r.Config(), r, deltaVarName, sourceVarName, targetVarName, indentLevel)
 		},
+		"GoCodeIsEqual": func(typeDef *ackmodel.TypeDef, sourceVarName string, targetVarName string, indentLevel int) string {
+			return code.IsEqualTypeDef(typeDef, sourceVarName, targetVarName, indentLevel)
+		},
 		"Empty": func(subject string) bool {
 			return strings.TrimSpace(subject) == ""
 		},
@@ -169,6 +172,20 @@ func Controller(
 		return nil, err
 	}
 
+	typeDefs, err := g.GetTypeDefs()
+	if err != nil {
+		return nil, err
+	}
+	equalVars := templateCompareVars{
+		metaVars,
+		typeDefs,
+	}
+
+	// Next add the template for pkg/compare/struct.go file
+	if err = ts.Add("pkg/compare/struct.go", "pkg/compare/struct.go.tpl", equalVars); err != nil {
+		return nil, err
+	}
+
 	// Next add the template for pkg/version/version.go file
 	if err = ts.Add("pkg/version/version.go", "pkg/version/version.go.tpl", nil); err != nil {
 		return nil, err
@@ -202,4 +219,11 @@ func Controller(
 type templateCmdVars struct {
 	templateset.MetaVars
 	SnakeCasedCRDNames []string
+}
+
+// templateCompareVars contains template variables for the template that outputs Go
+// code for equality/comparison helper functions.
+type templateCompareVars struct {
+	templateset.MetaVars
+	TypeDefs []*ackmodel.TypeDef
 }
