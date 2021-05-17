@@ -416,6 +416,18 @@ func setResourceReadMany(
 	// operation by checking for matching values in these fields.
 	matchFieldNames := r.ListOpMatchFieldNames()
 
+	for _, matchFieldName := range matchFieldNames {
+		_, foundSpec := r.SpecFields[matchFieldName]
+		_, foundStatus := r.StatusFields[matchFieldName]
+		if !foundSpec && !foundStatus {
+			msg := fmt.Sprintf(
+				"Match field name %s is not in %s Spec or Status fields",
+				matchFieldName, r.Names.Camel,
+			)
+			panic(msg)
+		}
+	}
+
 	// found := false
 	out += fmt.Sprintf("%sfound := false\n", indent)
 	// for _, elem := range resp.CacheClusters {
