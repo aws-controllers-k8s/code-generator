@@ -469,16 +469,22 @@ func setResourceReadMany(
 		var targetMemberShapeRef *awssdkmodel.ShapeRef
 		targetAdaptedVarName := targetVarName
 		// Check that the field has potentially been renamed
-		renamedName, _ := r.InputFieldRename(
+		renamedName, foundInputFieldRename := r.InputFieldRename(
 			op.Name, memberName,
 		)
 		f, found = r.SpecFields[renamedName]
 		if found {
 			targetAdaptedVarName += cfg.PrefixConfig.SpecField
 		} else {
-			f, found = r.StatusFields[memberName]
+			f, found = r.StatusFields[renamedName]
 			if !found {
-				// TODO(jaypipes): check generator config for exceptions?
+				if foundInputFieldRename {
+					msg := fmt.Sprintf(
+						"Input field rename %s for operation %s is not part of %s Spec or Status fields",
+						memberName, op.Name, r.Names.Camel,
+					)
+					panic(msg)
+				}
 				continue
 			}
 			targetAdaptedVarName += cfg.PrefixConfig.StatusField
@@ -521,7 +527,7 @@ func setResourceReadMany(
 			//                  continue
 			//              }
 			//          }
-			if util.InStrings(memberName, matchFieldNames) {
+			if util.InStrings(renamedName, matchFieldNames) {
 				out += fmt.Sprintf(
 					"%s\t\tif %s.%s != nil {\n",
 					indent,
