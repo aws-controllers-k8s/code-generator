@@ -3,6 +3,8 @@
 package {{ .CRD.Names.Snake }}
 
 import (
+	svccompare "github.com/aws-controllers-k8s/{{ .ServiceIDClean }}-controller/pkg/compare"
+
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 )
 
@@ -18,6 +20,6 @@ func newResourceDelta(
         delta.Add("", a, b)
         return delta
     }
-{{ GoCodeCompare .CRD "delta" "a.ko" "b.ko" 1}}
+{{ GoCodeCompare .CRD "svccompare" "delta" "a.ko" "b.ko" 1}}
     return delta
 }

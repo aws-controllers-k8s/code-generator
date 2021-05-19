@@ -22,7 +22,6 @@ import (
 
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
-	"github.com/aws-controllers-k8s/code-generator/pkg/names"
 )
 
 // CompareResource returns the Go code that traverses a set of two Resources,
@@ -39,6 +38,8 @@ import (
 func CompareResource(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,
+	// String represeting the package alias used when importing pkg/compare
+	svccomparePackageAlias string,
 	// String representing the name of the variable that is of type
 	// `*ackcompare.Delta`. We will generate Go code that calls the `Add()`
 	// method of this variable when differences between fields are detected.
@@ -119,10 +120,10 @@ func CompareResource(
 
 		switch memberShape.Type {
 		case "structure":
-			// Recurse through all the struct's fields and subfields, building
-			// nested conditionals and calls to `delta.Add()`...
+			// Returns Go code that uses pkg/compare package to compare struct types.
 			out += compareStruct(
 				cfg, r,
+				svccomparePackageAlias,
 				compareConfig,
 				memberShape,
 				deltaVarName,
@@ -453,10 +454,19 @@ func compareSlice(
 
 // compareStruct outputs Go code that compares two struct values from two
 // resource fields and, if there is a difference, adds the difference to a
-// variable representing an `ackcompare.Delta`.
+// variable representing an `ackcompare.Delta`. The output code uses the
+// generated functions in pkg/compare to compare the objects.
+//
+// Output code will look something like this:
+//
+//  if !svccompare.IsEqualAllowedPublishers(a.ko.Spec.AllowedPublishers, b.ko.Spec.AllowedPublishers) {
+//  	delta.Add("Spec.AllowedPublishers", a.ko.Spec.AllowedPublishers, b.ko.Spec.AllowedPublishers)
+//  }
 func compareStruct(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,
+	// String represeting the package alias used when importing pkg/compare
+	svccomparePackageAlias string,
 	// struct informing code generator how to compare the field values
 	compareConfig *ackgenconfig.CompareFieldConfig,
 	// struct describing the SDK type of the field being compared
@@ -480,119 +490,23 @@ func compareStruct(
 	// Number of levels of indentation to use
 	indentLevel int,
 ) string {
-	out := ""
-
-	fieldConfigs := cfg.ResourceFields(r.Names.Original)
-
-	for _, memberName := range shape.MemberNames() {
-		memberShapeRef := shape.MemberRefs[memberName]
-		// TODO(jaypipes): This is fragile. We actually need to have a way of
-		// normalizing names in a lossless fashion...
-		memberNames := names.New(memberName)
-		memberNameClean := memberNames.Camel
-
-		// this is the "path" to the field within the structs being compared.
-		// This is passed down into the compareXXX functions recursively and
-		// appended to with each level of nested structs we recurse into.
-		memberFieldPath := fieldPath + "." + memberNameClean
-		indent := strings.Repeat("\t", indentLevel)
-		firstResAdaptedVarName := firstResVarName + "." + memberNameClean
-		secondResAdaptedVarName := secondResVarName + "." + memberNameClean
-
-		var compareConfig *ackgenconfig.CompareFieldConfig
-		fieldConfig := fieldConfigs[memberFieldPath]
-		if fieldConfig != nil {
-			compareConfig = fieldConfig.Compare
-		}
-
-		if compareConfig != nil && compareConfig.IsIgnored {
-			continue
-		}
-
-		memberShape := memberShapeRef.Shape
-
-		// if ackcompare.HasNilDifference(a.ko.Spec.Name, b.ko.Spec.Name == nil) {
-		//   delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
-		// }
-		nilCode := compareNil(
-			compareConfig,
-			memberShape,
-			deltaVarName,
-			firstResAdaptedVarName,
-			secondResAdaptedVarName,
-			memberFieldPath,
-			indentLevel,
-		)
-
-		if nilCode != "" {
-			// else if a.ko.Spec.Name != nil && b.ko.Spec.Name != nil {
-			out += fmt.Sprintf(
-				"%s else if %s != nil && %s != nil {\n",
-				nilCode, firstResAdaptedVarName, secondResAdaptedVarName,
-			)
-			indentLevel++
-		} else {
-			out += "\n"
-		}
-		switch memberShape.Type {
-		case "structure":
-			// Recurse through all the struct's fields and subfields, building
-			// nested conditionals and calls to `delta.Add()`...
-			out += compareStruct(
-				cfg, r,
-				compareConfig,
-				memberShape,
-				deltaVarName,
-				firstResAdaptedVarName,
-				secondResAdaptedVarName,
-				memberFieldPath,
-				indentLevel,
-			)
-		case "list":
-			// Returns Go code that compares all the elements of the slice fields...
-			out += compareSlice(
-				cfg, r,
-				compareConfig,
-				memberShape,
-				deltaVarName,
-				firstResAdaptedVarName,
-				secondResAdaptedVarName,
-				memberFieldPath,
-				indentLevel,
-			)
-		case "map":
-			// Returns Go code that compares all the elements of the map fields...
-			out += compareMap(
-				cfg, r,
-				compareConfig,
-				memberShape,
-				deltaVarName,
-				firstResAdaptedVarName,
-				secondResAdaptedVarName,
-				memberFieldPath,
-				indentLevel,
-			)
-		default:
-			//   if *a.ko.Spec.Name != *b.ko.Spec.Name {
-			//     delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
-			//   }
-			out += compareScalar(
-				compareConfig,
-				memberShape,
-				deltaVarName,
-				firstResAdaptedVarName,
-				secondResAdaptedVarName,
-				memberFieldPath,
-				indentLevel,
-			)
-		}
-		if nilCode != "" {
-			// }
-			out += fmt.Sprintf(
-				"%s}\n", indent,
-			)
-			indentLevel--
-		}
+	if compareConfig != nil && compareConfig.IsIgnored {
+		return ""
 	}
+	//TODO(hilalymh): Figure out how to pass the compareConfig to the IsEqualTypeDef generators
+
+	indent := strings.Repeat("\t", indentLevel)
+	// if !svccompare.IsEqualCodeSigningPolicies(a.ko.Spec.CodeSigningPolicies, b.ko.Spec.CodeSigningPolicies) {
+	out := fmt.Sprintf(
+		"%sif !%s.IsEqual%s(%s, %s) {\n",
+		indent, svccomparePackageAlias, shape.ShapeName, firstResVarName, secondResVarName,
+	)
+	//   delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
+	out += fmt.Sprintf(
+		"%s\t%s.Add(\"%s\", %s, %s)\n",
+		indent, deltaVarName, fieldPath, firstResVarName, secondResVarName,
+	)
+	// }
+	out += fmt.Sprintf("%s}\n", indent)
 	return out
 }

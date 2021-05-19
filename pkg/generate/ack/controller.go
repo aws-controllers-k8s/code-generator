@@ -93,8 +93,8 @@ var (
 		"GoCodeSetDeleteInput": func(r *ackmodel.CRD, sourceVarName string, targetVarName string, indentLevel int) string {
 			return code.SetSDK(r.Config(), r, ackmodel.OpTypeDelete, sourceVarName, targetVarName, indentLevel)
 		},
-		"GoCodeCompare": func(r *ackmodel.CRD, deltaVarName string, sourceVarName string, targetVarName string, indentLevel int) string {
-			return code.CompareResource(r.Config(), r, deltaVarName, sourceVarName, targetVarName, indentLevel)
+		"GoCodeCompare": func(r *ackmodel.CRD, svccomparePackageAlias string, deltaVarName string, sourceVarName string, targetVarName string, indentLevel int) string {
+			return code.CompareResource(r.Config(), r, svccomparePackageAlias, deltaVarName, sourceVarName, targetVarName, indentLevel)
 		},
 		"GoCodeIsEqual": func(typeDef *ackmodel.TypeDef, sourceVarName string, targetVarName string, indentLevel int) string {
 			return code.IsEqualTypeDef(typeDef, sourceVarName, targetVarName, indentLevel)
