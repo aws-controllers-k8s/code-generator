@@ -155,6 +155,9 @@ type FieldConfig struct {
 	// IsSecret instructs the code generator that this field should be a
 	// SecretKeyReference.
 	IsSecret bool `json:"is_secret"`
+	// IsImmutable instructs the code generator to add advisory conditions
+	// if user modifies the spec field after resource was created.
+	IsImmutable bool `json:"is_immutable"`
 	// From instructs the code generator that the value of the field should
 	// be retrieved from the specified operation and member path
 	From *SourceFieldConfig `json:"from,omitempty"`

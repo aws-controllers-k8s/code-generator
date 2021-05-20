@@ -32,6 +32,9 @@ func (rm *resourceManager) sdkUpdate(
 	if respErr != nil {
 		return nil, respErr
 	}
+{{- if .CRD.HasImmutableFieldChanges }}
+	desired = rm.handleImmutableFieldsChangedCondition(desired, delta)
+{{- end }}
 	// Merge in the information we read from the API call above to the copy of
 	// the original Kubernetes object we passed to the function
 	ko := desired.ko.DeepCopy()
