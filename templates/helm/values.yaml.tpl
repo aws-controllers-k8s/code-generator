@@ -27,6 +27,12 @@ resources:
 aws:
   # If specified, use the AWS region for AWS API calls
   region: ""
+  account_id: ""
+
+# log level for the controller
+log:
+  enable_development_logging: false
+  level: info
 
 # If specified, the service controller will watch for object creation only in the provided namespace
 watchNamespace: ""
