@@ -56,13 +56,15 @@ code paths:
 * sdk_get_attributes_post_set_output
 * sdk_create_post_set_output
 * sdk_update_post_set_output
+* delta_pre_compare
+* delta_post_compare
 
 The "pre_build_request" hooks are called BEFORE the call to construct
 the Input shape that is used in the API operation and therefore BEFORE
 any call to validate that Input shape.
 
-The "post_build_request" hooks are called AFTER the call to construct 
-the Input shape but BEFORE the API operation. 
+The "post_build_request" hooks are called AFTER the call to construct
+the Input shape but BEFORE the API operation.
 
 The "post_request" hooks are called IMMEDIATELY AFTER the API operation
 aws-sdk-go client call.  These hooks will have access to a Go variable
@@ -88,6 +90,13 @@ The "post_set_output" hooks are called AFTER the the information from the API ca
 is merged with the copy of the original Kubernetes object. These hooks will
 have access to the updated Kubernetes object `ko`, the response of the API call
 (and the original Kubernetes CR object if its sdkUpdate)
+
+The "delta_pre_compare" hooks are called BEFORE the generated code that
+compares two resources.
+
+The "delta_post_compare" hooks are called AFTER the generated code that
+compares two resources.
+
 */
 
 // ResourceHookCode returns a string with custom callback code for a resource
