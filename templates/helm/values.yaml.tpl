@@ -16,6 +16,10 @@ deployment:
   labels: {}
   containerPort: 8080
 
+service:
+  create: false
+  type: "ClusterIP"
+
 resources:
   requests:
     memory: "64Mi"
