@@ -135,6 +135,9 @@ func (rm *resourceManager) sdkDelete(
 	if err != nil {
 		return err
 	}
+{{- if $hookCode := Hook .CRD "sdk_delete_post_build_request" }}
+{{ $hookCode }}
+{{- end }}
 	_, respErr := rm.sdkapi.{{ .CRD.Ops.Delete.Name }}WithContext(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "{{ .CRD.Ops.Delete.Name }}", respErr)
 {{- if $hookCode := Hook .CRD "sdk_delete_post_request" }}
