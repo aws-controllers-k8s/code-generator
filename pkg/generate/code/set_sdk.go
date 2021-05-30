@@ -1102,41 +1102,16 @@ func varEmptyConstructorK8sType(
 ) string {
 	out := ""
 	indent := strings.Repeat("\t", indentLevel)
-	goType := shape.GoTypeWithPkgName()
-	keepPointer := (shape.Type == "list" || shape.Type == "map")
-	goType = model.ReplacePkgName(goType, r.SDKAPIPackageName(), "svcapitypes", keepPointer)
-	goTypeNoPkg := goType
-	goPkg := ""
-	hadPkg := false
-	if strings.Contains(goType, ".") {
-		parts := strings.Split(goType, ".")
-		goTypeNoPkg = parts[1]
-		goPkg = parts[0]
-		hadPkg = true
-	}
-	renames := r.TypeRenames()
-	altTypeName, renamed := renames[goTypeNoPkg]
-	if renamed {
-		goTypeNoPkg = altTypeName
-	} else if hadPkg {
-		cleanNames := names.New(goTypeNoPkg)
-		goTypeNoPkg = cleanNames.Camel
-	}
-	goType = goTypeNoPkg
-	if hadPkg {
-		goType = goPkg + "." + goType
-	}
-
 	switch shape.Type {
 	case "structure":
 		// f0 := &svcapitypes.BookData{}
-		out += fmt.Sprintf("%s%s := &%s{}\n", indent, varName, goType)
+		out += fmt.Sprintf("%s%s := &%s{}\n", indent, varName, GetCRDStructType(shape, r, false))
 	case "list", "map":
 		// f0 := []*string{}
-		out += fmt.Sprintf("%s%s := %s{}\n", indent, varName, goType)
+		out += fmt.Sprintf("%s%s := %s{}\n", indent, varName, GetCRDStructType(shape, r, true))
 	default:
 		// var f0 string
-		out += fmt.Sprintf("%svar %s %s\n", indent, varName, goType)
+		out += fmt.Sprintf("%svar %s %s\n", indent, varName, GetCRDStructType(shape, r, false))
 	}
 	return out
 }

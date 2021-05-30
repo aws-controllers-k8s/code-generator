@@ -160,7 +160,7 @@ func LateInitializeGetAttributes(
 func lateInitStruct(responsePath, crPath string, r *model.CRD, str *awssdkmodel.ShapeRef, level int) string {
 	out := fmt.Sprintf("if %s != nil {\n", responsePath)
 	out += fmt.Sprintf("if %s == nil {\n", crPath)
-	out += fmt.Sprintf("%s = &%s{}\n", crPath, GetCorrespondingCRDType(str.Shape, r, false))
+	out += fmt.Sprintf("%s = &%s{}\n", crPath, GetCRDStructType(str.Shape, r, false))
 	out += fmt.Sprintf("}\n")
 	// Keys need to be sorted so that we get deterministic output.
 	var keys []string
@@ -181,7 +181,7 @@ func lateInitStruct(responsePath, crPath string, r *model.CRD, str *awssdkmodel.
 func lateInitMap(responsePath, crPath string, r *model.CRD, str *awssdkmodel.ShapeRef, level int) string {
 	out := fmt.Sprintf("if %s != nil {\n", responsePath)
 	out += fmt.Sprintf("if %s == nil {\n", crPath)
-	out += fmt.Sprintf("%s = %s{}\n", crPath, GetCorrespondingCRDType(str.Shape, r, false))
+	out += fmt.Sprintf("%s = %s{}\n", crPath, GetCRDStructType(str.Shape, r, false))
 	out += fmt.Sprintf("}\n")
 
 	out += fmt.Sprintf("for key%d := range %s {\n", level, responsePath)
@@ -205,7 +205,7 @@ func lateInitSlice(responsePath, crPath string, r *model.CRD, respShapeRef *awss
 	out := fmt.Sprintf(
 		"if len(%s) != 0 && len(%s) == 0 {\n", responsePath, crPath,
 	)
-	out += fmt.Sprintf("%s = make([]%s, len(%s))\n", crPath, GetCorrespondingCRDType(respShapeRef.Shape.MemberRef.Shape, r, true), responsePath)
+	out += fmt.Sprintf("%s = make([]%s, len(%s))\n", crPath, GetCRDStructType(respShapeRef.Shape.MemberRef.Shape, r, true), responsePath)
 	out += fmt.Sprintf("for i%d := range %s {\n", level, responsePath)
 	respFieldPath := fmt.Sprintf("%s[i%d]", responsePath, level)
 	crFieldPath := fmt.Sprintf("%s[i%d]", crPath, level)
@@ -234,19 +234,17 @@ func lateInit(responsePath, crPath string, r *model.CRD, str *awssdkmodel.ShapeR
 	}
 }
 
-func GetCorrespondingCRDType(s *awssdkmodel.Shape, r *model.CRD, keepPointer bool) string {
-	// Only structs need to have the package prefix when they are imported.
-	if s.Type != "structure" {
-		if keepPointer {
-			return s.GoType()
-		}
-		return strings.ReplaceAll(s.GoType(), "*", "")
-	}
+func GetCRDStructType(s *awssdkmodel.Shape, r *model.CRD, keepPointer bool) string {
 	goType := model.ReplacePkgName(s.GoTypeWithPkgName(), r.SDKAPIPackageName(), "svcapitypes", keepPointer)
+	if !strings.Contains(goType, ".") {
+		return goType
+	}
 	goTypeNoPkg := strings.Split(goType, ".")[1]
 	goPkg := strings.Split(goType, ".")[0]
 	if r.TypeRenames()[goTypeNoPkg] != "" {
 		goTypeNoPkg = r.TypeRenames()[goTypeNoPkg]
+	} else {
+		goTypeNoPkg = names.New(goTypeNoPkg).Camel
 	}
 	return fmt.Sprintf("%s.%s", goPkg, goTypeNoPkg)
 }
