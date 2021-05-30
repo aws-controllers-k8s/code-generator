@@ -19,6 +19,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/ack"
 	"github.com/aws-controllers-k8s/code-generator/pkg/testutil"
 )
 
@@ -26,7 +27,7 @@ func TestMQ_Broker(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "mq")
+	g := testutil.NewGeneratorForService(t, "mq", ackgenconfig.DefaultConfig)
 
 	crd := testutil.GetCRDByName(t, g, "Broker")
 	require.NotNil(crd)

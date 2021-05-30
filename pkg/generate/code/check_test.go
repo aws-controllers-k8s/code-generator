@@ -14,12 +14,14 @@
 package code_test
 
 import (
+
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/ack"
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate/code"
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 	"github.com/aws-controllers-k8s/code-generator/pkg/testutil"
@@ -29,7 +31,7 @@ func TestCheckRequiredFields_Attributes_ARNField(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "sns")
+	g := testutil.NewGeneratorForService(t, "sns", ackgenconfig.DefaultConfig)
 
 	crd := testutil.GetCRDByName(t, g, "Topic")
 	require.NotNil(crd)
@@ -57,7 +59,7 @@ func TestCheckRequiredFields_Attributes_StatusField(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "sqs")
+	g := testutil.NewGeneratorForService(t, "sqs", ackgenconfig.DefaultConfig)
 
 	crd := testutil.GetCRDByName(t, g, "Queue")
 	require.NotNil(crd)
@@ -78,7 +80,7 @@ func TestCheckRequiredFields_Attributes_StatusAndSpecField(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "apigatewayv2")
+	g := testutil.NewGeneratorForService(t, "apigatewayv2", ackgenconfig.DefaultConfig)
 
 	crd := testutil.GetCRDByName(t, g, "Route")
 	require.NotNil(crd)

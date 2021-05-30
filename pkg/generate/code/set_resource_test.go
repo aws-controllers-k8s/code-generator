@@ -19,6 +19,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/ack"
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate/code"
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 	"github.com/aws-controllers-k8s/code-generator/pkg/testutil"
@@ -28,7 +29,7 @@ func TestSetResource_APIGWv2_Route_Create(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "apigatewayv2")
+	g := testutil.NewGeneratorForService(t, "apigatewayv2", ackgenconfig.DefaultConfig)
 
 	crd := testutil.GetCRDByName(t, g, "Route")
 	require.NotNil(crd)
@@ -55,7 +56,7 @@ func TestSetResource_APIGWv2_Route_ReadOne(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "apigatewayv2")
+	g := testutil.NewGeneratorForService(t, "apigatewayv2", ackgenconfig.DefaultConfig)
 
 	crd := testutil.GetCRDByName(t, g, "Route")
 	require.NotNil(crd)
@@ -157,7 +158,7 @@ func TestSetResource_CodeDeploy_Deployment_Create(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "codedeploy")
+	g := testutil.NewGeneratorForService(t, "codedeploy", ackgenconfig.DefaultConfig)
 
 	crd := testutil.GetCRDByName(t, g, "Deployment")
 	require.NotNil(crd)
@@ -183,7 +184,7 @@ func TestSetResource_DynamoDB_Table_ReadOne(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "dynamodb")
+	g := testutil.NewGeneratorForService(t, "dynamodb", ackgenconfig.DefaultConfig)
 
 	crd := testutil.GetCRDByName(t, g, "Table")
 	require.NotNil(crd)
@@ -531,7 +532,7 @@ func TestSetResource_EC2_LaunchTemplate_Create(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "ec2")
+	g := testutil.NewGeneratorForService(t, "ec2", ackgenconfig.DefaultConfig)
 
 	crd := testutil.GetCRDByName(t, g, "LaunchTemplate")
 	require.NotNil(crd)
@@ -592,7 +593,7 @@ func TestSetResource_ECR_Repository_Create(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "ecr")
+	g := testutil.NewGeneratorForService(t, "ecr", ackgenconfig.DefaultConfig)
 
 	crd := testutil.GetCRDByName(t, g, "Repository")
 	require.NotNil(crd)
@@ -634,7 +635,7 @@ func TestSetResource_ECR_Repository_ReadMany(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "ecr")
+	g := testutil.NewGeneratorForService(t, "ecr", ackgenconfig.DefaultConfig)
 
 	crd := testutil.GetCRDByName(t, g, "Repository")
 	require.NotNil(crd)
@@ -710,7 +711,7 @@ func TestSetResource_Elasticache_ReplicationGroup_Create(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "elasticache")
+	g := testutil.NewGeneratorForService(t, "elasticache", ackgenconfig.DefaultConfig)
 
 	crd := testutil.GetCRDByName(t, g, "ReplicationGroup")
 	require.NotNil(crd)
@@ -975,7 +976,7 @@ func TestSetResource_Elasticache_ReplicationGroup_ReadMany(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "elasticache")
+	g := testutil.NewGeneratorForService(t, "elasticache", ackgenconfig.DefaultConfig)
 
 	crd := testutil.GetCRDByName(t, g, "ReplicationGroup")
 	require.NotNil(crd)
@@ -1331,7 +1332,7 @@ func TestSetResource_RDS_DBInstance_Create(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "rds")
+	g := testutil.NewGeneratorForService(t, "rds", ackgenconfig.DefaultConfig)
 
 	crd := testutil.GetCRDByName(t, g, "DBInstance")
 	require.NotNil(crd)
@@ -1714,7 +1715,7 @@ func TestSetResource_RDS_DBInstance_ReadMany(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "rds")
+	g := testutil.NewGeneratorForService(t, "rds", ackgenconfig.DefaultConfig)
 
 	crd := testutil.GetCRDByName(t, g, "DBInstance")
 	require.NotNil(crd)
@@ -2279,7 +2280,7 @@ func TestSetResource_S3_Bucket_Create(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "s3")
+	g := testutil.NewGeneratorForService(t, "s3", ackgenconfig.DefaultConfig)
 
 	crd := testutil.GetCRDByName(t, g, "Bucket")
 	require.NotNil(crd)
@@ -2301,7 +2302,7 @@ func TestSetResource_S3_Bucket_ReadMany(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "s3")
+	g := testutil.NewGeneratorForService(t, "s3", ackgenconfig.DefaultConfig)
 
 	crd := testutil.GetCRDByName(t, g, "Bucket")
 	require.NotNil(crd)
@@ -2336,7 +2337,7 @@ func TestSetResource_SNS_Topic_Create(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "sns")
+	g := testutil.NewGeneratorForService(t, "sns", ackgenconfig.DefaultConfig)
 
 	crd := testutil.GetCRDByName(t, g, "Topic")
 	require.NotNil(crd)
@@ -2366,7 +2367,7 @@ func TestSetResource_SNS_Topic_GetAttributes(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "sns")
+	g := testutil.NewGeneratorForService(t, "sns", ackgenconfig.DefaultConfig)
 
 	crd := testutil.GetCRDByName(t, g, "Topic")
 	require.NotNil(crd)
@@ -2396,7 +2397,7 @@ func TestSetResource_SQS_Queue_Create(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "sqs")
+	g := testutil.NewGeneratorForService(t, "sqs", ackgenconfig.DefaultConfig)
 
 	crd := testutil.GetCRDByName(t, g, "Queue")
 	require.NotNil(crd)
@@ -2420,7 +2421,7 @@ func TestSetResource_SQS_Queue_GetAttributes(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "sqs")
+	g := testutil.NewGeneratorForService(t, "sqs", ackgenconfig.DefaultConfig)
 
 	crd := testutil.GetCRDByName(t, g, "Queue")
 	require.NotNil(crd)
@@ -2449,7 +2450,7 @@ func TestSetResource_RDS_DBSubnetGroup_ReadMany(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "rds")
+	g := testutil.NewGeneratorForService(t, "rds", ackgenconfig.DefaultConfig)
 
 	crd := testutil.GetCRDByName(t, g, "DBSubnetGroup")
 	require.NotNil(crd)
