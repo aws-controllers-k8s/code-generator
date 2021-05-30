@@ -25,6 +25,15 @@ import (
 	"github.com/aws-controllers-k8s/code-generator/pkg/names"
 )
 
+// Late-initialization code uses returned result from AWS and sets the values of
+// each field in custom resource, if the corresponding field is empty. This is
+// especially useful in cases where user doesn't give a value for that field and
+// AWS assigns a default one.
+// See the following for more details about late-initialization:
+// https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#late-initialization
+
+// LateInitializeReadOne generates the code that will late initialize the custom
+// resource using information fetched from AWS, using ReadOne type output.
 func LateInitializeReadOne(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,
@@ -49,7 +58,6 @@ func LateInitializeReadOne(
 				shape = val.Shape
 				break
 			}
-			panic("there has to be a structure field in unwrapped readone output shape")
 		}
 	}
 	for _, memberName := range shape.MemberNames() {
@@ -64,6 +72,8 @@ func LateInitializeReadOne(
 	return strings.TrimSuffix(out, "\n")
 }
 
+// LateInitializeReadMany generates the code that will late initialize the custom
+// resource using information fetched from AWS, using ReadMany type output.
 func LateInitializeReadMany(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,
@@ -106,6 +116,8 @@ func LateInitializeReadMany(
 	return out
 }
 
+// LateInitializeGetAttributes generates the code that will late initialize the custom
+// resource using information fetched from AWS, using GetAttributes type output.
 func LateInitializeGetAttributes(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,
@@ -223,20 +235,14 @@ func lateInit(responsePath, crPath string, r *model.CRD, str *awssdkmodel.ShapeR
 }
 
 func GetCorrespondingCRDType(s *awssdkmodel.Shape, r *model.CRD, keepPointer bool) string {
-	switch s.Type {
-	case "string":
-		return "*string"
-	case "long", "integer":
-		return "*int64"
-	case "boolean":
-		return "*bool"
-	case "list":
-		return fmt.Sprintf("[]%s", GetCorrespondingCRDType(s.ValueRef.Shape, r, true))
-	case "map":
-		return fmt.Sprintf("map[string]%s", GetCorrespondingCRDType(s.ValueRef.Shape, r, true))
+	// Only structs need to have the package prefix when they are imported.
+	if s.Type != "structure" {
+		if keepPointer {
+			return s.GoType()
+		}
+		return strings.ReplaceAll(s.GoType(), "*", "")
 	}
-	goType := s.GoTypeWithPkgName()
-	goType = model.ReplacePkgName(goType, r.SDKAPIPackageName(), "svcapitypes", keepPointer)
+	goType := model.ReplacePkgName(s.GoTypeWithPkgName(), r.SDKAPIPackageName(), "svcapitypes", keepPointer)
 	goTypeNoPkg := strings.Split(goType, ".")[1]
 	goPkg := strings.Split(goType, ".")[0]
 	if r.TypeRenames()[goTypeNoPkg] != "" {
