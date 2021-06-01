@@ -13,6 +13,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	svcsdk "github.com/aws/aws-sdk-go/service/{{ .ServiceIDClean }}"
 
+	"github.com/crossplane/crossplane-runtime/pkg/resource"
+
 	svcapitypes "github.com/crossplane/provider-aws/apis/{{ .ServiceIDClean }}/{{ .APIVersion}}"
 	awsclients "github.com/crossplane/provider-aws/pkg/clients"
 )

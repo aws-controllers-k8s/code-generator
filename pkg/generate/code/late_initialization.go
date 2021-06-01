@@ -152,7 +152,7 @@ func LateInitializeGetAttributes(
 		n := names.New(name)
 		respFieldPath := fmt.Sprintf("%s.Attributes[\"%s\"]", path, n.Original)
 		crFieldPath := fmt.Sprintf("%s%s.%s", targetPath, cfg.PrefixConfig.SpecField, n.Camel)
-		out += fmt.Sprintf("%s = awsclients.LateInitializeStringPtr(%s, %s)\n", crFieldPath, crFieldPath, respFieldPath)
+		out += fmt.Sprintf("%s = li.LateInitializeStringPtr(%s, %s)\n", crFieldPath, crFieldPath, respFieldPath)
 	}
 	return strings.TrimSuffix(out, "\n")
 }
@@ -218,11 +218,16 @@ func lateInitSlice(responsePath, crPath string, r *model.CRD, respShapeRef *awss
 func lateInit(responsePath, crPath string, r *model.CRD, str *awssdkmodel.ShapeRef, level int) string {
 	switch str.Shape.Type {
 	case "string":
-		return fmt.Sprintf("%s = awsclients.LateInitializeStringPtr(%s, %s)\n", crPath, crPath, responsePath)
+		return fmt.Sprintf("%s = li.LateInitializeStringPtr(%s, %s)\n", crPath, crPath, responsePath)
 	case "long", "integer":
-		return fmt.Sprintf("%s = awsclients.LateInitializeInt64Ptr(%s, %s)\n", crPath, crPath, responsePath)
+		return fmt.Sprintf("%s = li.LateInitializeInt64Ptr(%s, %s)\n", crPath, crPath, responsePath)
 	case "boolean":
-		return fmt.Sprintf("%s = awsclients.LateInitializeBoolPtr(%s, %s)\n", crPath, crPath, responsePath)
+		return fmt.Sprintf("%s = li.LateInitializeBoolPtr(%s, %s)\n", crPath, crPath, responsePath)
+	case "timestamp":
+		return fmt.Sprintf("%s = li.LateInitializeTimePtr(%s, %s)\n", crPath, crPath, responsePath)
+	// NOTE(muvaf): double type is not yet supported.
+	case "double":
+		return "\n"
 	case "list":
 		return lateInitSlice(responsePath, crPath, r, str, level)
 	case "structure":
