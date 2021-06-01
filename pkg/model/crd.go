@@ -303,6 +303,32 @@ func (r *CRD) IsSecretField(path string) bool {
 	return false
 }
 
+// GetImmutableFieldPaths returns list of immutable field paths present in CRD
+func (r *CRD) GetImmutableFieldPaths() []string {
+	fConfigs := r.cfg.ResourceFields(r.Names.Original)
+	var immutableFields []string
+
+	for field, fieldConfig := range fConfigs {
+		if fieldConfig.IsImmutable {
+			immutableFields = append(immutableFields, field)
+		}
+	}
+
+	return immutableFields
+}
+
+// HasImmutableFieldChanges helper function that return true if there are any immutable field changes
+func (r *CRD) HasImmutableFieldChanges() bool {
+	fConfigs := r.cfg.ResourceFields(r.Names.Original)
+
+	for _, fieldConfig := range fConfigs {
+		if fieldConfig.IsImmutable {
+			return true
+		}
+	}
+	return false
+}
+
 // SetOutputCustomMethodName returns custom set output operation as *string for
 // given operation on custom resource, if specified in generator config
 func (r *CRD) SetOutputCustomMethodName(
