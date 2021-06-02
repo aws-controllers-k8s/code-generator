@@ -67,7 +67,7 @@ func LateInitializeReadOne(
 		}
 		responsePath := fmt.Sprintf("%s.%s", path, f.Names.Original)
 		crPath := fmt.Sprintf("%s%s.%s", targetPath, cfg.PrefixConfig.SpecField, f.Names.Camel)
-		out += lateInit(responsePath, crPath, r, f.ShapeRef, 0)
+		out += lateInit(responsePath, crPath, r, f.ShapeRef, shape.MemberRefs[memberName], 0)
 	}
 	return strings.TrimSuffix(out, "\n")
 }
@@ -110,7 +110,7 @@ func LateInitializeReadMany(
 		}
 		responsePath := fmt.Sprintf("%s.%s", path, f.Names.Original)
 		crPath := fmt.Sprintf("%s%s.%s", targetPath, cfg.PrefixConfig.SpecField, f.Names.Camel)
-		out += lateInit(responsePath, crPath, r, f.ShapeRef, 0)
+		out += lateInit(responsePath, crPath, r, f.ShapeRef, shape.MemberRefs[memberName], 0)
 	}
 	out += fmt.Sprintf("}")
 	return out
@@ -157,14 +157,18 @@ func LateInitializeGetAttributes(
 	return strings.TrimSuffix(out, "\n")
 }
 
-func lateInitStruct(responsePath, crPath string, r *model.CRD, str *awssdkmodel.ShapeRef, level int) string {
+func lateInitStruct(responsePath, crPath string, r *model.CRD, cr *awssdkmodel.ShapeRef, resp *awssdkmodel.ShapeRef, level int) string {
 	out := fmt.Sprintf("if %s != nil {\n", responsePath)
 	out += fmt.Sprintf("if %s == nil {\n", crPath)
-	out += fmt.Sprintf("%s = &%s{}\n", crPath, GetCRDStructType(str.Shape, r, false))
+	out += fmt.Sprintf("%s = &%s{}\n", crPath, GetCRDStructType(cr.Shape, r, false))
 	out += fmt.Sprintf("}\n")
-	// Keys need to be sorted so that we get deterministic output.
+	// NOTE(muvaf): Keys need to be sorted so that we get deterministic output.
 	var keys []string
-	for key := range str.Shape.MemberRefs {
+	for key := range cr.Shape.MemberRefs {
+		// NOTE(muvaf): The field has to exist in both response shape and CRD.
+		if _, ok := resp.Shape.MemberRefs[key]; !ok {
+			continue
+		}
 		keys = append(keys, key)
 	}
 	sort.Strings(keys)
@@ -172,28 +176,28 @@ func lateInitStruct(responsePath, crPath string, r *model.CRD, str *awssdkmodel.
 		n := names.New(name)
 		respFieldPath := fmt.Sprintf("%s.%s", responsePath, n.Original)
 		crFieldPath := fmt.Sprintf("%s.%s", crPath, n.Camel)
-		out += lateInit(respFieldPath, crFieldPath, r, str.Shape.MemberRefs[name], level+1)
+		out += lateInit(respFieldPath, crFieldPath, r, cr.Shape.MemberRefs[name], resp.Shape.MemberRefs[name], level+1)
 	}
 	out += fmt.Sprintf("}\n")
 	return out
 }
 
-func lateInitMap(responsePath, crPath string, r *model.CRD, str *awssdkmodel.ShapeRef, level int) string {
+func lateInitMap(responsePath, crPath string, r *model.CRD, cr *awssdkmodel.ShapeRef, resp *awssdkmodel.ShapeRef, level int) string {
 	out := fmt.Sprintf("if %s != nil {\n", responsePath)
 	out += fmt.Sprintf("if %s == nil {\n", crPath)
-	out += fmt.Sprintf("%s = %s{}\n", crPath, GetCRDStructType(str.Shape, r, true))
+	out += fmt.Sprintf("%s = %s{}\n", crPath, GetCRDStructType(cr.Shape, r, true))
 	out += fmt.Sprintf("}\n")
 
 	out += fmt.Sprintf("for key%d := range %s {\n", level, responsePath)
 	respFieldPath := fmt.Sprintf("%s[key%d]", responsePath, level)
 	crFieldPath := fmt.Sprintf("%s[key%d]", crPath, level)
-	out += lateInit(respFieldPath, crFieldPath, r, &str.Shape.ValueRef, level+1)
+	out += lateInit(respFieldPath, crFieldPath, r, &cr.Shape.ValueRef, &resp.Shape.ValueRef, level+1)
 	out += fmt.Sprintf("}\n")
 	out += fmt.Sprintf("}\n")
 	return out
 }
 
-func lateInitSlice(responsePath, crPath string, r *model.CRD, respShapeRef *awssdkmodel.ShapeRef, level int) string {
+func lateInitSlice(responsePath, crPath string, r *model.CRD, cr *awssdkmodel.ShapeRef, resp *awssdkmodel.ShapeRef, level int) string {
 	// NOTE(muvaf): Late initialization for slices is not a full-featured late-init.
 	// It works only if the slice in CRD is empty. If there is even one element,
 	// we don't late-init since slices do not have unique identifier like map/struct.
@@ -205,18 +209,18 @@ func lateInitSlice(responsePath, crPath string, r *model.CRD, respShapeRef *awss
 	out := fmt.Sprintf(
 		"if len(%s) != 0 && len(%s) == 0 {\n", responsePath, crPath,
 	)
-	out += fmt.Sprintf("%s = make([]%s, len(%s))\n", crPath, GetCRDStructType(respShapeRef.Shape.MemberRef.Shape, r, true), responsePath)
+	out += fmt.Sprintf("%s = make([]%s, len(%s))\n", crPath, GetCRDStructType(cr.Shape.MemberRef.Shape, r, true), responsePath)
 	out += fmt.Sprintf("for i%d := range %s {\n", level, responsePath)
 	respFieldPath := fmt.Sprintf("%s[i%d]", responsePath, level)
 	crFieldPath := fmt.Sprintf("%s[i%d]", crPath, level)
-	out += lateInit(respFieldPath, crFieldPath, r, &respShapeRef.Shape.MemberRef, level+1)
+	out += lateInit(respFieldPath, crFieldPath, r, &cr.Shape.MemberRef, &resp.Shape.MemberRef, level+1)
 	out += fmt.Sprintf("}\n")
 	out += fmt.Sprintf("}\n")
 	return out
 }
 
-func lateInit(responsePath, crPath string, r *model.CRD, str *awssdkmodel.ShapeRef, level int) string {
-	switch str.Shape.Type {
+func lateInit(responsePath, crPath string, r *model.CRD, cr *awssdkmodel.ShapeRef, resp *awssdkmodel.ShapeRef, level int) string {
+	switch cr.Shape.Type {
 	case "string":
 		return fmt.Sprintf("%s = li.LateInitializeStringPtr(%s, %s)\n", crPath, crPath, responsePath)
 	case "long", "integer":
@@ -226,17 +230,17 @@ func lateInit(responsePath, crPath string, r *model.CRD, str *awssdkmodel.ShapeR
 	case "timestamp":
 		return fmt.Sprintf("%s = li.LateInitializeTimePtr(%s, %s)\n", crPath, crPath, responsePath)
 	case "list":
-		return lateInitSlice(responsePath, crPath, r, str, level)
+		return lateInitSlice(responsePath, crPath, r, cr, resp, level)
 	case "structure":
-		return lateInitStruct(responsePath, crPath, r, str, level)
+		return lateInitStruct(responsePath, crPath, r, cr, resp, level)
 	case "map":
-		return lateInitMap(responsePath, crPath, r, str, level)
+		return lateInitMap(responsePath, crPath, r, cr, resp, level)
 	case "double":
-		return fmt.Sprintf("// Please handle %s manually. The check for double type is not implemented yet.\n", crPath)
+		return fmt.Sprintf("// Please handle %s manually. Late initialization for double type is not implemented yet.\n", crPath)
 	case "blob":
-		return fmt.Sprintf("// Please handle %s manually. The check for blob type is not implemented yet.\n", crPath)
+		return fmt.Sprintf("// Please handle %s manually. Late initialization for blob type is not implemented yet.\n", crPath)
 	default:
-		panic(fmt.Sprintf("unknown shape type %s", str.Shape.Type))
+		panic(fmt.Sprintf("unknown shape type %s", cr.Shape.Type))
 	}
 }
 
