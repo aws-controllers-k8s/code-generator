@@ -16,9 +16,14 @@ deployment:
   labels: {}
   containerPort: 8080
 
-service:
-  create: false
-  type: "ClusterIP"
+metrics:
+  service:
+    # Set to true to automatically create a Kubernetes Service resource for the
+    # Prometheus metrics server endpoint in controller
+    create: false
+    # Which Type to use for the Kubernetes Service?
+    # See: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types
+    type: "ClusterIP"
 
 resources:
   requests:
