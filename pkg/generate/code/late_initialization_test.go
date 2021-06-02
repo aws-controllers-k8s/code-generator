@@ -29,127 +29,46 @@ func Test_LateInitializeReadOne(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "dynamodb", crossplane.DefaultConfig)
+	g := testutil.NewGeneratorForService(t, "apigatewayv2", crossplane.DefaultConfig)
 
-	crd := testutil.GetCRDByName(t, g, "Table")
+	crd := testutil.GetCRDByName(t, g, "Route")
 	require.NotNil(crd)
 
-	expected := `if len(resp.Table.AttributeDefinitions) != 0 && len(cr.Spec.ForProvider.AttributeDefinitions) == 0 {
-cr.Spec.ForProvider.AttributeDefinitions = make([]*svcapitypes.AttributeDefinition, len(resp.Table.AttributeDefinitions))
-for i0 := range resp.Table.AttributeDefinitions {
-if resp.Table.AttributeDefinitions[i0] != nil {
-if cr.Spec.ForProvider.AttributeDefinitions[i0] == nil {
-cr.Spec.ForProvider.AttributeDefinitions[i0] = &svcapitypes.AttributeDefinition{}
-}
-cr.Spec.ForProvider.AttributeDefinitions[i0].AttributeName = li.LateInitializeStringPtr(cr.Spec.ForProvider.AttributeDefinitions[i0].AttributeName, resp.Table.AttributeDefinitions[i0].AttributeName)
-cr.Spec.ForProvider.AttributeDefinitions[i0].AttributeType = li.LateInitializeStringPtr(cr.Spec.ForProvider.AttributeDefinitions[i0].AttributeType, resp.Table.AttributeDefinitions[i0].AttributeType)
+	expected := `cr.Spec.ForProvider.APIKeyRequired = li.LateInitializeBoolPtr(cr.Spec.ForProvider.APIKeyRequired, resp.ApiKeyRequired)
+if len(resp.AuthorizationScopes) != 0 && len(cr.Spec.ForProvider.AuthorizationScopes) == 0 {
+cr.Spec.ForProvider.AuthorizationScopes = make([]*string, len(resp.AuthorizationScopes))
+for i0 := range resp.AuthorizationScopes {
+cr.Spec.ForProvider.AuthorizationScopes[i0] = li.LateInitializeStringPtr(cr.Spec.ForProvider.AuthorizationScopes[i0], resp.AuthorizationScopes[i0])
 }
 }
+cr.Spec.ForProvider.AuthorizationType = li.LateInitializeStringPtr(cr.Spec.ForProvider.AuthorizationType, resp.AuthorizationType)
+cr.Spec.ForProvider.AuthorizerID = li.LateInitializeStringPtr(cr.Spec.ForProvider.AuthorizerID, resp.AuthorizerId)
+cr.Spec.ForProvider.ModelSelectionExpression = li.LateInitializeStringPtr(cr.Spec.ForProvider.ModelSelectionExpression, resp.ModelSelectionExpression)
+cr.Spec.ForProvider.OperationName = li.LateInitializeStringPtr(cr.Spec.ForProvider.OperationName, resp.OperationName)
+if resp.RequestModels != nil {
+if cr.Spec.ForProvider.RequestModels == nil {
+cr.Spec.ForProvider.RequestModels = map[string]*string{}
 }
-if len(resp.Table.GlobalSecondaryIndexes) != 0 && len(cr.Spec.ForProvider.GlobalSecondaryIndexes) == 0 {
-cr.Spec.ForProvider.GlobalSecondaryIndexes = make([]*svcapitypes.GlobalSecondaryIndex, len(resp.Table.GlobalSecondaryIndexes))
-for i0 := range resp.Table.GlobalSecondaryIndexes {
-if resp.Table.GlobalSecondaryIndexes[i0] != nil {
-if cr.Spec.ForProvider.GlobalSecondaryIndexes[i0] == nil {
-cr.Spec.ForProvider.GlobalSecondaryIndexes[i0] = &svcapitypes.GlobalSecondaryIndex{}
-}
-cr.Spec.ForProvider.GlobalSecondaryIndexes[i0].IndexName = li.LateInitializeStringPtr(cr.Spec.ForProvider.GlobalSecondaryIndexes[i0].IndexName, resp.Table.GlobalSecondaryIndexes[i0].IndexName)
-if len(resp.Table.GlobalSecondaryIndexes[i0].KeySchema) != 0 && len(cr.Spec.ForProvider.GlobalSecondaryIndexes[i0].KeySchema) == 0 {
-cr.Spec.ForProvider.GlobalSecondaryIndexes[i0].KeySchema = make([]*svcapitypes.KeySchemaElement, len(resp.Table.GlobalSecondaryIndexes[i0].KeySchema))
-for i2 := range resp.Table.GlobalSecondaryIndexes[i0].KeySchema {
-if resp.Table.GlobalSecondaryIndexes[i0].KeySchema[i2] != nil {
-if cr.Spec.ForProvider.GlobalSecondaryIndexes[i0].KeySchema[i2] == nil {
-cr.Spec.ForProvider.GlobalSecondaryIndexes[i0].KeySchema[i2] = &svcapitypes.KeySchemaElement{}
-}
-cr.Spec.ForProvider.GlobalSecondaryIndexes[i0].KeySchema[i2].AttributeName = li.LateInitializeStringPtr(cr.Spec.ForProvider.GlobalSecondaryIndexes[i0].KeySchema[i2].AttributeName, resp.Table.GlobalSecondaryIndexes[i0].KeySchema[i2].AttributeName)
-cr.Spec.ForProvider.GlobalSecondaryIndexes[i0].KeySchema[i2].KeyType = li.LateInitializeStringPtr(cr.Spec.ForProvider.GlobalSecondaryIndexes[i0].KeySchema[i2].KeyType, resp.Table.GlobalSecondaryIndexes[i0].KeySchema[i2].KeyType)
+for key0 := range resp.RequestModels {
+cr.Spec.ForProvider.RequestModels[key0] = li.LateInitializeStringPtr(cr.Spec.ForProvider.RequestModels[key0], resp.RequestModels[key0])
 }
 }
+if resp.RequestParameters != nil {
+if cr.Spec.ForProvider.RequestParameters == nil {
+cr.Spec.ForProvider.RequestParameters = map[string]*svcapitypes.ParameterConstraints{}
 }
-if resp.Table.GlobalSecondaryIndexes[i0].Projection != nil {
-if cr.Spec.ForProvider.GlobalSecondaryIndexes[i0].Projection == nil {
-cr.Spec.ForProvider.GlobalSecondaryIndexes[i0].Projection = &svcapitypes.Projection{}
+for key0 := range resp.RequestParameters {
+if resp.RequestParameters[key0] != nil {
+if cr.Spec.ForProvider.RequestParameters[key0] == nil {
+cr.Spec.ForProvider.RequestParameters[key0] = &svcapitypes.ParameterConstraints{}
 }
-if len(resp.Table.GlobalSecondaryIndexes[i0].Projection.NonKeyAttributes) != 0 && len(cr.Spec.ForProvider.GlobalSecondaryIndexes[i0].Projection.NonKeyAttributes) == 0 {
-cr.Spec.ForProvider.GlobalSecondaryIndexes[i0].Projection.NonKeyAttributes = make([]*string, len(resp.Table.GlobalSecondaryIndexes[i0].Projection.NonKeyAttributes))
-for i3 := range resp.Table.GlobalSecondaryIndexes[i0].Projection.NonKeyAttributes {
-cr.Spec.ForProvider.GlobalSecondaryIndexes[i0].Projection.NonKeyAttributes[i3] = li.LateInitializeStringPtr(cr.Spec.ForProvider.GlobalSecondaryIndexes[i0].Projection.NonKeyAttributes[i3], resp.Table.GlobalSecondaryIndexes[i0].Projection.NonKeyAttributes[i3])
-}
-}
-cr.Spec.ForProvider.GlobalSecondaryIndexes[i0].Projection.ProjectionType = li.LateInitializeStringPtr(cr.Spec.ForProvider.GlobalSecondaryIndexes[i0].Projection.ProjectionType, resp.Table.GlobalSecondaryIndexes[i0].Projection.ProjectionType)
-}
-if resp.Table.GlobalSecondaryIndexes[i0].ProvisionedThroughput != nil {
-if cr.Spec.ForProvider.GlobalSecondaryIndexes[i0].ProvisionedThroughput == nil {
-cr.Spec.ForProvider.GlobalSecondaryIndexes[i0].ProvisionedThroughput = &svcapitypes.ProvisionedThroughput{}
-}
-cr.Spec.ForProvider.GlobalSecondaryIndexes[i0].ProvisionedThroughput.ReadCapacityUnits = li.LateInitializeInt64Ptr(cr.Spec.ForProvider.GlobalSecondaryIndexes[i0].ProvisionedThroughput.ReadCapacityUnits, resp.Table.GlobalSecondaryIndexes[i0].ProvisionedThroughput.ReadCapacityUnits)
-cr.Spec.ForProvider.GlobalSecondaryIndexes[i0].ProvisionedThroughput.WriteCapacityUnits = li.LateInitializeInt64Ptr(cr.Spec.ForProvider.GlobalSecondaryIndexes[i0].ProvisionedThroughput.WriteCapacityUnits, resp.Table.GlobalSecondaryIndexes[i0].ProvisionedThroughput.WriteCapacityUnits)
+cr.Spec.ForProvider.RequestParameters[key0].Required = li.LateInitializeBoolPtr(cr.Spec.ForProvider.RequestParameters[key0].Required, resp.RequestParameters[key0].Required)
 }
 }
 }
-}
-if len(resp.Table.KeySchema) != 0 && len(cr.Spec.ForProvider.KeySchema) == 0 {
-cr.Spec.ForProvider.KeySchema = make([]*svcapitypes.KeySchemaElement, len(resp.Table.KeySchema))
-for i0 := range resp.Table.KeySchema {
-if resp.Table.KeySchema[i0] != nil {
-if cr.Spec.ForProvider.KeySchema[i0] == nil {
-cr.Spec.ForProvider.KeySchema[i0] = &svcapitypes.KeySchemaElement{}
-}
-cr.Spec.ForProvider.KeySchema[i0].AttributeName = li.LateInitializeStringPtr(cr.Spec.ForProvider.KeySchema[i0].AttributeName, resp.Table.KeySchema[i0].AttributeName)
-cr.Spec.ForProvider.KeySchema[i0].KeyType = li.LateInitializeStringPtr(cr.Spec.ForProvider.KeySchema[i0].KeyType, resp.Table.KeySchema[i0].KeyType)
-}
-}
-}
-if len(resp.Table.LocalSecondaryIndexes) != 0 && len(cr.Spec.ForProvider.LocalSecondaryIndexes) == 0 {
-cr.Spec.ForProvider.LocalSecondaryIndexes = make([]*svcapitypes.LocalSecondaryIndex, len(resp.Table.LocalSecondaryIndexes))
-for i0 := range resp.Table.LocalSecondaryIndexes {
-if resp.Table.LocalSecondaryIndexes[i0] != nil {
-if cr.Spec.ForProvider.LocalSecondaryIndexes[i0] == nil {
-cr.Spec.ForProvider.LocalSecondaryIndexes[i0] = &svcapitypes.LocalSecondaryIndex{}
-}
-cr.Spec.ForProvider.LocalSecondaryIndexes[i0].IndexName = li.LateInitializeStringPtr(cr.Spec.ForProvider.LocalSecondaryIndexes[i0].IndexName, resp.Table.LocalSecondaryIndexes[i0].IndexName)
-if len(resp.Table.LocalSecondaryIndexes[i0].KeySchema) != 0 && len(cr.Spec.ForProvider.LocalSecondaryIndexes[i0].KeySchema) == 0 {
-cr.Spec.ForProvider.LocalSecondaryIndexes[i0].KeySchema = make([]*svcapitypes.KeySchemaElement, len(resp.Table.LocalSecondaryIndexes[i0].KeySchema))
-for i2 := range resp.Table.LocalSecondaryIndexes[i0].KeySchema {
-if resp.Table.LocalSecondaryIndexes[i0].KeySchema[i2] != nil {
-if cr.Spec.ForProvider.LocalSecondaryIndexes[i0].KeySchema[i2] == nil {
-cr.Spec.ForProvider.LocalSecondaryIndexes[i0].KeySchema[i2] = &svcapitypes.KeySchemaElement{}
-}
-cr.Spec.ForProvider.LocalSecondaryIndexes[i0].KeySchema[i2].AttributeName = li.LateInitializeStringPtr(cr.Spec.ForProvider.LocalSecondaryIndexes[i0].KeySchema[i2].AttributeName, resp.Table.LocalSecondaryIndexes[i0].KeySchema[i2].AttributeName)
-cr.Spec.ForProvider.LocalSecondaryIndexes[i0].KeySchema[i2].KeyType = li.LateInitializeStringPtr(cr.Spec.ForProvider.LocalSecondaryIndexes[i0].KeySchema[i2].KeyType, resp.Table.LocalSecondaryIndexes[i0].KeySchema[i2].KeyType)
-}
-}
-}
-if resp.Table.LocalSecondaryIndexes[i0].Projection != nil {
-if cr.Spec.ForProvider.LocalSecondaryIndexes[i0].Projection == nil {
-cr.Spec.ForProvider.LocalSecondaryIndexes[i0].Projection = &svcapitypes.Projection{}
-}
-if len(resp.Table.LocalSecondaryIndexes[i0].Projection.NonKeyAttributes) != 0 && len(cr.Spec.ForProvider.LocalSecondaryIndexes[i0].Projection.NonKeyAttributes) == 0 {
-cr.Spec.ForProvider.LocalSecondaryIndexes[i0].Projection.NonKeyAttributes = make([]*string, len(resp.Table.LocalSecondaryIndexes[i0].Projection.NonKeyAttributes))
-for i3 := range resp.Table.LocalSecondaryIndexes[i0].Projection.NonKeyAttributes {
-cr.Spec.ForProvider.LocalSecondaryIndexes[i0].Projection.NonKeyAttributes[i3] = li.LateInitializeStringPtr(cr.Spec.ForProvider.LocalSecondaryIndexes[i0].Projection.NonKeyAttributes[i3], resp.Table.LocalSecondaryIndexes[i0].Projection.NonKeyAttributes[i3])
-}
-}
-cr.Spec.ForProvider.LocalSecondaryIndexes[i0].Projection.ProjectionType = li.LateInitializeStringPtr(cr.Spec.ForProvider.LocalSecondaryIndexes[i0].Projection.ProjectionType, resp.Table.LocalSecondaryIndexes[i0].Projection.ProjectionType)
-}
-}
-}
-}
-if resp.Table.ProvisionedThroughput != nil {
-if cr.Spec.ForProvider.ProvisionedThroughput == nil {
-cr.Spec.ForProvider.ProvisionedThroughput = &svcapitypes.ProvisionedThroughput{}
-}
-cr.Spec.ForProvider.ProvisionedThroughput.ReadCapacityUnits = li.LateInitializeInt64Ptr(cr.Spec.ForProvider.ProvisionedThroughput.ReadCapacityUnits, resp.Table.ProvisionedThroughput.ReadCapacityUnits)
-cr.Spec.ForProvider.ProvisionedThroughput.WriteCapacityUnits = li.LateInitializeInt64Ptr(cr.Spec.ForProvider.ProvisionedThroughput.WriteCapacityUnits, resp.Table.ProvisionedThroughput.WriteCapacityUnits)
-}
-if resp.Table.StreamSpecification != nil {
-if cr.Spec.ForProvider.StreamSpecification == nil {
-cr.Spec.ForProvider.StreamSpecification = &svcapitypes.StreamSpecification{}
-}
-cr.Spec.ForProvider.StreamSpecification.StreamEnabled = li.LateInitializeBoolPtr(cr.Spec.ForProvider.StreamSpecification.StreamEnabled, resp.Table.StreamSpecification.StreamEnabled)
-cr.Spec.ForProvider.StreamSpecification.StreamViewType = li.LateInitializeStringPtr(cr.Spec.ForProvider.StreamSpecification.StreamViewType, resp.Table.StreamSpecification.StreamViewType)
-}
-cr.Spec.ForProvider.TableName = li.LateInitializeStringPtr(cr.Spec.ForProvider.TableName, resp.Table.TableName)`
+cr.Spec.ForProvider.RouteKey = li.LateInitializeStringPtr(cr.Spec.ForProvider.RouteKey, resp.RouteKey)
+cr.Spec.ForProvider.RouteResponseSelectionExpression = li.LateInitializeStringPtr(cr.Spec.ForProvider.RouteResponseSelectionExpression, resp.RouteResponseSelectionExpression)
+cr.Spec.ForProvider.Target = li.LateInitializeStringPtr(cr.Spec.ForProvider.Target, resp.Target)`
 	assert.Equal(
 		expected,
 		code.LateInitializeReadOne(crd.Config(), crd, "resp", "cr"),

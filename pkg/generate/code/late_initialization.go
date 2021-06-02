@@ -181,13 +181,13 @@ func lateInitStruct(responsePath, crPath string, r *model.CRD, str *awssdkmodel.
 func lateInitMap(responsePath, crPath string, r *model.CRD, str *awssdkmodel.ShapeRef, level int) string {
 	out := fmt.Sprintf("if %s != nil {\n", responsePath)
 	out += fmt.Sprintf("if %s == nil {\n", crPath)
-	out += fmt.Sprintf("%s = %s{}\n", crPath, GetCRDStructType(str.Shape, r, false))
+	out += fmt.Sprintf("%s = %s{}\n", crPath, GetCRDStructType(str.Shape, r, true))
 	out += fmt.Sprintf("}\n")
 
 	out += fmt.Sprintf("for key%d := range %s {\n", level, responsePath)
 	respFieldPath := fmt.Sprintf("%s[key%d]", responsePath, level)
 	crFieldPath := fmt.Sprintf("%s[key%d]", crPath, level)
-	out += lateInit(respFieldPath, crFieldPath, r, str, level+1)
+	out += lateInit(respFieldPath, crFieldPath, r, &str.Shape.ValueRef, level+1)
 	out += fmt.Sprintf("}\n")
 	out += fmt.Sprintf("}\n")
 	return out
@@ -225,15 +225,16 @@ func lateInit(responsePath, crPath string, r *model.CRD, str *awssdkmodel.ShapeR
 		return fmt.Sprintf("%s = li.LateInitializeBoolPtr(%s, %s)\n", crPath, crPath, responsePath)
 	case "timestamp":
 		return fmt.Sprintf("%s = li.LateInitializeTimePtr(%s, %s)\n", crPath, crPath, responsePath)
-	// NOTE(muvaf): double type is not yet supported.
-	case "double":
-		return "\n"
 	case "list":
 		return lateInitSlice(responsePath, crPath, r, str, level)
 	case "structure":
 		return lateInitStruct(responsePath, crPath, r, str, level)
 	case "map":
 		return lateInitMap(responsePath, crPath, r, str, level)
+	case "double":
+		return fmt.Sprintf("// Please handle %s manually. The check for double type is not implemented yet.\n", crPath)
+	case "blob":
+		return fmt.Sprintf("// Please handle %s manually. The check for blob type is not implemented yet.\n", crPath)
 	default:
 		panic(fmt.Sprintf("unknown shape type %s", str.Shape.Type))
 	}
