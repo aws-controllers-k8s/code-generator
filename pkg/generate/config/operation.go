@@ -28,6 +28,9 @@ type OperationConfig struct {
 	// `resourceManager` struct that will set fields on a `resource` struct
 	// depending on the output of the operation.
 	SetOutputCustomMethodName string `json:"set_output_custom_method_name,omitempty"`
+	// OutputWrapperFieldPath provides the JSON-Path like to the struct field containing
+	// information that will be merged into a `resource` object.
+	OutputWrapperFieldPath string `json:"output_wrapper_field_path,omitempty"`
 	// Override for resource name in case of heuristic failure
 	// An example of this is correcting stutter when the resource logic doesn't properly determine the resource name
 	ResourceName string `json:"resource_name"`

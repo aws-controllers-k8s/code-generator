@@ -14,6 +14,7 @@
 package code_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -22,6 +23,7 @@ import (
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate/code"
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 	"github.com/aws-controllers-k8s/code-generator/pkg/testutil"
+	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
 )
 
 func TestSetResource_APIGWv2_Route_Create(t *testing.T) {
@@ -145,6 +147,60 @@ func TestSetResource_APIGWv2_Route_ReadOne(t *testing.T) {
 		ko.Spec.Target = resp.Target
 	} else {
 		ko.Spec.Target = nil
+	}
+`
+	assert.Equal(
+		expected,
+		code.SetResource(crd.Config(), crd, model.OpTypeGet, "resp", "ko", 1, true),
+	)
+}
+
+func TestSetResource_DynamoDB_Backup_ReadOne(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewGeneratorForService(t, "dynamodb")
+
+	crd := testutil.GetCRDByName(t, g, "Backup")
+	require.NotNil(crd)
+
+	expected := `
+	if ko.Status.ACKResourceMetadata == nil {
+		ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
+	}
+	if resp.BackupDescription.BackupDetails.BackupArn != nil {
+		arn := ackv1alpha1.AWSResourceName(*resp.BackupDescription.BackupDetails.BackupArn)
+		ko.Status.ACKResourceMetadata.ARN = &arn
+	}
+	if resp.BackupDescription.BackupDetails.BackupCreationDateTime != nil {
+		ko.Status.BackupCreationDateTime = &metav1.Time{*resp.BackupDescription.BackupDetails.BackupCreationDateTime}
+	} else {
+		ko.Status.BackupCreationDateTime = nil
+	}
+	if resp.BackupDescription.BackupDetails.BackupExpiryDateTime != nil {
+		ko.Status.BackupExpiryDateTime = &metav1.Time{*resp.BackupDescription.BackupDetails.BackupExpiryDateTime}
+	} else {
+		ko.Status.BackupExpiryDateTime = nil
+	}
+	if resp.BackupDescription.BackupDetails.BackupName != nil {
+		ko.Spec.BackupName = resp.BackupDescription.BackupDetails.BackupName
+	} else {
+		ko.Spec.BackupName = nil
+	}
+	if resp.BackupDescription.BackupDetails.BackupSizeBytes != nil {
+		ko.Status.BackupSizeBytes = resp.BackupDescription.BackupDetails.BackupSizeBytes
+	} else {
+		ko.Status.BackupSizeBytes = nil
+	}
+	if resp.BackupDescription.BackupDetails.BackupStatus != nil {
+		ko.Status.BackupStatus = resp.BackupDescription.BackupDetails.BackupStatus
+	} else {
+		ko.Status.BackupStatus = nil
+	}
+	if resp.BackupDescription.BackupDetails.BackupType != nil {
+		ko.Status.BackupType = resp.BackupDescription.BackupDetails.BackupType
+	} else {
+		ko.Status.BackupType = nil
 	}
 `
 	assert.Equal(
@@ -2529,4 +2585,63 @@ func TestSetResource_RDS_DBSubnetGroup_ReadMany(t *testing.T) {
 		expected,
 		code.SetResource(crd.Config(), crd, model.OpTypeList, "resp", "ko", 1, false),
 	)
+}
+
+func TestGetWrapperOutputShape(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewGeneratorForService(t, "dynamodb")
+
+	crd := testutil.GetCRDByName(t, g, "Backup")
+	require.NotNil(crd)
+
+	op := crd.Ops.ReadOne.OutputRef.Shape
+
+	type args struct {
+		outputShape *awssdkmodel.Shape
+		fieldPath   string
+	}
+	tests := []struct {
+		name          string
+		args          args
+		wantErr       bool
+		wantShapeName string
+	}{
+		{
+			name: "incorrect field path: element not found",
+			args: args{
+				outputShape: op,
+				fieldPath:   "BackupDescription.Something",
+			},
+			wantErr: true,
+		},
+		{
+			name: "incorrect field path: element not of type structure",
+			args: args{
+				outputShape: op,
+				fieldPath:   "BackupDescription.BackupArn",
+			},
+			wantErr: true,
+		},
+		{
+			name: "correct field path",
+			args: args{
+				outputShape: op,
+				fieldPath:   "BackupDescription.BackupDetails",
+			},
+			wantErr:       false,
+			wantShapeName: "BackupDetails",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			outputShape, err := code.GetWrapperOutputShape(tt.args.outputShape, tt.args.fieldPath)
+			if (err != nil) != tt.wantErr {
+				assert.Fail(fmt.Sprintf("GetWrapperOutputShape() error = %v, wantErr %v", err, tt.wantErr))
+			} else if !tt.wantErr {
+				assert.Equal(tt.wantShapeName, outputShape.ShapeName)
+			}
+		})
+	}
 }

@@ -4,3 +4,12 @@ resources:
       errors:
         404:
           code: ResourceNotFoundException
+operations:
+  DescribeBackup:
+    # DescribeBackupOutput is an unsual shape because it contains information for
+    # the backup it self (BackupDetails), the table details when the backup was
+    # created (SourceTableDetails) and the table features (SourceTableFeatureDetails).
+    # If not specified the code generator will try to determine the wrapper field by
+    # selecting for the output shape that only have a single member, which is incorrect
+    # in this case.
+    output_wrapper_field_path: BackupDescription.BackupDetails
