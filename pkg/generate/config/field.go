@@ -135,6 +135,10 @@ type FieldConfig struct {
 	// AdditionalPrinterColumns list to be included in the `kubectl get`
 	// response.
 	IsPrintable bool `json:"is_printable"`
+	// PrintName instructs the code generator to override the column name used
+	// to include the field in `kubectl get` response. If `IsPrintable` is false
+	// this field is ignored.
+	PrintName string `json:"print_name"`
 	// Required indicates whether this field is a required member or not.
 	// This field is used to configure '+kubebuilder:validation:Required' on API object's members.
 	IsRequired *bool `json:"is_required,omitempty"`
