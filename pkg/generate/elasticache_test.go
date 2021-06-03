@@ -22,7 +22,7 @@ import (
 	"github.com/aws-controllers-k8s/code-generator/pkg/testutil"
 )
 
-func TestElasticache_CacheCluster(t *testing.T) {
+func TestElasticache_ReplicationGroup(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
@@ -31,41 +31,41 @@ func TestElasticache_CacheCluster(t *testing.T) {
 	crds, err := g.GetCRDs()
 	require.Nil(err)
 
-	crd := getCRDByName("CacheCluster", crds)
+	crd := getCRDByName("ReplicationGroup", crds)
 	require.NotNil(crd)
 
-	assert.Equal("CacheCluster", crd.Names.Camel)
-	assert.Equal("cacheCluster", crd.Names.CamelLower)
-	assert.Equal("cache_cluster", crd.Names.Snake)
+	assert.Equal("ReplicationGroup", crd.Names.Camel)
+	assert.Equal("replicationGroup", crd.Names.CamelLower)
+	assert.Equal("replication_group", crd.Names.Snake)
 
 	// The DescribeCacheClusters operation has the following definition:
 	//
-	//    "DescribeCacheClusters":{
-	//      "name":"DescribeCacheClusters",
-	//      "http":{
-	//        "method":"POST",
-	//        "requestUri":"/"
-	//      },
-	//      "input":{"shape":"DescribeCacheClustersMessage"},
-	//      "output":{
-	//        "shape":"CacheClusterMessage",
-	//        "resultWrapper":"DescribeCacheClustersResult"
-	//      },
-	//      "errors":[
-	//        {"shape":"CacheClusterNotFoundFault"},
-	//        {"shape":"InvalidParameterValueException"},
-	//        {"shape":"InvalidParameterCombinationException"}
-	//      ]
-	//    },
+	//	"DescribeReplicationGroups":{
+	//		"name":"DescribeReplicationGroups",
+	//			"http":{
+	//			"method":"POST",
+	//				"requestUri":"/"
+	//		},
+	//		"input":{"shape":"DescribeReplicationGroupsMessage"},
+	//		"output":{
+	//			"shape":"ReplicationGroupMessage",
+	//				"resultWrapper":"DescribeReplicationGroupsResult"
+	//		},
+	//		"errors":[
+	//			{"shape":"ReplicationGroupNotFoundFault"},
+	//			{"shape":"InvalidParameterValueException"},
+	//			{"shape":"InvalidParameterCombinationException"}
+	//		]
+	//	}
 	//
-	// Where the CacheClusterNotFoundFault shape looks like this:
+	// Where the ReplicationGroupNotFoundFault shape looks like this:
 	//
-	//    "CacheClusterNotFoundFault":{
+	//    "ReplicationGroupNotFoundFault":{
 	//      "type":"structure",
 	//      "members":{
 	//      },
 	//      "error":{
-	//        "code":"CacheClusterNotFound",
+	//        "code":"ReplicationGroupNotFoundFault",
 	//        "httpStatusCode":404,
 	//        "senderFault":true
 	//      },
@@ -73,15 +73,15 @@ func TestElasticache_CacheCluster(t *testing.T) {
 	//    },
 	//
 	// Which indicates that the error is a 404 and is our NotFoundException
-	// error with a "code" value of CacheClusterNotFound
-	assert.Equal("CacheClusterNotFound", crd.ExceptionCode(404))
+	// error with a "code" value of ReplicationGroupNotFoundFault
+	assert.Equal("ReplicationGroupNotFoundFault", crd.ExceptionCode(404))
 
-	// The Elasticache CacheCluster API has CUD+L operations:
+	// The Elasticache ReplicationGroup API has CUD+L operations:
 	//
-	// * CreateCacheCluster
-	// * DeleteCacheCluster
-	// * UpdateCacheCluster
-	// * GetCacheClusters
+	// * CreateReplicationGroup
+	// * DeleteReplicationGroup
+	// * ModifyReplicationGroup
+	// * DescribeReplicationGroup
 	require.NotNil(crd.Ops)
 
 	assert.NotNil(crd.Ops.Create)
@@ -100,22 +100,29 @@ func TestElasticache_CacheCluster(t *testing.T) {
 	statusFields := crd.StatusFields
 
 	expSpecFieldCamel := []string{
-		"AZMode",
+		"AtRestEncryptionEnabled",
 		"AuthToken",
 		"AutoMinorVersionUpgrade",
-		"CacheClusterID",
+		"AutomaticFailoverEnabled",
 		"CacheNodeType",
 		"CacheParameterGroupName",
 		"CacheSecurityGroupNames",
 		"CacheSubnetGroupName",
 		"Engine",
 		"EngineVersion",
+		"KMSKeyID",
+		"LogDeliveryConfigurations",
+		"MultiAZEnabled",
+		"NodeGroupConfiguration",
 		"NotificationTopicARN",
-		"NumCacheNodes",
+		"NumCacheClusters",
+		"NumNodeGroups",
 		"Port",
-		"PreferredAvailabilityZone",
-		"PreferredAvailabilityZones",
+		"PreferredCacheClusterAZs",
 		"PreferredMaintenanceWindow",
+		"PrimaryClusterID",
+		"ReplicasPerNodeGroup",
+		"ReplicationGroupDescription",
 		"ReplicationGroupID",
 		"SecurityGroupIDs",
 		"SnapshotARNs",
@@ -123,40 +130,31 @@ func TestElasticache_CacheCluster(t *testing.T) {
 		"SnapshotRetentionLimit",
 		"SnapshotWindow",
 		"Tags",
+		"TransitEncryptionEnabled",
+		"UserGroupIDs",
 	}
 	assert.Equal(expSpecFieldCamel, attrCamelNames(specFields))
 
 	expStatusFieldCamel := []string{
-		"AtRestEncryptionEnabled",
+		"AllowedScaleDownModifications",
+		"AllowedScaleUpModifications",
 		"AuthTokenEnabled",
 		"AuthTokenLastModifiedDate",
-		"CacheClusterCreateTime",
-		"CacheClusterStatus",
-		"CacheNodes",
-		"CacheParameterGroup",
-		"CacheSecurityGroups",
-		"ClientDownloadLandingPage",
+		"AutomaticFailover",
+		"ClusterEnabled",
 		"ConfigurationEndpoint",
-		"NotificationConfiguration",
+		"Description",
+		"Events",
+		"GlobalReplicationGroupInfo",
+		"MemberClusters",
+		"MemberClustersOutpostARNs",
+		"MultiAZ",
+		"NodeGroups",
 		"PendingModifiedValues",
-		"SecurityGroups",
-		"TransitEncryptionEnabled",
+		"SnapshottingClusterID",
+		"Status",
 	}
 	assert.Equal(expStatusFieldCamel, attrCamelNames(statusFields))
-}
-
-func TestElasticache_Ignored_Operations(t *testing.T) {
-	require := require.New(t)
-
-	g := testutil.NewGeneratorForService(t, "elasticache")
-
-	crds, err := g.GetCRDs()
-	require.Nil(err)
-
-	crd := getCRDByName("Snapshot", crds)
-	require.NotNil(crd)
-	require.NotNil(crd.Ops.Create)
-	require.Nil(crd.Ops.Delete)
 }
 
 func TestElasticache_Ignored_Resources(t *testing.T) {

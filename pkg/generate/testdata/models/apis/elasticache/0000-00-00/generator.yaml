@@ -1,20 +1,79 @@
 resources:
   CacheSubnetGroup:
     exceptions:
-      codes:
-        404: CacheSubnetGroupNotFoundFault
+      errors:
+        404:
+          code: CacheSubnetGroupNotFoundFault
+      terminal_codes:
+        - CacheSubnetGroupQuotaExceeded
+        - CacheSubnetQuotaExceededFault
+        - SubnetInUse
+        - InvalidSubnet
+        - InvalidParameter
+        - InvalidParameterValue
+        - InvalidParameterCombination
     fields:
       Events:
         is_read_only: true
         from:
           operation: DescribeEvents
           path: Events
+  ReplicationGroup:
+    update_conditions_custom_method_name: CustomUpdateConditions
+    exceptions:
+      terminal_codes:
+        - InvalidParameter
+        - InvalidParameterValue
+        - InvalidParameterCombination
+        - InsufficientCacheClusterCapacity
+        - CacheSecurityGroupNotFound
+        - CacheSubnetGroupNotFoundFault
+        - ClusterQuotaForCustomerExceeded
+        - NodeQuotaForClusterExceeded
+        - NodeQuotaForCustomerExceeded
+        - InvalidVPCNetworkStateFault
+        - TagQuotaPerResourceExceeded
+        - NodeGroupsPerReplicationGroupQuotaExceeded
+        - InvalidCacheSecurityGroupState
+        - CacheParameterGroupNotFound
+        - InvalidKMSKeyFault
+    fields:
+      AllowedScaleUpModifications:
+        is_read_only: true
+        from:
+          operation: ListAllowedNodeTypeModifications
+          path: ScaleUpModifications
+      AllowedScaleDownModifications:
+        is_read_only: true
+        from:
+          operation: ListAllowedNodeTypeModifications
+          path: ScaleDownModifications
+      Events:
+        is_read_only: true
+        from:
+          operation: DescribeEvents
+          path: Events
+      AuthToken:
+        is_secret: true
   Snapshot:
+    update_conditions_custom_method_name: CustomUpdateConditions
+    exceptions:
+      terminal_codes:
+        - InvalidParameter
+        - InvalidParameterValue
+        - InvalidParameterCombination
+        - SnapshotAlreadyExistsFault
+        - CacheClusterNotFound
+        - ReplicationGroupNotFoundFault
+        - SnapshotQuotaExceededFault
+        - SnapshotFeatureNotSupportedFault
     fields:
       SourceSnapshotName:
         from:
           operation: CopySnapshot
           path: SourceSnapshotName
+    update_operation:
+      custom_method_name: customUpdateSnapshot
   CacheParameterGroup:
     exceptions:
       terminal_codes:
@@ -41,34 +100,38 @@ resources:
           path: Events
     update_operation:
       custom_method_name: customUpdateCacheParameterGroup
-  ReplicationGroup:
-    fields:
-      AllowedScaleUpModifications:
-        is_read_only: true
-        from:
-          operation: ListAllowedNodeTypeModifications
-          path: ScaleUpModifications
-      AllowedScaleDownModifications:
-        is_read_only: true
-        from:
-          operation: ListAllowedNodeTypeModifications
-          path: ScaleDownModifications
-      Events:
-        is_read_only: true
-        from:
-          operation: DescribeEvents
-          path: Events
-      AuthToken:
-        is_secret: true
 operations:
+  DescribeCacheSubnetGroups:
+    set_output_custom_method_name: CustomDescribeCacheSubnetGroupsSetOutput
+  DescribeReplicationGroups:
+    set_output_custom_method_name: CustomDescribeReplicationGroupsSetOutput
+  CreateReplicationGroup:
+    set_output_custom_method_name: CustomCreateReplicationGroupSetOutput
   ModifyReplicationGroup:
+    custom_implementation: CustomModifyReplicationGroup
+    set_output_custom_method_name: CustomModifyReplicationGroupSetOutput
     override_values:
       ApplyImmediately: true
-  ModifyCacheCluster:
-    override_values:
-      ApplyImmediately: true
+  CreateSnapshot:
+    custom_implementation: CustomCreateSnapshot
+    set_output_custom_method_name: CustomCreateSnapshotSetOutput
+  DescribeSnapshots:
+    set_output_custom_method_name: CustomDescribeSnapshotSetOutput
+  CreateCacheParameterGroup:
+    set_output_custom_method_name: CustomCreateCacheParameterGroupSetOutput
+  DescribeCacheParameterGroups:
+    set_output_custom_method_name: CustomDescribeCacheParameterGroupsSetOutput
 ignore:
-  operations:
-    - DeleteSnapshot
   resource_names:
     - GlobalReplicationGroup
+    - CacheCluster
+    - CacheSecurityGroup
+    - User
+    - UserGroup
+  field_paths:
+    - DescribeSnapshotsInput.CacheClusterId
+    - DescribeSnapshotsInput.ReplicationGroupId
+    - DescribeSnapshotsInput.SnapshotSource
+    - ModifyReplicationGroupInput.SecurityGroupIds
+    - ModifyReplicationGroupInput.EngineVersion
+    - CreateReplicationGroupInput.GlobalReplicationGroupId
