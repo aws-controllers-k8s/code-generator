@@ -739,27 +739,33 @@ func TestSetSDK_ECR_Repository_Create(t *testing.T) {
 	)
 }
 
-func TestSetSDK_Elasticache_CacheCluster_Create(t *testing.T) {
+func TestSetSDK_Elasticache_ReplicationGroup_Create(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
 	g := testutil.NewGeneratorForService(t, "elasticache")
 
-	crd := testutil.GetCRDByName(t, g, "CacheCluster")
+	crd := testutil.GetCRDByName(t, g, "ReplicationGroup")
 	require.NotNil(crd)
 
 	expected := `
-	if r.ko.Spec.AZMode != nil {
-		res.SetAZMode(*r.ko.Spec.AZMode)
+	if r.ko.Spec.AtRestEncryptionEnabled != nil {
+		res.SetAtRestEncryptionEnabled(*r.ko.Spec.AtRestEncryptionEnabled)
 	}
 	if r.ko.Spec.AuthToken != nil {
-		res.SetAuthToken(*r.ko.Spec.AuthToken)
+		tmpSecret, err := rm.rr.SecretValueFromReference(ctx, r.ko.Spec.AuthToken)
+		if err != nil {
+			return nil, err
+		}
+		if tmpSecret != "" {
+			res.SetAuthToken(tmpSecret)
+		}
 	}
 	if r.ko.Spec.AutoMinorVersionUpgrade != nil {
 		res.SetAutoMinorVersionUpgrade(*r.ko.Spec.AutoMinorVersionUpgrade)
 	}
-	if r.ko.Spec.CacheClusterID != nil {
-		res.SetCacheClusterId(*r.ko.Spec.CacheClusterID)
+	if r.ko.Spec.AutomaticFailoverEnabled != nil {
+		res.SetAutomaticFailoverEnabled(*r.ko.Spec.AutomaticFailoverEnabled)
 	}
 	if r.ko.Spec.CacheNodeType != nil {
 		res.SetCacheNodeType(*r.ko.Spec.CacheNodeType)
@@ -785,50 +791,144 @@ func TestSetSDK_Elasticache_CacheCluster_Create(t *testing.T) {
 	if r.ko.Spec.EngineVersion != nil {
 		res.SetEngineVersion(*r.ko.Spec.EngineVersion)
 	}
+	if r.ko.Spec.KMSKeyID != nil {
+		res.SetKmsKeyId(*r.ko.Spec.KMSKeyID)
+	}
+	if r.ko.Spec.LogDeliveryConfigurations != nil {
+		f11 := []*svcsdk.LogDeliveryConfigurationRequest{}
+		for _, f11iter := range r.ko.Spec.LogDeliveryConfigurations {
+			f11elem := &svcsdk.LogDeliveryConfigurationRequest{}
+			if f11iter.DestinationDetails != nil {
+				f11elemf0 := &svcsdk.DestinationDetails{}
+				if f11iter.DestinationDetails.CloudWatchLogsDetails != nil {
+					f11elemf0f0 := &svcsdk.CloudWatchLogsDestinationDetails{}
+					if f11iter.DestinationDetails.CloudWatchLogsDetails.LogGroup != nil {
+						f11elemf0f0.SetLogGroup(*f11iter.DestinationDetails.CloudWatchLogsDetails.LogGroup)
+					}
+					f11elemf0.SetCloudWatchLogsDetails(f11elemf0f0)
+				}
+				if f11iter.DestinationDetails.KinesisFirehoseDetails != nil {
+					f11elemf0f1 := &svcsdk.KinesisFirehoseDestinationDetails{}
+					if f11iter.DestinationDetails.KinesisFirehoseDetails.DeliveryStream != nil {
+						f11elemf0f1.SetDeliveryStream(*f11iter.DestinationDetails.KinesisFirehoseDetails.DeliveryStream)
+					}
+					f11elemf0.SetKinesisFirehoseDetails(f11elemf0f1)
+				}
+				f11elem.SetDestinationDetails(f11elemf0)
+			}
+			if f11iter.DestinationType != nil {
+				f11elem.SetDestinationType(*f11iter.DestinationType)
+			}
+			if f11iter.Enabled != nil {
+				f11elem.SetEnabled(*f11iter.Enabled)
+			}
+			if f11iter.LogFormat != nil {
+				f11elem.SetLogFormat(*f11iter.LogFormat)
+			}
+			if f11iter.LogType != nil {
+				f11elem.SetLogType(*f11iter.LogType)
+			}
+			f11 = append(f11, f11elem)
+		}
+		res.SetLogDeliveryConfigurations(f11)
+	}
+	if r.ko.Spec.MultiAZEnabled != nil {
+		res.SetMultiAZEnabled(*r.ko.Spec.MultiAZEnabled)
+	}
+	if r.ko.Spec.NodeGroupConfiguration != nil {
+		f13 := []*svcsdk.NodeGroupConfiguration{}
+		for _, f13iter := range r.ko.Spec.NodeGroupConfiguration {
+			f13elem := &svcsdk.NodeGroupConfiguration{}
+			if f13iter.NodeGroupID != nil {
+				f13elem.SetNodeGroupId(*f13iter.NodeGroupID)
+			}
+			if f13iter.PrimaryAvailabilityZone != nil {
+				f13elem.SetPrimaryAvailabilityZone(*f13iter.PrimaryAvailabilityZone)
+			}
+			if f13iter.PrimaryOutpostARN != nil {
+				f13elem.SetPrimaryOutpostArn(*f13iter.PrimaryOutpostARN)
+			}
+			if f13iter.ReplicaAvailabilityZones != nil {
+				f13elemf3 := []*string{}
+				for _, f13elemf3iter := range f13iter.ReplicaAvailabilityZones {
+					var f13elemf3elem string
+					f13elemf3elem = *f13elemf3iter
+					f13elemf3 = append(f13elemf3, &f13elemf3elem)
+				}
+				f13elem.SetReplicaAvailabilityZones(f13elemf3)
+			}
+			if f13iter.ReplicaCount != nil {
+				f13elem.SetReplicaCount(*f13iter.ReplicaCount)
+			}
+			if f13iter.ReplicaOutpostARNs != nil {
+				f13elemf5 := []*string{}
+				for _, f13elemf5iter := range f13iter.ReplicaOutpostARNs {
+					var f13elemf5elem string
+					f13elemf5elem = *f13elemf5iter
+					f13elemf5 = append(f13elemf5, &f13elemf5elem)
+				}
+				f13elem.SetReplicaOutpostArns(f13elemf5)
+			}
+			if f13iter.Slots != nil {
+				f13elem.SetSlots(*f13iter.Slots)
+			}
+			f13 = append(f13, f13elem)
+		}
+		res.SetNodeGroupConfiguration(f13)
+	}
 	if r.ko.Spec.NotificationTopicARN != nil {
 		res.SetNotificationTopicArn(*r.ko.Spec.NotificationTopicARN)
 	}
-	if r.ko.Spec.NumCacheNodes != nil {
-		res.SetNumCacheNodes(*r.ko.Spec.NumCacheNodes)
+	if r.ko.Spec.NumCacheClusters != nil {
+		res.SetNumCacheClusters(*r.ko.Spec.NumCacheClusters)
+	}
+	if r.ko.Spec.NumNodeGroups != nil {
+		res.SetNumNodeGroups(*r.ko.Spec.NumNodeGroups)
 	}
 	if r.ko.Spec.Port != nil {
 		res.SetPort(*r.ko.Spec.Port)
 	}
-	if r.ko.Spec.PreferredAvailabilityZone != nil {
-		res.SetPreferredAvailabilityZone(*r.ko.Spec.PreferredAvailabilityZone)
-	}
-	if r.ko.Spec.PreferredAvailabilityZones != nil {
-		f14 := []*string{}
-		for _, f14iter := range r.ko.Spec.PreferredAvailabilityZones {
-			var f14elem string
-			f14elem = *f14iter
-			f14 = append(f14, &f14elem)
+	if r.ko.Spec.PreferredCacheClusterAZs != nil {
+		f18 := []*string{}
+		for _, f18iter := range r.ko.Spec.PreferredCacheClusterAZs {
+			var f18elem string
+			f18elem = *f18iter
+			f18 = append(f18, &f18elem)
 		}
-		res.SetPreferredAvailabilityZones(f14)
+		res.SetPreferredCacheClusterAZs(f18)
 	}
 	if r.ko.Spec.PreferredMaintenanceWindow != nil {
 		res.SetPreferredMaintenanceWindow(*r.ko.Spec.PreferredMaintenanceWindow)
+	}
+	if r.ko.Spec.PrimaryClusterID != nil {
+		res.SetPrimaryClusterId(*r.ko.Spec.PrimaryClusterID)
+	}
+	if r.ko.Spec.ReplicasPerNodeGroup != nil {
+		res.SetReplicasPerNodeGroup(*r.ko.Spec.ReplicasPerNodeGroup)
+	}
+	if r.ko.Spec.ReplicationGroupDescription != nil {
+		res.SetReplicationGroupDescription(*r.ko.Spec.ReplicationGroupDescription)
 	}
 	if r.ko.Spec.ReplicationGroupID != nil {
 		res.SetReplicationGroupId(*r.ko.Spec.ReplicationGroupID)
 	}
 	if r.ko.Spec.SecurityGroupIDs != nil {
-		f17 := []*string{}
-		for _, f17iter := range r.ko.Spec.SecurityGroupIDs {
-			var f17elem string
-			f17elem = *f17iter
-			f17 = append(f17, &f17elem)
+		f24 := []*string{}
+		for _, f24iter := range r.ko.Spec.SecurityGroupIDs {
+			var f24elem string
+			f24elem = *f24iter
+			f24 = append(f24, &f24elem)
 		}
-		res.SetSecurityGroupIds(f17)
+		res.SetSecurityGroupIds(f24)
 	}
 	if r.ko.Spec.SnapshotARNs != nil {
-		f18 := []*string{}
-		for _, f18iter := range r.ko.Spec.SnapshotARNs {
-			var f18elem string
-			f18elem = *f18iter
-			f18 = append(f18, &f18elem)
+		f25 := []*string{}
+		for _, f25iter := range r.ko.Spec.SnapshotARNs {
+			var f25elem string
+			f25elem = *f25iter
+			f25 = append(f25, &f25elem)
 		}
-		res.SetSnapshotArns(f18)
+		res.SetSnapshotArns(f25)
 	}
 	if r.ko.Spec.SnapshotName != nil {
 		res.SetSnapshotName(*r.ko.Spec.SnapshotName)
@@ -840,18 +940,30 @@ func TestSetSDK_Elasticache_CacheCluster_Create(t *testing.T) {
 		res.SetSnapshotWindow(*r.ko.Spec.SnapshotWindow)
 	}
 	if r.ko.Spec.Tags != nil {
-		f22 := []*svcsdk.Tag{}
-		for _, f22iter := range r.ko.Spec.Tags {
-			f22elem := &svcsdk.Tag{}
-			if f22iter.Key != nil {
-				f22elem.SetKey(*f22iter.Key)
+		f29 := []*svcsdk.Tag{}
+		for _, f29iter := range r.ko.Spec.Tags {
+			f29elem := &svcsdk.Tag{}
+			if f29iter.Key != nil {
+				f29elem.SetKey(*f29iter.Key)
 			}
-			if f22iter.Value != nil {
-				f22elem.SetValue(*f22iter.Value)
+			if f29iter.Value != nil {
+				f29elem.SetValue(*f29iter.Value)
 			}
-			f22 = append(f22, f22elem)
+			f29 = append(f29, f29elem)
 		}
-		res.SetTags(f22)
+		res.SetTags(f29)
+	}
+	if r.ko.Spec.TransitEncryptionEnabled != nil {
+		res.SetTransitEncryptionEnabled(*r.ko.Spec.TransitEncryptionEnabled)
+	}
+	if r.ko.Spec.UserGroupIDs != nil {
+		f31 := []*string{}
+		for _, f31iter := range r.ko.Spec.UserGroupIDs {
+			var f31elem string
+			f31elem = *f31iter
+			f31 = append(f31, &f31elem)
+		}
+		res.SetUserGroupIds(f31)
 	}
 `
 	assert.Equal(
@@ -860,13 +972,13 @@ func TestSetSDK_Elasticache_CacheCluster_Create(t *testing.T) {
 	)
 }
 
-func TestSetSDK_Elasticache_CacheCluster_ReadMany(t *testing.T) {
+func TestSetSDK_Elasticache_ReplicationGroup_ReadMany(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
 	g := testutil.NewGeneratorForService(t, "elasticache")
 
-	crd := testutil.GetCRDByName(t, g, "CacheCluster")
+	crd := testutil.GetCRDByName(t, g, "ReplicationGroup")
 	require.NotNil(crd)
 
 	// Elasticache doesn't have a ReadOne operation; only a List/ReadMany
@@ -874,8 +986,8 @@ func TestSetSDK_Elasticache_CacheCluster_ReadMany(t *testing.T) {
 	// DescribeCacheClustersInput and processing of the
 	// DescribeCacheClustersOutput shapes is correct.
 	expected := `
-	if r.ko.Spec.CacheClusterID != nil {
-		res.SetCacheClusterId(*r.ko.Spec.CacheClusterID)
+	if r.ko.Spec.ReplicationGroupID != nil {
+		res.SetReplicationGroupId(*r.ko.Spec.ReplicationGroupID)
 	}
 `
 	assert.Equal(
@@ -925,8 +1037,43 @@ func TestSetSDK_Elasticache_ReplicationGroup_Update_Override_Values(t *testing.T
 		}
 		res.SetCacheSecurityGroupNames(f7)
 	}
-	if r.ko.Spec.EngineVersion != nil {
-		res.SetEngineVersion(*r.ko.Spec.EngineVersion)
+	if r.ko.Spec.LogDeliveryConfigurations != nil {
+		f8 := []*svcsdk.LogDeliveryConfigurationRequest{}
+		for _, f8iter := range r.ko.Spec.LogDeliveryConfigurations {
+			f8elem := &svcsdk.LogDeliveryConfigurationRequest{}
+			if f8iter.DestinationDetails != nil {
+				f8elemf0 := &svcsdk.DestinationDetails{}
+				if f8iter.DestinationDetails.CloudWatchLogsDetails != nil {
+					f8elemf0f0 := &svcsdk.CloudWatchLogsDestinationDetails{}
+					if f8iter.DestinationDetails.CloudWatchLogsDetails.LogGroup != nil {
+						f8elemf0f0.SetLogGroup(*f8iter.DestinationDetails.CloudWatchLogsDetails.LogGroup)
+					}
+					f8elemf0.SetCloudWatchLogsDetails(f8elemf0f0)
+				}
+				if f8iter.DestinationDetails.KinesisFirehoseDetails != nil {
+					f8elemf0f1 := &svcsdk.KinesisFirehoseDestinationDetails{}
+					if f8iter.DestinationDetails.KinesisFirehoseDetails.DeliveryStream != nil {
+						f8elemf0f1.SetDeliveryStream(*f8iter.DestinationDetails.KinesisFirehoseDetails.DeliveryStream)
+					}
+					f8elemf0.SetKinesisFirehoseDetails(f8elemf0f1)
+				}
+				f8elem.SetDestinationDetails(f8elemf0)
+			}
+			if f8iter.DestinationType != nil {
+				f8elem.SetDestinationType(*f8iter.DestinationType)
+			}
+			if f8iter.Enabled != nil {
+				f8elem.SetEnabled(*f8iter.Enabled)
+			}
+			if f8iter.LogFormat != nil {
+				f8elem.SetLogFormat(*f8iter.LogFormat)
+			}
+			if f8iter.LogType != nil {
+				f8elem.SetLogType(*f8iter.LogType)
+			}
+			f8 = append(f8, f8elem)
+		}
+		res.SetLogDeliveryConfigurations(f8)
 	}
 	if r.ko.Spec.MultiAZEnabled != nil {
 		res.SetMultiAZEnabled(*r.ko.Spec.MultiAZEnabled)
@@ -945,15 +1092,6 @@ func TestSetSDK_Elasticache_ReplicationGroup_Update_Override_Values(t *testing.T
 	}
 	if r.ko.Spec.ReplicationGroupID != nil {
 		res.SetReplicationGroupId(*r.ko.Spec.ReplicationGroupID)
-	}
-	if r.ko.Spec.SecurityGroupIDs != nil {
-		f17 := []*string{}
-		for _, f17iter := range r.ko.Spec.SecurityGroupIDs {
-			var f17elem string
-			f17elem = *f17iter
-			f17 = append(f17, &f17elem)
-		}
-		res.SetSecurityGroupIds(f17)
 	}
 	if r.ko.Spec.SnapshotRetentionLimit != nil {
 		res.SetSnapshotRetentionLimit(*r.ko.Spec.SnapshotRetentionLimit)
