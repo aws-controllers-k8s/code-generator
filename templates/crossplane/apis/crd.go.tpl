@@ -51,7 +51,7 @@ type {{ .CRD.Kind }}Observation struct {
 // {{ .CRD.Kind }}Status defines the observed state of {{ .CRD.Kind }}.
 type {{ .CRD.Kind }}Status struct {
 	xpv1.ResourceStatus `json:",inline"`
-	AtProvider {{ .CRD.Kind }}Observation `json:"atProvider"`
+	AtProvider {{ .CRD.Kind }}Observation `json:"atProvider,omitempty"`
 }
 
 
@@ -66,7 +66,7 @@ type {{ .CRD.Kind }}Status struct {
 type {{ .CRD.Kind }} struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec   {{ .CRD.Kind }}Spec   `json:"spec,omitempty"`
+	Spec   {{ .CRD.Kind }}Spec   `json:"spec"`
 	Status {{ .CRD.Kind }}Status `json:"status,omitempty"`
 }
 
