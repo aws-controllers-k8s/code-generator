@@ -33,7 +33,7 @@ var (
 		"helm/templates/_helpers.tpl",
 		"helm/templates/cluster-role-binding.yaml",
 		"helm/templates/deployment.yaml",
-		"helm/templates/service.yaml",
+		"helm/templates/metrics-service.yaml",
 		"helm/templates/service-account.yaml",
 	}
 	releaseFuncMap = ttpl.FuncMap{
