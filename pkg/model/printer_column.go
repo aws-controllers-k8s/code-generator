@@ -82,21 +82,22 @@ func (r *CRD) addPrintableColumn(
 	// https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md#data-types
 	// This maps Go type to OpenAPI type.
 	acceptableColumnMaps := map[string]string{
-		"string":  "string",
-		"boolean": "boolean",
-		"int":     "integer",
-		"int8":    "integer",
-		"int16":   "integer",
-		"int32":   "integer",
-		"int64":   "integer",
-		"uint":    "integer",
-		"uint8":   "integer",
-		"uint16":  "integer",
-		"uint32":  "integer",
-		"uint64":  "integer",
-		"uintptr": "integer",
-		"float32": "number",
-		"float64": "number",
+		"string":      "string",
+		"boolean":     "boolean",
+		"int":         "integer",
+		"int8":        "integer",
+		"int16":       "integer",
+		"int32":       "integer",
+		"int64":       "integer",
+		"uint":        "integer",
+		"uint8":       "integer",
+		"uint16":      "integer",
+		"uint32":      "integer",
+		"uint64":      "integer",
+		"uintptr":     "integer",
+		"float32":     "number",
+		"float64":     "number",
+		"metav1.Time": "date",
 	}
 	printColumnType, exists := acceptableColumnMaps[fieldColumnType]
 
@@ -108,9 +109,14 @@ func (r *CRD) addPrintableColumn(
 		panic(msg)
 	}
 
+	name := field.Names.Camel
+	if field.FieldConfig.PrintName != "" {
+		name = field.FieldConfig.PrintName
+	}
+
 	column := &PrinterColumn{
 		CRD:      r,
-		Name:     field.Names.Camel,
+		Name:     name,
 		Type:     printColumnType,
 		JSONPath: jsonPath,
 	}
