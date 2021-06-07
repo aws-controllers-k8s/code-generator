@@ -74,6 +74,9 @@ func (rm *resourceManager) ReadOne(
 	}
 	observed, err := rm.sdkFind(ctx, r)
 	if err != nil {
+		if observed != nil {
+			return rm.onError(observed, err)
+		}
 		return rm.onError(r, err)
 	}
 	return rm.onSuccess(observed)
