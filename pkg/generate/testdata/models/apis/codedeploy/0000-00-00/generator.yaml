@@ -7,10 +7,13 @@ resources:
     # below, we're testing printer columns end up sorted properly in the CRD
     fields:
       DeploymentGroupName:
-        is_printable: true
+        print:
+          name: DeploymentGroup
       ApplicationName:
-        is_printable: true
+        print:
+          name: Application
       DeploymentConfigName:
-        is_printable: true
+        print:
+          name: DeploymentConfig
       Description:
-        is_printable: true
+        print: {}

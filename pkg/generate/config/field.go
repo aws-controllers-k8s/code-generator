@@ -116,6 +116,16 @@ type CompareFieldConfig struct {
 	NilEqualsZeroValue bool `json:"nil_equals_zero_value"`
 }
 
+// PrintFieldConfig instructs the code generator how to handle kubebuilder:printcolumn
+// comment marker generation. If this struct is not nil, the field will be added to the
+// columns of `kubectl get` response.
+type PrintFieldConfig struct {
+	// Name instructs the code generator to override the column name used to
+	// include the field in `kubectl get` response. This field is generally used
+	// to override very long and redundant columns names.
+	Name string `json:"name"`
+}
+
 // FieldConfig contains instructions to the code generator about how
 // to interpret the value of an Attribute and how to map it to a CRD's Spec or
 // Status field
@@ -131,14 +141,6 @@ type FieldConfig struct {
 	// IsReadOnly indicates the field's value can not be set by a Kubernetes
 	// user; in other words, the field should go in the CR's Status struct
 	IsReadOnly bool `json:"is_read_only"`
-	// IsPrintable determines whether the field should be included in the
-	// AdditionalPrinterColumns list to be included in the `kubectl get`
-	// response.
-	IsPrintable bool `json:"is_printable"`
-	// PrintName instructs the code generator to override the column name used
-	// to include the field in `kubectl get` response. If `IsPrintable` is false
-	// this field is ignored.
-	PrintName string `json:"print_name"`
 	// Required indicates whether this field is a required member or not.
 	// This field is used to configure '+kubebuilder:validation:Required' on API object's members.
 	IsRequired *bool `json:"is_required,omitempty"`
@@ -168,4 +170,8 @@ type FieldConfig struct {
 	// Compare instructs the code generator how to produce code that compares
 	// the value of the field in two resources
 	Compare *CompareFieldConfig `json:"compare,omitempty"`
+	// Print instructs the code generator how to generate comment markers that
+	// influence hows field are printed in `kubectl get` response. If this field
+	// is not nil, it will be added to the columns of `kubectl get`.
+	Print *PrintFieldConfig `json:"print,omitempty"`
 }

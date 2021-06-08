@@ -113,12 +113,12 @@ func TestCodeDeploy_Deployment(t *testing.T) {
 
 	// We marked the fields, "ApplicationName", "DeploymentGroupName",
 	// "DeploymentConfigName and "Description" as printer columns in the
-	// generator.yaml. Let's make sure that they are always returned in sorted
-	// order.
+	// generator.yaml and trimmed the "Name" suffix. Let's make sure that
+	// they are always returned in sorted order.
 	expPrinterColNames := []string{
-		"ApplicationName",
-		"DeploymentConfigName",
-		"DeploymentGroupName",
+		"Application",
+		"DeploymentConfig",
+		"DeploymentGroup",
 		"Description",
 	}
 	gotPrinterCols := crd.AdditionalPrinterColumns()
