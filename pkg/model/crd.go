@@ -417,6 +417,15 @@ func (r *CRD) IsAdoptable() bool {
 	return r.cfg.ResourceIsAdoptable(r.Names.Original)
 }
 
+// GetResourcePrintOrderByName returns the Printer Column order-by field name
+func (r *CRD) GetResourcePrintOrderByName() string {
+	orderBy := r.cfg.GetResourcePrintOrderByName(r.Names.Camel)
+	if orderBy == "" {
+		return "name"
+	}
+	return orderBy
+}
+
 // CustomUpdateMethodName returns the name of the custom resourceManager method
 // for updating the resource state, if any has been specified in the generator
 // config

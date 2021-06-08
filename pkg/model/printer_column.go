@@ -16,6 +16,7 @@ package model
 import (
 	"fmt"
 	"sort"
+	"strings"
 )
 
 // PrinterColumn represents a single field in the CRD's Spec or Status objects
@@ -59,13 +60,34 @@ func (pcs printerColumnSorter) Less(i, j int) bool {
 	return pcs.by(pcs.cols[i], pcs.cols[j])
 }
 
+// sortFunction returns a Go function used the sort the printer columns.
+func sortFunction(sortByField string) func(a, b *PrinterColumn) bool {
+	switch strings.ToLower(sortByField) {
+	//TODO(a-hially): add Priority and Order sort functions
+	case "name":
+		return func(a, b *PrinterColumn) bool {
+			return a.Name < b.Name
+		}
+	case "type":
+		return func(a, b *PrinterColumn) bool {
+			return a.Type < b.Type
+		}
+	case "jsonpath":
+		return func(a, b *PrinterColumn) bool {
+			return a.JSONPath < b.JSONPath
+		}
+	default:
+		msg := fmt.Sprintf("unknown sort-by field: '%s'. must be one of 'Name', 'Type' and 'JSONPath'", sortByField)
+		panic(msg)
+	}
+}
+
 // AdditionalPrinterColumns returns a sorted list of PrinterColumn structs for
 // the resource
-func (r CRD) AdditionalPrinterColumns() []*PrinterColumn {
-	byName := func(a, b *PrinterColumn) bool {
-		return a.Name < b.Name
-	}
-	By(byName).Sort(r.additionalPrinterColumns)
+func (r *CRD) AdditionalPrinterColumns() []*PrinterColumn {
+	orderByFieldName := r.GetResourcePrintOrderByName()
+	sortFn := sortFunction(orderByFieldName)
+	By(sortFn).Sort(r.additionalPrinterColumns)
 	return r.additionalPrinterColumns
 }
 
