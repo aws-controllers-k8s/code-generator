@@ -1,5 +1,7 @@
 resources:
   Deployment:
+    print:
+      order_by: jsonpath
     exceptions:
       errors:
         404:

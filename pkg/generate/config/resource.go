@@ -76,6 +76,9 @@ type ResourceConfig struct {
 	// If set to false, the user will be given an error if they attempt to adopt a resource
 	// with this type.
 	IsAdoptable *bool `json:"is_adoptable,omitempty"`
+	// Print contains instructions for the code generator to generate kubebuilder printcolumns
+	// marker comments.
+	Print *PrintConfig `json:"print,omitempty"`
 }
 
 // HooksConfig instructs the code generator how to inject custom callback hooks
@@ -249,6 +252,13 @@ type UpdateOperationConfig struct {
 	CustomMethodName string `json:"custom_method_name"`
 }
 
+// PrintConfig informs instruct the code generator on how to sort kubebuilder
+// printcolumn marker coments.
+type PrintConfig struct {
+	// OrderBy is the field used to sort the list of PrinterColumn options.
+	OrderBy string `json:"order_by"`
+}
+
 // ResourceConfig returns the ResourceConfig for a given named resource
 func (c *Config) ResourceConfig(name string) (*ResourceConfig, bool) {
 	rc, ok := c.Resources[name]
@@ -402,4 +412,19 @@ func (c *Config) ResourceIsAdoptable(resourceName string) bool {
 		return true
 	}
 	return *rConfig.IsAdoptable
+}
+
+// GetResourcePrintOrderByName returns the Printer Column order-by field name
+func (c *Config) GetResourcePrintOrderByName(resourceName string) string {
+	if c == nil {
+		return ""
+	}
+	rConfig, ok := c.Resources[resourceName]
+	if !ok {
+		return ""
+	}
+	if rConfig.Print != nil {
+		return rConfig.Print.OrderBy
+	}
+	return ""
 }
