@@ -255,6 +255,13 @@ type UpdateOperationConfig struct {
 // PrintConfig informs instruct the code generator on how to sort kubebuilder
 // printcolumn marker coments.
 type PrintConfig struct {
+	// AddAgeColumn a boolean informing the code generator whether to append a kubebuilder
+	// marker comment to show a resource Age (created since date) in `kubectl get` response.
+	// The Age value is parsed from '.metadata.creationTimestamp'.
+	//
+	// NOTE: this is the Kubernetes resource Age (creation time at the api-server/etcd)
+	// and not the AWS resource Age.
+	AddAgeColumn bool `json:"add_age_column"`
 	// OrderBy is the field used to sort the list of PrinterColumn options.
 	OrderBy string `json:"order_by"`
 }
@@ -427,4 +434,19 @@ func (c *Config) GetResourcePrintOrderByName(resourceName string) string {
 		return rConfig.Print.OrderBy
 	}
 	return ""
+}
+
+// GetResourcePrintAddAgeColumn returns the resource printer AddAgeColumn config
+func (c *Config) GetResourcePrintAddAgeColumn(resourceName string) bool {
+	if c == nil {
+		return false
+	}
+	rConfig, ok := c.Resources[resourceName]
+	if !ok {
+		return false
+	}
+	if rConfig.Print != nil {
+		return rConfig.Print.AddAgeColumn
+	}
+	return false
 }

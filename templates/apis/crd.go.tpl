@@ -50,6 +50,9 @@ type {{ .CRD.Kind }}Status struct {
 {{- range $column := .CRD.AdditionalPrinterColumns }}
 // +kubebuilder:printcolumn:name="{{$column.Name}}",type={{$column.Type}},JSONPath=`{{$column.JSONPath}}`
 {{- end }}
+{{- if .CRD.PrintAgeColumn }}
+// +kubebuilder:printcolumn:name="Age",type="date",priority=0,JSONPath=".metadata.creationTimestamp"
+{{- end }}
 {{- if .CRD.ShortNames }}
 // +kubebuilder:resource:shortName={{ Join .CRD.ShortNames ";" }}
 {{- end }}

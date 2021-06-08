@@ -426,6 +426,12 @@ func (r *CRD) GetResourcePrintOrderByName() string {
 	return orderBy
 }
 
+// PrintAgeColumn returns whether the code generator should append 'Age'
+// kubebuilder:printcolumn comment marker
+func (r *CRD) PrintAgeColumn() bool {
+	return r.cfg.GetResourcePrintAddAgeColumn(r.Names.Camel)
+}
+
 // CustomUpdateMethodName returns the name of the custom resourceManager method
 // for updating the resource state, if any has been specified in the generator
 // config
