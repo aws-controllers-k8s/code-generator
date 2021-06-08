@@ -176,7 +176,7 @@ func (r *CRD) AddSpecField(
 	fConfigs := r.cfg.ResourceFields(r.Names.Original)
 	fConfig := fConfigs[memberNames.Original]
 	f := NewField(r, fPath, memberNames, shapeRef, fConfig)
-	if fConfig != nil && fConfig.IsPrintable {
+	if fConfig != nil && fConfig.Print != nil {
 		r.addSpecPrintableColumn(f)
 	}
 	r.SpecFields[memberNames.Original] = f
@@ -193,7 +193,7 @@ func (r *CRD) AddStatusField(
 	fConfigs := r.cfg.ResourceFields(r.Names.Original)
 	fConfig := fConfigs[memberNames.Original]
 	f := NewField(r, fPath, memberNames, shapeRef, fConfig)
-	if fConfig != nil && fConfig.IsPrintable {
+	if fConfig != nil && fConfig.Print != nil {
 		r.addStatusPrintableColumn(f)
 	}
 	r.StatusFields[memberNames.Original] = f

@@ -110,8 +110,8 @@ func (r *CRD) addPrintableColumn(
 	}
 
 	name := field.Names.Camel
-	if field.FieldConfig.PrintName != "" {
-		name = field.FieldConfig.PrintName
+	if field.FieldConfig.Print.Name != "" {
+		name = field.FieldConfig.Print.Name
 	}
 
 	column := &PrinterColumn{
