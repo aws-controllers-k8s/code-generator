@@ -24,6 +24,7 @@ type PrinterColumn struct {
 	CRD      *CRD
 	Name     string
 	Type     string
+	Priority int
 	JSONPath string
 }
 
@@ -140,6 +141,7 @@ func (r *CRD) addPrintableColumn(
 		CRD:      r,
 		Name:     name,
 		Type:     printColumnType,
+		Priority: field.FieldConfig.Print.Priority,
 		JSONPath: jsonPath,
 	}
 	r.additionalPrinterColumns = append(r.additionalPrinterColumns, column)

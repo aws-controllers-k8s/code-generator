@@ -124,6 +124,10 @@ type PrintFieldConfig struct {
 	// include the field in `kubectl get` response. This field is generally used
 	// to override very long and redundant columns names.
 	Name string `json:"name"`
+	// Priority differentiates between fields/columns shown in standard view or wide
+	// view (using the -o wide flag). Fields with priority 0 are shown in standard view.
+	// Fields with priority greater than 0 are only shown in wide view. Default is 0
+	Priority int `json:"priority"`
 }
 
 // FieldConfig contains instructions to the code generator about how
