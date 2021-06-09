@@ -48,7 +48,7 @@ type {{ .CRD.Kind }}Status struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 {{- range $column := .CRD.AdditionalPrinterColumns }}
-// +kubebuilder:printcolumn:name="{{$column.Name}}",type={{$column.Type}},JSONPath=`{{$column.JSONPath}}`
+// +kubebuilder:printcolumn:name="{{$column.Name}}",type={{$column.Type}},priority={{$column.Priority}},JSONPath=`{{$column.JSONPath}}`
 {{- end }}
 {{- if .CRD.ShortNames }}
 // +kubebuilder:resource:shortName={{ Join .CRD.ShortNames ";" }}
