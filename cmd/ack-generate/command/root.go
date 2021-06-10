@@ -18,7 +18,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 )
 
@@ -62,7 +61,7 @@ func init() {
 		os.Exit(1)
 	}
 
-	hd, err := homedir.Dir()
+	hd, err := os.UserHomeDir()
 	if err != nil {
 		fmt.Printf("unable to determine $HOME: %s\n", err)
 		os.Exit(1)
