@@ -236,17 +236,6 @@ func SetSDK(
 		sourceAdaptedVarName += "." + f.Names.Camel
 		sourceFieldPath := f.Names.Camel
 
-		if r.IsSecretField(memberName) {
-			out += setSDKForSecret(
-				cfg, r,
-				memberName,
-				targetVarName,
-				sourceAdaptedVarName,
-				indentLevel,
-			)
-			continue
-		}
-
 		memberShapeRef, _ := inputShape.MemberRefs[memberName]
 		memberShape := memberShapeRef.Shape
 
@@ -339,16 +328,26 @@ func SetSDK(
 				)
 			}
 		default:
-			out += setSDKForScalar(
-				cfg, r,
-				memberName,
-				targetVarName,
-				inputShape.Type,
-				sourceFieldPath,
-				sourceAdaptedVarName,
-				memberShapeRef,
-				indentLevel+1,
-			)
+			if r.IsSecretField(memberName) {
+				out += setSDKForSecret(
+					cfg, r,
+					memberName,
+					targetVarName,
+					sourceAdaptedVarName,
+					indentLevel,
+				)
+			} else {
+				out += setSDKForScalar(
+					cfg, r,
+					memberName,
+					targetVarName,
+					inputShape.Type,
+					sourceFieldPath,
+					sourceAdaptedVarName,
+					memberShapeRef,
+					indentLevel+1,
+				)
+			}
 		}
 		out += fmt.Sprintf(
 			"%s}\n", indent,
@@ -770,6 +769,25 @@ func setSDKForContainer(
 			indentLevel,
 		)
 	default:
+		if r.IsSecretField(sourceFieldPath) {
+			indent := strings.Repeat("\t", indentLevel)
+			// if ko.Spec.MasterUserPassword != nil {
+			out := fmt.Sprintf(
+				"%sif %s != nil {\n",
+				indent, sourceVarName,
+			)
+			out += setSDKForSecret(
+				cfg, r,
+				"",
+				targetVarName,
+				sourceVarName,
+				indentLevel,
+			)
+			// }
+			out += fmt.Sprintf("%s}\n", indent)
+			return out
+		}
+
 		return setSDKForScalar(
 			cfg, r,
 			targetFieldName,
@@ -789,7 +807,6 @@ func setSDKForContainer(
 //
 // The Go code output from this function looks like this:
 //
-// if ko.Spec.MasterUserPassword != nil {
 //     tmpSecret, err := rm.rr.SecretValueFromReference(ctx, ko.Spec.MasterUserPassword)
 //     if err != nil {
 //         return nil, err
@@ -797,7 +814,20 @@ func setSDKForContainer(
 //     if tmpSecret != "" {
 //         res.SetMasterUserPassword(tmpSecret)
 //     }
-// }
+//
+//     or:
+//
+//	   tmpSecret, err := rm.rr.SecretValueFromReference(ctx, f3iter)
+//	   if err != nil {
+//	       return nil, err
+//     }
+//     if tmpSecret != "" {
+//         f3elem = tmpSecret
+//     }
+//
+// The second case is used when the SecretKeyReference field
+// is a slice of `[]*string` in the original AWS API Input shape.
+
 func setSDKForSecret(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,
@@ -809,15 +839,11 @@ func setSDKForSecret(
 	sourceVarName string,
 	indentLevel int,
 ) string {
+
 	out := ""
 	indent := strings.Repeat("\t", indentLevel)
 	secVar := "tmpSecret"
 
-	// if ko.Spec.MasterUserPassword != nil {
-	out += fmt.Sprintf(
-		"%sif %s != nil {\n",
-		indent, sourceVarName,
-	)
 	//     tmpSecret, err := rm.rr.SecretValueFromReference(ctx, ko.Spec.MasterUserPassword)
 	out += fmt.Sprintf(
 		"%s\t%s, err := rm.rr.SecretValueFromReference(ctx, %s)\n",
@@ -833,13 +859,18 @@ func setSDKForSecret(
 	//         res.SetMasterUserPassword(tmpSecret)
 	//     }
 	out += fmt.Sprintf("%s\tif tmpSecret != \"\" {\n", indent)
-	out += fmt.Sprintf(
-		"%s\t\t%s.Set%s(%s)\n",
-		indent, targetVarName, targetFieldName, secVar,
-	)
+	if targetFieldName == "" {
+		out += fmt.Sprintf(
+			"%s\t\t%s = %s\n",
+			indent, targetVarName, secVar,
+		)
+	} else {
+		out += fmt.Sprintf(
+			"%s\t\t%s.Set%s(%s)\n",
+			indent, targetVarName, targetFieldName, secVar,
+		)
+	}
 	out += fmt.Sprintf("%s\t}\n", indent)
-	// }
-	out += fmt.Sprintf("%s}\n", indent)
 	return out
 }
 
@@ -871,16 +902,7 @@ func setSDKForStruct(
 		cleanMemberName := cleanMemberNames.Camel
 		sourceAdaptedVarName := sourceVarName + "." + cleanMemberName
 		memberFieldPath := sourceFieldPath + "." + cleanMemberName
-		if r.IsSecretField(memberFieldPath) {
-			out += setSDKForSecret(
-				cfg, r,
-				memberName,
-				targetVarName,
-				sourceAdaptedVarName,
-				indentLevel,
-			)
-			continue
-		}
+
 		out += fmt.Sprintf(
 			"%sif %s != nil {\n", indent, sourceAdaptedVarName,
 		)
@@ -918,16 +940,26 @@ func setSDKForStruct(
 				)
 			}
 		default:
-			out += setSDKForScalar(
-				cfg, r,
-				memberName,
-				targetVarName,
-				targetShape.Type,
-				memberFieldPath,
-				sourceAdaptedVarName,
-				memberShapeRef,
-				indentLevel+1,
-			)
+			if r.IsSecretField(memberFieldPath) {
+				out += setSDKForSecret(
+					cfg, r,
+					memberName,
+					targetVarName,
+					sourceAdaptedVarName,
+					indentLevel,
+				)
+			} else {
+				out += setSDKForScalar(
+					cfg, r,
+					memberName,
+					targetVarName,
+					targetShape.Type,
+					memberFieldPath,
+					sourceAdaptedVarName,
+					memberShapeRef,
+					indentLevel+1,
+				)
+			}
 		}
 		out += fmt.Sprintf(
 			"%s}\n", indent,
@@ -974,14 +1006,16 @@ func setSDKForSlice(
 	//
 	//  f0elem.SetMyField(*f0iter)
 	containerFieldName := ""
+	sourceAttributePath := sourceFieldPath
 	if targetShape.MemberRef.Shape.Type == "structure" {
 		containerFieldName = targetFieldName
+		sourceAttributePath = sourceFieldPath+"."
 	}
 	out += setSDKForContainer(
 		cfg, r,
 		containerFieldName,
 		elemVarName,
-		sourceFieldPath+".",
+		sourceAttributePath,
 		iterVarName,
 		&targetShape.MemberRef,
 		indentLevel+1,

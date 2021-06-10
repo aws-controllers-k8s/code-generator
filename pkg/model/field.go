@@ -95,12 +95,8 @@ func NewField(
 		shape = shapeRef.Shape
 	}
 
-	if cfg != nil && cfg.IsSecret {
-		gt = "*ackv1alpha1.SecretKeyReference"
-		gte = "ackv1alpha1.SecretKeyReference"
-		gtwp = "*ackv1alpha1.SecretKeyReference"
-	} else if shape != nil {
-		gte, gt, gtwp = cleanGoType(crd.sdkAPI, crd.cfg, shape)
+	if shape != nil {
+		gte, gt, gtwp = cleanGoType(crd.sdkAPI, crd.cfg, shape, cfg)
 	} else {
 		gte = "string"
 		gt = "*string"

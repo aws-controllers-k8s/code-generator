@@ -18,6 +18,10 @@ resources:
         from:
           operation: DescribeEvents
           path: Events
+  User:
+    fields:
+      Passwords:
+        is_secret: true
   ReplicationGroup:
     update_conditions_custom_method_name: CustomUpdateConditions
     exceptions:
@@ -126,7 +130,6 @@ ignore:
     - GlobalReplicationGroup
     - CacheCluster
     - CacheSecurityGroup
-    - User
     - UserGroup
   field_paths:
     - DescribeSnapshotsInput.CacheClusterId
