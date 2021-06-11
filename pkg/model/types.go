@@ -29,6 +29,7 @@ func cleanGoType(
 	api *SDKAPI,
 	cfg *ackgenconfig.Config,
 	shape *awssdkmodel.Shape,
+	fieldCfg *ackgenconfig.FieldConfig,
 ) (string, string, string) {
 	// There are shapes that are called things like DBProxyStatus that are
 	// fields in a DBProxy CRD... we need to ensure the type names don't
@@ -48,7 +49,7 @@ func cleanGoType(
 	} else if shape.Type == "list" {
 		// If it's a list type, where the element is a structure, we need to
 		// set the GoType to the cleaned-up Camel-cased name
-		mgte, mgt, _ := cleanGoType(api, cfg, shape.MemberRef.Shape)
+		mgte, mgt, mgtwp := cleanGoType(api, cfg, shape.MemberRef.Shape, fieldCfg)
 		cleanNames := names.New(mgte)
 		gte = cleanNames.Camel
 		if api.HasConflictingTypeName(mgte, cfg) {
@@ -56,12 +57,18 @@ func cleanGoType(
 		}
 
 		gt = "[]" + mgt
+		gtwp = "[]" + mgtwp
 	} else if shape.Type == "timestamp" {
 		// time.Time needs to be converted to apimachinery/metav1.Time
 		// otherwise there is no DeepCopy support
 		gtwp = "*metav1.Time"
 		gte = "metav1.Time"
 		gt = "*metav1.Time"
+	} else if fieldCfg != nil && fieldCfg.IsSecret {
+		gt = "*ackv1alpha1.SecretKeyReference"
+		gte = "SecretKeyReference"
+		gtwp = "*ackv1alpha1.SecretKeyReference"
+		return gte, gt, gtwp
 	}
 
 	// Replace the type part of the full type-with-package-name with the

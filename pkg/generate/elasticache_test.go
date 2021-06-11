@@ -274,6 +274,13 @@ func TestElasticache_ValidateAuthTokenIsSecret(t *testing.T) {
 
 	assert := assert.New(t)
 	assert.Equal("*ackv1alpha1.SecretKeyReference", crd.SpecFields["AuthToken"].GoType)
-	assert.Equal("ackv1alpha1.SecretKeyReference", crd.SpecFields["AuthToken"].GoTypeElem)
+	assert.Equal("SecretKeyReference", crd.SpecFields["AuthToken"].GoTypeElem)
 	assert.Equal("*ackv1alpha1.SecretKeyReference", crd.SpecFields["AuthToken"].GoTypeWithPkgName)
+
+	crd = getCRDByName("User", crds)
+	require.NotNil(crd)
+
+	assert.Equal("[]*ackv1alpha1.SecretKeyReference", crd.SpecFields["Passwords"].GoType)
+	assert.Equal("SecretKeyReference", crd.SpecFields["Passwords"].GoTypeElem)
+	assert.Equal("[]*ackv1alpha1.SecretKeyReference", crd.SpecFields["Passwords"].GoTypeWithPkgName)
 }

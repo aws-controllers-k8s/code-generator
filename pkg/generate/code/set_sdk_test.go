@@ -1109,6 +1109,49 @@ func TestSetSDK_Elasticache_ReplicationGroup_Update_Override_Values(t *testing.T
 	)
 }
 
+func TestSetSDK_Elasticache_User_Create_Override_Values(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewGeneratorForService(t, "elasticache")
+
+	crd := testutil.GetCRDByName(t, g, "User")
+	require.NotNil(crd)
+
+	expected := `
+	if r.ko.Spec.AccessString != nil {
+		res.SetAccessString(*r.ko.Spec.AccessString)
+	}
+	if r.ko.Spec.NoPasswordRequired != nil {
+		res.SetNoPasswordRequired(*r.ko.Spec.NoPasswordRequired)
+	}
+	if r.ko.Spec.Passwords != nil {
+		f3 := []*string{}
+		for _, f3iter := range r.ko.Spec.Passwords {
+			var f3elem string
+			if f3iter != nil {
+				tmpSecret, err := rm.rr.SecretValueFromReference(ctx, f3iter)
+				if err != nil {
+					return nil, err
+				}
+				if tmpSecret != "" {
+					f3elem = tmpSecret
+				}
+			}
+			f3 = append(f3, &f3elem)
+		}
+		res.SetPasswords(f3)
+	}
+	if r.ko.Spec.UserID != nil {
+		res.SetUserId(*r.ko.Spec.UserID)
+	}
+`
+	assert.Equal(
+		expected,
+		code.SetSDK(crd.Config(), crd, model.OpTypeUpdate, "r.ko", "res", 1),
+	)
+}
+
 func TestSetSDK_RDS_DBInstance_Create(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
