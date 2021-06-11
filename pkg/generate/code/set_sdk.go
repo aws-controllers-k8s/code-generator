@@ -817,9 +817,9 @@ func setSDKForContainer(
 //
 //     or:
 //
-//	   tmpSecret, err := rm.rr.SecretValueFromReference(ctx, f3iter)
-//	   if err != nil {
-//	       return nil, err
+//     tmpSecret, err := rm.rr.SecretValueFromReference(ctx, f3iter)
+//     if err != nil {
+//         return nil, err
 //     }
 //     if tmpSecret != "" {
 //         f3elem = tmpSecret
