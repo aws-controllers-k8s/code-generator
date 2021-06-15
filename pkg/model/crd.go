@@ -110,10 +110,11 @@ func (r *CRD) TypeRenames() map[string]string {
 // Documentation returns the base documentation string for the API formatted as
 // a Go code comment block
 func (r *CRD) Documentation() string {
-	docString := fmt.Sprintf("// %sSpec defines the desired state of %s", r.Names.Original, r.Names.Original)
+	docString := fmt.Sprintf("// %sSpec defines the desired state of %s.", r.Names.Original, r.Names.Original)
 	shape, ok := r.sdkAPI.API.Shapes[r.Names.Original]
 	if ok {
-		docString += "\n" + shape.Documentation
+		// Separate with a double newline to force a newline in the CRD base
+		docString += "\n//\n" + shape.Documentation
 	}
 	return docString
 }
