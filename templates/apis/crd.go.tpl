@@ -13,7 +13,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// {{ .CRD.Kind }}Spec defines the desired state of {{ .CRD.Kind }}
+{{ .CRD.Documentation }}
 type {{ .CRD.Kind }}Spec struct {
 	{{- range $fieldName, $field := .CRD.SpecFields }}
 	{{- if $field.ShapeRef }}

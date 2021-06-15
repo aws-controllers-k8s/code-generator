@@ -14,6 +14,7 @@
 package model
 
 import (
+	"fmt"
 	"sort"
 	"strings"
 
@@ -104,6 +105,18 @@ func (r *CRD) SDKAPIPackageName() string {
 // type definition names conflict with generated names)
 func (r *CRD) TypeRenames() map[string]string {
 	return r.sdkAPI.GetTypeRenames(r.cfg)
+}
+
+// Documentation returns the base documentation string for the API formatted as
+// a Go code comment block
+func (r *CRD) Documentation() string {
+	docString := fmt.Sprintf("// %sSpec defines the desired state of %s.", r.Names.Original, r.Names.Original)
+	shape, ok := r.sdkAPI.API.Shapes[r.Names.Original]
+	if ok {
+		// Separate with a double newline to force a newline in the CRD base
+		docString += "\n//\n" + shape.Documentation
+	}
+	return docString
 }
 
 // HasShapeAsMember returns true if the supplied Shape name appears in *any*
