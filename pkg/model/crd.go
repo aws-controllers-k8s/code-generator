@@ -110,11 +110,12 @@ func (r *CRD) TypeRenames() map[string]string {
 // Documentation returns the base documentation string for the API formatted as
 // a Go code comment block
 func (r *CRD) Documentation() string {
+	docString := fmt.Sprintf("// %sSpec defines the desired state of %s", r.Names.Original, r.Names.Original)
 	shape, ok := r.sdkAPI.API.Shapes[r.Names.Original]
 	if ok {
-		return shape.Documentation
+		docString += "\n" + shape.Documentation
 	}
-	return fmt.Sprintf("// %sSpec defines the desired state of %s", r.Names.Original, r.Names.Original)
+	return docString
 }
 
 // HasShapeAsMember returns true if the supplied Shape name appears in *any*
