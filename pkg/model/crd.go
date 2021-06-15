@@ -352,6 +352,28 @@ func (r *CRD) SetOutputCustomMethodName(
 	return &resGenConfig.SetOutputCustomMethodName
 }
 
+// GetOutputWrapperFieldPath returns the JSON-Path of the output wrapper field
+// as *string for a given operation, if specified in generator config.
+func (r *CRD) GetOutputWrapperFieldPath(
+	op *awssdkmodel.Operation,
+) *string {
+	if op == nil {
+		return nil
+	}
+	if r.cfg == nil {
+		return nil
+	}
+	opConfig, found := r.cfg.Operations[op.Name]
+	if !found {
+		return nil
+	}
+
+	if opConfig.OutputWrapperFieldPath == "" {
+		return nil
+	}
+	return &opConfig.OutputWrapperFieldPath
+}
+
 // GetCustomImplementation returns custom implementation method name for the
 // supplied operation as specified in generator config
 func (r *CRD) GetCustomImplementation(
