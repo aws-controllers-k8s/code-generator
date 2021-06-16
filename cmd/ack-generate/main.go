@@ -17,15 +17,6 @@ import (
 	"github.com/aws-controllers-k8s/code-generator/cmd/ack-generate/command"
 )
 
-var (
-	// version of application at compile time (-X 'main.version=$(VERSION)').
-	version = "(Unknown Version)"
-	// buildHash GIT hash of application at compile time (-X 'main.buildHash=$(GITCOMMIT)').
-	buildHash = "No Git-hash Provided."
-	// buildDate of application at compile time (-X 'main.buildDate=$(BUILDDATE)').
-	buildDate = "No Build Date Provided."
-)
-
 func main() {
-	command.Execute(version, buildHash, buildDate)
+	command.Execute()
 }

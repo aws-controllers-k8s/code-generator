@@ -11,31 +11,24 @@
 // express or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
-package command
+package version
 
 import (
 	"fmt"
-
-	"github.com/spf13/cobra"
-
-	"github.com/aws-controllers-k8s/code-generator/pkg/version"
+	"runtime"
 )
 
-const debugHeader = `Date: %s
-Build: %s
-Version: %s
-Git Hash: %s
-`
-
-// versionCmd represents the version command
-var versionCmd = &cobra.Command{
-	Use:   "version",
-	Short: "Display the version of " + appName,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf(debugHeader, version.BuildDate, version.GoVersion, version.Version, version.BuildHash)
-	},
-}
+var (
+	// BuildDate of application at compile time (-X 'main.buildDate=$(BUILDDATE)').
+	BuildDate string = "No Build Date Provided."
+	// Version of application at compile time (-X 'main.version=$(VERSION)').
+	Version string = "(Unknown Version)"
+	// BuildHash is the GIT hash of application at compile time (-X 'main.buildHash=$(GITCOMMIT)').
+	BuildHash string = "No Git-hash Provided."
+	// GoVersion is the Go compiler version used to compile this binary
+	GoVersion string
+)
 
 func init() {
-	rootCmd.AddCommand(versionCmd)
+	GoVersion = fmt.Sprintf("%s %s/%s", runtime.Version(), runtime.GOOS, runtime.GOARCH)
 }

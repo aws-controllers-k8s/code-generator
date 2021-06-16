@@ -9,9 +9,10 @@ AWS_SERVICE=$(shell echo $(SERVICE) | tr '[:upper:]' '[:lower:]')
 VERSION ?= "v0.0.0"
 GITCOMMIT=$(shell git rev-parse HEAD)
 BUILDDATE=$(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
-GO_LDFLAGS=-ldflags "-X main.version=$(VERSION) \
-			-X main.buildHash=$(GITCOMMIT) \
-			-X main.buildDate=$(BUILDDATE)"
+IMPORT_PATH=github.com/aws-controllers-k8s/code-generator
+GO_LDFLAGS=-ldflags "-X $(IMPORT_PATH)/pkg/version.Version=$(VERSION) \
+			-X $(IMPORT_PATH)/pkg/version.BuildHash=$(GITCOMMIT) \
+			-X $(IMPORT_PATH)/pkg/version.BuildDate=$(BUILDDATE)"
 
 # We need to use the codegen tag when building and testing because the
 # aws-sdk-go/private/model/api package is gated behind a build tag "codegen"...
