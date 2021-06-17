@@ -400,7 +400,7 @@ func (r *CRD) SpecIdentifierField() *string {
 		r.Names.Original + "Name",
 		r.Names.Original + "Id",
 	}
-	for memberName := range r.SpecFields {
+	for _, memberName := range r.SpecFieldNames() {
 		if util.InStrings(memberName, lookup) {
 			return &r.SpecFields[memberName].Names.Camel
 		}
