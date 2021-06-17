@@ -38,7 +38,7 @@ func TestResourceHookCodeInline(t *testing.T) {
 
 	// The Broker's update operation has a special hook callback configured
 	expected := `if err := rm.requeueIfNotRunning(latest); err != nil { return nil, err }`
-	got, err := ack.ResourceHookCode(basePaths, crd, hookID)
+	got, err := ack.ResourceHookCode(basePaths, crd, hookID, nil, nil)
 	assert.Nil(err)
 	assert.Equal(expected, got)
 }
@@ -59,7 +59,7 @@ func TestResourceHookCodeTemplatePath(t *testing.T) {
 
 	// The Broker's delete operation has a special hook configured to point to a template.
 	expected := "// this is my template.\n"
-	got, err := ack.ResourceHookCode(basePaths, crd, hookID)
+	got, err := ack.ResourceHookCode(basePaths, crd, hookID, nil, nil)
 	assert.Nil(err)
 	assert.Equal(expected, got)
 }

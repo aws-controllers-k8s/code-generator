@@ -122,10 +122,16 @@ func Controller(
 		return nil, err
 	}
 
+	metaVars := g.MetaVars()
+
 	// Hook code can reference a template path, and we can look up the template
 	// in any of our base paths...
 	controllerFuncMap["Hook"] = func(r *ackmodel.CRD, hookID string) string {
-		code, err := ResourceHookCode(templateBasePaths, r, hookID)
+		crdVars := &templateCRDVars{
+			metaVars,
+			r,
+		}
+		code, err := ResourceHookCode(templateBasePaths, r, hookID, crdVars, controllerFuncMap)
 		if err != nil {
 			// It's a compile-time error, so just panic...
 			panic(err)
@@ -139,8 +145,6 @@ func Controller(
 		controllerCopyPaths,
 		controllerFuncMap,
 	)
-
-	metaVars := g.MetaVars()
 
 	// First add all the CRD pkg/resource templates
 	targets := []string{
