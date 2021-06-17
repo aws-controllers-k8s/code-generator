@@ -30,9 +30,6 @@ A tool to generate AWS service controller code`
 )
 
 var (
-	version                string
-	buildHash              string
-	buildDate              string
 	defaultCacheDir        string
 	optCacheDir            string
 	optRefreshCache        bool
@@ -125,11 +122,7 @@ func init() {
 // Execute adds all child commands to the root command and sets flags
 // appropriately. This is called by main.main(). It only needs to happen once
 // to the rootCmd.
-func Execute(v string, bh string, bd string) {
-	version = v
-	buildHash = bh
-	buildDate = bd
-
+func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
 	}

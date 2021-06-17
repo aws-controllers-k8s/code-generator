@@ -42,9 +42,10 @@ var (
 
 // apiCmd is the command that generates service API types
 var apisCmd = &cobra.Command{
-	Use:   "apis <service>",
-	Short: "Generate Kubernetes API type definitions for an AWS service API",
-	RunE:  generateAPIs,
+	Use:      "apis <service>",
+	Short:    "Generate Kubernetes API type definitions for an AWS service API",
+	RunE:     generateAPIs,
+	PostRunE: saveGeneratedMetadata,
 }
 
 func init() {
@@ -52,6 +53,19 @@ func init() {
 		&optGenVersion, "version", "v1alpha1", "the resource API Version to use when generating API infrastructure and type definitions",
 	)
 	rootCmd.AddCommand(apisCmd)
+}
+
+// saveGeneratedMetadata saves the parameters used to generate APIs and checksum
+// of the generated code.
+func saveGeneratedMetadata(cmd *cobra.Command, args []string) error {
+	err := ackgenerate.CreateGenerationMetadata(
+		optGenVersion,
+		filepath.Join(optOutputPath, "apis"),
+		ackgenerate.UpdateReasonAPIGeneration,
+		optAWSSDKGoVersion,
+		optGeneratorConfigPath,
+	)
+	return err
 }
 
 // generateAPIs generates the Go files for each resource in the AWS service
