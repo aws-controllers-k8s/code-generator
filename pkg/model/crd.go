@@ -14,6 +14,7 @@
 package model
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -385,6 +386,81 @@ func (r *CRD) GetOutputWrapperFieldPath(
 		return nil
 	}
 	return &opConfig.OutputWrapperFieldPath
+}
+
+// GetOutputShape returns the Output shape for given operation.
+func (r *CRD) GetOutputShape(
+	// The operation to look for the Output shape
+	op *awssdkmodel.Operation,
+) (*awssdkmodel.Shape, error) {
+	if op == nil {
+		return nil, errors.New("no output shape for nil operation")
+	}
+
+	outputShape := op.OutputRef.Shape
+	if outputShape == nil {
+		return nil, errors.New("output shape not found")
+	}
+
+	// We might be in a "wrapper" shape. Unwrap it to find the real object
+	// representation for the CRD's createOp/DescribeOP.
+
+	// Use the wrapper field path if it's given in the ack-generate config file.
+	wrapperFieldPath := r.GetOutputWrapperFieldPath(op)
+	if wrapperFieldPath != nil {
+		wrapperOutputShape, err := r.GetWrapperOutputShape(outputShape, *wrapperFieldPath)
+		if err != nil {
+			return nil, fmt.Errorf("unable to unwrap the output shape: %v", err)
+		}
+		outputShape = wrapperOutputShape
+	} else {
+		// If the wrapper field path is not specified in the config file and if
+		// there is a single member shape and that member shape is a structure,
+		// unwrap it.
+		if outputShape.UsedAsOutput && len(outputShape.MemberRefs) == 1 {
+			for _, memberRef := range outputShape.MemberRefs {
+				if memberRef.Shape.Type == "structure" {
+					outputShape = memberRef.Shape
+				}
+			}
+		}
+	}
+	return outputShape, nil
+}
+
+// GetWrapperOutputShape returns the shape of the last element of a given field
+// Path. It carefully unwraps the output shape and verifies that every element
+// of the field path exists in their correspanding parent shape and that they are
+// structures.
+func (r *CRD) GetWrapperOutputShape(
+	shape *awssdkmodel.Shape,
+	fieldPath string,
+) (*awssdkmodel.Shape, error) {
+	if fieldPath == "" {
+		return shape, nil
+	}
+	fieldPathParts := strings.Split(fieldPath, ".")
+	for x, wrapperField := range fieldPathParts {
+		for memberName, memberRef := range shape.MemberRefs {
+			if memberName == wrapperField {
+				if memberRef.Shape.Type != "structure" {
+					// All the mentionned shapes must be structure
+					return nil, fmt.Errorf(
+						"Expected SetOutput.WrapperFieldPath to only contain fields of type 'structure'."+
+							" Found %s of type '%s'",
+						memberName, memberRef.Shape.Type,
+					)
+				}
+				remainPath := strings.Join(fieldPathParts[x+1:], ".")
+				return r.GetWrapperOutputShape(memberRef.Shape, remainPath)
+			}
+		}
+		return nil, fmt.Errorf(
+			"Incorrect SetOutput.WrapperFieldPath. Could not find %s in Shape %s",
+			wrapperField, shape.ShapeName,
+		)
+	}
+	return shape, nil
 }
 
 // GetCustomImplementation returns custom implementation method name for the

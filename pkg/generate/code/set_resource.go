@@ -125,7 +125,7 @@ func SetResource(
 	// Use the wrapper field path if it's given in the ack-generate config file.
 	wrapperFieldPath := r.GetOutputWrapperFieldPath(op)
 	if wrapperFieldPath != nil {
-		outputShape, err = GetWrapperOutputShape(outputShape, *wrapperFieldPath)
+		outputShape, err = r.GetWrapperOutputShape(outputShape, *wrapperFieldPath)
 		if err != nil {
 			msg := fmt.Sprintf("Unable to unwrap the output shape: %v", err)
 			panic(msg)
@@ -317,40 +317,6 @@ func SetResource(
 	return out
 }
 
-// GetWrapperOutputShape returns the shape of the last element of a given field
-// Path. It carefully unwraps the output shape and verifies that every element
-// of the field path exists in their correspanding parent shape and that they are
-// structures.
-func GetWrapperOutputShape(
-	shape *awssdkmodel.Shape,
-	fieldPath string,
-) (*awssdkmodel.Shape, error) {
-	if fieldPath == "" {
-		return shape, nil
-	}
-	fieldPathParts := strings.Split(fieldPath, ".")
-	for x, wrapperField := range fieldPathParts {
-		for memberName, memberRef := range shape.MemberRefs {
-			if memberName == wrapperField {
-				if memberRef.Shape.Type != "structure" {
-					// All the mentionned shapes must be structure
-					return nil, fmt.Errorf(
-						"Expected SetOutput.WrapperFieldPath to only contain fields of type 'structure'."+
-							" Found %s of type '%s'",
-						memberName, memberRef.Shape.Type,
-					)
-				}
-				remainPath := strings.Join(fieldPathParts[x+1:], ".")
-				return GetWrapperOutputShape(memberRef.Shape, remainPath)
-			}
-		}
-		return nil, fmt.Errorf(
-			"Incorrect SetOutput.WrapperFieldPath. Could not find %s in Shape %s",
-			wrapperField, shape.ShapeName,
-		)
-	}
-	return shape, nil
-}
 
 func ListMemberNameInReadManyOutput(
 	r *model.CRD,
