@@ -19,6 +19,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/ack"
 	"github.com/aws-controllers-k8s/code-generator/pkg/testutil"
 )
 
@@ -26,7 +27,7 @@ func TestLambda_Function(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "lambda")
+	g := testutil.NewGeneratorForService(t, "lambda", ackgenconfig.DefaultConfig)
 
 	crds, err := g.GetCRDs()
 	require.Nil(err)

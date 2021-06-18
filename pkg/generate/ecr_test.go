@@ -19,6 +19,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/ack"
 	"github.com/aws-controllers-k8s/code-generator/pkg/testutil"
 )
 
@@ -26,7 +27,7 @@ func TestECRRepository(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "ecr")
+	g := testutil.NewGeneratorForService(t, "ecr", ackgenconfig.DefaultConfig)
 
 	crds, err := g.GetCRDs()
 	require.Nil(err)

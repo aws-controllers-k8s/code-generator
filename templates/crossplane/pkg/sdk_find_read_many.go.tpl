@@ -13,4 +13,11 @@ func Generate{{ .CRD.Names.Camel }}(resp *svcsdk.{{ .CRD.Ops.ReadMany.OutputRef.
 {{ GoCodeSetReadManyOutput .CRD "resp" "cr" 1 false }}
 return cr
 }
+
+func lateInitialize(cr *svcapitypes.{{ .CRD.Names.Camel }}, resp *svcsdk.{{ .CRD.Ops.ReadMany.OutputRef.Shape.ShapeName }}) (bool, error) {
+	li := resource.NewLateInitializer()
+{{ GoCodeLateInitializeReadMany .CRD  "resp" "cr" 1 false }}
+	return li.IsChanged(), nil
+}
+
 {{- end -}}

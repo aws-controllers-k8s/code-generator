@@ -19,6 +19,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/ack"
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate/code"
 	"github.com/aws-controllers-k8s/code-generator/pkg/testutil"
 )
@@ -27,7 +28,8 @@ func TestCompareResource_S3_Bucket(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "s3")
+
+	g := testutil.NewGeneratorForService(t, "s3", ackgenconfig.DefaultConfig)
 
 	crd := testutil.GetCRDByName(t, g, "Bucket")
 	require.NotNil(crd)
@@ -108,7 +110,7 @@ func TestCompareResource_Lambda_CodeSigningConfig(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "lambda")
+	g := testutil.NewGeneratorForService(t, "lambda", ackgenconfig.DefaultConfig)
 
 	crd := testutil.GetCRDByName(t, g, "CodeSigningConfig")
 	require.NotNil(crd)

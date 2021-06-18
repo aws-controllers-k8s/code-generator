@@ -20,6 +20,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/ack"
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 	"github.com/aws-controllers-k8s/code-generator/pkg/testutil"
 )
@@ -95,7 +96,7 @@ func TestEnumDefs(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		g := testutil.NewGeneratorForService(t, test.service)
+		g := testutil.NewGeneratorForService(t, test.service, ackgenconfig.DefaultConfig)
 
 		edefs, err := g.GetEnumDefs()
 		require.Nil(err)
