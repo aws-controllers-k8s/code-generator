@@ -276,6 +276,8 @@ type PrintConfig struct {
 	AddAgeColumn bool `json:"add_age_column"`
 	// OrderBy is the field used to sort the list of PrinterColumn options.
 	OrderBy string `json:"order_by"`
+}
+
 // ReconcileConfig describes options for controlling the reconciliation
 // logic for a particular resource.
 type ReconcileConfig struct {
