@@ -567,12 +567,11 @@ func (r *CRD) ReconcileRequeuOnSuccessSeconds() int {
 		return 0
 	}
 	reconcile := resGenConfig.Reconcile
-	// handles the default case
-	if reconcile == nil {
-		return 0
-	} else {
+	if reconcile != nil {
 		return reconcile.RequeueOnSuccessSeconds
 	}
+	// handles the default case
+	return 0
 }
 
 // CustomUpdateMethodName returns the name of the custom resourceManager method

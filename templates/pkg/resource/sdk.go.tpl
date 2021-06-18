@@ -254,13 +254,13 @@ func (rm *resourceManager) updateConditions (
 	if syncCondition == nil && onSuccess {
 		syncCondition = &ackv1alpha1.Condition{
 			Type:   ackv1alpha1.ConditionTypeResourceSynced,
+			Status: corev1.ConditionTrue,
 		}
-		syncCondition.Status = corev1.ConditionTrue
 		ko.Status.Conditions = append(ko.Status.Conditions, syncCondition)
 	}
 {{- else }}
 	// Required to avoid the "declared but not used" error in the default case
-	syncCondition = nil
+	_ = syncCondition
 {{- end }}
 
 {{- if $updateConditionsCustomMethodName := .CRD.UpdateConditionsCustomMethodName }}

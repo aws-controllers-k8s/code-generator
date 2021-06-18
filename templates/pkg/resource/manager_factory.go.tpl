@@ -66,13 +66,13 @@ func (f *resourceManagerFactory) IsAdoptable() bool {
 	return {{ .CRD.IsAdoptable }}
 }
 
-// GetRequeueOnSuccessSeconds returns true if the resource should be requeued after specified seconds
+// RequeueOnSuccessSeconds returns true if the resource should be requeued after specified seconds
 // Default is false which means resource will not be requeued after success. 
-func (f *resourceManagerFactory) GetRequeueOnSuccessSeconds() (int, bool) {
+func (f *resourceManagerFactory) RequeueOnSuccessSeconds() int {
 {{- if $reconcileRequeuOnSuccessSeconds := .CRD.ReconcileRequeuOnSuccessSeconds }}
-	return {{ $reconcileRequeuOnSuccessSeconds }}, true
+	return {{ $reconcileRequeuOnSuccessSeconds }}
 {{- else }}
-	return 0, false
+	return 0
 {{- end }}
 }
 

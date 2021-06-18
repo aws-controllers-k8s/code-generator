@@ -56,7 +56,7 @@ type ResourceConfig struct {
 	// very little consistency to the APIs that we can use to instruct the code
 	// generator :(
 	UpdateOperation *UpdateOperationConfig `json:"update_operation,omitempty"`
-	// ReconcileConfig describes options for controlling the reconciliation
+	// Reconcile describes options for controlling the reconciliation
 	// logic for a particular resource.
 	Reconcile *ReconcileConfig `json:"reconcile,omitempty"`
 	// UpdateConditionsCustomMethodName provides the name of the custom method on the
