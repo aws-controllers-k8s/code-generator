@@ -554,6 +554,24 @@ func (r *CRD) GetResourcePrintOrderByName() string {
 // kubebuilder:printcolumn comment marker
 func (r *CRD) PrintAgeColumn() bool {
 	return r.cfg.GetResourcePrintAddAgeColumn(r.Names.Camel)
+
+// ReconcileRequeuOnSuccessSeconds returns the duration after which to requeue
+// the custom resource as int, if specified in generator config. 
+func (r *CRD) ReconcileRequeuOnSuccessSeconds() int {
+	if r.cfg == nil {
+		return 0
+	}
+	resGenConfig, found := r.cfg.Resources[r.Names.Original]
+	if !found {
+		return 0
+	}
+	reconcile := resGenConfig.Reconcile
+	// handles the default case
+	if reconcile == nil {
+		return 0
+	} else {
+		return reconcile.RequeueOnSuccessSeconds
+	}
 }
 
 // CustomUpdateMethodName returns the name of the custom resourceManager method
