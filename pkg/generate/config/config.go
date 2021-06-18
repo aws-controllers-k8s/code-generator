@@ -68,6 +68,19 @@ type PrefixConfig struct {
 	StatusField string `json:"status_field,omitempty"`
 }
 
+// ResourceContainsSecret returns true if any of the fields in any resource are
+// defined as secrets.
+func (c *Config) ResourceContainsSecret() bool {
+	for _, resource := range c.Resources {
+		for _, field := range resource.Fields {
+			if field.IsSecret {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // New returns a new Config object given a supplied
 // path to a config file
 func New(

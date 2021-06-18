@@ -682,6 +682,12 @@ func (g *Generator) ApplyShapeIgnoreRules() {
 	}
 }
 
+// GetConfig returns the configuration option used to define the current
+// generator.
+func (g *Generator) GetConfig() *ackgenconfig.Config {
+	return g.cfg
+}
+
 // New returns a new Generator struct for a supplied API model.
 // Optionally, pass a file path to a generator config file that can be used to
 // instruct the code generator how to handle the API properly
