@@ -20,6 +20,7 @@ import (
 
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate"
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate/code"
+	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate/templateset"
 	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
 )
@@ -165,7 +166,12 @@ func Controller(
 			}
 		}
 	}
-	if err = ts.Add("pkg/resource/registry.go", "pkg/resource/registry.go.tpl", metaVars); err != nil {
+
+	configVars := &templateConfigVars{
+		metaVars,
+		g.GetConfig(),
+	}
+	if err = ts.Add("pkg/resource/registry.go", "pkg/resource/registry.go.tpl", configVars); err != nil {
 		return nil, err
 	}
 
@@ -202,4 +208,11 @@ func Controller(
 type templateCmdVars struct {
 	templateset.MetaVars
 	SnakeCasedCRDNames []string
+}
+
+// templateConfigVars contains template variables for the templates that require
+// access to the generator configuration definition
+type templateConfigVars struct {
+	templateset.MetaVars
+	GeneratorConfig *ackgenconfig.Config
 }
