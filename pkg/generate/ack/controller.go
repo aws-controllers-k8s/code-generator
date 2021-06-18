@@ -54,8 +54,8 @@ var (
 		"ResourceExceptionCode": func(r *ackmodel.CRD, httpStatusCode int) string {
 			return r.ExceptionCode(httpStatusCode)
 		},
-		"GoCodeSetExceptionMessagePrefixCheck": func(r *ackmodel.CRD, httpStatusCode int) string {
-			return code.CheckExceptionMessagePrefix(r.Config(), r, httpStatusCode)
+		"GoCodeSetExceptionMessageCheck": func(r *ackmodel.CRD, httpStatusCode int) string {
+			return code.CheckExceptionMessage(r.Config(), r, httpStatusCode)
 		},
 		"GoCodeSetReadOneOutput": func(r *ackmodel.CRD, sourceVarName string, targetVarName string, indentLevel int, performSpecUpdate bool) string {
 			return code.SetResource(r.Config(), r, ackmodel.OpTypeGet, sourceVarName, targetVarName, indentLevel, performSpecUpdate)

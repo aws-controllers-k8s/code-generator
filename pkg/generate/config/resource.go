@@ -215,6 +215,15 @@ type ErrorConfig struct {
 	// later is a terminal state.
 	// In Go SDK terms - awsErr.Message()
 	MessagePrefix *string `json:"message_prefix,omitempty"`
+	// MessageSuffix is an optional string field to be checked as suffix of the
+	// exception message in addition to exception name. This is needed for HTTP codes
+	// where the exception name alone is not sufficient to determine the type of error.
+	// Example: SageMaker service throws ValidationException if job does not exist
+	// as well as if IAM role does not have sufficient permission to fetch the dataset
+	// For the former controller should proceed with creation of job whereas the
+	// later is a terminal state.
+	// In Go SDK terms - awsErr.Message()
+	MessageSuffix *string `json:"message_suffix,omitempty"`
 }
 
 // RenamesConfig contains instructions to the code generator how to rename

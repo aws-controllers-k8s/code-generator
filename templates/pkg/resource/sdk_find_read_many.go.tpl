@@ -20,7 +20,7 @@ func (rm *resourceManager) sdkFind(
 {{- end }}
 	rm.metrics.RecordAPICall("READ_MANY", "{{ .CRD.Ops.ReadMany.ExportedName }}", respErr)
 	if respErr != nil {
-		if awsErr, ok := ackerr.AWSError(respErr); ok && awsErr.Code() == "{{ ResourceExceptionCode .CRD 404 }}" {{ GoCodeSetExceptionMessagePrefixCheck .CRD 404 }}{
+		if awsErr, ok := ackerr.AWSError(respErr); ok && awsErr.Code() == "{{ ResourceExceptionCode .CRD 404 }}" {{ GoCodeSetExceptionMessageCheck .CRD 404 }}{
 			return nil, ackerr.NotFound
 		}
 		return nil, respErr

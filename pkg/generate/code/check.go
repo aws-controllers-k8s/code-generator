@@ -24,16 +24,17 @@ import (
 	"github.com/aws-controllers-k8s/code-generator/pkg/names"
 )
 
-// CheckExceptionMessagePrefix returns Go code that contains a condition to
-// check if the message_prefix specified for a particular HTTP status code in
+// CheckExceptionMessage returns Go code that contains a condition to
+// check if the message_prefix/message_suffix specified for a particular HTTP status code in
 // generator config is a prefix for the exception message returned by AWS API.
-// If message_prefix field was not specified for this HTTP code in generator
+// If message_prefix/message_suffix field was not specified for this HTTP code in generator
 // config, we return an empty string
 //
 // Sample Output:
 //
 // && strings.HasPrefix(awsErr.Message(), "Could not find model")
-func CheckExceptionMessagePrefix(
+// && strings.HasSuffix(awsErr.Message(), "does not exist.")
+func CheckExceptionMessage(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,
 	httpStatusCode int,
@@ -41,9 +42,16 @@ func CheckExceptionMessagePrefix(
 	rConfig, ok := cfg.ResourceConfig(r.Names.Original)
 	if ok && rConfig.Exceptions != nil {
 		excConfig, ok := rConfig.Exceptions.Errors[httpStatusCode]
-		if ok && excConfig.MessagePrefix != nil {
+		if !ok {
+			return ""
+		}
+		if excConfig.MessagePrefix != nil {
 			return fmt.Sprintf("&& strings.HasPrefix(awsErr.Message(), \"%s\") ",
 				*excConfig.MessagePrefix)
+		}
+		if excConfig.MessageSuffix != nil {
+			return fmt.Sprintf("&& strings.HasSuffix(awsErr.Message(), \"%s\") ",
+				*excConfig.MessageSuffix)
 		}
 	}
 	return ""
