@@ -7,6 +7,18 @@ resources:
     fields:
       JobDefinitionArn:
         is_arn: true
+  TrainingJob:
+    exceptions:
+      errors:
+          404:
+            code: ValidationException
+            message_prefix: Requested resource not found
+  ModelPackageGroup:
+      exceptions:
+        errors:
+            404:
+              code: ValidationException
+              message_suffix: does not exist.
 ignore:
     resource_names:
       - Algorithm
@@ -36,7 +48,7 @@ ignore:
       - ModelBiasJobDefinition
       - ModelExplainabilityJobDefinition
       - ModelPackage
-      - ModelPackageGroup
+      # ModelPackageGroup
       - ModelQualityJobDefinition
       - MonitoringSchedule
       - NotebookInstanceLifecycleConfig
@@ -46,7 +58,7 @@ ignore:
       - PresignedNotebookInstanceUrl
       - ProcessingJob
       - Project
-      - TrainingJob
+      # TrainingJob
       - TransformJob
       - TrialComponent
       - Trial
