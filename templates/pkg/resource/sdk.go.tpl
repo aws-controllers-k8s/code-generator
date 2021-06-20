@@ -9,12 +9,14 @@ import (
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
+	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	"github.com/aws/aws-sdk-go/aws"
 	svcsdk "github.com/aws/aws-sdk-go/service/{{ .ServiceIDClean }}"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	svcapitypes "github.com/aws-controllers-k8s/{{.ServiceIDClean }}-controller/apis/{{ .APIVersion }}"
+	svcsdkapi "github.com/aws/aws-sdk-go/service/{{ .ServiceIDClean }}"
 )
 
 // Hack to avoid import errors during build...
@@ -26,6 +28,7 @@ var (
 	_ = &svcapitypes.{{ .CRD.Names.Camel }}{}
 	_ = ackv1alpha1.AWSAccountID("")
 	_ = &ackerr.NotFound
+	_ = svcsdkapi.New
 )
 
 // sdkFind returns SDK-specific information about a supplied resource
@@ -40,52 +43,57 @@ var (
 {{- end }}
 
 // sdkCreate creates the supplied resource in the backend AWS service API and
-// returns a new resource with any fields in the Status field filled in
+// returns a copy of the resource with resource fields (in both Spec and
+// Status) filled in with values from the CREATE API operation's Output shape.
 func (rm *resourceManager) sdkCreate(
 	ctx context.Context,
-	r *resource,
-) (*resource, error) {
+	desired *resource,
+) (created *resource, err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.sdkCreate")
+	defer exit(err)
+
 {{- if $hookCode := Hook .CRD "sdk_create_pre_build_request" }}
 {{ $hookCode }}
 {{- end }}
-{{- $customMethod := .CRD.GetCustomImplementation .CRD.Ops.Create -}}
-{{- if $customMethod }}
-	customResp, customRespErr := rm.{{ $customMethod }}(ctx, r)
-	if customResp != nil || customRespErr != nil {
-		return customResp, customRespErr
+{{- if $customMethod := .CRD.GetCustomImplementation .CRD.Ops.Create -}}
+	created, err = rm.{{ $customMethod }}(ctx, desired)
+	if created != nil || err != nil {
+		return created, err
 	}
 {{- end }}
-	input, err := rm.newCreateRequestPayload(ctx, r)
+	input, err := rm.newCreateRequestPayload(ctx, desired)
 	if err != nil {
 		return nil, err
 	}
 {{- if $hookCode := Hook .CRD "sdk_create_post_build_request" }}
 {{ $hookCode }} 
-{{- end }}	
-{{ $createCode := GoCodeSetCreateOutput .CRD "resp" "ko" 1 false }}
-	{{ if not ( Empty $createCode ) }}resp{{ else }}_{{ end }}, respErr := rm.sdkapi.{{ .CRD.Ops.Create.ExportedName }}WithContext(ctx, input)
+{{- end }}
+
+	var resp {{ .CRD.GetOutputShapeGoType .CRD.Ops.Create }}
+	resp, err = rm.sdkapi.{{ .CRD.Ops.Create.ExportedName }}WithContext(ctx, input)
 {{- if $hookCode := Hook .CRD "sdk_create_post_request" }}
 {{ $hookCode }}
 {{- end }}
-	rm.metrics.RecordAPICall("CREATE", "{{ .CRD.Ops.Create.ExportedName }}", respErr)
-	if respErr != nil {
-		return nil, respErr
+	rm.metrics.RecordAPICall("CREATE", "{{ .CRD.Ops.Create.ExportedName }}", err)
+	if err != nil {
+		return nil, err
 	}
 	// Merge in the information we read from the API call above to the copy of
 	// the original Kubernetes object we passed to the function
-	ko := r.ko.DeepCopy()
+	ko := desired.ko.DeepCopy()
 {{- if $hookCode := Hook .CRD "sdk_create_pre_set_output" }}
 {{ $hookCode }}
 {{- end }}
-{{ $createCode }}
+{{ GoCodeSetCreateOutput .CRD "resp" "ko" 1 false }}
 	rm.setStatusDefaults(ko)
-	{{ if $setOutputCustomMethodName := .CRD.SetOutputCustomMethodName .CRD.Ops.Create }}
-		// custom set output from response
-		ko, err = rm.{{ $setOutputCustomMethodName }}(ctx, r, resp, ko)
-		if err != nil {
-			return nil, err
-		}
-	{{ end }}
+{{- if $setOutputCustomMethodName := .CRD.SetOutputCustomMethodName .CRD.Ops.Create }}
+	// custom set output from response
+	ko, err = rm.{{ $setOutputCustomMethodName }}(ctx, desired, resp, ko)
+	if err != nil {
+		return nil, err
+	}
+{{- end }}
 {{- if $hookCode := Hook .CRD "sdk_create_post_set_output" }}
 {{ $hookCode }}
 {{- end }}
@@ -95,8 +103,8 @@ func (rm *resourceManager) sdkCreate(
 // newCreateRequestPayload returns an SDK-specific struct for the HTTP request
 // payload of the Create API call for the resource
 func (rm *resourceManager) newCreateRequestPayload(
-    ctx context.Context,
-    r *resource,
+	ctx context.Context,
+	r *resource,
 ) (*svcsdk.{{ .CRD.Ops.Create.InputRef.Shape.ShapeName }}, error) {
 	res := &svcsdk.{{ .CRD.Ops.Create.InputRef.Shape.ShapeName }}{}
 {{ GoCodeSetCreateInput .CRD "r.ko" "res" 1 }}
@@ -119,18 +127,20 @@ func (rm *resourceManager) newCreateRequestPayload(
 func (rm *resourceManager) sdkDelete(
 	ctx context.Context,
 	r *resource,
-) error {
+) (err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.sdkDelete")
+	defer exit(err)
+
 {{- if .CRD.Ops.Delete }}
 {{- if $hookCode := Hook .CRD "sdk_delete_pre_build_request" }}
 {{ $hookCode }}
 {{- end }}
-{{ $customMethod := .CRD.GetCustomImplementation .CRD.Ops.Delete }}
-{{ if $customMethod }}
-	customRespErr := rm.{{ $customMethod }}(ctx, r)
-	if customRespErr != nil {
-		return customRespErr
+{{- if $customMethod := .CRD.GetCustomImplementation .CRD.Ops.Delete }}
+	if err = rm.{{ $customMethod }}(ctx, r); err != nil {
+		return err
 	}
-{{ end }}
+{{- end }}
 	input, err := rm.newDeleteRequestPayload(r)
 	if err != nil {
 		return err
@@ -138,12 +148,12 @@ func (rm *resourceManager) sdkDelete(
 {{- if $hookCode := Hook .CRD "sdk_delete_post_build_request" }}
 {{ $hookCode }}
 {{- end }}
-	_, respErr := rm.sdkapi.{{ .CRD.Ops.Delete.Name }}WithContext(ctx, input)
-	rm.metrics.RecordAPICall("DELETE", "{{ .CRD.Ops.Delete.Name }}", respErr)
+	_, err = rm.sdkapi.{{ .CRD.Ops.Delete.Name }}WithContext(ctx, input)
+	rm.metrics.RecordAPICall("DELETE", "{{ .CRD.Ops.Delete.Name }}", err)
 {{- if $hookCode := Hook .CRD "sdk_delete_post_request" }}
 {{ $hookCode }}
 {{- end }}
-	return respErr
+	return err
 {{- else }}
 	// TODO(jaypipes): Figure this out...
 	return nil

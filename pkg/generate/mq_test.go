@@ -51,3 +51,17 @@ func TestMQ_Broker(t *testing.T) {
 	require.True(found)
 	assert.Equal("*ackv1alpha1.SecretKeyReference", passAttr.GoType)
 }
+
+func TestMQ_GetOutputShapeGoType(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewGeneratorForService(t, "mq")
+
+	crd := testutil.GetCRDByName(t, g, "Broker")
+	require.NotNil(crd)
+
+	exp := "*svcsdkapi.CreateBrokerResponse"
+	otype := crd.GetOutputShapeGoType(crd.Ops.Create)
+	assert.Equal(exp, otype)
+}

@@ -2,7 +2,11 @@
 func (rm *resourceManager) sdkFind(
 	ctx context.Context,
 	r *resource,
-) (*resource, error) {
+) (latest *resource, err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.sdkFind")
+	defer exit(err)
+
 {{- if $hookCode := Hook .CRD "sdk_read_one_pre_build_request" }}
 {{ $hookCode }}
 {{- end }}
@@ -20,17 +24,18 @@ func (rm *resourceManager) sdkFind(
 {{- if $hookCode := Hook .CRD "sdk_read_one_post_build_request" }}
 {{ $hookCode }}
 {{- end }}
-{{ $setCode := GoCodeSetReadOneOutput .CRD "resp" "ko" 1 true }}
-	{{ if not ( Empty $setCode ) }}resp{{ else }}_{{ end }}, respErr := rm.sdkapi.{{ .CRD.Ops.ReadOne.ExportedName }}WithContext(ctx, input)
+
+	var resp {{ .CRD.GetOutputShapeGoType .CRD.Ops.ReadOne }}
+	resp, err = rm.sdkapi.{{ .CRD.Ops.ReadOne.ExportedName }}WithContext(ctx, input)
 {{- if $hookCode := Hook .CRD "sdk_read_one_post_request" }}
 {{ $hookCode }}
 {{- end }}
-	rm.metrics.RecordAPICall("READ_ONE", "{{ .CRD.Ops.ReadOne.ExportedName }}", respErr)
-	if respErr != nil {
-		if awsErr, ok := ackerr.AWSError(respErr); ok && awsErr.Code() == "{{ ResourceExceptionCode .CRD 404 }}" {{ GoCodeSetExceptionMessageCheck .CRD 404 }}{
+	rm.metrics.RecordAPICall("READ_ONE", "{{ .CRD.Ops.ReadOne.ExportedName }}", err)
+	if err != nil {
+		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "{{ ResourceExceptionCode .CRD 404 }}" {{ GoCodeSetExceptionMessageCheck .CRD 404 }}{
 			return nil, ackerr.NotFound
 		}
-		return nil, respErr
+		return nil, err
 	}
 
 	// Merge in the information we read from the API call above to the copy of
@@ -39,15 +44,15 @@ func (rm *resourceManager) sdkFind(
 {{- if $hookCode := Hook .CRD "sdk_read_one_pre_set_output" }}
 {{ $hookCode }}
 {{- end }}
-{{ $setCode }}
+{{ GoCodeSetReadOneOutput .CRD "resp" "ko" 1 true }}
 	rm.setStatusDefaults(ko)
-{{ if $setOutputCustomMethodName := .CRD.SetOutputCustomMethodName .CRD.Ops.ReadOne }}
+{{- if $setOutputCustomMethodName := .CRD.SetOutputCustomMethodName .CRD.Ops.ReadOne }}
 	// custom set output from response
 	ko, err = rm.{{ $setOutputCustomMethodName }}(ctx, r, resp, ko)
 	if err != nil {
 		return nil, err
 	}
-{{ end }}
+{{- end }}
 {{- if $hookCode := Hook .CRD "sdk_read_one_post_set_output" }}
 {{ $hookCode }}
 {{- end }}

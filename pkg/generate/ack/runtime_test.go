@@ -14,6 +14,7 @@
 package ack
 
 import (
+	"context"
 	"testing"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -23,6 +24,7 @@ import (
 
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
+	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
 )
 
@@ -82,4 +84,12 @@ func TestRuntimeDependency(t *testing.T) {
 
 	require.Implements((*acktypes.AWSResourceIdentifiers)(nil), new(fakeIdentifiers))
 	require.Implements((*acktypes.AWSResourceDescriptor)(nil), new(fakeDescriptor))
+
+	// ACK runtime 0.2.3 introduced a new logger that is now passed into the
+	// Context and retrievable using the `pkg/runtime/log.FromContext`
+	// function.  This function returns NoopLogger if no such logger is found
+	// in the context, but this check here is mostly to ensure that the new
+	// function used in ACK runtime 0.2.3 and templates in code-generator
+	// consuming 0.2.3 are properly pinned.
+	require.Implements((*acktypes.Logger)(nil), ackrtlog.FromContext(context.TODO()))
 }
