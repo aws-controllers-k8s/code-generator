@@ -5,16 +5,16 @@ package {{ .CRD.Names.Snake }}
 import (
 	"context"
 	"fmt"
-	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
-	corev1 "k8s.io/api/core/v1"
 
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
 	ackcfg "github.com/aws-controllers-k8s/runtime/pkg/config"
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
+	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackmetrics "github.com/aws-controllers-k8s/runtime/pkg/metrics"
 	acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/go-logr/logr"
+	corev1 "k8s.io/api/core/v1"
 
 	svcsdk "github.com/aws/aws-sdk-go/service/{{ .ServiceIDClean }}"
 	svcsdkapi "github.com/aws/aws-sdk-go/service/{{ .ServiceIDClean }}/{{ .ServiceIDClean }}iface"

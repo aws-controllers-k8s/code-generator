@@ -4,18 +4,20 @@ func (rm *resourceManager) sdkUpdate(
 	desired *resource,
 	latest *resource,
 	delta *ackcompare.Delta,
-) (*resource, error) {
+) (updated *resource, err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.sdkUpdate")
+	defer exit(err)
+
 {{- if $hookCode := Hook .CRD "sdk_update_pre_build_request" }}
 {{ $hookCode }}
 {{- end }}
-{{ $customMethod := .CRD.GetCustomImplementation .CRD.Ops.Update }}
-{{ if $customMethod }}
-	customResp, customRespErr := rm.{{ $customMethod }}(ctx, desired, latest, delta)
-	if customResp != nil || customRespErr != nil {
-		return customResp, customRespErr
+{{- if $customMethod := .CRD.GetCustomImplementation .CRD.Ops.Update }}
+	updated, err = rm.{{ $customMethod }}(ctx, desired, latest, delta)
+	if updated != nil || err != nil {
+		return updated, err
 	}
-{{ end }}
-
+{{- end }}
 	input, err := rm.newUpdateRequestPayload(ctx, desired)
 	if err != nil {
 		return nil, err
@@ -23,14 +25,15 @@ func (rm *resourceManager) sdkUpdate(
 {{- if $hookCode := Hook .CRD "sdk_update_post_build_request" }}
 {{ $hookCode }} 
 {{- end }}
-{{ $setCode := GoCodeSetUpdateOutput .CRD "resp" "ko" 1 false }}
-	{{ if not ( Empty $setCode ) }}resp{{ else }}_{{ end }}, respErr := rm.sdkapi.{{ .CRD.Ops.Update.ExportedName }}WithContext(ctx, input)
+
+	var resp {{ .CRD.GetOutputShapeGoType .CRD.Ops.Update }}
+	resp, err = rm.sdkapi.{{ .CRD.Ops.Update.ExportedName }}WithContext(ctx, input)
 {{- if $hookCode := Hook .CRD "sdk_update_post_request" }}
 {{ $hookCode }}
 {{- end }}
-	rm.metrics.RecordAPICall("UPDATE", "{{ .CRD.Ops.Update.ExportedName }}", respErr)
-	if respErr != nil {
-		return nil, respErr
+	rm.metrics.RecordAPICall("UPDATE", "{{ .CRD.Ops.Update.ExportedName }}", err)
+	if err != nil {
+		return nil, err
 	}
 {{- if .CRD.HasImmutableFieldChanges }}
 	desired = rm.handleImmutableFieldsChangedCondition(desired, delta)
@@ -41,15 +44,15 @@ func (rm *resourceManager) sdkUpdate(
 {{- if $hookCode := Hook .CRD "sdk_update_pre_set_output" }}
 {{ $hookCode }}
 {{- end }}
-{{ $setCode }}
+{{ GoCodeSetUpdateOutput .CRD "resp" "ko" 1 false }}
 	rm.setStatusDefaults(ko)
-{{ if $setOutputCustomMethodName := .CRD.SetOutputCustomMethodName .CRD.Ops.Update }}
+{{- if $setOutputCustomMethodName := .CRD.SetOutputCustomMethodName .CRD.Ops.Update }}
 	// custom set output from response
 	ko, err = rm.{{ $setOutputCustomMethodName }}(ctx, desired, resp, ko)
 	if err != nil {
 		return nil, err
 	}
-{{ end }}
+{{- end }}
 {{- if $hookCode := Hook .CRD "sdk_update_post_set_output" }}
 {{ $hookCode }}
 {{- end }}
@@ -59,8 +62,8 @@ func (rm *resourceManager) sdkUpdate(
 // newUpdateRequestPayload returns an SDK-specific struct for the HTTP request
 // payload of the Update API call for the resource
 func (rm *resourceManager) newUpdateRequestPayload(
-    ctx context.Context,
-    r *resource,
+	ctx context.Context,
+	r *resource,
 ) (*svcsdk.{{ .CRD.Ops.Update.InputRef.Shape.ShapeName }}, error) {
 	res := &svcsdk.{{ .CRD.Ops.Update.InputRef.Shape.ShapeName }}{}
 {{ GoCodeSetUpdateInput .CRD "r.ko" "res" 1 }}

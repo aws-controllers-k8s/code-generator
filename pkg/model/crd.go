@@ -365,6 +365,19 @@ func (r *CRD) SetOutputCustomMethodName(
 	return &resGenConfig.SetOutputCustomMethodName
 }
 
+// GetOutputShapeGoType returns the Go type of the supplied operation's Output
+// shape, renamed to use the standardized svcsdkapi alias.
+func (r *CRD) GetOutputShapeGoType(
+	op *awssdkmodel.Operation,
+) string {
+	if op == nil {
+		panic("called GetOutputShapeGoType on nil operation.")
+	}
+	orig := op.OutputRef.GoType()
+	// orig will contain "*<OutputShape>" with no package specifier
+	return "*svcsdkapi." + orig[1:]
+}
+
 // GetOutputWrapperFieldPath returns the JSON-Path of the output wrapper field
 // as *string for a given operation, if specified in generator config.
 func (r *CRD) GetOutputWrapperFieldPath(

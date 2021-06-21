@@ -2,7 +2,11 @@
 func (rm *resourceManager) sdkFind(
 	ctx context.Context,
 	r *resource,
-) (*resource, error) {
+) (latest *resource, err error) {
+	rlog := ackrtlog.FromContext(ctx)
+	exit := rlog.Trace("rm.sdkFind")
+	defer exit(err)
+
 {{- if $hookCode := Hook .CRD "sdk_get_attributes_pre_build_request" }}
 {{ $hookCode }}
 {{- end }}
@@ -20,23 +24,23 @@ func (rm *resourceManager) sdkFind(
 {{- if $hookCode := Hook .CRD "sdk_get_attributes_post_build_request" }}
 {{ $hookCode }}
 {{- end }}
-{{ $setCode := GoCodeGetAttributesSetOutput .CRD "resp" "ko" 1 }}
-	{{ if not ( Empty $setCode ) }}resp{{ else }}_{{ end }}, respErr := rm.sdkapi.{{ .CRD.Ops.GetAttributes.ExportedName }}WithContext(ctx, input)
+	var resp {{ .CRD.GetOutputShapeGoType .CRD.Ops.GetAttributes }}
+	resp, err = rm.sdkapi.{{ .CRD.Ops.GetAttributes.ExportedName }}WithContext(ctx, input)
 {{- if $hookCode := Hook .CRD "sdk_get_attributes_post_request" }}
 {{ $hookCode }}
 {{- end }}
-	rm.metrics.RecordAPICall("GET_ATTRIBUTES", "{{ .CRD.Ops.GetAttributes.ExportedName }}", respErr)
-	if respErr != nil {
-		if awsErr, ok := ackerr.AWSError(respErr); ok && awsErr.Code() == "{{ ResourceExceptionCode .CRD 404 }}" {{ GoCodeSetExceptionMessageCheck .CRD 404 }}{
+	rm.metrics.RecordAPICall("GET_ATTRIBUTES", "{{ .CRD.Ops.GetAttributes.ExportedName }}", err)
+	if err != nil {
+		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "{{ ResourceExceptionCode .CRD 404 }}" {{ GoCodeSetExceptionMessageCheck .CRD 404 }}{
 			return nil, ackerr.NotFound
 		}
-		return nil, respErr
+		return nil, err
 	}
 
 	// Merge in the information we read from the API call above to the copy of
 	// the original Kubernetes object we passed to the function
 	ko := r.ko.DeepCopy()
-{{ $setCode }}
+{{ GoCodeGetAttributesSetOutput .CRD "resp" "ko" 1 }}
 {{- if $hookCode := Hook .CRD "sdk_get_attributes_pre_set_output" }}
 {{ $hookCode }}
 {{- end }}
