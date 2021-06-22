@@ -105,6 +105,8 @@ func ResourceHookCode(
 	templateBasePaths []string,
 	r *ackmodel.CRD,
 	hookID string,
+	vars interface{},
+	funcMap ttpl.FuncMap,
 ) (string, error) {
 	resourceName := r.Names.Original
 	if resourceName == "" || hookID == "" {
@@ -146,6 +148,7 @@ func ResourceHookCode(
 			return "", err
 		}
 		t := ttpl.New(tplPath)
+		t = t.Funcs(funcMap)
 		if t, err = t.Parse(string(tplContents)); err != nil {
 			err := fmt.Errorf(
 				"resource %s hook config for %s is invalid: error parsing %s: %s",
@@ -156,7 +159,7 @@ func ResourceHookCode(
 		var b bytes.Buffer
 		// TODO(jaypipes): Instead of nil for template vars here, maybe pass in
 		// a struct of variables?
-		if err := t.Execute(&b, nil); err != nil {
+		if err := t.Execute(&b, vars); err != nil {
 			err := fmt.Errorf(
 				"resource %s hook config for %s is invalid: error executing %s: %s",
 				resourceName, hookID, tplPath, err,
