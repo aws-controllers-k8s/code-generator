@@ -507,7 +507,10 @@ func (r *CRD) UpdateConditionsCustomMethodName() string {
 	return resGenConfig.UpdateConditionsCustomMethodName
 }
 
-// SpecIdentifierField returns the name of the "Name" or string identifier field in the Spec
+// SpecIdentifierField returns the name of the "Name" or string identifier field
+// in the Spec.
+// This method does not guarantee that the identifier field returned is the
+// primary identifier used in any of the `Read*` operations.
 func (r *CRD) SpecIdentifierField() *string {
 	if r.cfg != nil {
 		rConfig, found := r.cfg.Resources[r.Names.Original]

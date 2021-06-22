@@ -770,6 +770,109 @@ func SetResourceGetAttributes(
 	return out
 }
 
+func SetResourceIdentifiers(
+	cfg *ackgenconfig.Config,
+	r *model.CRD,
+	// String representing the name of the variable that we will grab the Input
+	// shape from. This will likely be "identifier" since in the templates that
+	// call this method, the "source variable" is the CRD struct which is used
+	// to populate the target variable, which is the struct of unique
+	// identifiers
+	sourceVarName string,
+	// String representing the name of the variable that we will be **setting**
+	// with values we get from the Output shape. This will likely be
+	// "r.ko" since that is the name of the "target variable" that the
+	// templates that call this method use for the Input shape.
+	targetVarName string,
+	// Number of levels of indentation to use
+	indentLevel int,
+) string {
+	op := r.Ops.ReadOne
+	inputShape := op.InputRef.Shape
+	if inputShape == nil {
+		return ""
+	}
+
+	out := "\n"
+	indent := strings.Repeat("\t", indentLevel)
+
+	primaryIdentifier := ""
+
+	// Determine the "primary identifier" based on the names of each field
+	primaryIdentifierLookup := []string{
+		"Name",
+		r.Names.Original + "Name",
+		r.Names.Original + "Id",
+	}
+
+	for _, memberName := range inputShape.MemberNames() {
+		if util.InStrings(memberName, primaryIdentifierLookup) {
+			primaryIdentifier = memberName
+		}
+	}
+
+	for _, memberName := range inputShape.MemberNames() {
+		if r.UnpacksAttributesMap() && memberName == "Attributes" {
+			continue
+		}
+
+		if r.IsPrimaryARNField(memberName) {
+			// r.ko.Status.ACKResourceMetadata.ARN = identifier.ARN
+			out += fmt.Sprintf(
+				"%s%s.Status.%s.ARN = %s.ARN\n",
+				indent, targetVarName, sourceVarName,
+			)
+			continue
+		}
+
+		isPrimaryIdentifier := memberName == primaryIdentifier
+
+		memberShapeRef, _ := inputShape.MemberRefs[memberName]
+		memberShape := memberShapeRef.Shape
+
+		cleanMemberNames := names.New(memberName)
+		cleanMemberName := cleanMemberNames.Camel
+
+		sourceAdaptedVarName := ""
+		if isPrimaryIdentifier {
+			sourceAdaptedVarName = fmt.Sprintf("%s.NameOrID", sourceVarName)
+		} else {
+			sourceAdaptedVarName = fmt.Sprintf("%s.AdditionalKeys[\"%s\"]", sourceVarName, cleanMemberNames.CamelLower)
+		}
+
+		// TODO(RedbackThomson): If the identifiers don't exist, we should be
+		// throwing an error accessible to the user
+		out += fmt.Sprintf(
+			"%sif %s != nil {\n", indent, sourceAdaptedVarName,
+		)
+
+		switch memberShape.Type {
+		// Only primitives are accepted as valid inputs for identifier fields
+		case "list", "structure", "map":
+			continue
+		default:
+			if r.IsSecretField(memberName) {
+				panic("Secrets cannot be used as fields in identifiers")
+			} else {
+				out += setSDKForScalar(
+					cfg, r,
+					memberName,
+					targetVarName,
+					inputShape.Type,
+					cleanMemberName,
+					sourceAdaptedVarName,
+					memberShapeRef,
+					indentLevel+1,
+				)
+			}
+		}
+		out += fmt.Sprintf(
+			"%s}\n", indent,
+		)
+	}
+	return out
+}
+
 // setResourceForContainer returns a string of Go code that sets the value of a
 // target variable to that of a source variable. When the source variable type
 // is a map, struct or slice type, then this function is called recursively on

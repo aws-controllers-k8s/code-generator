@@ -82,5 +82,6 @@ func (r *resource) SetIdentifiers(identifier *ackv1alpha1.AWSIdentifiers) error 
 {{- else }}
 	r.ko.Status.ACKResourceMetadata.ARN = identifier.ARN
 {{- end }}
+{{ GoCodeSetResourceIdentifiers .CRD "r.ko" "res" 1}}
 	return nil
 }
