@@ -56,7 +56,7 @@ func (rm *resourceManager) sdkCreate(
 {{- if $hookCode := Hook .CRD "sdk_create_pre_build_request" }}
 {{ $hookCode }}
 {{- end }}
-{{- if $customMethod := .CRD.GetCustomImplementation .CRD.Ops.Create -}}
+{{- if $customMethod := .CRD.GetCustomImplementation .CRD.Ops.Create }}
 	created, err = rm.{{ $customMethod }}(ctx, desired)
 	if created != nil || err != nil {
 		return created, err
