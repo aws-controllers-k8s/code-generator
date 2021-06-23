@@ -367,7 +367,7 @@ func (r *CRD) SetOutputCustomMethodName(
 }
 
 // GetOutputShapeGoType returns the Go type of the supplied operation's Output
-// shape, renamed to use the standardized svcsdkapi alias.
+// shape, renamed to use the standardized svcsdk alias.
 func (r *CRD) GetOutputShapeGoType(
 	op *awssdkmodel.Operation,
 ) string {
@@ -376,7 +376,7 @@ func (r *CRD) GetOutputShapeGoType(
 	}
 	orig := op.OutputRef.GoType()
 	// orig will contain "*<OutputShape>" with no package specifier
-	return "*svcsdkapi." + orig[1:]
+	return "*svcsdk." + orig[1:]
 }
 
 // GetOutputWrapperFieldPath returns the JSON-Path of the output wrapper field
