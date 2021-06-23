@@ -40,7 +40,7 @@ func (rm *resourceManager) sdkUpdate(
 {{- end }}
 	// Merge in the information we read from the API call above to the copy of
 	// the original Kubernetes object we passed to the function
-	ko := desired.ko.DeepCopy()
+	ko := latest.ko.DeepCopy()
 {{- if $hookCode := Hook .CRD "sdk_update_pre_set_output" }}
 {{ $hookCode }}
 {{- end }}
