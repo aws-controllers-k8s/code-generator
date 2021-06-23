@@ -70,7 +70,7 @@ func (rm *resourceManager) sdkCreate(
 {{ $hookCode }} 
 {{- end }}
 
-	var resp {{ .CRD.GetOutputShapeGoType .CRD.Ops.Create }}
+	var resp {{ .CRD.GetOutputShapeGoType .CRD.Ops.Create }}; _ = resp;
 	resp, err = rm.sdkapi.{{ .CRD.Ops.Create.ExportedName }}WithContext(ctx, input)
 {{- if $hookCode := Hook .CRD "sdk_create_post_request" }}
 {{ $hookCode }}
