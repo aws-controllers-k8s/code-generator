@@ -867,7 +867,7 @@ func SetResourceIdentifiers(
 		if r.IsPrimaryARNField(memberName) {
 			// r.ko.Status.ACKResourceMetadata.ARN = identifier.ARN
 			arnOut += fmt.Sprintf(
-				"\n%s%s.Status.%s.ARN = %s.ARN\n",
+				"\n%s%s.Status.ACKResourceMetadata.ARN = %s.ARN\n",
 				indent, targetVarName, sourceVarName,
 			)
 			continue
@@ -892,14 +892,20 @@ func SetResourceIdentifiers(
 		}
 
 		if isPrimaryIdentifier {
+			// r.ko.Status.BrokerID = identifier.NameOrID
 			primaryKeyOut += fmt.Sprintf("%s%s.%s.%s = %s.NameOrID\n", indent, targetVarName, memberPath, cleanMemberName, sourceVarName)
 		} else {
+			// f0, f0ok := identifier.AdditionalKeys["scalableDimension"]
+			// if f0ok {
+			// 	r.ko.Spec.ScalableDimension = f0
+			// }
+
 			fieldIndexName := fmt.Sprintf("f%d", additionalKeyCount)
 			sourceAdaptedVarName := fmt.Sprintf("%s.AdditionalKeys[\"%s\"]", sourceVarName, cleanMemberNames.CamelLower)
 
 			// TODO(RedbackThomson): If the identifiers don't exist, we should be
 			// throwing an error accessible to the user
-			additionalKeyOut += fmt.Sprintf("%s%s,%sok := %s \n", indent, fieldIndexName, fieldIndexName, sourceAdaptedVarName)
+			additionalKeyOut += fmt.Sprintf("%s%s, %sok := %s\n", indent, fieldIndexName, fieldIndexName, sourceAdaptedVarName)
 			additionalKeyOut += fmt.Sprintf("%sif %sok {\n", indent, fieldIndexName)
 			additionalKeyOut += fmt.Sprintf("%s\t%s.%s.%s = %s\n", indent, targetVarName, memberPath, cleanMemberName, fieldIndexName)
 			additionalKeyOut += fmt.Sprintf("%s}\n", indent)
