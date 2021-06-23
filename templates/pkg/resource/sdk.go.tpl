@@ -16,7 +16,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	svcapitypes "github.com/aws-controllers-k8s/{{.ServiceIDClean }}-controller/apis/{{ .APIVersion }}"
-	svcsdkapi "github.com/aws/aws-sdk-go/service/{{ .ServiceIDClean }}"
 )
 
 // Hack to avoid import errors during build...
@@ -28,7 +27,6 @@ var (
 	_ = &svcapitypes.{{ .CRD.Names.Camel }}{}
 	_ = ackv1alpha1.AWSAccountID("")
 	_ = &ackerr.NotFound
-	_ = svcsdkapi.New
 )
 
 // sdkFind returns SDK-specific information about a supplied resource
