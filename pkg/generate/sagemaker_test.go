@@ -140,3 +140,89 @@ func TestSageMaker_Error_Suffix_Message(t *testing.T) {
 	// Validation Exception has suffix ModelPackageGroup arn:aws:sagemaker:/ does not exist
 	assert.Equal("&& strings.HasSuffix(awsErr.Message(), \"does not exist.\") ", code.CheckExceptionMessage(crd.Config(), crd, 404))
 }
+
+func TestSageMaker_RequeueOnSuccessSeconds(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewGeneratorForService(t, "sagemaker")
+
+	crds, err := g.GetCRDs()
+	require.Nil(err)
+
+	crd := getCRDByName("Endpoint", crds)
+	require.NotNil(crd)
+
+	// The CreateEndpoint has the following definition:
+	//
+	// "CreateEndpoint":{
+	// 	"name":"CreateEndpoint",
+	// 	"http":{
+	// 	  "method":"POST",
+	// 	  "requestUri":"/"
+	// 	},
+	// 	"input":{"shape":"CreateEndpointInput"},
+	// 	"output":{"shape":"CreateEndpointOutput"},
+	// 	"errors":[
+	// 	  {"shape":"ResourceLimitExceeded"}
+	// 	]
+	//   }
+	//
+	// Where the CreateEndpointOutput shape looks like this:
+	//
+	// "CreateEndpointOutput":{
+	// 	"type":"structure",
+	// 	"required":["EndpointArn"],
+	// 	"members":{
+	// 	  "EndpointArn":{"shape":"EndpointArn"}
+	// 	}
+	//   }
+	//
+	// So, we expect that crd.ReconcileRequeuOnSuccessSeconds() returns the requeue 
+	// duration specified in the config file
+	assert.Equal(10, crd.ReconcileRequeuOnSuccessSeconds())
+}
+
+func TestSageMaker_RequeueOnSuccessSeconds_Default(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewGeneratorForService(t, "sagemaker")
+
+	crds, err := g.GetCRDs()
+	require.Nil(err)
+
+	crd := getCRDByName("DataQualityJobDefinition", crds)
+	require.NotNil(crd)
+
+	// The CreateDataQualityJobDefinition has the following definition:
+	//
+	//   "CreateDataQualityJobDefinition":{
+	//   "name":"CreateDataQualityJobDefinition",
+	//   "http":{
+	//     "method":"POST",
+	//     "requestUri":"/"
+	//   },
+	//   "input":{"shape":"CreateDataQualityJobDefinitionRequest"},
+	//   "output":{"shape":"CreateDataQualityJobDefinitionResponse"},
+	//   "errors":[
+	//     {"shape":"ResourceLimitExceeded"},
+	//     {"shape":"ResourceInUse"}
+	//   ]
+	// }
+	//
+	// Where the CreateDataQualityJobDefinitionResponse shape looks like this:
+	//
+	// "CreateDataQualityJobDefinitionResponse":{
+	// 	"type":"structure",
+	// 	"required":["JobDefinitionArn"],
+	// 	"members":{
+	// 	  "JobDefinitionArn":{"shape":"MonitoringJobDefinitionArn"}
+	// 	}
+	// }
+	//
+	// So, we expect that crd.ReconcileRequeuOnSuccessSeconds() returns the default  
+	// requeue duration of 0 because it is not specified in the config file
+	assert.Equal(0, crd.ReconcileRequeuOnSuccessSeconds())
+
+}

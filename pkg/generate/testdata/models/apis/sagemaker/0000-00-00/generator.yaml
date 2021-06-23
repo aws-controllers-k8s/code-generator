@@ -19,6 +19,9 @@ resources:
             404:
               code: ValidationException
               message_suffix: does not exist.
+  Endpoint:
+    reconcile: 
+      requeue_on_success_seconds: 10
 ignore:
     resource_names:
       - Algorithm
@@ -35,7 +38,7 @@ ignore:
       - Domain
       - EdgePackagingJob
       - EndpointConfig
-      - Endpoint
+      # - Endpoint
       - Experiment
       - FeatureGroup
       - FlowDefinition
