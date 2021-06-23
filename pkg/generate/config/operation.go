@@ -37,6 +37,10 @@ type OperationConfig struct {
 	// Override for operation type in case of heuristic failure
 	// An example of this is `Put...` or `Register...` API operations not being correctly classified as `Create` op type
 	OperationType string `json:"operation_type"`
+	// PrimaryIdentifierFieldName provides the name of the field that should be
+	// interpreted as the "primary" identifier field. This field will be used as
+	// the primary field for resource adoption.
+	PrimaryIdentifierFieldName string `json:"primary_identifier_field_name,omitempty"`
 }
 
 // IsIgnoredOperation returns true if Operation Name is configured to be ignored
