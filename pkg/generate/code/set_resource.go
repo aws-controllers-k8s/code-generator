@@ -317,7 +317,6 @@ func SetResource(
 	return out
 }
 
-
 func ListMemberNameInReadManyOutput(
 	r *model.CRD,
 ) string {
@@ -788,27 +787,58 @@ func SetResourceIdentifiers(
 	indentLevel int,
 ) string {
 	op := r.Ops.ReadOne
+	if op == nil {
+		// If single lookups can only be done using ReadMany
+		op = r.Ops.ReadMany
+	}
 	inputShape := op.InputRef.Shape
 	if inputShape == nil {
 		return ""
 	}
 
-	out := "\n"
+	primaryKeyOut := "\n"
+	arnOut := ""
+	additionalKeyOut := "\n"
+
 	indent := strings.Repeat("\t", indentLevel)
+
+	primaryKeyOut += fmt.Sprintf("%sif %s.NameOrID == nil {\n", indent, sourceVarName)
+	primaryKeyOut += fmt.Sprintf("%s\treturn ackerrors.MissingNameIdentifier\n", indent)
+	primaryKeyOut += fmt.Sprintf("%s}\n", indent)
 
 	primaryIdentifier := ""
 
-	// Determine the "primary identifier" based on the names of each field
-	primaryIdentifierLookup := []string{
-		"Name",
-		r.Names.Original + "Name",
-		r.Names.Original + "Id",
+	// Attempt to fetch the primary identifier from the configuration
+	opConfig, ok := cfg.Operations[op.Name]
+	if ok {
+		primaryIdentifier = opConfig.PrimaryIdentifierFieldName
 	}
 
-	for _, memberName := range inputShape.MemberNames() {
-		if util.InStrings(memberName, primaryIdentifierLookup) {
-			primaryIdentifier = memberName
+	// Determine the "primary identifier" based on the names of each field
+	if primaryIdentifier == "" {
+		primaryIdentifierLookup := []string{
+			"Name",
+			r.Names.Original + "Name",
+			r.Names.Original + "Id",
 		}
+
+		for _, memberName := range inputShape.MemberNames() {
+			if util.InStrings(memberName, primaryIdentifierLookup) {
+				primaryIdentifier = memberName
+			}
+		}
+
+		// Still haven't determined the identifier? Panic
+		if primaryIdentifier == "" {
+			panic("Could not find primary identifier for " + r.Names.Original +
+				". Set `primary_identifier_field_name` for the " + op.Name +
+				" operation in the generator config.")
+		}
+	}
+
+	paginatorFieldLookup := []string{
+		"NextToken",
+		"MaxResults",
 	}
 
 	for _, memberName := range inputShape.MemberNames() {
@@ -816,61 +846,68 @@ func SetResourceIdentifiers(
 			continue
 		}
 
-		if r.IsPrimaryARNField(memberName) {
-			// r.ko.Status.ACKResourceMetadata.ARN = identifier.ARN
-			out += fmt.Sprintf(
-				"%s%s.Status.%s.ARN = %s.ARN\n",
-				indent, targetVarName, sourceVarName,
-			)
+		if util.InStrings(memberName, paginatorFieldLookup) {
 			continue
 		}
-
-		isPrimaryIdentifier := memberName == primaryIdentifier
 
 		memberShapeRef, _ := inputShape.MemberRefs[memberName]
 		memberShape := memberShapeRef.Shape
 
+		// Only strings are currently accepted as valid inputs for
+		// additional key fields
+		if memberShape.Type != "string" {
+			continue
+		}
+
+		if r.IsSecretField(memberName) {
+			panic("Secrets cannot be used as fields in identifiers")
+		}
+
+		if r.IsPrimaryARNField(memberName) {
+			// r.ko.Status.ACKResourceMetadata.ARN = identifier.ARN
+			arnOut += fmt.Sprintf(
+				"\n%s%s.Status.%s.ARN = %s.ARN\n",
+				indent, targetVarName, sourceVarName,
+			)
+			continue
+
+		}
+
+		isPrimaryIdentifier := memberName == primaryIdentifier
 		cleanMemberNames := names.New(memberName)
 		cleanMemberName := cleanMemberNames.Camel
 
-		sourceAdaptedVarName := ""
-		if isPrimaryIdentifier {
-			sourceAdaptedVarName = fmt.Sprintf("%s.NameOrID", sourceVarName)
+		memberPath := ""
+		_, inSpec := r.SpecFields[memberName]
+		_, inStatus := r.StatusFields[memberName]
+		if inSpec {
+			memberPath = "Spec"
+		} else if inStatus {
+			memberPath = "Status"
+		} else if isPrimaryIdentifier {
+			panic("Primary identifier field '" + memberName + "' cannot be set in either spec or status.")
 		} else {
-			sourceAdaptedVarName = fmt.Sprintf("%s.AdditionalKeys[\"%s\"]", sourceVarName, cleanMemberNames.CamelLower)
-		}
-
-		// TODO(RedbackThomson): If the identifiers don't exist, we should be
-		// throwing an error accessible to the user
-		out += fmt.Sprintf(
-			"%sif %s != nil {\n", indent, sourceAdaptedVarName,
-		)
-
-		switch memberShape.Type {
-		// Only primitives are accepted as valid inputs for identifier fields
-		case "list", "structure", "map":
 			continue
-		default:
-			if r.IsSecretField(memberName) {
-				panic("Secrets cannot be used as fields in identifiers")
-			} else {
-				out += setSDKForScalar(
-					cfg, r,
-					memberName,
-					targetVarName,
-					inputShape.Type,
-					cleanMemberName,
-					sourceAdaptedVarName,
-					memberShapeRef,
-					indentLevel+1,
-				)
-			}
 		}
-		out += fmt.Sprintf(
-			"%s}\n", indent,
-		)
+
+		if isPrimaryIdentifier {
+			primaryKeyOut += fmt.Sprintf("%s%s.%s.%s = %s.NameOrID\n", indent, targetVarName, memberPath, cleanMemberName, sourceVarName)
+		} else {
+			sourceAdaptedVarName := fmt.Sprintf("%s.AdditionalKeys[\"%s\"]", sourceVarName, cleanMemberNames.CamelLower)
+
+			// TODO(RedbackThomson): If the identifiers don't exist, we should be
+			// throwing an error accessible to the user
+			additionalKeyOut += fmt.Sprintf("%sif %s != nil {\n", indent, sourceAdaptedVarName)
+			additionalKeyOut += fmt.Sprintf("%s\t%s.%s.%s = %s\n", indent, targetVarName, memberPath, cleanMemberName, sourceAdaptedVarName)
+			additionalKeyOut += fmt.Sprintf("%s}\n", indent)
+		}
 	}
-	return out
+
+	// Only use at most one of ARN or nameOrID as primary identifier outputs
+	if arnOut != "" {
+		return arnOut + additionalKeyOut
+	}
+	return primaryKeyOut + additionalKeyOut
 }
 
 // setResourceForContainer returns a string of Go code that sets the value of a
