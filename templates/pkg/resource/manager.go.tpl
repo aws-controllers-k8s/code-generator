@@ -184,7 +184,7 @@ func (rm *resourceManager) onError(
 	r *resource,
 	err error,
 ) (acktypes.AWSResource, error) {
-	r1, updated := rm.updateConditions(r, err)
+	r1, updated := rm.updateConditions(r, false, err)
 	if !updated {
 		return r, err
 	}
@@ -204,7 +204,7 @@ func (rm *resourceManager) onError(
 func (rm *resourceManager) onSuccess(
 	r *resource,
 ) (acktypes.AWSResource, error) {
-	r1, updated := rm.updateConditions(r, nil)
+	r1, updated := rm.updateConditions(r, true, nil)
 	if !updated {
 		return r, nil
 	}

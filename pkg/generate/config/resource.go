@@ -56,6 +56,9 @@ type ResourceConfig struct {
 	// very little consistency to the APIs that we can use to instruct the code
 	// generator :(
 	UpdateOperation *UpdateOperationConfig `json:"update_operation,omitempty"`
+	// Reconcile describes options for controlling the reconciliation
+	// logic for a particular resource.
+	Reconcile *ReconcileConfig `json:"reconcile,omitempty"`
 	// UpdateConditionsCustomMethodName provides the name of the custom method on the
 	// `resourceManager` struct that will set Conditions on a `resource` struct
 	// depending on the status of the resource.
@@ -273,6 +276,21 @@ type PrintConfig struct {
 	AddAgeColumn bool `json:"add_age_column"`
 	// OrderBy is the field used to sort the list of PrinterColumn options.
 	OrderBy string `json:"order_by"`
+}
+
+// ReconcileConfig describes options for controlling the reconciliation
+// logic for a particular resource.
+type ReconcileConfig struct {
+    // RequeueOnSuccessSeconds indicates the number of seconds after which to requeue a
+    // resource that has been successfully reconciled (i.e. ConditionTypeResourceSynced=true)
+    // This is useful for resources that are long-lived and may have observable status fields
+    // change over time that would be useful to refresh those field values for users.
+    // This field is optional and the default behaviour of the ACK runtime is to not requeue
+    // resources that have been successfully reconciled. Note that all ACK controllers will
+    // *flush and resync their watch caches* every 10 hours by default, which will end up
+    // causing ACK controllers to refresh the status views of all watched resources, but this
+    // behaviour is expensive and may be turned off in future ACK runtime options.
+    RequeueOnSuccessSeconds int `json:"requeue_on_success_seconds,omitempty"`
 }
 
 // ResourceConfig returns the ResourceConfig for a given named resource
