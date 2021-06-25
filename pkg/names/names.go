@@ -46,7 +46,7 @@ var (
 		{"Ids", "IDs", "ids", nil},
 		// Need to prevent "Identifier" from becoming "IDentifier",
 		// and "Idle" from becoming "IDle"
-		{"Id", "ID", "id", regexp.MustCompile("Id(?!entifier|le)", regexp.None)},
+		{"Id", "ID", "id", regexp.MustCompile("Id(?!entifier|le|entity)", regexp.None)},
 		// Need to prevent "DbInstance" from becoming "dbinstance" when lower
 		// prefix-converted (should be dbInstance). Amazingly, even within just
 		// the RDS API, there are fields named "DbiResourceId",
@@ -98,6 +98,7 @@ var (
 		{"Kms", "KMS", "kms", nil},
 		{"Ldap", "LDAP", "ldap", nil},
 		{"Mfa", "MFA", "mfa", nil},
+		{"Oidc", "OIDC", "oidc", nil},
 		{"Sdk", "SDK", "sdk", nil},
 		{"Sha256", "SHA256", "sha256", nil},
 		{"Sqs", "SQS", "sns", nil},
