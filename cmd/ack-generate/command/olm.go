@@ -81,7 +81,7 @@ func generateOLMAssets(cmd *cobra.Command, args []string) error {
 	version := args[1]
 
 	// get the generator inputs
-	if err := ensureSDKRepo(optCacheDir); err != nil {
+	if err := ensureSDKRepo(optCacheDir, optRefreshCache); err != nil {
 		return err
 	}
 	sdkHelper := ackmodel.NewSDKHelper(sdkDir)

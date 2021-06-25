@@ -57,7 +57,7 @@ func generateController(cmd *cobra.Command, args []string) error {
 		optOutputPath = filepath.Join(optServicesDir, svcAlias)
 	}
 
-	if err := ensureSDKRepo(optCacheDir); err != nil {
+	if err := ensureSDKRepo(optCacheDir, optRefreshCache); err != nil {
 		return err
 	}
 	sdkHelper := ackmodel.NewSDKHelper(sdkDir)

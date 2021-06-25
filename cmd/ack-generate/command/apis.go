@@ -91,7 +91,7 @@ func generateAPIs(cmd *cobra.Command, args []string) error {
 	if optOutputPath == "" {
 		optOutputPath = filepath.Join(optServicesDir, svcAlias)
 	}
-	if err := ensureSDKRepo(optCacheDir); err != nil {
+	if err := ensureSDKRepo(optCacheDir, optRefreshCache); err != nil {
 		return err
 	}
 	sdkHelper := model.NewSDKHelper(sdkDir)
