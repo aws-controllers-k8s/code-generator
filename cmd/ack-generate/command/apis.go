@@ -24,6 +24,7 @@ import (
 	generate "github.com/aws-controllers-k8s/code-generator/pkg/generate"
 	ackgenerate "github.com/aws-controllers-k8s/code-generator/pkg/generate/ack"
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
+	"github.com/aws-controllers-k8s/code-generator/pkg/util"
 )
 
 type contentType int
@@ -65,7 +66,19 @@ func saveGeneratedMetadata(cmd *cobra.Command, args []string) error {
 		optAWSSDKGoVersion,
 		optGeneratorConfigPath,
 	)
-	return err
+	if err != nil {
+		return fmt.Errorf("cannot create generation metadata file: %v", err)
+	}
+
+	copyDest := filepath.Join(
+		optOutputPath, "apis", optGenVersion, "generator.yaml",
+	)
+	err = util.CopyFile(optGeneratorConfigPath, copyDest)
+	if err != nil {
+		return fmt.Errorf("cannot copy generator configuration file: %v", err)
+	}
+
+	return nil
 }
 
 // generateAPIs generates the Go files for each resource in the AWS service
