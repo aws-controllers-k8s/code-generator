@@ -769,6 +769,45 @@ func SetResourceGetAttributes(
 	return out
 }
 
+// SetResourceIdentifiers returns the Go code that sets an empty CR object with
+// Spec and Status field values that correspond to the primary identifier (be
+// that an ARN, ID or Name) and any other "additional keys" required for the AWS
+// service to uniquely identify the object.
+//
+// The method will attempt to use the `ReadOne` operation, if present, otherwise
+// will fall back to using `ReadMany`. If it detects the operation uses an ARN
+// to identify the resource it will read it from the metadata status field.
+// Otherwise it will use any fields with a matching name in the operation,
+// pulling from spec or status - requiring that exactly one of those fields is
+// marked as the "primary" identifier.
+//
+// An example of code with no additional keys:
+//
+// ```
+// 	if identifier.NameOrID == nil {
+// 		return ackerrors.MissingNameIdentifier
+// 	}
+// 	r.ko.Status.BrokerID = identifier.NameOrID
+// ```
+//
+// An example of code with additional keys:
+//
+// ```
+// if identifier.NameOrID == nil {
+// 	  return ackerrors.MissingNameIdentifier
+// }
+// r.ko.Spec.ResourceID = identifier.NameOrID
+//
+// f0, f0ok := identifier.AdditionalKeys["scalableDimension"]
+// if f0ok {
+// 	  r.ko.Spec.ScalableDimension = f0
+// }
+// f1, f1ok := identifier.AdditionalKeys["serviceNamespace"]
+// if f1ok {
+// 	  r.ko.Spec.ServiceNamespace = f1
+// }
+// ```
+
 func SetResourceIdentifiers(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,
@@ -824,7 +863,14 @@ func SetResourceIdentifiers(
 
 		for _, memberName := range inputShape.MemberNames() {
 			if util.InStrings(memberName, primaryIdentifierLookup) {
-				primaryIdentifier = memberName
+				if primaryIdentifier == "" {
+					primaryIdentifier = memberName
+				} else {
+					panic("Found multiple possible primary identifiers for " +
+						r.Names.Original + ". Set " +
+						"`primary_identifier_field_name` for the " + op.Name +
+						" operation in the generator config.")
+				}
 			}
 		}
 
@@ -861,7 +907,8 @@ func SetResourceIdentifiers(
 		}
 
 		if r.IsSecretField(memberName) {
-			panic("Secrets cannot be used as fields in identifiers")
+			// Secrets cannot be used as fields in identifiers
+			continue
 		}
 
 		if r.IsPrimaryARNField(memberName) {
@@ -881,13 +928,14 @@ func SetResourceIdentifiers(
 		memberPath := ""
 		_, inSpec := r.SpecFields[memberName]
 		_, inStatus := r.StatusFields[memberName]
-		if inSpec {
+		switch {
+		case inSpec:
 			memberPath = "Spec"
-		} else if inStatus {
+		case inStatus:
 			memberPath = "Status"
-		} else if isPrimaryIdentifier {
-			panic("Primary identifier field '" + memberName + "' cannot be set in either spec or status.")
-		} else {
+		case isPrimaryIdentifier:
+			panic("Primary identifier field '" + memberName + "' cannot be found in either spec or status.")
+		default:
 			continue
 		}
 
