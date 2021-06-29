@@ -807,7 +807,6 @@ func SetResourceGetAttributes(
 // 	  r.ko.Spec.ServiceNamespace = f1
 // }
 // ```
-
 func SetResourceIdentifiers(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,
@@ -827,6 +826,10 @@ func SetResourceIdentifiers(
 ) string {
 	op := r.Ops.ReadOne
 	if op == nil {
+		if r.Ops.GetAttributes != nil {
+			// TODO(RedbackThomson): Support attribute maps for resource identifiers
+			return ""
+		}
 		// If single lookups can only be done using ReadMany
 		op = r.Ops.ReadMany
 	}
@@ -889,10 +892,6 @@ func SetResourceIdentifiers(
 
 	additionalKeyCount := 0
 	for _, memberName := range inputShape.MemberNames() {
-		if r.UnpacksAttributesMap() && memberName == "Attributes" {
-			continue
-		}
-
 		if util.InStrings(memberName, paginatorFieldLookup) {
 			continue
 		}
@@ -930,9 +929,9 @@ func SetResourceIdentifiers(
 		_, inStatus := r.StatusFields[memberName]
 		switch {
 		case inSpec:
-			memberPath = "Spec"
+			memberPath = cfg.PrefixConfig.SpecField
 		case inStatus:
-			memberPath = "Status"
+			memberPath = cfg.PrefixConfig.StatusField
 		case isPrimaryIdentifier:
 			panic("Primary identifier field '" + memberName + "' cannot be found in either spec or status.")
 		default:
