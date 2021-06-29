@@ -940,7 +940,7 @@ func SetResourceIdentifiers(
 
 		if isPrimaryIdentifier {
 			// r.ko.Status.BrokerID = identifier.NameOrID
-			primaryKeyOut += fmt.Sprintf("%s%s.%s.%s = %s.NameOrID\n", indent, targetVarName, memberPath, cleanMemberName, sourceVarName)
+			primaryKeyOut += fmt.Sprintf("%s%s%s.%s = %s.NameOrID\n", indent, targetVarName, memberPath, cleanMemberName, sourceVarName)
 		} else {
 			// f0, f0ok := identifier.AdditionalKeys["scalableDimension"]
 			// if f0ok {
@@ -954,7 +954,7 @@ func SetResourceIdentifiers(
 			// throwing an error accessible to the user
 			additionalKeyOut += fmt.Sprintf("%s%s, %sok := %s\n", indent, fieldIndexName, fieldIndexName, sourceAdaptedVarName)
 			additionalKeyOut += fmt.Sprintf("%sif %sok {\n", indent, fieldIndexName)
-			additionalKeyOut += fmt.Sprintf("%s\t%s.%s.%s = %s\n", indent, targetVarName, memberPath, cleanMemberName, fieldIndexName)
+			additionalKeyOut += fmt.Sprintf("%s\t%s%s.%s = %s\n", indent, targetVarName, memberPath, cleanMemberName, fieldIndexName)
 			additionalKeyOut += fmt.Sprintf("%s}\n", indent)
 
 			additionalKeyCount++
