@@ -507,6 +507,21 @@ func (r *CRD) UpdateConditionsCustomMethodName() string {
 	return resGenConfig.UpdateConditionsCustomMethodName
 }
 
+// CustomCheckRequiredFieldsMissingMethod returns custom check required fields missing method
+// as *string for custom resource, if specified in generator config
+func (r *CRD) CustomCheckRequiredFieldsMissingMethod(op *awssdkmodel.Operation) string {
+	if op == nil || r.cfg == nil {
+		return ""
+	}
+
+	operationConfig, found := r.cfg.Operations[op.Name]
+	if !found {
+		return ""
+	}
+
+	return operationConfig.CustomCheckRequiredFieldsMissingMethod
+}
+
 // SpecIdentifierField returns the name of the "Name" or string identifier field in the Spec
 func (r *CRD) SpecIdentifierField() *string {
 	if r.cfg != nil {
@@ -557,7 +572,7 @@ func (r *CRD) PrintAgeColumn() bool {
 }
 
 // ReconcileRequeuOnSuccessSeconds returns the duration after which to requeue
-// the custom resource as int, if specified in generator config. 
+// the custom resource as int, if specified in generator config.
 func (r *CRD) ReconcileRequeuOnSuccessSeconds() int {
 	if r.cfg == nil {
 		return 0
