@@ -65,7 +65,7 @@ func generateRelease(cmd *cobra.Command, args []string) error {
 	// version supplied hasn't been used (as a Git tag) before...
 	releaseVersion := strings.ToLower(args[1])
 
-	if err := ensureSDKRepo(optCacheDir); err != nil {
+	if err := ensureSDKRepo(optCacheDir, optRefreshCache); err != nil {
 		return err
 	}
 	sdkHelper := ackmodel.NewSDKHelper(sdkDir)
