@@ -94,3 +94,24 @@ func TestCheckRequiredFields_Attributes_StatusAndSpecField(t *testing.T) {
 		strings.TrimSpace(gotCode),
 	)
 }
+
+func TestCheckRequiredFields_RenamedSpecField(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewGeneratorForService(t, "eks")
+
+	crd := testutil.GetCRDByName(t, g, "FargateProfile")
+	require.NotNil(crd)
+
+	expRequiredFieldsCode := `
+	return r.ko.Spec.ClusterName == nil || r.ko.Spec.Name == nil
+`
+	gotCode := code.CheckRequiredFieldsMissingFromShape(
+		crd, model.OpTypeGet, "r.ko", 1,
+	)
+	assert.Equal(
+		strings.TrimSpace(expRequiredFieldsCode),
+		strings.TrimSpace(gotCode),
+	)
+}

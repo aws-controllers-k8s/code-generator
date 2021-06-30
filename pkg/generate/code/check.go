@@ -137,11 +137,13 @@ func checkRequiredFieldsMissingFromShape(
 
 		resVarPath := koVarName
 		// Check that the field has potentially been renamed
-		renamedName, _ := r.InputFieldRename(
+		renamedName, wasRenamed := r.InputFieldRename(
 			op.Name, memberName,
 		)
 		_, found := r.SpecFields[renamedName]
-		if found {
+		if found && !wasRenamed {
+			resVarPath = resVarPath + r.Config().PrefixConfig.SpecField + "." + cleanMemberName
+		} else if found {
 			resVarPath = resVarPath + r.Config().PrefixConfig.SpecField + "." + renamedName
 		} else {
 			_, found = r.StatusFields[memberName]
