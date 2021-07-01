@@ -109,6 +109,9 @@ var (
 		"GoCodeRequiredFieldsMissingFromSetAttributesInput": func(r *ackmodel.CRD, koVarName string, indentLevel int) string {
 			return code.CheckRequiredFieldsMissingFromShape(r, ackmodel.OpTypeSetAttributes, koVarName, indentLevel)
 		},
+		"GoCodeSetResourceIdentifiers": func(r *ackmodel.CRD, sourceVarName string, targetVarName string, indentLevel int) string {
+			return code.SetResourceIdentifiers(r.Config(), r, sourceVarName, targetVarName, indentLevel)
+		},
 	}
 )
 

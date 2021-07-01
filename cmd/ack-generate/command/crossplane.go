@@ -22,12 +22,11 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
 
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate"
 	cpgenerate "github.com/aws-controllers-k8s/code-generator/pkg/generate/crossplane"
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
-
-	"github.com/spf13/cobra"
 )
 
 // crossplaneCmd is the command that generates Crossplane API types
@@ -50,7 +49,7 @@ func generateCrossplane(_ *cobra.Command, args []string) error {
 	if len(args) != 1 {
 		return fmt.Errorf("please specify the service alias for the AWS service API to generate")
 	}
-	if err := ensureSDKRepo(optCacheDir); err != nil {
+	if err := ensureSDKRepo(optCacheDir, optRefreshCache); err != nil {
 		return err
 	}
 	svcAlias := strings.ToLower(args[0])

@@ -1,6 +1,9 @@
 ignore:
   shape_names:
     - DBSecurityGroupMembershipList
+operations:
+  DescribeDBInstances:
+    primary_identifier_field_name: DBInstanceIdentifier
 resources:
   DBSubnetGroup:
     renames:

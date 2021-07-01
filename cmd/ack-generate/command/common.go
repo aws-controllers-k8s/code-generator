@@ -14,14 +14,16 @@
 package command
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
 	"golang.org/x/mod/modfile"
+
+	"github.com/aws-controllers-k8s/code-generator/pkg/util"
 )
 
 const (
@@ -64,53 +66,83 @@ func isDirWriteable(fp string) bool {
 // ensureSDKRepo ensures that we have a git clone'd copy of the aws-sdk-go
 // repository, which we use model JSON files from. Upon successful return of
 // this function, the sdkDir global variable will be set to the directory where
-// the aws-sdk-go is found
-func ensureSDKRepo(cacheDir string) error {
+// the aws-sdk-go is found. It will also optionally fetch all the remote tags
+// and checkout the given tag.
+func ensureSDKRepo(
+	cacheDir string,
+	// A boolean instructing ensureSDKRepo whether to fetch the remote tags from
+	// the upstream repository
+	fetchTags bool,
+) error {
 	var err error
 	srcPath := filepath.Join(cacheDir, "src")
 	if err = os.MkdirAll(srcPath, os.ModePerm); err != nil {
 		return err
 	}
-	// clone the aws-sdk-go repository locally so we can query for API
-	// information in the models/apis/ directories
-	sdkDir, err = cloneSDKRepo(srcPath)
+
+	// Clone repository if it doen't exist
+	sdkDir = filepath.Join(srcPath, "aws-sdk-go")
+	if _, err := os.Stat(sdkDir); os.IsNotExist(err) {
+		err = util.CloneRepository(context.Background(), sdkDir, sdkRepoURL)
+		if err != nil {
+			return fmt.Errorf("canot clone repository: %v", err)
+		}
+	}
+
+	// Fetch all tags
+	if fetchTags {
+		err = util.FetchRepositoryTags(context.Background(), sdkDir)
+		if err != nil {
+			return fmt.Errorf("cannot fetch tags: %v", err)
+		}
+	}
+
+	// get sdkVersion and ensure it prefix
+	// TODO(a-hilaly) Parse `ack-generate-metadata.yaml` and pass the aws-sdk-go
+	// version here.
+	sdkVersion, err := getSDKVersion("")
+	if err != nil {
+		return err
+	}
+	sdkVersion = ensureSemverPrefix(sdkVersion)
+
+	repo, err := util.LoadRepository(sdkDir)
+	if err != nil {
+		return fmt.Errorf("cannot read local repository: %v", err)
+	}
+
+	// Now checkout the local repository.
+	err = util.CheckoutRepositoryTag(repo, sdkVersion)
+	if err != nil {
+		return fmt.Errorf("cannot checkout tag: %v", err)
+	}
+
 	return err
 }
 
-// cloneSDKRepo git clone's the aws-sdk-go source repo into the cache and
-// returns the filepath to the clone'd repo. If the aws-sdk-go repository
-// already exists in the cache, it will checkout the current sdk-go version
-// mentionned in 'go.mod' file.
-func cloneSDKRepo(srcPath string) (string, error) {
-	sdkVersion, err := getSDKVersion()
-	if err != nil {
-		return "", err
-	}
-	clonePath := filepath.Join(srcPath, "aws-sdk-go")
-	if optRefreshCache {
-		if _, err := os.Stat(filepath.Join(clonePath, ".git")); !os.IsNotExist(err) {
-			cmd := exec.Command("git", "-C", clonePath, "fetch", "--all", "--tags")
-			if err = cmd.Run(); err != nil {
-				return "", err
-			}
-			cmd = exec.Command("git", "-C", clonePath, "checkout", "tags/"+sdkVersion)
-			return clonePath, cmd.Run()
-		}
-	}
-	if _, err := os.Stat(clonePath); os.IsNotExist(err) {
-		cmd := exec.Command("git", "clone", "-b", sdkVersion, sdkRepoURL, clonePath)
-		return clonePath, cmd.Run()
-	}
-	return clonePath, nil
+// ensureSemverPrefix takes a semver string and tries to append the 'v'
+// prefix if it's missing.
+func ensureSemverPrefix(s string) string {
+	// trim all leading 'v' runes (characters)
+	s = strings.TrimLeft(s, "v")
+	return fmt.Sprintf("v%s", s)
 }
 
 // getSDKVersion returns the github.com/aws/aws-sdk-go version to use. It
-// first tries to get return version from the --aws-sdk-go-version flag, then
-// look for the service controller and local go.mod files.
-func getSDKVersion() (string, error) {
+// first tries to get the version from the --aws-sdk-go-version flag, then
+// from the ack-generate-metadata.yaml and finally look for the service
+// go.mod controller.
+func getSDKVersion(
+	lastGenerationVersion string,
+) (string, error) {
 	// First try to get the version from --aws-sdk-go-version flag
 	if optAWSSDKGoVersion != "" {
 		return optAWSSDKGoVersion, nil
+	}
+
+	// then, try to use last generation version (from ack-generate-metadata.yaml)
+	if lastGenerationVersion != "" {
+		return lastGenerationVersion, nil
 	}
 
 	// then, try to parse the service controller go.mod file
@@ -119,12 +151,7 @@ func getSDKVersion() (string, error) {
 		return sdkVersion, nil
 	}
 
-	// then try to parse a local go.mod
-	sdkVersion, err = getSDKVersionFromGoMod("go.mod")
-	if err != nil {
-		return "", err
-	}
-	return sdkVersion, nil
+	return "", err
 }
 
 // getSDKVersionFromGoMod parses a given go.mod file and returns

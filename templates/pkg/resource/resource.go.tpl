@@ -74,13 +74,6 @@ func (r *resource) SetObjectMeta(meta metav1.ObjectMeta) {
 // SetIdentifiers sets the Spec or Status field that is referenced as the unique
 // resource identifier
 func (r *resource) SetIdentifiers(identifier *ackv1alpha1.AWSIdentifiers) error {
-{{- if $idField := .CRD.SpecIdentifierField }}
-	if identifier.NameOrID == nil {
-		return ackerrors.MissingNameIdentifier
-	}
-	r.ko.Spec.{{ $idField }} = identifier.NameOrID
-{{- else }}
-	r.ko.Status.ACKResourceMetadata.ARN = identifier.ARN
-{{- end }}
+{{- GoCodeSetResourceIdentifiers .CRD "identifier" "r.ko" 1}}
 	return nil
 }

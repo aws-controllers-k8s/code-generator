@@ -87,6 +87,7 @@ func CheckRequiredFieldsMissingFromShape(
 		r,
 		koVarName,
 		indentLevel,
+		op,
 		shape,
 	)
 }
@@ -95,6 +96,7 @@ func checkRequiredFieldsMissingFromShape(
 	r *model.CRD,
 	koVarName string,
 	indentLevel int,
+	op *awssdkmodel.Operation,
 	shape *awssdkmodel.Shape,
 ) string {
 	indent := strings.Repeat("\t", indentLevel)
@@ -134,9 +136,15 @@ func checkRequiredFieldsMissingFromShape(
 		cleanMemberName := cleanMemberNames.Camel
 
 		resVarPath := koVarName
-		_, found := r.SpecFields[memberName]
-		if found {
+		// Check that the field has potentially been renamed
+		renamedName, wasRenamed := r.InputFieldRename(
+			op.Name, memberName,
+		)
+		_, found := r.SpecFields[renamedName]
+		if found && !wasRenamed {
 			resVarPath = resVarPath + r.Config().PrefixConfig.SpecField + "." + cleanMemberName
+		} else if found {
+			resVarPath = resVarPath + r.Config().PrefixConfig.SpecField + "." + renamedName
 		} else {
 			_, found = r.StatusFields[memberName]
 			if !found {
