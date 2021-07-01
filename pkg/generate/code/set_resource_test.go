@@ -2645,3 +2645,73 @@ func TestGetWrapperOutputShape(t *testing.T) {
 		})
 	}
 }
+
+func TestSetResource_MQ_Broker_SetResourceIdentifiers(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewGeneratorForService(t, "mq")
+
+	crd := testutil.GetCRDByName(t, g, "Broker")
+	require.NotNil(crd)
+
+	expected := `
+	if identifier.NameOrID == nil {
+		return ackerrors.MissingNameIdentifier
+	}
+	r.ko.Status.BrokerID = identifier.NameOrID
+
+`
+	assert.Equal(
+		expected,
+		code.SetResourceIdentifiers(crd.Config(), crd, "identifier", "r.ko", 1),
+	)
+}
+
+func TestSetResource_RDS_DBInstances_SetResourceIdentifiers(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewGeneratorForService(t, "rds")
+
+	crd := testutil.GetCRDByName(t, g, "DBInstance")
+	require.NotNil(crd)
+
+	expected := `
+	if identifier.NameOrID == nil {
+		return ackerrors.MissingNameIdentifier
+	}
+	r.ko.Spec.DBInstanceIdentifier = identifier.NameOrID
+
+`
+	assert.Equal(
+		expected,
+		code.SetResourceIdentifiers(crd.Config(), crd, "identifier", "r.ko", 1),
+	)
+}
+
+func TestSetResource_APIGWV2_ApiMapping_SetResourceIdentifiers(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewGeneratorForService(t, "apigatewayv2")
+
+	crd := testutil.GetCRDByName(t, g, "ApiMapping")
+	require.NotNil(crd)
+
+	expected := `
+	if identifier.NameOrID == nil {
+		return ackerrors.MissingNameIdentifier
+	}
+	r.ko.Status.APIMappingID = identifier.NameOrID
+
+	f0, f0ok := identifier.AdditionalKeys["domainName"]
+	if f0ok {
+		r.ko.Spec.DomainName = f0
+	}
+`
+	assert.Equal(
+		expected,
+		code.SetResourceIdentifiers(crd.Config(), crd, "identifier", "r.ko", 1),
+	)
+}

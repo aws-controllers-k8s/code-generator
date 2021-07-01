@@ -317,7 +317,6 @@ func SetResource(
 	return out
 }
 
-
 func ListMemberNameInReadManyOutput(
 	r *model.CRD,
 ) string {
@@ -768,6 +767,205 @@ func SetResourceGetAttributes(
 		}
 	}
 	return out
+}
+
+// SetResourceIdentifiers returns the Go code that sets an empty CR object with
+// Spec and Status field values that correspond to the primary identifier (be
+// that an ARN, ID or Name) and any other "additional keys" required for the AWS
+// service to uniquely identify the object.
+//
+// The method will attempt to use the `ReadOne` operation, if present, otherwise
+// will fall back to using `ReadMany`. If it detects the operation uses an ARN
+// to identify the resource it will read it from the metadata status field.
+// Otherwise it will use any fields with a matching name in the operation,
+// pulling from spec or status - requiring that exactly one of those fields is
+// marked as the "primary" identifier.
+//
+// An example of code with no additional keys:
+//
+// ```
+// 	if identifier.NameOrID == nil {
+// 		return ackerrors.MissingNameIdentifier
+// 	}
+// 	r.ko.Status.BrokerID = identifier.NameOrID
+// ```
+//
+// An example of code with additional keys:
+//
+// ```
+// if identifier.NameOrID == nil {
+// 	  return ackerrors.MissingNameIdentifier
+// }
+// r.ko.Spec.ResourceID = identifier.NameOrID
+//
+// f0, f0ok := identifier.AdditionalKeys["scalableDimension"]
+// if f0ok {
+// 	  r.ko.Spec.ScalableDimension = f0
+// }
+// f1, f1ok := identifier.AdditionalKeys["serviceNamespace"]
+// if f1ok {
+// 	  r.ko.Spec.ServiceNamespace = f1
+// }
+// ```
+func SetResourceIdentifiers(
+	cfg *ackgenconfig.Config,
+	r *model.CRD,
+	// String representing the name of the variable that we will grab the Input
+	// shape from. This will likely be "identifier" since in the templates that
+	// call this method, the "source variable" is the CRD struct which is used
+	// to populate the target variable, which is the struct of unique
+	// identifiers
+	sourceVarName string,
+	// String representing the name of the variable that we will be **setting**
+	// with values we get from the Output shape. This will likely be
+	// "r.ko" since that is the name of the "target variable" that the
+	// templates that call this method use for the Input shape.
+	targetVarName string,
+	// Number of levels of indentation to use
+	indentLevel int,
+) string {
+	op := r.Ops.ReadOne
+	if op == nil {
+		if r.Ops.GetAttributes != nil {
+			// TODO(RedbackThomson): Support attribute maps for resource identifiers
+			return ""
+		}
+		// If single lookups can only be done using ReadMany
+		op = r.Ops.ReadMany
+	}
+	inputShape := op.InputRef.Shape
+	if inputShape == nil {
+		return ""
+	}
+
+	primaryKeyOut := "\n"
+	arnOut := ""
+	additionalKeyOut := "\n"
+
+	indent := strings.Repeat("\t", indentLevel)
+
+	primaryKeyOut += fmt.Sprintf("%sif %s.NameOrID == nil {\n", indent, sourceVarName)
+	primaryKeyOut += fmt.Sprintf("%s\treturn ackerrors.MissingNameIdentifier\n", indent)
+	primaryKeyOut += fmt.Sprintf("%s}\n", indent)
+
+	primaryIdentifier := ""
+
+	// Attempt to fetch the primary identifier from the configuration
+	opConfig, ok := cfg.Operations[op.Name]
+	if ok {
+		primaryIdentifier = opConfig.PrimaryIdentifierFieldName
+	}
+
+	// Determine the "primary identifier" based on the names of each field
+	if primaryIdentifier == "" {
+		primaryIdentifierLookup := []string{
+			"Name",
+			r.Names.Original + "Name",
+			r.Names.Original + "Id",
+		}
+
+		for _, memberName := range inputShape.MemberNames() {
+			if util.InStrings(memberName, primaryIdentifierLookup) {
+				if primaryIdentifier == "" {
+					primaryIdentifier = memberName
+				} else {
+					panic("Found multiple possible primary identifiers for " +
+						r.Names.Original + ". Set " +
+						"`primary_identifier_field_name` for the " + op.Name +
+						" operation in the generator config.")
+				}
+			}
+		}
+
+		// Still haven't determined the identifier? Panic
+		if primaryIdentifier == "" {
+			panic("Could not find primary identifier for " + r.Names.Original +
+				". Set `primary_identifier_field_name` for the " + op.Name +
+				" operation in the generator config.")
+		}
+	}
+
+	paginatorFieldLookup := []string{
+		"NextToken",
+		"MaxResults",
+	}
+
+	additionalKeyCount := 0
+	for _, memberName := range inputShape.MemberNames() {
+		if util.InStrings(memberName, paginatorFieldLookup) {
+			continue
+		}
+
+		memberShapeRef, _ := inputShape.MemberRefs[memberName]
+		memberShape := memberShapeRef.Shape
+
+		// Only strings are currently accepted as valid inputs for
+		// additional key fields
+		if memberShape.Type != "string" {
+			continue
+		}
+
+		if r.IsSecretField(memberName) {
+			// Secrets cannot be used as fields in identifiers
+			continue
+		}
+
+		if r.IsPrimaryARNField(memberName) {
+			// r.ko.Status.ACKResourceMetadata.ARN = identifier.ARN
+			arnOut += fmt.Sprintf(
+				"\n%s%s.Status.ACKResourceMetadata.ARN = %s.ARN\n",
+				indent, targetVarName, sourceVarName,
+			)
+			continue
+
+		}
+
+		isPrimaryIdentifier := memberName == primaryIdentifier
+		cleanMemberNames := names.New(memberName)
+		cleanMemberName := cleanMemberNames.Camel
+
+		memberPath := ""
+		_, inSpec := r.SpecFields[memberName]
+		_, inStatus := r.StatusFields[memberName]
+		switch {
+		case inSpec:
+			memberPath = cfg.PrefixConfig.SpecField
+		case inStatus:
+			memberPath = cfg.PrefixConfig.StatusField
+		case isPrimaryIdentifier:
+			panic("Primary identifier field '" + memberName + "' cannot be found in either spec or status.")
+		default:
+			continue
+		}
+
+		if isPrimaryIdentifier {
+			// r.ko.Status.BrokerID = identifier.NameOrID
+			primaryKeyOut += fmt.Sprintf("%s%s%s.%s = %s.NameOrID\n", indent, targetVarName, memberPath, cleanMemberName, sourceVarName)
+		} else {
+			// f0, f0ok := identifier.AdditionalKeys["scalableDimension"]
+			// if f0ok {
+			// 	r.ko.Spec.ScalableDimension = f0
+			// }
+
+			fieldIndexName := fmt.Sprintf("f%d", additionalKeyCount)
+			sourceAdaptedVarName := fmt.Sprintf("%s.AdditionalKeys[\"%s\"]", sourceVarName, cleanMemberNames.CamelLower)
+
+			// TODO(RedbackThomson): If the identifiers don't exist, we should be
+			// throwing an error accessible to the user
+			additionalKeyOut += fmt.Sprintf("%s%s, %sok := %s\n", indent, fieldIndexName, fieldIndexName, sourceAdaptedVarName)
+			additionalKeyOut += fmt.Sprintf("%sif %sok {\n", indent, fieldIndexName)
+			additionalKeyOut += fmt.Sprintf("%s\t%s%s.%s = %s\n", indent, targetVarName, memberPath, cleanMemberName, fieldIndexName)
+			additionalKeyOut += fmt.Sprintf("%s}\n", indent)
+
+			additionalKeyCount++
+		}
+	}
+
+	// Only use at most one of ARN or nameOrID as primary identifier outputs
+	if arnOut != "" {
+		return arnOut + additionalKeyOut
+	}
+	return primaryKeyOut + additionalKeyOut
 }
 
 // setResourceForContainer returns a string of Go code that sets the value of a
