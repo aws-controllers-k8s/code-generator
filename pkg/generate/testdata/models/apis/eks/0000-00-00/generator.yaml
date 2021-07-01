@@ -1,0 +1,13 @@
+resources:
+  FargateProfile:
+    renames:
+      operations:
+        CreateFargateProfile:
+          input_fields:
+            FargateProfileName: Name
+        DescribeFargateProfile:
+          input_fields:
+            FargateProfileName: Name
+        DeleteFargateProfile:
+          input_fields:
+            FargateProfileName: Name
