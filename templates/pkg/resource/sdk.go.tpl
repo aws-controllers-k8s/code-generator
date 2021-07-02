@@ -125,7 +125,7 @@ func (rm *resourceManager) newCreateRequestPayload(
 func (rm *resourceManager) sdkDelete(
 	ctx context.Context,
 	r *resource,
-) (err error) {
+) (latest *resource, err error) {
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.sdkDelete")
 	defer exit(err)
@@ -136,25 +136,26 @@ func (rm *resourceManager) sdkDelete(
 {{- end }}
 {{- if $customMethod := .CRD.GetCustomImplementation .CRD.Ops.Delete }}
 	if err = rm.{{ $customMethod }}(ctx, r); err != nil {
-		return err
+		return nil, err
 	}
 {{- end }}
 	input, err := rm.newDeleteRequestPayload(r)
 	if err != nil {
-		return err
+		return nil, err
 	}
 {{- if $hookCode := Hook .CRD "sdk_delete_post_build_request" }}
 {{ $hookCode }}
 {{- end }}
-	_, err = rm.sdkapi.{{ .CRD.Ops.Delete.Name }}WithContext(ctx, input)
+	var resp {{ .CRD.GetOutputShapeGoType .CRD.Ops.Delete }}; _ = resp;
+	resp, err = rm.sdkapi.{{ .CRD.Ops.Delete.Name }}WithContext(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "{{ .CRD.Ops.Delete.Name }}", err)
 {{- if $hookCode := Hook .CRD "sdk_delete_post_request" }}
 {{ $hookCode }}
 {{- end }}
-	return err
+	return nil, err
 {{- else }}
 	// TODO(jaypipes): Figure this out...
-	return nil
+	return nil, nil
 {{ end }}
 }
 
