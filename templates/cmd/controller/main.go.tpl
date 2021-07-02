@@ -7,6 +7,8 @@ import (
 
 	ackcfg "github.com/aws-controllers-k8s/runtime/pkg/config"
 	ackrt "github.com/aws-controllers-k8s/runtime/pkg/runtime"
+	ackrtutil "github.com/aws-controllers-k8s/runtime/pkg/util"
+	ackrtwebhook "github.com/aws-controllers-k8s/runtime/pkg/webhook"
 	flag "github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -16,7 +18,7 @@ import (
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
 	svcresource "github.com/aws-controllers-k8s/{{ .ServiceIDClean }}-controller/pkg/resource"
 	svctypes "github.com/aws-controllers-k8s/{{ .ServiceIDClean }}-controller/apis/{{ .APIVersion }}"
-
+	{{/* TODO(a-hilaly): import apis/* packages to register webhooks */}}
 	{{ $serviceIDClean := .ServiceIDClean }} {{range $crdName := .SnakeCasedCRDNames }}_ "github.com/aws-controllers-k8s/{{ $serviceIDClean }}-controller/pkg/resource/{{ $crdName }}"
 	{{end}}
 )
@@ -30,6 +32,7 @@ var (
 
 func init() {
 	_ = clientgoscheme.AddToScheme(scheme)
+	{{/* TODO(a-hilaly): register all the apis/* schemes */}}
 	_ = svctypes.AddToScheme(scheme)
 	_ = ackv1alpha1.AddToScheme(scheme)
 }
@@ -48,13 +51,23 @@ func main() {
 		os.Exit(1)
 	}
 
+	host, port, err := ackrtutil.GetHostPort(ackCfg.WebhookServerAddr)
+	if err != nil {
+		setupLog.Error(
+			err, "Unable to parse webhook server address.",
+			"aws.service", awsServiceAlias,
+		)
+		os.Exit(1)
+	}
+
 	mgr, err := ctrlrt.NewManager(ctrlrt.GetConfigOrDie(), ctrlrt.Options{
-		Scheme:			 scheme,
-		Port:			   ackCfg.BindPort,
+		Scheme:             scheme,
+		Port:               port,
+		Host:               host,
 		MetricsBindAddress: ackCfg.MetricsAddr,
-		LeaderElection:	 ackCfg.EnableLeaderElection,
+		LeaderElection:	    ackCfg.EnableLeaderElection,
 		LeaderElectionID:   awsServiceAPIGroup,
-		Namespace: ackCfg.WatchNamespace,
+		Namespace:          ackCfg.WatchNamespace,
 	})
 	if err != nil {
 		setupLog.Error(
@@ -80,6 +93,20 @@ func main() {
 	).WithPrometheusRegistry(
 		ctrlrtmetrics.Registry,
 	)
+
+	if ackCfg.EnableWebhookServer {
+		webhooks := ackrtwebhook.GetWebhooks()
+		for _, webhook := range webhooks {
+			if err := webhook.Setup(mgr); err != nil {
+				setupLog.Error(
+					err, "unable to register webhook "+webhook.UID(),
+					"aws.service", awsServiceAlias,
+				)
+
+			}
+		}
+	}
+
 	if err = sc.BindControllerManager(mgr, ackCfg); err != nil {
 		setupLog.Error(
 			err, "unable bind to controller manager to service controller",
