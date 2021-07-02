@@ -860,8 +860,11 @@ func SetResourceIdentifiers(
 	if primaryIdentifier == "" {
 		primaryIdentifierLookup := []string{
 			"Name",
+			"Names",
 			r.Names.Original + "Name",
+			r.Names.Original + "Names",
 			r.Names.Original + "Id",
+			r.Names.Original + "Ids",
 		}
 
 		for _, memberName := range inputShape.MemberNames() {
