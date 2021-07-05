@@ -2690,6 +2690,30 @@ func TestSetResource_RDS_DBInstances_SetResourceIdentifiers(t *testing.T) {
 	)
 }
 
+func TestSetResource_RDS_DBSubnetGroup_SetResourceIdentifiers(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewGeneratorForService(t, "rds")
+
+	crd := testutil.GetCRDByName(t, g, "DBSubnetGroup")
+	require.NotNil(crd)
+
+	// In our testdata generator.yaml file, we've renamed the original
+	// DBSubnetGroupName to just Name...
+	expected := `
+	if identifier.NameOrID == "" {
+		return ackerrors.MissingNameIdentifier
+	}
+	r.ko.Spec.Name = &identifier.NameOrID
+
+`
+	assert.Equal(
+		expected,
+		code.SetResourceIdentifiers(crd.Config(), crd, "identifier", "r.ko", 1),
+	)
+}
+
 func TestSetResource_APIGWV2_ApiMapping_SetResourceIdentifiers(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
