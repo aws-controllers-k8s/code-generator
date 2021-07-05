@@ -120,4 +120,16 @@ func TestRuntimeDependency(t *testing.T) {
 	// ACK runtime 0.3.0 introduced a new RequeueOnSuccessSeconds method to the
 	// resource manager factory
 	require.Implements((*acktypes.AWSResourceManagerFactory)(nil), new(fakeRMF))
+
+	// ACK runtime 0.4.0 introduced a new AdditionalKeys field to the
+	// AWSIdentifiers type. By simply referring to the new AdditionalKeys field
+	// here, we have a compile-time test of the pinning of code-generator to
+	// ACK runtime v0.4.0...
+	ids := ackv1alpha1.AWSIdentifiers{
+		NameOrID: "my-id",
+		AdditionalKeys: map[string]string{
+			"namespace": "my-namespace",
+		},
+	}
+	_ = ids
 }
