@@ -922,21 +922,25 @@ func SetResourceIdentifiers(
 			continue
 
 		}
+		// Check that the field has potentially been renamed
+		renamedName, _ := r.InputFieldRename(
+			op.Name, memberName,
+		)
 
 		isPrimaryIdentifier := memberName == primaryIdentifier
-		cleanMemberNames := names.New(memberName)
+		cleanMemberNames := names.New(renamedName)
 		cleanMemberName := cleanMemberNames.Camel
 
 		memberPath := ""
-		_, inSpec := r.SpecFields[memberName]
-		_, inStatus := r.StatusFields[memberName]
+		_, inSpec := r.SpecFields[renamedName]
+		_, inStatus := r.StatusFields[renamedName]
 		switch {
 		case inSpec:
 			memberPath = cfg.PrefixConfig.SpecField
 		case inStatus:
 			memberPath = cfg.PrefixConfig.StatusField
 		case isPrimaryIdentifier:
-			panic("Primary identifier field '" + memberName + "' cannot be found in either spec or status.")
+			panic("Primary identifier field '" + memberName + "' in operation '" + op.Name + "' cannot be found in either spec or status.")
 		default:
 			continue
 		}
