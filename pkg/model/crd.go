@@ -507,9 +507,12 @@ func (r *CRD) UpdateConditionsCustomMethodName() string {
 	return resGenConfig.UpdateConditionsCustomMethodName
 }
 
-// CustomCheckRequiredFieldsMissingMethod returns custom check required fields missing method
-// as *string for custom resource, if specified in generator config
-func (r *CRD) CustomCheckRequiredFieldsMissingMethod(op *awssdkmodel.Operation) string {
+// GetCustomCheckRequiredFieldsMissingMethod returns custom check required fields missing method
+// as string for custom resource, if specified in generator config
+func (r *CRD) GetCustomCheckRequiredFieldsMissingMethod(
+	// The type of operation
+	op *awssdkmodel.Operation,
+) string {
 	if op == nil || r.cfg == nil {
 		return ""
 	}

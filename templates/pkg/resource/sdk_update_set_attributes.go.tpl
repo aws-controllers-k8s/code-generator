@@ -45,7 +45,7 @@ func (rm *resourceManager) sdkUpdate(
 func (rm *resourceManager) requiredFieldsMissingFromSetAttributesInput(
 	r *resource,
 ) bool {
-{{- if $customCheckMethod := .CRD.CustomCheckRequiredFieldsMissingMethod .CRD.Ops.SetAttributes }}
+{{- if $customCheckMethod := .CRD.GetCustomCheckRequiredFieldsMissingMethod .CRD.Ops.SetAttributes }}
 return rm.{{ $customCheckMethod }}(r)
 {{- else }}
 {{ GoCodeRequiredFieldsMissingFromSetAttributesInput .CRD "r.ko" 1 }}
