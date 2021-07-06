@@ -844,7 +844,7 @@ func SetResourceIdentifiers(
 
 	indent := strings.Repeat("\t", indentLevel)
 
-	primaryKeyOut += fmt.Sprintf("%sif %s.NameOrID == nil {\n", indent, sourceVarName)
+	primaryKeyOut += fmt.Sprintf("%sif %s.NameOrID == \"\" {\n", indent, sourceVarName)
 	primaryKeyOut += fmt.Sprintf("%s\treturn ackerrors.MissingNameIdentifier\n", indent)
 	primaryKeyOut += fmt.Sprintf("%s}\n", indent)
 
@@ -860,8 +860,11 @@ func SetResourceIdentifiers(
 	if primaryIdentifier == "" {
 		primaryIdentifierLookup := []string{
 			"Name",
+			"Names",
 			r.Names.Original + "Name",
+			r.Names.Original + "Names",
 			r.Names.Original + "Id",
+			r.Names.Original + "Ids",
 		}
 
 		for _, memberName := range inputShape.MemberNames() {
@@ -919,28 +922,32 @@ func SetResourceIdentifiers(
 			continue
 
 		}
+		// Check that the field has potentially been renamed
+		renamedName, _ := r.InputFieldRename(
+			op.Name, memberName,
+		)
 
 		isPrimaryIdentifier := memberName == primaryIdentifier
-		cleanMemberNames := names.New(memberName)
+		cleanMemberNames := names.New(renamedName)
 		cleanMemberName := cleanMemberNames.Camel
 
 		memberPath := ""
-		_, inSpec := r.SpecFields[memberName]
-		_, inStatus := r.StatusFields[memberName]
+		_, inSpec := r.SpecFields[renamedName]
+		_, inStatus := r.StatusFields[renamedName]
 		switch {
 		case inSpec:
 			memberPath = cfg.PrefixConfig.SpecField
 		case inStatus:
 			memberPath = cfg.PrefixConfig.StatusField
 		case isPrimaryIdentifier:
-			panic("Primary identifier field '" + memberName + "' cannot be found in either spec or status.")
+			panic("Primary identifier field '" + memberName + "' in operation '" + op.Name + "' cannot be found in either spec or status.")
 		default:
 			continue
 		}
 
 		if isPrimaryIdentifier {
 			// r.ko.Status.BrokerID = identifier.NameOrID
-			primaryKeyOut += fmt.Sprintf("%s%s%s.%s = %s.NameOrID\n", indent, targetVarName, memberPath, cleanMemberName, sourceVarName)
+			primaryKeyOut += fmt.Sprintf("%s%s%s.%s = &%s.NameOrID\n", indent, targetVarName, memberPath, cleanMemberName, sourceVarName)
 		} else {
 			// f0, f0ok := identifier.AdditionalKeys["scalableDimension"]
 			// if f0ok {
@@ -954,7 +961,7 @@ func SetResourceIdentifiers(
 			// throwing an error accessible to the user
 			additionalKeyOut += fmt.Sprintf("%s%s, %sok := %s\n", indent, fieldIndexName, fieldIndexName, sourceAdaptedVarName)
 			additionalKeyOut += fmt.Sprintf("%sif %sok {\n", indent, fieldIndexName)
-			additionalKeyOut += fmt.Sprintf("%s\t%s%s.%s = %s\n", indent, targetVarName, memberPath, cleanMemberName, fieldIndexName)
+			additionalKeyOut += fmt.Sprintf("%s\t%s%s.%s = &%s\n", indent, targetVarName, memberPath, cleanMemberName, fieldIndexName)
 			additionalKeyOut += fmt.Sprintf("%s}\n", indent)
 
 			additionalKeyCount++

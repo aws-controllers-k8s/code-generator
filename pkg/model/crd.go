@@ -522,7 +522,6 @@ func (r *CRD) CustomCheckRequiredFieldsMissingMethod(op *awssdkmodel.Operation) 
 	return operationConfig.CustomCheckRequiredFieldsMissingMethod
 }
 
-
 // SpecIdentifierField returns the name of the "Name" or string identifier field
 // in the Spec.
 // This method does not guarantee that the identifier field returned is the

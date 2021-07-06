@@ -2656,10 +2656,10 @@ func TestSetResource_MQ_Broker_SetResourceIdentifiers(t *testing.T) {
 	require.NotNil(crd)
 
 	expected := `
-	if identifier.NameOrID == nil {
+	if identifier.NameOrID == "" {
 		return ackerrors.MissingNameIdentifier
 	}
-	r.ko.Status.BrokerID = identifier.NameOrID
+	r.ko.Status.BrokerID = &identifier.NameOrID
 
 `
 	assert.Equal(
@@ -2678,10 +2678,34 @@ func TestSetResource_RDS_DBInstances_SetResourceIdentifiers(t *testing.T) {
 	require.NotNil(crd)
 
 	expected := `
-	if identifier.NameOrID == nil {
+	if identifier.NameOrID == "" {
 		return ackerrors.MissingNameIdentifier
 	}
-	r.ko.Spec.DBInstanceIdentifier = identifier.NameOrID
+	r.ko.Spec.DBInstanceIdentifier = &identifier.NameOrID
+
+`
+	assert.Equal(
+		expected,
+		code.SetResourceIdentifiers(crd.Config(), crd, "identifier", "r.ko", 1),
+	)
+}
+
+func TestSetResource_RDS_DBSubnetGroup_SetResourceIdentifiers(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewGeneratorForService(t, "rds")
+
+	crd := testutil.GetCRDByName(t, g, "DBSubnetGroup")
+	require.NotNil(crd)
+
+	// In our testdata generator.yaml file, we've renamed the original
+	// DBSubnetGroupName to just Name...
+	expected := `
+	if identifier.NameOrID == "" {
+		return ackerrors.MissingNameIdentifier
+	}
+	r.ko.Spec.Name = &identifier.NameOrID
 
 `
 	assert.Equal(
@@ -2700,14 +2724,14 @@ func TestSetResource_APIGWV2_ApiMapping_SetResourceIdentifiers(t *testing.T) {
 	require.NotNil(crd)
 
 	expected := `
-	if identifier.NameOrID == nil {
+	if identifier.NameOrID == "" {
 		return ackerrors.MissingNameIdentifier
 	}
-	r.ko.Status.APIMappingID = identifier.NameOrID
+	r.ko.Status.APIMappingID = &identifier.NameOrID
 
 	f0, f0ok := identifier.AdditionalKeys["domainName"]
 	if f0ok {
-		r.ko.Spec.DomainName = f0
+		r.ko.Spec.DomainName = &f0
 	}
 `
 	assert.Equal(
