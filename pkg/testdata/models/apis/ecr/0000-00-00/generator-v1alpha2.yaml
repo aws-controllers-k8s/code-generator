@@ -1,0 +1,27 @@
+resources:
+  Repository:
+    renames:
+      operations:
+        CreateRepository:
+          input_fields:
+            RepositoryName: Name
+            ImageScanningConfiguration: ScanConfig
+        DescribeRepository:
+          input_fields:
+            ImageScanningConfiguration: ScanConfig
+        DeleteRepository:
+          input_fields:
+            RepositoryName: Name
+        DescribeRepositories:
+          input_fields:
+            RepositoryName: Name
+            ImageScanningConfiguration: ScanConfig
+    exceptions:
+      errors:
+        404:
+          code: RepositoryNotFoundException
+    list_operation:
+      match_fields:
+        - Name
+    update_operation:
+      custom_method_name: customUpdateRepository

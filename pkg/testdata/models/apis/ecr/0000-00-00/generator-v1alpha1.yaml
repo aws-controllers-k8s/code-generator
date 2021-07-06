@@ -1,0 +1,11 @@
+resources:
+  Repository:
+    exceptions:
+      errors:
+        404:
+          code: RepositoryNotFoundException
+    list_operation:
+      match_fields:
+        - Name
+    update_operation:
+      custom_method_name: customUpdateRepository

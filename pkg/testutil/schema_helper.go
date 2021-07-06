@@ -24,7 +24,37 @@ import (
 	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
 )
 
+// TestingModelOptions contains optional variables that are passed to
+// `NewModelForServiceWithOptions`.
+type TestingModelOptions struct {
+	// The CR API Version. Defaults to v1alpha1
+	APIVersion string
+	// The generator config file. Defaults to generator.yaml
+	GeneratorConfigFile string
+	// The AWS Service's API version. Defaults to 00-00-0000
+	ServiceAPIVersion string
+}
+
+// SetDefaults sets the empty fields to a default value.
+func (o *TestingModelOptions) SetDefaults() {
+	if o.APIVersion == "" {
+		o.APIVersion = "v1alpha1"
+	}
+	if o.GeneratorConfigFile == "" {
+		o.GeneratorConfigFile = "generator.yaml"
+	}
+	if o.ServiceAPIVersion == "" {
+		o.ServiceAPIVersion = "0000-00-00"
+	}
+}
+
+// NewModelForService returns a new *ackmodel.Model used for testing purposes.
 func NewModelForService(t *testing.T, serviceAlias string) *ackmodel.Model {
+	return NewModelForServiceWithOptions(t, serviceAlias, &TestingModelOptions{})
+}
+
+// NewModelForServiceWithOptions returns a new *ackmodel.Model used for testing purposes.
+func NewModelForServiceWithOptions(t *testing.T, serviceAlias string, options *TestingModelOptions) *ackmodel.Model {
 	path, err := os.Getwd()
 	if err != nil {
 		t.Fatal(err)
@@ -41,18 +71,20 @@ func NewModelForService(t *testing.T, serviceAlias string) *ackmodel.Model {
 			break
 		}
 	}
+	options.SetDefaults()
 	sdkHelper := model.NewSDKHelper(path)
+	sdkHelper.WithAPIVersion(options.ServiceAPIVersion)
 	sdkAPI, err := sdkHelper.API(serviceAlias)
 	if err != nil {
 		t.Fatal(err)
 	}
-	generatorConfigPath := filepath.Join(path, "models", "apis", serviceAlias, "0000-00-00", "generator.yaml")
+	generatorConfigPath := filepath.Join(path, "models", "apis", serviceAlias, options.ServiceAPIVersion, options.GeneratorConfigFile)
 	if _, err := os.Stat(generatorConfigPath); os.IsNotExist(err) {
 		generatorConfigPath = ""
 	}
-	g, err := ackmodel.New(sdkAPI, "v1alpha1", generatorConfigPath, ackgenerate.DefaultConfig)
+	m, err := ackmodel.New(sdkAPI, options.APIVersion, generatorConfigPath, ackgenerate.DefaultConfig)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return g
+	return m
 }
