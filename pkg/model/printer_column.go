@@ -26,6 +26,7 @@ type PrinterColumn struct {
 	Type     string
 	Priority int
 	JSONPath string
+	Index    int
 }
 
 // By can sort two PrinterColumns
@@ -64,7 +65,6 @@ func (pcs printerColumnSorter) Less(i, j int) bool {
 // sortFunction returns a Go function used the sort the printer columns.
 func sortFunction(sortByField string) func(a, b *PrinterColumn) bool {
 	switch strings.ToLower(sortByField) {
-	//TODO(a-hially): add Priority and Order sort functions
 	case "name":
 		return func(a, b *PrinterColumn) bool {
 			return a.Name < b.Name
@@ -77,8 +77,13 @@ func sortFunction(sortByField string) func(a, b *PrinterColumn) bool {
 		return func(a, b *PrinterColumn) bool {
 			return a.JSONPath < b.JSONPath
 		}
+	case "index":
+		return func(a, b *PrinterColumn) bool {
+			return a.Index < b.Index
+		}
 	default:
-		msg := fmt.Sprintf("unknown sort-by field: '%s'. must be one of 'Name', 'Type' and 'JSONPath'", sortByField)
+		msg := fmt.Sprintf("unknown sort-by field: '%s'. must be one of 'Name',"+
+			" 'Type', 'JSONPath' and 'Index'", sortByField)
 		panic(msg)
 	}
 }
@@ -143,6 +148,7 @@ func (r *CRD) addPrintableColumn(
 		Type:     printColumnType,
 		Priority: field.FieldConfig.Print.Priority,
 		JSONPath: jsonPath,
+		Index:    field.FieldConfig.Print.Index,
 	}
 	r.additionalPrinterColumns = append(r.additionalPrinterColumns, column)
 }
