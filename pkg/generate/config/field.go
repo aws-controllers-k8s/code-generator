@@ -128,6 +128,12 @@ type PrintFieldConfig struct {
 	// view (using the -o wide flag). Fields with priority 0 are shown in standard view.
 	// Fields with priority greater than 0 are only shown in wide view. Default is 0
 	Priority int `json:"priority"`
+	// Index informs the code generator about the position/order of a specific field/column in
+	// `kubectl get` response. To enable ordering by index, `$resource.print.orderBy` must be set
+	// to `index`
+	// The field with the smallest index will be right next to the first column (NAME).
+	// The field with the biggest index will be positioned right before the last column (AGE).
+	Index int `json:"index"`
 }
 
 // FieldConfig contains instructions to the code generator about how
