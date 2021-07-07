@@ -25,15 +25,18 @@ import (
 )
 
 func NewModelForService(t *testing.T, serviceAlias string) *ackmodel.Model {
-	path, _ := filepath.Abs("testdata")
-	// We have subdirectories in pkg/generate that rely on the testdata in
-	// pkg/generate. This code simply detects if we're running from one of
+	path, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	// We have subdirectories in pkg/generate and pkg/model that rely on the testdata
+	// in pkg/generate. This code simply detects if we're running from one of
 	// those subdirectories and if so, rebuilds the path to the API model files
 	// in pkg/generate/testdata
 	pathParts := strings.Split(path, "/")
 	for x, pathPart := range pathParts {
-		if pathPart == "generate" {
-			path = filepath.Join(pathParts[0 : x+1]...)
+		if pathPart == "generate" || pathPart == "model" {
+			path = filepath.Join(pathParts[0:x]...)
 			path = filepath.Join("/", path, "testdata")
 			break
 		}
