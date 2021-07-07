@@ -45,7 +45,11 @@ func (rm *resourceManager) sdkUpdate(
 func (rm *resourceManager) requiredFieldsMissingFromSetAttributesInput(
 	r *resource,
 ) bool {
+{{- if $customCheckMethod := .CRD.GetCustomCheckRequiredFieldsMissingMethod .CRD.Ops.SetAttributes }}
+return rm.{{ $customCheckMethod }}(r)
+{{- else }}
 {{ GoCodeRequiredFieldsMissingFromSetAttributesInput .CRD "r.ko" 1 }}
+{{- end }}
 }
 
 // newSetAttributesRequestPayload returns SDK-specific struct for the HTTP

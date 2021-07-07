@@ -57,7 +57,11 @@ func (rm *resourceManager) sdkFind(
 func (rm *resourceManager) requiredFieldsMissingFromGetAttributesInput(
 	r *resource,
 ) bool {
+{{- if $customCheckMethod := .CRD.GetCustomCheckRequiredFieldsMissingMethod .CRD.Ops.GetAttributes }}
+return rm.{{ $customCheckMethod }}(r)
+{{- else }}
 {{ GoCodeRequiredFieldsMissingFromGetAttributesInput .CRD "r.ko" 1 }}
+{{- end }}
 }
 
 // newGetAttributesRequestPayload returns SDK-specific struct for the HTTP

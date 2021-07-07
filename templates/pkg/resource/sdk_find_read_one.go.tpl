@@ -65,7 +65,11 @@ func (rm *resourceManager) sdkFind(
 func (rm *resourceManager) requiredFieldsMissingFromReadOneInput(
 	r *resource,
 ) bool {
+{{- if $customCheckMethod := .CRD.GetCustomCheckRequiredFieldsMissingMethod .CRD.Ops.ReadOne }}
+return rm.{{ $customCheckMethod }}(r)
+{{- else }}
 {{ GoCodeRequiredFieldsMissingFromReadOneInput .CRD "r.ko" 1 }}
+{{- end }}
 }
 
 // newDescribeRequestPayload returns SDK-specific struct for the HTTP request
