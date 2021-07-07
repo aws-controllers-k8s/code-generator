@@ -14,6 +14,7 @@
 package command
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
@@ -81,7 +82,9 @@ func generateOLMAssets(cmd *cobra.Command, args []string) error {
 	version := args[1]
 
 	// get the generator inputs
-	if err := ensureSDKRepo(optCacheDir, optRefreshCache); err != nil {
+	ctx, cancel := contextWithSigterm(context.Background())
+	defer cancel()
+	if err := ensureSDKRepo(ctx, optCacheDir, optRefreshCache); err != nil {
 		return err
 	}
 	sdkHelper := ackmodel.NewSDKHelper(sdkDir)

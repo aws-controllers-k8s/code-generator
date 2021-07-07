@@ -14,6 +14,7 @@
 package command
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
@@ -91,7 +92,9 @@ func generateAPIs(cmd *cobra.Command, args []string) error {
 	if optOutputPath == "" {
 		optOutputPath = filepath.Join(optServicesDir, svcAlias)
 	}
-	if err := ensureSDKRepo(optCacheDir, optRefreshCache); err != nil {
+	ctx, cancel := contextWithSigterm(context.Background())
+	defer cancel()
+	if err := ensureSDKRepo(ctx, optCacheDir, optRefreshCache); err != nil {
 		return err
 	}
 	sdkHelper := model.NewSDKHelper(sdkDir)

@@ -14,6 +14,7 @@
 package command
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
@@ -65,7 +66,9 @@ func generateRelease(cmd *cobra.Command, args []string) error {
 	// version supplied hasn't been used (as a Git tag) before...
 	releaseVersion := strings.ToLower(args[1])
 
-	if err := ensureSDKRepo(optCacheDir, optRefreshCache); err != nil {
+	ctx, cancel := contextWithSigterm(context.Background())
+	defer cancel()
+	if err := ensureSDKRepo(ctx, optCacheDir, optRefreshCache); err != nil {
 		return err
 	}
 	sdkHelper := ackmodel.NewSDKHelper(sdkDir)

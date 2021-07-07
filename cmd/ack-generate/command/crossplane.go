@@ -14,6 +14,7 @@
 package command
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -49,7 +50,9 @@ func generateCrossplane(_ *cobra.Command, args []string) error {
 	if len(args) != 1 {
 		return fmt.Errorf("please specify the service alias for the AWS service API to generate")
 	}
-	if err := ensureSDKRepo(optCacheDir, optRefreshCache); err != nil {
+	ctx, cancel := contextWithSigterm(context.Background())
+	defer cancel()
+	if err := ensureSDKRepo(ctx, optCacheDir, optRefreshCache); err != nil {
 		return err
 	}
 	svcAlias := strings.ToLower(args[0])

@@ -18,8 +18,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
+	"syscall"
+	"time"
 
 	"golang.org/x/mod/modfile"
 
@@ -27,8 +30,33 @@ import (
 )
 
 const (
-	sdkRepoURL = "https://github.com/aws/aws-sdk-go"
+	sdkRepoURL             = "https://github.com/aws/aws-sdk-go"
+	defaultGitCloneTimeout = 180 * time.Second
+	defaultGitFetchTimeout = 30 * time.Second
 )
+
+func contextWithSigterm(ctx context.Context) (context.Context, context.CancelFunc) {
+	ctx, cancel := context.WithCancel(ctx)
+	signalCh := make(chan os.Signal, 1)
+
+	// recreate the context.CancelFunc
+	cancelFunc := func() {
+		signal.Stop(signalCh)
+		cancel()
+	}
+
+	// notify on SIGINT or SIGTERM
+	signal.Notify(signalCh, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		select {
+		case <-signalCh:
+			cancel()
+		case <-ctx.Done():
+		}
+	}()
+
+	return ctx, cancelFunc
+}
 
 // ensureDir makes sure that a supplied directory exists and
 // returns whether the directory already existed.
@@ -69,6 +97,7 @@ func isDirWriteable(fp string) bool {
 // the aws-sdk-go is found. It will also optionally fetch all the remote tags
 // and checkout the given tag.
 func ensureSDKRepo(
+	ctx context.Context,
 	cacheDir string,
 	// A boolean instructing ensureSDKRepo whether to fetch the remote tags from
 	// the upstream repository
@@ -83,7 +112,10 @@ func ensureSDKRepo(
 	// Clone repository if it doen't exist
 	sdkDir = filepath.Join(srcPath, "aws-sdk-go")
 	if _, err := os.Stat(sdkDir); os.IsNotExist(err) {
-		err = util.CloneRepository(context.Background(), sdkDir, sdkRepoURL)
+
+		ctx, cancel := context.WithTimeout(ctx, defaultGitCloneTimeout)
+		defer cancel()
+		err = util.CloneRepository(ctx, sdkDir, sdkRepoURL)
 		if err != nil {
 			return fmt.Errorf("canot clone repository: %v", err)
 		}
@@ -91,7 +123,9 @@ func ensureSDKRepo(
 
 	// Fetch all tags
 	if fetchTags {
-		err = util.FetchRepositoryTags(context.Background(), sdkDir)
+		ctx, cancel := context.WithTimeout(ctx, defaultGitFetchTimeout)
+		defer cancel()
+		err = util.FetchRepositoryTags(ctx, sdkDir)
 		if err != nil {
 			return fmt.Errorf("cannot fetch tags: %v", err)
 		}
