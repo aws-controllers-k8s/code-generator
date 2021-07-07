@@ -26,7 +26,7 @@ func TestRDS_DBInstance(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "rds")
+	g := testutil.NewModelForService(t, "rds")
 
 	crds, err := g.GetCRDs()
 	require.Nil(err)

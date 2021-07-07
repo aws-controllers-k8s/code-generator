@@ -26,7 +26,7 @@ func TestSQS_Queue(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "sqs")
+	g := testutil.NewModelForService(t, "sqs")
 
 	crds, err := g.GetCRDs()
 	require.Nil(err)

@@ -26,7 +26,7 @@ func TestAPIGatewayV2_GetTypeDefs(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "apigatewayv2")
+	g := testutil.NewModelForService(t, "apigatewayv2")
 
 	// There is an "Api" Shape that is a struct that is an element of the
 	// GetApis Operation. Its name conflicts with the CRD called API and thus
@@ -43,7 +43,7 @@ func TestAPIGatewayV2_Api(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "apigatewayv2")
+	g := testutil.NewModelForService(t, "apigatewayv2")
 
 	crds, err := g.GetCRDs()
 	require.Nil(err)
@@ -71,7 +71,7 @@ func TestAPIGatewayV2_Route(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "apigatewayv2")
+	g := testutil.NewModelForService(t, "apigatewayv2")
 
 	crds, err := g.GetCRDs()
 	require.Nil(err)

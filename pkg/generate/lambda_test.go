@@ -26,7 +26,7 @@ func TestLambda_Function(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "lambda")
+	g := testutil.NewModelForService(t, "lambda")
 
 	crds, err := g.GetCRDs()
 	require.Nil(err)

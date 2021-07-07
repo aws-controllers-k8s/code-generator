@@ -26,7 +26,7 @@ func TestMQ_Broker(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "mq")
+	g := testutil.NewModelForService(t, "mq")
 
 	crd := testutil.GetCRDByName(t, g, "Broker")
 	require.NotNil(crd)
@@ -56,7 +56,7 @@ func TestMQ_GetOutputShapeGoType(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "mq")
+	g := testutil.NewModelForService(t, "mq")
 
 	crd := testutil.GetCRDByName(t, g, "Broker")
 	require.NotNil(crd)

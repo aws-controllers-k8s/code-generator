@@ -18,7 +18,6 @@ import (
 	"strings"
 	ttpl "text/template"
 
-	"github.com/aws-controllers-k8s/code-generator/pkg/generate"
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate/templateset"
 	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
 	"github.com/iancoleman/strcase"
@@ -45,18 +44,18 @@ var (
 // APIs returns a pointer to a TemplateSet containing all the templates for
 // generating ACK service controller's apis/ contents
 func APIs(
-	g *generate.Generator,
+	m *ackmodel.Model,
 	templateBasePaths []string,
 ) (*templateset.TemplateSet, error) {
-	enumDefs, err := g.GetEnumDefs()
+	enumDefs, err := m.GetEnumDefs()
 	if err != nil {
 		return nil, err
 	}
-	typeDefs, err := g.GetTypeDefs()
+	typeDefs, err := m.GetTypeDefs()
 	if err != nil {
 		return nil, err
 	}
-	crds, err := g.GetCRDs()
+	crds, err := m.GetCRDs()
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +67,7 @@ func APIs(
 		apisFuncMap,
 	)
 
-	metaVars := g.MetaVars()
+	metaVars := m.MetaVars()
 	apiVars := &templateAPIVars{
 		metaVars,
 		enumDefs,

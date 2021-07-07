@@ -26,7 +26,7 @@ func TestElasticache_ReplicationGroup(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "elasticache")
+	g := testutil.NewModelForService(t, "elasticache")
 
 	crds, err := g.GetCRDs()
 	require.Nil(err)
@@ -160,7 +160,7 @@ func TestElasticache_ReplicationGroup(t *testing.T) {
 func TestElasticache_Ignored_Resources(t *testing.T) {
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "elasticache")
+	g := testutil.NewModelForService(t, "elasticache")
 
 	crds, err := g.GetCRDs()
 	require.Nil(err)
@@ -172,7 +172,7 @@ func TestElasticache_Ignored_Resources(t *testing.T) {
 func TestElasticache_Additional_Snapshot_Spec(t *testing.T) {
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "elasticache")
+	g := testutil.NewModelForService(t, "elasticache")
 	crds, err := g.GetCRDs()
 
 	require.Nil(err)
@@ -187,7 +187,7 @@ func TestElasticache_Additional_Snapshot_Spec(t *testing.T) {
 func TestElasticache_Additional_CacheParameterGroup_Spec(t *testing.T) {
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "elasticache")
+	g := testutil.NewModelForService(t, "elasticache")
 	crds, err := g.GetCRDs()
 
 	require.Nil(err)
@@ -202,7 +202,7 @@ func TestElasticache_Additional_CacheParameterGroup_Spec(t *testing.T) {
 func TestElasticache_Additional_CacheParameterGroup_Status(t *testing.T) {
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "elasticache")
+	g := testutil.NewModelForService(t, "elasticache")
 	crds, err := g.GetCRDs()
 
 	require.Nil(err)
@@ -218,7 +218,7 @@ func TestElasticache_Additional_CacheParameterGroup_Status(t *testing.T) {
 func TestElasticache_Additional_ReplicationGroup_Status(t *testing.T) {
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "elasticache")
+	g := testutil.NewModelForService(t, "elasticache")
 	crds, err := g.GetCRDs()
 
 	require.Nil(err)
@@ -233,7 +233,7 @@ func TestElasticache_Additional_ReplicationGroup_Status(t *testing.T) {
 func TestElasticache_Additional_CacheSubnetGroup_Status(t *testing.T) {
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "elasticache")
+	g := testutil.NewModelForService(t, "elasticache")
 	crds, err := g.GetCRDs()
 
 	require.Nil(err)
@@ -248,7 +248,7 @@ func TestElasticache_Additional_CacheSubnetGroup_Status(t *testing.T) {
 func TestElasticache_Additional_ReplicationGroup_Status_RenameField(t *testing.T) {
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "elasticache")
+	g := testutil.NewModelForService(t, "elasticache")
 	crds, err := g.GetCRDs()
 
 	require.Nil(err)
@@ -264,7 +264,7 @@ func TestElasticache_Additional_ReplicationGroup_Status_RenameField(t *testing.T
 func TestElasticache_ValidateAuthTokenIsSecret(t *testing.T) {
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "elasticache")
+	g := testutil.NewModelForService(t, "elasticache")
 	crds, err := g.GetCRDs()
 
 	require.Nil(err)

@@ -29,7 +29,7 @@ func TestCheckRequiredFields_Attributes_ARNField(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "sns")
+	g := testutil.NewModelForService(t, "sns")
 
 	crd := testutil.GetCRDByName(t, g, "Topic")
 	require.NotNil(crd)
@@ -57,7 +57,7 @@ func TestCheckRequiredFields_Attributes_StatusField(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "sqs")
+	g := testutil.NewModelForService(t, "sqs")
 
 	crd := testutil.GetCRDByName(t, g, "Queue")
 	require.NotNil(crd)
@@ -78,7 +78,7 @@ func TestCheckRequiredFields_Attributes_StatusAndSpecField(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "apigatewayv2")
+	g := testutil.NewModelForService(t, "apigatewayv2")
 
 	crd := testutil.GetCRDByName(t, g, "Route")
 	require.NotNil(crd)
@@ -99,7 +99,7 @@ func TestCheckRequiredFields_RenamedSpecField(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "eks")
+	g := testutil.NewModelForService(t, "eks")
 
 	crd := testutil.GetCRDByName(t, g, "FargateProfile")
 	require.NotNil(crd)

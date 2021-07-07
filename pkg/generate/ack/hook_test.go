@@ -31,7 +31,7 @@ func TestResourceHookCodeInline(t *testing.T) {
 	basePaths := []string{}
 	hookID := "sdk_update_pre_build_request"
 
-	g := testutil.NewGeneratorForService(t, "mq")
+	g := testutil.NewModelForService(t, "mq")
 
 	crd := testutil.GetCRDByName(t, g, "Broker")
 	require.NotNil(crd)
@@ -52,7 +52,7 @@ func TestResourceHookCodeTemplatePath(t *testing.T) {
 	}
 	hookID := "sdk_delete_pre_build_request"
 
-	g := testutil.NewGeneratorForService(t, "mq")
+	g := testutil.NewModelForService(t, "mq")
 
 	crd := testutil.GetCRDByName(t, g, "Broker")
 	require.NotNil(crd)

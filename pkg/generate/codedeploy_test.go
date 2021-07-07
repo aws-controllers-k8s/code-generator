@@ -26,7 +26,7 @@ func TestCodeDeploy_Deployment(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "codedeploy")
+	g := testutil.NewModelForService(t, "codedeploy")
 
 	crds, err := g.GetCRDs()
 	require.Nil(err)

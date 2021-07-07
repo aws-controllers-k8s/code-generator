@@ -95,7 +95,7 @@ func TestEnumDefs(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		g := testutil.NewGeneratorForService(t, test.service)
+		g := testutil.NewModelForService(t, test.service)
 
 		edefs, err := g.GetEnumDefs()
 		require.Nil(err)

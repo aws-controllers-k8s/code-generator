@@ -17,8 +17,8 @@ import (
 	"strings"
 	ttpl "text/template"
 
-	"github.com/aws-controllers-k8s/code-generator/pkg/generate"
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate/templateset"
+	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
 )
 
 var (
@@ -47,7 +47,7 @@ var (
 // Release returns a pointer to a TemplateSet containing all the templates for
 // generating an ACK service controller release (Helm artifacts, etc)
 func Release(
-	g *generate.Generator,
+	m *ackmodel.Model,
 	templateBasePaths []string,
 	// releaseVersion is the SemVer string describing the release that the Helm
 	// chart will install
@@ -66,7 +66,7 @@ func Release(
 		releaseFuncMap,
 	)
 
-	metaVars := g.MetaVars()
+	metaVars := m.MetaVars()
 	releaseVars := &templateReleaseVars{
 		metaVars,
 		releaseVersion,
