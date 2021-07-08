@@ -6,7 +6,6 @@ import (
 	ttpl "text/template"
 	"time"
 
-	"github.com/aws-controllers-k8s/code-generator/pkg/generate"
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate/templateset"
 	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
 	opsv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
@@ -39,7 +38,7 @@ var (
 // BundleAssets generates the assets necessary to generate
 // a bundle used for deploying a service via OLM.
 func BundleAssets(
-	g *generate.Generator,
+	m *ackmodel.Model,
 	commonMeta CommonMetadata,
 	serviceConfig ServiceConfig,
 	vers string,
@@ -53,7 +52,7 @@ func BundleAssets(
 		csvFuncMap,
 	)
 
-	crds, err := g.GetCRDs()
+	crds, err := m.GetCRDs()
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +60,7 @@ func BundleAssets(
 	olmVars := templateOLMVars{
 		vers,
 		time.Now().Format("2006-01-02 15:04:05"),
-		g.MetaVars(),
+		m.MetaVars(),
 		commonMeta,
 		serviceConfig,
 		crds,
@@ -80,7 +79,7 @@ func BundleAssets(
 
 	csvBaseOutPath := fmt.Sprintf(
 		"config/manifests/bases/ack-%s-controller.clusterserviceversion.yaml",
-		g.MetaVars().ServiceIDClean)
+		m.MetaVars().ServiceIDClean)
 	if err := ts.Add(csvBaseOutPath, "config/manifests/bases/clusterserviceversion.yaml.tpl", olmVars); err != nil {
 		return nil, err
 	}

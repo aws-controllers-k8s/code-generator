@@ -11,7 +11,7 @@
 // express or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
-package generate_test
+package model_test
 
 import (
 	"sort"
@@ -95,7 +95,7 @@ func TestEnumDefs(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		g := testutil.NewGeneratorForService(t, test.service)
+		g := testutil.NewModelForService(t, test.service)
 
 		edefs, err := g.GetEnumDefs()
 		require.Nil(err)

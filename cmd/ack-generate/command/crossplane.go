@@ -25,9 +25,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
-	"github.com/aws-controllers-k8s/code-generator/pkg/generate"
 	cpgenerate "github.com/aws-controllers-k8s/code-generator/pkg/generate/crossplane"
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
+	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
 )
 
 // crossplaneCmd is the command that generates Crossplane API types
@@ -77,14 +77,14 @@ func generateCrossplane(_ *cobra.Command, args []string) error {
 	if os.IsNotExist(err) {
 		cfgPath = ""
 	}
-	g, err := generate.New(
+	m, err := ackmodel.New(
 		sdkAPI, optGenVersion, cfgPath, cpgenerate.DefaultConfig,
 	)
 	if err != nil {
 		return err
 	}
 
-	ts, err := cpgenerate.Crossplane(g, optTemplateDirs)
+	ts, err := cpgenerate.Crossplane(m, optTemplateDirs)
 	if err != nil {
 		return err
 	}

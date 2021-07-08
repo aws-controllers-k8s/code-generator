@@ -27,7 +27,6 @@ import (
 	"github.com/spf13/cobra"
 	k8sversion "k8s.io/apimachinery/pkg/version"
 
-	"github.com/aws-controllers-k8s/code-generator/pkg/generate"
 	ackgenerate "github.com/aws-controllers-k8s/code-generator/pkg/generate/ack"
 	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
 )
@@ -79,13 +78,13 @@ func generateController(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	g, err := generate.New(
+	m, err := ackmodel.New(
 		sdkAPI, latestAPIVersion, optGeneratorConfigPath, ackgenerate.DefaultConfig,
 	)
 	if err != nil {
 		return err
 	}
-	ts, err := ackgenerate.Controller(g, optTemplateDirs)
+	ts, err := ackgenerate.Controller(m, optTemplateDirs)
 	if err != nil {
 		return err
 	}

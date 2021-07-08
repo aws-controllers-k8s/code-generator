@@ -31,7 +31,7 @@ func lambdaSDKAPI(t *testing.T) *model.SDKAPI {
 	if lambda != nil {
 		return lambda
 	}
-	path := filepath.Clean("../generate/testdata")
+	path := filepath.Clean("../testdata")
 	sdkHelper := model.NewSDKHelper(path)
 	lambda, err := sdkHelper.API("lambda")
 	if err != nil {

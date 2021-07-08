@@ -11,7 +11,7 @@
 // express or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
-package generate_test
+package model_test
 
 import (
 	"testing"
@@ -26,7 +26,7 @@ func TestLambda_Function(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "lambda")
+	g := testutil.NewModelForService(t, "lambda")
 
 	crds, err := g.GetCRDs()
 	require.Nil(err)

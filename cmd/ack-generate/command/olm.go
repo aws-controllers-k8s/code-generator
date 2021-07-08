@@ -23,7 +23,6 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
 
-	generate "github.com/aws-controllers-k8s/code-generator/pkg/generate"
 	ackgenerate "github.com/aws-controllers-k8s/code-generator/pkg/generate/ack"
 	olmgenerate "github.com/aws-controllers-k8s/code-generator/pkg/generate/olm"
 	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
@@ -104,7 +103,7 @@ func generateOLMAssets(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	g, err := generate.New(
+	m, err := ackmodel.New(
 		sdkAPI, latestAPIVersion, optGeneratorConfigPath, ackgenerate.DefaultConfig,
 	)
 	if err != nil {
@@ -141,7 +140,7 @@ func generateOLMAssets(cmd *cobra.Command, args []string) error {
 	}
 
 	// generate templates
-	ts, err := olmgenerate.BundleAssets(g, commonMeta, svcConf, version, optTemplateDirs)
+	ts, err := olmgenerate.BundleAssets(m, commonMeta, svcConf, version, optTemplateDirs)
 	if err != nil {
 		return err
 	}

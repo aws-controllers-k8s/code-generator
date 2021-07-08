@@ -27,7 +27,7 @@ func TestCompareResource_S3_Bucket(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "s3")
+	g := testutil.NewModelForService(t, "s3")
 
 	crd := testutil.GetCRDByName(t, g, "Bucket")
 	require.NotNil(crd)
@@ -108,7 +108,7 @@ func TestCompareResource_Lambda_CodeSigningConfig(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "lambda")
+	g := testutil.NewModelForService(t, "lambda")
 
 	crd := testutil.GetCRDByName(t, g, "CodeSigningConfig")
 	require.NotNil(crd)

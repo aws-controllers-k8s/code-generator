@@ -11,7 +11,7 @@
 // express or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
-package generate_test
+package model_test
 
 import (
 	"testing"
@@ -27,7 +27,7 @@ func TestSageMaker_ARN_Field_Override(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "sagemaker")
+	g := testutil.NewModelForService(t, "sagemaker")
 
 	crds, err := g.GetCRDs()
 	require.Nil(err)
@@ -72,7 +72,7 @@ func TestSageMaker_Error_Prefix_Message(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "sagemaker")
+	g := testutil.NewModelForService(t, "sagemaker")
 
 	crds, err := g.GetCRDs()
 	require.Nil(err)
@@ -110,7 +110,7 @@ func TestSageMaker_Error_Suffix_Message(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "sagemaker")
+	g := testutil.NewModelForService(t, "sagemaker")
 
 	crds, err := g.GetCRDs()
 	require.Nil(err)
@@ -145,7 +145,7 @@ func TestSageMaker_RequeueOnSuccessSeconds(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "sagemaker")
+	g := testutil.NewModelForService(t, "sagemaker")
 
 	crds, err := g.GetCRDs()
 	require.Nil(err)
@@ -178,7 +178,7 @@ func TestSageMaker_RequeueOnSuccessSeconds(t *testing.T) {
 	// 	}
 	//   }
 	//
-	// So, we expect that crd.ReconcileRequeuOnSuccessSeconds() returns the requeue 
+	// So, we expect that crd.ReconcileRequeuOnSuccessSeconds() returns the requeue
 	// duration specified in the config file
 	assert.Equal(10, crd.ReconcileRequeuOnSuccessSeconds())
 }
@@ -187,7 +187,7 @@ func TestSageMaker_RequeueOnSuccessSeconds_Default(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "sagemaker")
+	g := testutil.NewModelForService(t, "sagemaker")
 
 	crds, err := g.GetCRDs()
 	require.Nil(err)
@@ -221,7 +221,7 @@ func TestSageMaker_RequeueOnSuccessSeconds_Default(t *testing.T) {
 	// 	}
 	// }
 	//
-	// So, we expect that crd.ReconcileRequeuOnSuccessSeconds() returns the default  
+	// So, we expect that crd.ReconcileRequeuOnSuccessSeconds() returns the default
 	// requeue duration of 0 because it is not specified in the config file
 	assert.Equal(0, crd.ReconcileRequeuOnSuccessSeconds())
 

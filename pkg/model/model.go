@@ -11,28 +11,33 @@
 // express or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
-package generate
+package model
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
 
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate/templateset"
-	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
 	"github.com/aws-controllers-k8s/code-generator/pkg/names"
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
 )
 
-// Generator contains the ACK model for the generator to process and apply
-// templates against
-type Generator struct {
-	SDKAPI       *ackmodel.SDKAPI
+var (
+	// ErrNilShapePointer indicates an unexpected nil Shape pointer
+	ErrNilShapePointer = errors.New("found nil Shape pointer")
+)
+
+// Model contains the ACK model for the generator to process and apply
+// templates against.
+type Model struct {
+	SDKAPI       *SDKAPI
 	serviceAlias string
 	apiVersion   string
-	crds         []*ackmodel.CRD
-	typeDefs     []*ackmodel.TypeDef
+	crds         []*CRD
+	typeDefs     []*TypeDef
 	typeImports  map[string]string
 	typeRenames  map[string]string
 	// Instructions to the code generator how to handle the API and its
@@ -42,23 +47,23 @@ type Generator struct {
 
 // MetaVars returns a MetaVars struct populated with metadata about the AWS
 // service API
-func (g *Generator) MetaVars() templateset.MetaVars {
+func (m *Model) MetaVars() templateset.MetaVars {
 	return templateset.MetaVars{
-		ServiceAlias:            g.serviceAlias,
-		ServiceID:               g.SDKAPI.ServiceID(),
-		ServiceIDClean:          g.SDKAPI.ServiceIDClean(),
-		APIGroup:                g.SDKAPI.APIGroup(),
-		APIVersion:              g.apiVersion,
-		SDKAPIInterfaceTypeName: g.SDKAPI.SDKAPIInterfaceTypeName(),
-		CRDNames:                g.crdNames(),
+		ServiceAlias:            m.serviceAlias,
+		ServiceID:               m.SDKAPI.ServiceID(),
+		ServiceIDClean:          m.SDKAPI.ServiceIDClean(),
+		APIGroup:                m.SDKAPI.APIGroup(),
+		APIVersion:              m.apiVersion,
+		SDKAPIInterfaceTypeName: m.SDKAPI.SDKAPIInterfaceTypeName(),
+		CRDNames:                m.crdNames(),
 	}
 }
 
 // crdNames returns all crd names lowercased and in plural
-func (g *Generator) crdNames() []string {
+func (m *Model) crdNames() []string {
 	var crdConfigs []string
 
-	crds, _ := g.GetCRDs()
+	crds, _ := m.GetCRDs()
 	for _, crd := range crds {
 		crdConfigs = append(crdConfigs, strings.ToLower(crd.Plural))
 	}
@@ -66,30 +71,30 @@ func (g *Generator) crdNames() []string {
 	return crdConfigs
 }
 
-// GetCRDs returns a slice of `ackmodel.CRD` structs that describe the
+// GetCRDs returns a slice of `CRD` structs that describe the
 // top-level resources discovered by the code generator for an AWS service API
-func (g *Generator) GetCRDs() ([]*ackmodel.CRD, error) {
-	if g.crds != nil {
-		return g.crds, nil
+func (m *Model) GetCRDs() ([]*CRD, error) {
+	if m.crds != nil {
+		return m.crds, nil
 	}
-	crds := []*ackmodel.CRD{}
+	crds := []*CRD{}
 
-	opMap := g.SDKAPI.GetOperationMap(g.cfg)
+	opMap := m.SDKAPI.GetOperationMap(m.cfg)
 
-	createOps := (*opMap)[ackmodel.OpTypeCreate]
-	readOneOps := (*opMap)[ackmodel.OpTypeGet]
-	readManyOps := (*opMap)[ackmodel.OpTypeList]
-	updateOps := (*opMap)[ackmodel.OpTypeUpdate]
-	deleteOps := (*opMap)[ackmodel.OpTypeDelete]
-	getAttributesOps := (*opMap)[ackmodel.OpTypeGetAttributes]
-	setAttributesOps := (*opMap)[ackmodel.OpTypeSetAttributes]
+	createOps := (*opMap)[OpTypeCreate]
+	readOneOps := (*opMap)[OpTypeGet]
+	readManyOps := (*opMap)[OpTypeList]
+	updateOps := (*opMap)[OpTypeUpdate]
+	deleteOps := (*opMap)[OpTypeDelete]
+	getAttributesOps := (*opMap)[OpTypeGetAttributes]
+	setAttributesOps := (*opMap)[OpTypeSetAttributes]
 
 	for crdName, createOp := range createOps {
-		if g.cfg.IsIgnoredResource(crdName) {
+		if m.cfg.IsIgnoredResource(crdName) {
 			continue
 		}
 		crdNames := names.New(crdName)
-		ops := ackmodel.Ops{
+		ops := Ops{
 			Create:        createOps[crdName],
 			ReadOne:       readOneOps[crdName],
 			ReadMany:      readManyOps[crdName],
@@ -98,8 +103,8 @@ func (g *Generator) GetCRDs() ([]*ackmodel.CRD, error) {
 			GetAttributes: getAttributesOps[crdName],
 			SetAttributes: setAttributesOps[crdName],
 		}
-		g.RemoveIgnoredOperations(&ops)
-		crd := ackmodel.NewCRD(g.SDKAPI, g.cfg, crdNames, ops)
+		m.RemoveIgnoredOperations(&ops)
+		crd := NewCRD(m.SDKAPI, m.cfg, crdNames, ops)
 
 		// OK, begin to gather the CRDFields that will go into the Spec struct.
 		// These fields are those members of the Create operation's Input
@@ -117,7 +122,7 @@ func (g *Generator) GetCRDs() ([]*ackmodel.CRD, error) {
 			)
 			memberNames := names.New(renamedName)
 			memberNames.ModelOriginal = memberName
-			if memberName == "Attributes" && g.cfg.UnpacksAttributesMap(crdName) {
+			if memberName == "Attributes" && m.cfg.UnpacksAttributesMap(crdName) {
 				crd.UnpackAttributes()
 				continue
 			}
@@ -126,7 +131,7 @@ func (g *Generator) GetCRDs() ([]*ackmodel.CRD, error) {
 
 		// Now any additional Spec fields that are required from other API
 		// operations.
-		for targetFieldName, fieldConfig := range g.cfg.ResourceFields(crdName) {
+		for targetFieldName, fieldConfig := range m.cfg.ResourceFields(crdName) {
 			if fieldConfig.IsReadOnly {
 				// It's a Status field...
 				continue
@@ -136,7 +141,7 @@ func (g *Generator) GetCRDs() ([]*ackmodel.CRD, error) {
 				continue
 			}
 			from := fieldConfig.From
-			memberShapeRef, found := g.SDKAPI.GetInputShapeRef(
+			memberShapeRef, found := m.SDKAPI.GetInputShapeRef(
 				from.Operation, from.Path,
 			)
 			if found {
@@ -182,7 +187,7 @@ func (g *Generator) GetCRDs() ([]*ackmodel.CRD, error) {
 				// the Status struct
 				continue
 			}
-			if memberName == "Attributes" && g.cfg.UnpacksAttributesMap(crdName) {
+			if memberName == "Attributes" && m.cfg.UnpacksAttributesMap(crdName) {
 				continue
 			}
 			if crd.IsPrimaryARNField(memberName) {
@@ -195,7 +200,7 @@ func (g *Generator) GetCRDs() ([]*ackmodel.CRD, error) {
 
 		// Now add the additional Status fields that are required from other
 		// API operations.
-		for targetFieldName, fieldConfig := range g.cfg.ResourceFields(crdName) {
+		for targetFieldName, fieldConfig := range m.cfg.ResourceFields(crdName) {
 			if !fieldConfig.IsReadOnly {
 				// It's a Spec field...
 				continue
@@ -205,7 +210,7 @@ func (g *Generator) GetCRDs() ([]*ackmodel.CRD, error) {
 				continue
 			}
 			from := fieldConfig.From
-			memberShapeRef, found := g.SDKAPI.GetOutputShapeRef(
+			memberShapeRef, found := m.SDKAPI.GetOutputShapeRef(
 				from.Operation, from.Path,
 			)
 			if found {
@@ -229,42 +234,42 @@ func (g *Generator) GetCRDs() ([]*ackmodel.CRD, error) {
 	// This is the place that we build out the CRD.Fields map with
 	// `pkg/model.Field` objects that represent the non-top-level Spec and
 	// Status fields.
-	g.processNestedFields(crds)
-	g.crds = crds
+	m.processNestedFields(crds)
+	m.crds = crds
 	return crds, nil
 }
 
 // RemoveIgnoredOperations updates Ops argument by setting those
 // operations to nil that are configured to be ignored in generator config for
 // the AWS service
-func (g *Generator) RemoveIgnoredOperations(ops *ackmodel.Ops) {
-	if g.cfg.IsIgnoredOperation(ops.Create) {
+func (m *Model) RemoveIgnoredOperations(ops *Ops) {
+	if m.cfg.IsIgnoredOperation(ops.Create) {
 		ops.Create = nil
 	}
-	if g.cfg.IsIgnoredOperation(ops.ReadOne) {
+	if m.cfg.IsIgnoredOperation(ops.ReadOne) {
 		ops.ReadOne = nil
 	}
-	if g.cfg.IsIgnoredOperation(ops.ReadMany) {
+	if m.cfg.IsIgnoredOperation(ops.ReadMany) {
 		ops.ReadMany = nil
 	}
-	if g.cfg.IsIgnoredOperation(ops.Update) {
+	if m.cfg.IsIgnoredOperation(ops.Update) {
 		ops.Update = nil
 	}
-	if g.cfg.IsIgnoredOperation(ops.Delete) {
+	if m.cfg.IsIgnoredOperation(ops.Delete) {
 		ops.Delete = nil
 	}
-	if g.cfg.IsIgnoredOperation(ops.GetAttributes) {
+	if m.cfg.IsIgnoredOperation(ops.GetAttributes) {
 		ops.GetAttributes = nil
 	}
-	if g.cfg.IsIgnoredOperation(ops.SetAttributes) {
+	if m.cfg.IsIgnoredOperation(ops.SetAttributes) {
 		ops.SetAttributes = nil
 	}
 }
 
 // IsShapeUsedInCRDs returns true if the supplied shape name is a member of amy
 // CRD's payloads or those payloads sub-member shapes
-func (g *Generator) IsShapeUsedInCRDs(shapeName string) bool {
-	crds, _ := g.GetCRDs()
+func (m *Model) IsShapeUsedInCRDs(shapeName string) bool {
+	crds, _ := m.GetCRDs()
 	for _, crd := range crds {
 		if crd.HasShapeAsMember(shapeName) {
 			return true
@@ -273,20 +278,20 @@ func (g *Generator) IsShapeUsedInCRDs(shapeName string) bool {
 	return false
 }
 
-// GetTypeDefs returns a slice of `ackmodel.TypeDef` pointers
-func (g *Generator) GetTypeDefs() ([]*ackmodel.TypeDef, error) {
-	if g.typeDefs != nil {
-		return g.typeDefs, nil
+// GetTypeDefs returns a slice of `TypeDef` pointers
+func (m *Model) GetTypeDefs() ([]*TypeDef, error) {
+	if m.typeDefs != nil {
+		return m.typeDefs, nil
 	}
 
-	tdefs := []*ackmodel.TypeDef{}
+	tdefs := []*TypeDef{}
 	// Map, keyed by original Shape GoTypeElem(), with the values being a
 	// renamed type name (due to conflicting names)
 	trenames := map[string]string{}
 
-	payloads := g.SDKAPI.GetPayloads()
+	payloads := m.SDKAPI.GetPayloads()
 
-	for shapeName, shape := range g.SDKAPI.API.Shapes {
+	for shapeName, shape := range m.SDKAPI.API.Shapes {
 		if util.InStrings(shapeName, payloads) {
 			// Payloads are not type defs
 			continue
@@ -299,16 +304,16 @@ func (g *Generator) GetTypeDefs() ([]*ackmodel.TypeDef, error) {
 			continue
 		}
 		tdefNames := names.New(shapeName)
-		if g.SDKAPI.HasConflictingTypeName(shapeName, g.cfg) {
-			tdefNames.Camel += ackmodel.ConflictingNameSuffix
+		if m.SDKAPI.HasConflictingTypeName(shapeName, m.cfg) {
+			tdefNames.Camel += ConflictingNameSuffix
 			trenames[shapeName] = tdefNames.Camel
 		}
 
-		attrs := map[string]*ackmodel.Attr{}
+		attrs := map[string]*Attr{}
 		for memberName, memberRef := range shape.MemberRefs {
 			memberNames := names.New(memberName)
 			memberShape := memberRef.Shape
-			if !g.IsShapeUsedInCRDs(memberShape.ShapeName) {
+			if !m.IsShapeUsedInCRDs(memberShape.ShapeName) {
 				continue
 			}
 			// There are shapes that are called things like DBProxyStatus that are
@@ -318,8 +323,8 @@ func (g *Generator) GetTypeDefs() ([]*ackmodel.TypeDef, error) {
 			gt := memberShape.GoType()
 			if memberShape.Type == "structure" {
 				typeNames := names.New(memberShape.ShapeName)
-				if g.SDKAPI.HasConflictingTypeName(memberShape.ShapeName, g.cfg) {
-					typeNames.Camel += ackmodel.ConflictingNameSuffix
+				if m.SDKAPI.HasConflictingTypeName(memberShape.ShapeName, m.cfg) {
+					typeNames.Camel += ConflictingNameSuffix
 				}
 				gt = "*" + typeNames.Camel
 			} else if memberShape.Type == "list" {
@@ -328,8 +333,8 @@ func (g *Generator) GetTypeDefs() ([]*ackmodel.TypeDef, error) {
 				if memberShape.MemberRef.Shape.Type == "structure" {
 					elemType := memberShape.MemberRef.Shape.GoTypeElem()
 					typeNames := names.New(elemType)
-					if g.SDKAPI.HasConflictingTypeName(elemType, g.cfg) {
-						typeNames.Camel += ackmodel.ConflictingNameSuffix
+					if m.SDKAPI.HasConflictingTypeName(elemType, m.cfg) {
+						typeNames.Camel += ConflictingNameSuffix
 					}
 					gt = "[]*" + typeNames.Camel
 				}
@@ -339,8 +344,8 @@ func (g *Generator) GetTypeDefs() ([]*ackmodel.TypeDef, error) {
 				if memberShape.ValueRef.Shape.Type == "structure" {
 					valType := memberShape.ValueRef.Shape.GoTypeElem()
 					typeNames := names.New(valType)
-					if g.SDKAPI.HasConflictingTypeName(valType, g.cfg) {
-						typeNames.Camel += ackmodel.ConflictingNameSuffix
+					if m.SDKAPI.HasConflictingTypeName(valType, m.cfg) {
+						typeNames.Camel += ConflictingNameSuffix
 					}
 					gt = "[]map[string]*" + typeNames.Camel
 				}
@@ -349,13 +354,13 @@ func (g *Generator) GetTypeDefs() ([]*ackmodel.TypeDef, error) {
 				// otherwise there is no DeepCopy support
 				gt = "*metav1.Time"
 			}
-			attrs[memberName] = ackmodel.NewAttr(memberNames, gt, memberShape)
+			attrs[memberName] = NewAttr(memberNames, gt, memberShape)
 		}
 		if len(attrs) == 0 {
 			// Just ignore these...
 			continue
 		}
-		tdefs = append(tdefs, &ackmodel.TypeDef{
+		tdefs = append(tdefs, &TypeDef{
 			Shape: shape,
 			Names: tdefNames,
 			Attrs: attrs,
@@ -364,19 +369,19 @@ func (g *Generator) GetTypeDefs() ([]*ackmodel.TypeDef, error) {
 	sort.Slice(tdefs, func(i, j int) bool {
 		return tdefs[i].Names.Camel < tdefs[j].Names.Camel
 	})
-	g.processNestedFieldTypeDefs(tdefs)
-	g.typeDefs = tdefs
-	g.typeRenames = trenames
+	m.processNestedFieldTypeDefs(tdefs)
+	m.typeDefs = tdefs
+	m.typeRenames = trenames
 	return tdefs, nil
 }
 
 // processNestedFieldTypeDefs updates the supplied TypeDef structs' if a nested
 // field has been configured with a type overriding FieldConfig -- such as
 // FieldConfig.IsSecret.
-func (g *Generator) processNestedFieldTypeDefs(
-	tdefs []*ackmodel.TypeDef,
+func (m *Model) processNestedFieldTypeDefs(
+	tdefs []*TypeDef,
 ) {
-	crds, _ := g.GetCRDs()
+	crds, _ := m.GetCRDs()
 	for _, crd := range crds {
 		for fieldPath, field := range crd.Fields {
 			if !strings.Contains(fieldPath, ".") {
@@ -405,15 +410,15 @@ func (g *Generator) processNestedFieldTypeDefs(
 	}
 }
 
-// replaceSecretAttrGoType replaces a nested field ackmodel.Attr's GoType with
+// replaceSecretAttrGoType replaces a nested field Attr's GoType with
 // `*ackv1alpha1.SecretKeyReference`.
 func replaceSecretAttrGoType(
-	crd *ackmodel.CRD,
-	field *ackmodel.Field,
-	tdefs []*ackmodel.TypeDef,
+	crd *CRD,
+	field *Field,
+	tdefs []*TypeDef,
 ) {
 	fieldPath := field.Path
-	parentFieldPath := ackmodel.ParentFieldPath(field.Path)
+	parentFieldPath := ParentFieldPath(field.Path)
 	parentField, ok := crd.Fields[parentFieldPath]
 	if !ok {
 		msg := fmt.Sprintf(
@@ -456,7 +461,7 @@ func replaceSecretAttrGoType(
 		}
 		parentFieldShapeName = parentField.ShapeRef.Shape.ValueRef.ShapeName
 	}
-	var parentTypeDef *ackmodel.TypeDef
+	var parentTypeDef *TypeDef
 	for _, tdef := range tdefs {
 		if tdef.Names.Original == parentFieldShapeName {
 			parentTypeDef = tdef
@@ -491,22 +496,22 @@ func replaceSecretAttrGoType(
 // nested fields along with that `Field`'s `Config` object that allows us to
 // determine if the TypeDef associated with that nested field should have its
 // data type overridden (e.g. for SecretKeyReferences)
-func (g *Generator) processNestedFields(crds []*ackmodel.CRD) {
+func (m *Model) processNestedFields(crds []*CRD) {
 	for _, crd := range crds {
 		for _, field := range crd.SpecFields {
-			g.processNestedField(crd, field)
+			m.processNestedField(crd, field)
 		}
 		for _, field := range crd.StatusFields {
-			g.processNestedField(crd, field)
+			m.processNestedField(crd, field)
 		}
 	}
 }
 
 // processNestedField processes any nested fields (non-scalar fields associated
 // with the Spec and Status objects)
-func (g *Generator) processNestedField(
-	crd *ackmodel.CRD,
-	field *ackmodel.Field,
+func (m *Model) processNestedField(
+	crd *CRD,
+	field *Field,
 ) {
 	if field.ShapeRef == nil && (field.FieldConfig == nil || !field.FieldConfig.IsAttribute) {
 		fmt.Printf(
@@ -521,21 +526,21 @@ func (g *Generator) processNestedField(
 		fieldType := fieldShape.Type
 		switch fieldType {
 		case "structure":
-			g.processNestedStructField(crd, field.Path+".", field)
+			m.processNestedStructField(crd, field.Path+".", field)
 		case "list":
-			g.processNestedListField(crd, field.Path+"..", field)
+			m.processNestedListField(crd, field.Path+"..", field)
 		case "map":
-			g.processNestedMapField(crd, field.Path+"..", field)
+			m.processNestedMapField(crd, field.Path+"..", field)
 		}
 	}
 }
 
 // processNestedStructField recurses through the members of a nested field that
 // is a struct type and adds any Field objects to the supplied CRD.
-func (g *Generator) processNestedStructField(
-	crd *ackmodel.CRD,
+func (m *Model) processNestedStructField(
+	crd *CRD,
 	baseFieldPath string,
-	baseField *ackmodel.Field,
+	baseField *Field,
 ) {
 	fieldConfigs := crd.Config().ResourceFields(crd.Names.Original)
 	baseFieldShape := baseField.ShapeRef.Shape
@@ -545,14 +550,14 @@ func (g *Generator) processNestedStructField(
 		memberShapeType := memberShape.Type
 		fieldPath := baseFieldPath + memberNames.Camel
 		fieldConfig := fieldConfigs[fieldPath]
-		field := ackmodel.NewField(crd, fieldPath, memberNames, memberRef, fieldConfig)
+		field := NewField(crd, fieldPath, memberNames, memberRef, fieldConfig)
 		switch memberShapeType {
 		case "structure":
-			g.processNestedStructField(crd, fieldPath+".", field)
+			m.processNestedStructField(crd, fieldPath+".", field)
 		case "list":
-			g.processNestedListField(crd, fieldPath+"..", field)
+			m.processNestedListField(crd, fieldPath+"..", field)
 		case "map":
-			g.processNestedMapField(crd, fieldPath+"..", field)
+			m.processNestedMapField(crd, fieldPath+"..", field)
 		}
 		crd.Fields[fieldPath] = field
 	}
@@ -561,10 +566,10 @@ func (g *Generator) processNestedStructField(
 // processNestedListField recurses through the members of a nested field that
 // is a list type that has a struct element type and adds any Field objects to
 // the supplied CRD.
-func (g *Generator) processNestedListField(
-	crd *ackmodel.CRD,
+func (m *Model) processNestedListField(
+	crd *CRD,
 	baseFieldPath string,
-	baseField *ackmodel.Field,
+	baseField *Field,
 ) {
 	baseFieldShape := baseField.ShapeRef.Shape
 	elementFieldShape := baseFieldShape.MemberRef.Shape
@@ -578,14 +583,14 @@ func (g *Generator) processNestedListField(
 		memberShapeType := memberShape.Type
 		fieldPath := baseFieldPath + memberNames.Camel
 		fieldConfig := fieldConfigs[fieldPath]
-		field := ackmodel.NewField(crd, fieldPath, memberNames, memberRef, fieldConfig)
+		field := NewField(crd, fieldPath, memberNames, memberRef, fieldConfig)
 		switch memberShapeType {
 		case "structure":
-			g.processNestedStructField(crd, fieldPath+".", field)
+			m.processNestedStructField(crd, fieldPath+".", field)
 		case "list":
-			g.processNestedListField(crd, fieldPath+"..", field)
+			m.processNestedListField(crd, fieldPath+"..", field)
 		case "map":
-			g.processNestedMapField(crd, fieldPath+"..", field)
+			m.processNestedMapField(crd, fieldPath+"..", field)
 		}
 		crd.Fields[fieldPath] = field
 	}
@@ -594,10 +599,10 @@ func (g *Generator) processNestedListField(
 // processNestedMapField recurses through the members of a nested field that
 // is a map type that has a struct value type and adds any Field objects to
 // the supplied CRD.
-func (g *Generator) processNestedMapField(
-	crd *ackmodel.CRD,
+func (m *Model) processNestedMapField(
+	crd *CRD,
 	baseFieldPath string,
-	baseField *ackmodel.Field,
+	baseField *Field,
 ) {
 	baseFieldShape := baseField.ShapeRef.Shape
 	valueFieldShape := baseFieldShape.ValueRef.Shape
@@ -611,36 +616,36 @@ func (g *Generator) processNestedMapField(
 		memberShapeType := memberShape.Type
 		fieldPath := baseFieldPath + memberNames.Camel
 		fieldConfig := fieldConfigs[fieldPath]
-		field := ackmodel.NewField(crd, fieldPath, memberNames, memberRef, fieldConfig)
+		field := NewField(crd, fieldPath, memberNames, memberRef, fieldConfig)
 		switch memberShapeType {
 		case "structure":
-			g.processNestedStructField(crd, fieldPath+".", field)
+			m.processNestedStructField(crd, fieldPath+".", field)
 		case "list":
-			g.processNestedListField(crd, fieldPath+"..", field)
+			m.processNestedListField(crd, fieldPath+"..", field)
 		case "map":
-			g.processNestedMapField(crd, fieldPath+"..", field)
+			m.processNestedMapField(crd, fieldPath+"..", field)
 		}
 		crd.Fields[fieldPath] = field
 	}
 }
 
-// GetEnumDefs returns a slice of pointers to `ackmodel.EnumDef` structs which
+// GetEnumDefs returns a slice of pointers to `EnumDef` structs which
 // represent string fields whose value is constrained to one or more specific
 // string values.
-func (g *Generator) GetEnumDefs() ([]*ackmodel.EnumDef, error) {
-	edefs := []*ackmodel.EnumDef{}
+func (m *Model) GetEnumDefs() ([]*EnumDef, error) {
+	edefs := []*EnumDef{}
 
-	for shapeName, shape := range g.SDKAPI.API.Shapes {
+	for shapeName, shape := range m.SDKAPI.API.Shapes {
 		if !shape.IsEnum() {
 			continue
 		}
 		enumNames := names.New(shapeName)
 		// Handle name conflicts with top-level CRD.Spec or CRD.Status
 		// types
-		if g.SDKAPI.HasConflictingTypeName(shapeName, g.cfg) {
-			enumNames.Camel += ackmodel.ConflictingNameSuffix
+		if m.SDKAPI.HasConflictingTypeName(shapeName, m.cfg) {
+			enumNames.Camel += ConflictingNameSuffix
 		}
-		edef, err := ackmodel.NewEnumDef(enumNames, shape.Enum)
+		edef, err := NewEnumDef(enumNames, shape.Enum)
 		if err != nil {
 			return nil, err
 		}
@@ -654,12 +659,12 @@ func (g *Generator) GetEnumDefs() ([]*ackmodel.EnumDef, error) {
 
 // ApplyShapeIgnoreRules removes the ignored shapes and fields from the API object
 // so that they are not considered in any of the calculations of code generator.
-func (g *Generator) ApplyShapeIgnoreRules() {
-	if g.cfg == nil || g.SDKAPI == nil {
+func (m *Model) ApplyShapeIgnoreRules() {
+	if m.cfg == nil || m.SDKAPI == nil {
 		return
 	}
-	for sdkShapeID, shape := range g.SDKAPI.API.Shapes {
-		for _, fieldpath := range g.cfg.Ignore.FieldPaths {
+	for sdkShapeID, shape := range m.SDKAPI.API.Shapes {
+		for _, fieldpath := range m.cfg.Ignore.FieldPaths {
 			sn := strings.Split(fieldpath, ".")[0]
 			fn := strings.Split(fieldpath, ".")[1]
 			if shape.ShapeName != sn {
@@ -667,9 +672,9 @@ func (g *Generator) ApplyShapeIgnoreRules() {
 			}
 			delete(shape.MemberRefs, fn)
 		}
-		for _, sn := range g.cfg.Ignore.ShapeNames {
+		for _, sn := range m.cfg.Ignore.ShapeNames {
 			if shape.ShapeName == sn {
-				delete(g.SDKAPI.API.Shapes, sdkShapeID)
+				delete(m.SDKAPI.API.Shapes, sdkShapeID)
 				continue
 			}
 			// NOTE(muvaf): We need to remove the usage of the shape as well.
@@ -684,24 +689,24 @@ func (g *Generator) ApplyShapeIgnoreRules() {
 
 // GetConfig returns the configuration option used to define the current
 // generator.
-func (g *Generator) GetConfig() *ackgenconfig.Config {
-	return g.cfg
+func (m *Model) GetConfig() *ackgenconfig.Config {
+	return m.cfg
 }
 
-// New returns a new Generator struct for a supplied API model.
+// New returns a new Model struct for a supplied API model.
 // Optionally, pass a file path to a generator config file that can be used to
 // instruct the code generator how to handle the API properly
 func New(
-	SDKAPI *ackmodel.SDKAPI,
+	SDKAPI *SDKAPI,
 	apiVersion string,
 	configPath string,
 	defaultConfig ackgenconfig.Config,
-) (*Generator, error) {
+) (*Model, error) {
 	cfg, err := ackgenconfig.New(configPath, defaultConfig)
 	if err != nil {
 		return nil, err
 	}
-	g := &Generator{
+	m := &Model{
 		SDKAPI: SDKAPI,
 		// TODO(jaypipes): Handle cases where service alias and service ID
 		// don't match (Step Functions)
@@ -709,6 +714,6 @@ func New(
 		apiVersion:   apiVersion,
 		cfg:          &cfg,
 	}
-	g.ApplyShapeIgnoreRules()
-	return g, nil
+	m.ApplyShapeIgnoreRules()
+	return m, nil
 }

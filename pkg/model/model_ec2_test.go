@@ -11,7 +11,7 @@
 // express or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
-package generate_test
+package model_test
 
 import (
 	"testing"
@@ -26,7 +26,7 @@ func TestEC2_LaunchTemplate(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "ec2")
+	g := testutil.NewModelForService(t, "ec2")
 
 	crds, err := g.GetCRDs()
 	require.Nil(err)

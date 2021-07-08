@@ -30,7 +30,7 @@ func TestSetResource_APIGWv2_Route_Create(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "apigatewayv2")
+	g := testutil.NewModelForService(t, "apigatewayv2")
 
 	crd := testutil.GetCRDByName(t, g, "Route")
 	require.NotNil(crd)
@@ -57,7 +57,7 @@ func TestSetResource_APIGWv2_Route_ReadOne(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "apigatewayv2")
+	g := testutil.NewModelForService(t, "apigatewayv2")
 
 	crd := testutil.GetCRDByName(t, g, "Route")
 	require.NotNil(crd)
@@ -159,7 +159,7 @@ func TestSetResource_DynamoDB_Backup_ReadOne(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "dynamodb")
+	g := testutil.NewModelForService(t, "dynamodb")
 
 	crd := testutil.GetCRDByName(t, g, "Backup")
 	require.NotNil(crd)
@@ -213,7 +213,7 @@ func TestSetResource_CodeDeploy_Deployment_Create(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "codedeploy")
+	g := testutil.NewModelForService(t, "codedeploy")
 
 	crd := testutil.GetCRDByName(t, g, "Deployment")
 	require.NotNil(crd)
@@ -239,7 +239,7 @@ func TestSetResource_DynamoDB_Table_ReadOne(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "dynamodb")
+	g := testutil.NewModelForService(t, "dynamodb")
 
 	crd := testutil.GetCRDByName(t, g, "Table")
 	require.NotNil(crd)
@@ -587,7 +587,7 @@ func TestSetResource_EC2_LaunchTemplate_Create(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "ec2")
+	g := testutil.NewModelForService(t, "ec2")
 
 	crd := testutil.GetCRDByName(t, g, "LaunchTemplate")
 	require.NotNil(crd)
@@ -648,7 +648,7 @@ func TestSetResource_ECR_Repository_Create(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "ecr")
+	g := testutil.NewModelForService(t, "ecr")
 
 	crd := testutil.GetCRDByName(t, g, "Repository")
 	require.NotNil(crd)
@@ -690,7 +690,7 @@ func TestSetResource_ECR_Repository_ReadMany(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "ecr")
+	g := testutil.NewModelForService(t, "ecr")
 
 	crd := testutil.GetCRDByName(t, g, "Repository")
 	require.NotNil(crd)
@@ -766,7 +766,7 @@ func TestSetResource_Elasticache_ReplicationGroup_Create(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "elasticache")
+	g := testutil.NewModelForService(t, "elasticache")
 
 	crd := testutil.GetCRDByName(t, g, "ReplicationGroup")
 	require.NotNil(crd)
@@ -1031,7 +1031,7 @@ func TestSetResource_Elasticache_ReplicationGroup_ReadMany(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "elasticache")
+	g := testutil.NewModelForService(t, "elasticache")
 
 	crd := testutil.GetCRDByName(t, g, "ReplicationGroup")
 	require.NotNil(crd)
@@ -1387,7 +1387,7 @@ func TestSetResource_RDS_DBInstance_Create(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "rds")
+	g := testutil.NewModelForService(t, "rds")
 
 	crd := testutil.GetCRDByName(t, g, "DBInstance")
 	require.NotNil(crd)
@@ -1770,7 +1770,7 @@ func TestSetResource_RDS_DBInstance_ReadMany(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "rds")
+	g := testutil.NewModelForService(t, "rds")
 
 	crd := testutil.GetCRDByName(t, g, "DBInstance")
 	require.NotNil(crd)
@@ -2335,7 +2335,7 @@ func TestSetResource_S3_Bucket_Create(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "s3")
+	g := testutil.NewModelForService(t, "s3")
 
 	crd := testutil.GetCRDByName(t, g, "Bucket")
 	require.NotNil(crd)
@@ -2357,7 +2357,7 @@ func TestSetResource_S3_Bucket_ReadMany(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "s3")
+	g := testutil.NewModelForService(t, "s3")
 
 	crd := testutil.GetCRDByName(t, g, "Bucket")
 	require.NotNil(crd)
@@ -2392,7 +2392,7 @@ func TestSetResource_SNS_Topic_Create(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "sns")
+	g := testutil.NewModelForService(t, "sns")
 
 	crd := testutil.GetCRDByName(t, g, "Topic")
 	require.NotNil(crd)
@@ -2422,7 +2422,7 @@ func TestSetResource_SNS_Topic_GetAttributes(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "sns")
+	g := testutil.NewModelForService(t, "sns")
 
 	crd := testutil.GetCRDByName(t, g, "Topic")
 	require.NotNil(crd)
@@ -2452,7 +2452,7 @@ func TestSetResource_SQS_Queue_Create(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "sqs")
+	g := testutil.NewModelForService(t, "sqs")
 
 	crd := testutil.GetCRDByName(t, g, "Queue")
 	require.NotNil(crd)
@@ -2476,7 +2476,7 @@ func TestSetResource_SQS_Queue_GetAttributes(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "sqs")
+	g := testutil.NewModelForService(t, "sqs")
 
 	crd := testutil.GetCRDByName(t, g, "Queue")
 	require.NotNil(crd)
@@ -2505,7 +2505,7 @@ func TestSetResource_RDS_DBSubnetGroup_ReadMany(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "rds")
+	g := testutil.NewModelForService(t, "rds")
 
 	crd := testutil.GetCRDByName(t, g, "DBSubnetGroup")
 	require.NotNil(crd)
@@ -2591,7 +2591,7 @@ func TestGetWrapperOutputShape(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "dynamodb")
+	g := testutil.NewModelForService(t, "dynamodb")
 
 	crd := testutil.GetCRDByName(t, g, "Backup")
 	require.NotNil(crd)
@@ -2650,7 +2650,7 @@ func TestSetResource_MQ_Broker_SetResourceIdentifiers(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "mq")
+	g := testutil.NewModelForService(t, "mq")
 
 	crd := testutil.GetCRDByName(t, g, "Broker")
 	require.NotNil(crd)
@@ -2672,7 +2672,7 @@ func TestSetResource_RDS_DBInstances_SetResourceIdentifiers(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "rds")
+	g := testutil.NewModelForService(t, "rds")
 
 	crd := testutil.GetCRDByName(t, g, "DBInstance")
 	require.NotNil(crd)
@@ -2694,7 +2694,7 @@ func TestSetResource_RDS_DBSubnetGroup_SetResourceIdentifiers(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "rds")
+	g := testutil.NewModelForService(t, "rds")
 
 	crd := testutil.GetCRDByName(t, g, "DBSubnetGroup")
 	require.NotNil(crd)
@@ -2718,7 +2718,7 @@ func TestSetResource_APIGWV2_ApiMapping_SetResourceIdentifiers(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	g := testutil.NewGeneratorForService(t, "apigatewayv2")
+	g := testutil.NewModelForService(t, "apigatewayv2")
 
 	crd := testutil.GetCRDByName(t, g, "ApiMapping")
 	require.NotNil(crd)

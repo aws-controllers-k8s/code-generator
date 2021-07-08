@@ -22,7 +22,6 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/aws-controllers-k8s/code-generator/pkg/generate"
 	ackgenerate "github.com/aws-controllers-k8s/code-generator/pkg/generate/ack"
 	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
 )
@@ -83,14 +82,14 @@ func generateRelease(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("service %s not found", svcAlias)
 		}
 	}
-	g, err := generate.New(
+	m, err := ackmodel.New(
 		sdkAPI, "", optGeneratorConfigPath, ackgenerate.DefaultConfig,
 	)
 	if err != nil {
 		return err
 	}
 	ts, err := ackgenerate.Release(
-		g, optTemplateDirs,
+		m, optTemplateDirs,
 		releaseVersion, optImageRepository, optServiceAccountName,
 	)
 	if err != nil {

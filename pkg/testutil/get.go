@@ -18,19 +18,19 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/aws-controllers-k8s/code-generator/pkg/generate"
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
+	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
 )
 
 // GetCRDByName returns a CRD model with the supplied name
 func GetCRDByName(
 	t *testing.T,
-	g *generate.Generator,
+	m *ackmodel.Model,
 	name string,
 ) *model.CRD {
 	require := require.New(t)
 
-	crds, err := g.GetCRDs()
+	crds, err := m.GetCRDs()
 	require.Nil(err)
 
 	for _, c := range crds {
@@ -44,12 +44,12 @@ func GetCRDByName(
 // GetTypeDefByName returns a TypeDef model with the supplied name
 func GetTypeDefByName(
 	t *testing.T,
-	g *generate.Generator,
+	m *ackmodel.Model,
 	name string,
 ) *model.TypeDef {
 	require := require.New(t)
 
-	tdefs, err := g.GetTypeDefs()
+	tdefs, err := m.GetTypeDefs()
 	require.Nil(err)
 
 	for _, tdef := range tdefs {

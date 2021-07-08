@@ -18,7 +18,6 @@ import (
 	"strings"
 	ttpl "text/template"
 
-	"github.com/aws-controllers-k8s/code-generator/pkg/generate"
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate/code"
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate/templateset"
 	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
@@ -112,18 +111,18 @@ type templateCRDVars struct {
 // Crossplane returns a pointer to a TemplateSet containing all the templates for
 // generating Crossplane API types and controller code for an AWS service API
 func Crossplane(
-	g *generate.Generator,
+	m *ackmodel.Model,
 	templateBasePaths []string,
 ) (*templateset.TemplateSet, error) {
-	enumDefs, err := g.GetEnumDefs()
+	enumDefs, err := m.GetEnumDefs()
 	if err != nil {
 		return nil, err
 	}
-	typeDefs, err := g.GetTypeDefs()
+	typeDefs, err := m.GetTypeDefs()
 	if err != nil {
 		return nil, err
 	}
-	crds, err := g.GetCRDs()
+	crds, err := m.GetCRDs()
 	if err != nil {
 		return nil, err
 	}
@@ -135,7 +134,7 @@ func Crossplane(
 		funcMap,
 	)
 
-	metaVars := g.MetaVars()
+	metaVars := m.MetaVars()
 
 	// First add all the CRDs and API types
 	apiVars := &templateAPIVars{

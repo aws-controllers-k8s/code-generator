@@ -18,7 +18,6 @@ import (
 	"strings"
 	ttpl "text/template"
 
-	"github.com/aws-controllers-k8s/code-generator/pkg/generate"
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate/code"
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate/templateset"
@@ -118,15 +117,15 @@ var (
 // Controller returns a pointer to a TemplateSet containing all the templates
 // for generating ACK service controller implementations
 func Controller(
-	g *generate.Generator,
+	m *ackmodel.Model,
 	templateBasePaths []string,
 ) (*templateset.TemplateSet, error) {
-	crds, err := g.GetCRDs()
+	crds, err := m.GetCRDs()
 	if err != nil {
 		return nil, err
 	}
 
-	metaVars := g.MetaVars()
+	metaVars := m.MetaVars()
 
 	// Hook code can reference a template path, and we can look up the template
 	// in any of our base paths...
@@ -176,7 +175,7 @@ func Controller(
 
 	configVars := &templateConfigVars{
 		metaVars,
-		g.GetConfig(),
+		m.GetConfig(),
 	}
 	if err = ts.Add("pkg/resource/registry.go", "pkg/resource/registry.go.tpl", configVars); err != nil {
 		return nil, err
