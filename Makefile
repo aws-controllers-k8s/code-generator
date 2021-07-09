@@ -18,7 +18,8 @@ GO_LDFLAGS=-ldflags "-X $(IMPORT_PATH)/pkg/version.Version=$(VERSION) \
 # aws-sdk-go/private/model/api package is gated behind a build tag "codegen"...
 GO_TAGS=-tags codegen
 
-.PHONY: all build-ack-generate build-controller test
+.PHONY: all build-ack-generate build-controller test \
+	build-controller-image local-build-controller-image
 
 all: test
 
@@ -30,6 +31,14 @@ build-ack-generate:	## Build ack-generate binary
 build-controller: build-ack-generate ## Generate controller code for SERVICE
 	@./scripts/install-controller-gen.sh 
 	@./scripts/build-controller.sh $(AWS_SERVICE)
+
+build-controller-image: export LOCAL_MODULES = false
+build-controller-image:	## Build container image for SERVICE
+	@./scripts/build-controller-image.sh $(AWS_SERVICE)
+
+local-build-controller-image: export LOCAL_MODULES = true
+local-build-controller-image:	## Build container image for SERVICE allowing local modules
+	@./scripts/build-controller-image.sh $(AWS_SERVICE)
 
 test: 				## Run code tests
 	go test ${GO_TAGS} ./...
