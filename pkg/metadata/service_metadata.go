@@ -45,8 +45,27 @@ type ServiceDetails struct {
 // ServiceVersion describes the status of all existing version of the controller
 type ServiceVersion struct {
 	APIVersion string `json:"api_version"`
-	//TODO(RedbackThomson): Update with APIStatus after merging #121
+	// TODO(RedbackThomson): Update with APIStatus after merging #121
 	Status string `json:"status"`
+}
+
+func (m *ServiceMetadata) GetDevelopmentAPIVersion() (*ServiceVersion, error) {
+	if len(m.Versions) == 0 {
+		return nil, fmt.Errorf("service metadata contains no versions")
+	}
+
+	var devVersion *ServiceVersion
+	for _, v := range m.Versions {
+		// TODO(RedbackThomson): Update to APIStatus after merging #121
+		if v.Status == "development" {
+			if devVersion != nil {
+				return nil, fmt.Errorf("service metadata contains multiple development versions")
+			}
+			devVersion = &v
+		}
+	}
+
+	return devVersion, nil
 }
 
 // New returns a new Metadata object given a supplied
