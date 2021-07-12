@@ -23,6 +23,7 @@ import (
 	"github.com/spf13/cobra"
 
 	ackgenerate "github.com/aws-controllers-k8s/code-generator/pkg/generate/ack"
+	ackmetadata "github.com/aws-controllers-k8s/code-generator/pkg/metadata"
 	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
 )
@@ -59,10 +60,10 @@ func init() {
 // saveGeneratedMetadata saves the parameters used to generate APIs and checksum
 // of the generated code.
 func saveGeneratedMetadata(cmd *cobra.Command, args []string) error {
-	err := ackgenerate.CreateGenerationMetadata(
+	err := ackmetadata.CreateGenerationMetadata(
 		optGenVersion,
 		filepath.Join(optOutputPath, "apis"),
-		ackgenerate.UpdateReasonAPIGeneration,
+		ackmetadata.UpdateReasonAPIGeneration,
 		optAWSSDKGoVersion,
 		optGeneratorConfigPath,
 	)

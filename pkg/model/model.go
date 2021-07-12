@@ -20,8 +20,8 @@ import (
 	"strings"
 
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
-	ackgenmetadata "github.com/aws-controllers-k8s/code-generator/pkg/generate/metadata"
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate/templateset"
+	ackgenmetadata "github.com/aws-controllers-k8s/code-generator/pkg/metadata"
 	"github.com/aws-controllers-k8s/code-generator/pkg/names"
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
 )
@@ -42,7 +42,7 @@ type Model struct {
 	typeImports  map[string]string
 	typeRenames  map[string]string
 	// Metadata for the service
-	meta *ackgenmetadata.Metadata
+	meta *ackgenmetadata.ServiceMetadata
 	// Instructions to the code generator how to handle the API and its
 	// resources
 	cfg *ackgenconfig.Config

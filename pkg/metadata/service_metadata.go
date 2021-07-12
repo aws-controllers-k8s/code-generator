@@ -20,17 +20,17 @@ import (
 	"github.com/ghodss/yaml"
 )
 
-// Metadata consists of information about the service and relative links as well
+// ServiceMetadata consists of information about the service and relative links as well
 // as a list of supported/deprecated versions
-type Metadata struct {
-	Service ServiceMetadata `json:"service"`
+type ServiceMetadata struct {
+	Service ServiceDetails `json:"service"`
 	// CRDs to ignore. ACK generator would skip these resources.
 	Versions []ServiceVersion `json:"versions"`
 }
 
-// ServiceMetadata contains string identifiers and relevant links for the
+// ServiceDetails contains string identifiers and relevant links for the
 // service
-type ServiceMetadata struct {
+type ServiceDetails struct {
 	// The full display name for the service. eg. Amazon Elastic Kubernetes
 	// Service
 	FullName string `json:"full_name"`
@@ -45,24 +45,25 @@ type ServiceMetadata struct {
 // ServiceVersion describes the status of all existing version of the controller
 type ServiceVersion struct {
 	APIVersion string `json:"api_version"`
-	Status     string `json:"status"`
+	//TODO(RedbackThomson): Update with APIStatus after merging #121
+	Status string `json:"status"`
 }
 
 // New returns a new Metadata object given a supplied
 // path to a metadata file
 func New(
 	metadataPath string,
-) (Metadata, error) {
+) (ServiceMetadata, error) {
 	if metadataPath == "" {
-		return Metadata{}, fmt.Errorf("expected metadata file path, none provided")
+		return ServiceMetadata{}, fmt.Errorf("expected metadata file path, none provided")
 	}
 	content, err := ioutil.ReadFile(metadataPath)
 	if err != nil {
-		return Metadata{}, err
+		return ServiceMetadata{}, err
 	}
-	gc := Metadata{}
+	gc := ServiceMetadata{}
 	if err = yaml.Unmarshal(content, &gc); err != nil {
-		return Metadata{}, err
+		return ServiceMetadata{}, err
 	}
 	return gc, nil
 }

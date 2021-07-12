@@ -78,11 +78,15 @@ func NewModelForServiceWithOptions(t *testing.T, serviceAlias string, options *T
 	if err != nil {
 		t.Fatal(err)
 	}
+	metadataConfigPath := filepath.Join(path, "models", "metadata.yaml")
+	if _, err := os.Stat(metadataConfigPath); os.IsNotExist(err) {
+		metadataConfigPath = ""
+	}
 	generatorConfigPath := filepath.Join(path, "models", "apis", serviceAlias, options.ServiceAPIVersion, options.GeneratorConfigFile)
 	if _, err := os.Stat(generatorConfigPath); os.IsNotExist(err) {
 		generatorConfigPath = ""
 	}
-	m, err := ackmodel.New(sdkAPI, options.APIVersion, generatorConfigPath, ackgenerate.DefaultConfig)
+	m, err := ackmodel.New(sdkAPI, options.APIVersion, metadataConfigPath, generatorConfigPath, ackgenerate.DefaultConfig)
 	if err != nil {
 		t.Fatal(err)
 	}
