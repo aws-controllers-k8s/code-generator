@@ -14,10 +14,17 @@
 package metadata
 
 import (
-	"fmt"
+	"errors"
 	"io/ioutil"
 
 	"github.com/ghodss/yaml"
+)
+
+var (
+	ErrNoServiceMetadataFile      = errors.New("expected metadata file path, none provided")
+	ErrNoAvailableVersions        = errors.New("service metadata contains no available versions")
+	ErrNoDevelopmentVersion       = errors.New("service metadata contains no development versions")
+	ErrMultipleDevelopmentVersion = errors.New("service metadata contains multiple development versions")
 )
 
 // ServiceMetadata consists of information about the service and relative links as well
@@ -52,7 +59,7 @@ func (m *ServiceMetadata) GetLatestAPIVersion() (string, error) {
 	availableVersions := m.GetAvailableAPIVersions()
 
 	if len(availableVersions) == 0 {
-		return "", fmt.Errorf("service metadata contains no available versions")
+		return "", ErrNoAvailableVersions
 	}
 
 	return availableVersions[len(availableVersions)-1], nil
@@ -62,7 +69,7 @@ func (m *ServiceMetadata) GetDeprecatedAPIVersions() []string {
 	return m.getVersionsByStatus(APIStatusDeprecated)
 }
 
-func (m *ServiceMetadata) GetRemoveAPIVersions() []string {
+func (m *ServiceMetadata) GetRemovedAPIVersions() []string {
 	return m.getVersionsByStatus(APIStatusRemoved)
 }
 
@@ -74,11 +81,11 @@ func (m *ServiceMetadata) GetDevelopmentAPIVersion() (string, error) {
 	devVersions := m.getVersionsByStatus(APIStatusInDevelopment)
 
 	if len(devVersions) == 0 {
-		return "", fmt.Errorf("service metadata contains no development versions")
+		return "", ErrNoDevelopmentVersion
 	}
 
 	if len(devVersions) > 1 {
-		return "", fmt.Errorf("service metadata contains multiple development versions")
+		return "", ErrMultipleDevelopmentVersion
 	}
 
 	return devVersions[0], nil
@@ -104,7 +111,7 @@ func NewServiceMetadata(
 	metadataPath string,
 ) (ServiceMetadata, error) {
 	if metadataPath == "" {
-		return ServiceMetadata{}, fmt.Errorf("expected metadata file path, none provided")
+		return ServiceMetadata{}, ErrNoServiceMetadataFile
 	}
 	content, err := ioutil.ReadFile(metadataPath)
 	if err != nil {
