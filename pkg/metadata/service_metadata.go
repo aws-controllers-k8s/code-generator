@@ -48,22 +48,54 @@ type ServiceVersion struct {
 	Status     APIStatus `json:"status"`
 }
 
-func (m *ServiceMetadata) GetDevelopmentAPIVersion() (*ServiceVersion, error) {
-	if len(m.Versions) == 0 {
-		return nil, fmt.Errorf("service metadata contains no versions")
+func (m *ServiceMetadata) GetLatestAPIVersion() (string, error) {
+	availableVersions := m.GetAvailableAPIVersions()
+
+	if len(availableVersions) == 0 {
+		return "", fmt.Errorf("service metadata contains no available versions")
 	}
 
-	var devVersion *ServiceVersion
+	return availableVersions[len(availableVersions)-1], nil
+}
+
+func (m *ServiceMetadata) GetDeprecatedAPIVersions() []string {
+	return m.getVersionsByStatus(APIStatusDeprecated)
+}
+
+func (m *ServiceMetadata) GetRemoveAPIVersions() []string {
+	return m.getVersionsByStatus(APIStatusRemoved)
+}
+
+func (m *ServiceMetadata) GetAvailableAPIVersions() []string {
+	return m.getVersionsByStatus(APIStatusAvailable)
+}
+
+func (m *ServiceMetadata) GetDevelopmentAPIVersion() (string, error) {
+	devVersions := m.getVersionsByStatus(APIStatusInDevelopment)
+
+	if len(devVersions) == 0 {
+		return "", fmt.Errorf("service metadata contains no development versions")
+	}
+
+	if len(devVersions) > 1 {
+		return "", fmt.Errorf("service metadata contains multiple development versions")
+	}
+
+	return devVersions[0], nil
+}
+
+func (m *ServiceMetadata) getVersionsByStatus(status APIStatus) []string {
+	if len(m.Versions) == 0 {
+		return []string{}
+	}
+
+	versions := []string{}
 	for _, v := range m.Versions {
-		if v.Status == APIStatusInDevelopment {
-			if devVersion != nil {
-				return nil, fmt.Errorf("service metadata contains multiple development versions")
-			}
-			devVersion = &v
+		if v.Status == status {
+			versions = append(versions, v.APIVersion)
 		}
 	}
-
-	return devVersion, nil
+	return versions
 }
 
 // NewServiceMetadata returns a new Metadata object given a supplied
