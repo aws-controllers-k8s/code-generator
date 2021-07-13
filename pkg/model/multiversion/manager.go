@@ -21,6 +21,7 @@ import (
 	"gopkg.in/src-d/go-git.v4"
 
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
+	ackmetadata "github.com/aws-controllers-k8s/code-generator/pkg/metadata"
 	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
 )
@@ -43,7 +44,7 @@ type APIVersionManager struct {
 	deprecatedVersions []string
 	removedVersions    []string
 
-	apiInfos map[string]APIInfo
+	apiInfos map[string]ackmetadata.APIInfo
 	models   map[string]*ackmodel.Model
 }
 
@@ -52,7 +53,7 @@ func NewAPIVersionManager(
 	sdkCacheDir string,
 	serviceAlias string,
 	hubVersion string,
-	apisInfo map[string]APIInfo,
+	apisInfo map[string]ackmetadata.APIInfo,
 	defaultConfig ackgenconfig.Config,
 ) (*APIVersionManager, error) {
 	if len(apisInfo) == 0 {
@@ -140,10 +141,10 @@ func (m *APIVersionManager) VerifyAPIVersions(apiVersions ...string) error {
 		if !ok {
 			return fmt.Errorf("%v: %s", ErrAPIVersionNotFound, apiVersion)
 		}
-		if apiInfo.Status == APIStatusDeprecated {
+		if apiInfo.Status == ackmetadata.APIStatusDeprecated {
 			return fmt.Errorf("%v: %s", ErrAPIVersionDeprecated, apiVersion)
 		}
-		if apiInfo.Status == APIStatusRemoved {
+		if apiInfo.Status == ackmetadata.APIStatusRemoved {
 			return fmt.Errorf("%v: %s", ErrAPIVersionRemoved, apiVersion)
 		}
 	}
