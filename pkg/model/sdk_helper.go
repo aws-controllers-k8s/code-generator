@@ -19,7 +19,10 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
+
+	"gopkg.in/src-d/go-git.v4"
 
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/names"
@@ -37,13 +40,19 @@ var (
 	ErrServiceNotFound = errors.New(
 		"no such service",
 	)
+	ErrAPIVersionNotFound = errors.New(
+		"no such api version",
+	)
 )
 
 // SDKHelper is a helper struct that helps work with the aws-sdk-go models and
 // API model loader
 type SDKHelper struct {
-	basePath string
-	loader   *awssdkmodel.Loader
+	gitRepository *git.Repository
+	basePath      string
+	loader        *awssdkmodel.Loader
+	// Default is set by `FirstAPIVersion`
+	apiVersion string
 	// Default is "services.k8s.aws"
 	APIGroupSuffix string
 }
@@ -57,6 +66,29 @@ func NewSDKHelper(basePath string) *SDKHelper {
 			IgnoreUnsupportedAPIs: true,
 		},
 	}
+}
+
+// WithSDKVersion checks out the sdk git repository to the provided version. To use
+// this function h.basePath should point to a git repository.
+func (h *SDKHelper) WithSDKVersion(version string) error {
+	if h.gitRepository == nil {
+		gitRepository, err := util.LoadRepository(h.basePath)
+		if err != nil {
+			return fmt.Errorf("error loading repository from %s: %v", h.basePath, err)
+		}
+		h.gitRepository = gitRepository
+	}
+
+	err := util.CheckoutRepositoryTag(h.gitRepository, version)
+	if err != nil {
+		return fmt.Errorf("cannot checkout tag %s: %v", version, err)
+	}
+	return nil
+}
+
+// WithAPIVersion sets the `apiVersion` field.
+func (h *SDKHelper) WithAPIVersion(apiVersion string) {
+	h.apiVersion = apiVersion
 }
 
 // API returns the aws-sdk-go API model for a supplied service alias
@@ -89,40 +121,56 @@ func (h *SDKHelper) API(serviceAlias string) (*SDKAPI, error) {
 func (h *SDKHelper) ModelAndDocsPath(
 	serviceAlias string,
 ) (string, string, error) {
-	apiVersion, err := h.APIVersion(serviceAlias)
-	if err != nil {
-		return "", "", err
+	if h.apiVersion == "" {
+		apiVersion, err := h.FirstAPIVersion(serviceAlias)
+		if err != nil {
+			return "", "", err
+		}
+		h.apiVersion = apiVersion
 	}
 	versionPath := filepath.Join(
-		h.basePath, "models", "apis", serviceAlias, apiVersion,
+		h.basePath, "models", "apis", serviceAlias, h.apiVersion,
 	)
 	modelPath := filepath.Join(versionPath, "api-2.json")
 	docsPath := filepath.Join(versionPath, "docs-2.json")
 	return modelPath, docsPath, nil
 }
 
-// APIVersion returns the API version (e.h. "2012-10-03") for a service API
-func (h *SDKHelper) APIVersion(serviceAlias string) (string, error) {
-	apiPath := filepath.Join(h.basePath, "models", "apis", serviceAlias)
-	versionDirs, err := ioutil.ReadDir(apiPath)
+// FirstAPIVersion returns the first found API version for a service API.
+// (e.h. "2012-10-03")
+func (h *SDKHelper) FirstAPIVersion(serviceAlias string) (string, error) {
+	versions, err := h.GetAPIVersions(serviceAlias)
 	if err != nil {
 		return "", err
 	}
+	sort.Strings(versions)
+	return versions[0], nil
+}
+
+// GetAPIVersions returns the list of API Versions found in a service directory.
+func (h *SDKHelper) GetAPIVersions(serviceAlias string) ([]string, error) {
+	apiPath := filepath.Join(h.basePath, "models", "apis", serviceAlias)
+	versionDirs, err := ioutil.ReadDir(apiPath)
+	if err != nil {
+		return nil, err
+	}
+	versions := []string{}
 	for _, f := range versionDirs {
 		version := f.Name()
 		fp := filepath.Join(apiPath, version)
 		fi, err := os.Lstat(fp)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 		if !fi.IsDir() {
-			return "", ErrInvalidVersionDirectory
+			return nil, fmt.Errorf("found %s: %v", version, ErrInvalidVersionDirectory)
 		}
-		// TODO(jaypipes): handle more than one version? doesn't seem like
-		// there is ever more than one.
-		return version, nil
+		versions = append(versions, version)
 	}
-	return "", ErrNoValidVersionDirectory
+	if len(versions) == 0 {
+		return nil, ErrNoValidVersionDirectory
+	}
+	return versions, nil
 }
 
 // SDKAPI contains an API model for a single AWS service API

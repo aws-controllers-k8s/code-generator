@@ -618,6 +618,36 @@ func (r *CRD) ListOpMatchFieldNames() []string {
 	return r.cfg.ListOpMatchFieldNames(r.Names.Original)
 }
 
+// GetAllRenames returns all the field renames observed in the generator config
+// for a given OpType.
+func (r *CRD) GetAllRenames(op OpType) (map[string]string, error) {
+	renames := make(map[string]string)
+	resourceConfig, ok := r.cfg.Resources[r.Names.Original]
+	if !ok {
+		return renames, nil
+	}
+
+	opMap := r.sdkAPI.GetOperationMap(r.cfg)
+	operations := (*opMap)[op]
+
+	if resourceConfig.Renames == nil || resourceConfig.Renames.Operations == nil {
+		return renames, nil
+	}
+
+	opRenameConfigs := resourceConfig.Renames.Operations
+	for opName, opRenameConfigs := range opRenameConfigs {
+		for _, op := range operations {
+			if opName != op.Name {
+				continue
+			}
+			for old, new := range opRenameConfigs.InputFields {
+				renames[old] = new
+			}
+		}
+	}
+	return renames, nil
+}
+
 // NewCRD returns a pointer to a new `ackmodel.CRD` struct that describes a
 // single top-level resource in an AWS service API
 func NewCRD(
