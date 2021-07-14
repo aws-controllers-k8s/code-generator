@@ -31,8 +31,8 @@ var (
 // as a list of supported/deprecated versions
 type ServiceMetadata struct {
 	Service ServiceDetails `json:"service"`
-	// CRDs to ignore. ACK generator would skip these resources.
-	Versions []ServiceVersion `json:"versions"`
+	// A list of all generated API versions of the service
+	APIVersions []ServiceVersion `json:"api_versions"`
 }
 
 // ServiceDetails contains string identifiers and relevant links for the
@@ -92,12 +92,12 @@ func (m *ServiceMetadata) GetDevelopmentAPIVersion() (string, error) {
 }
 
 func (m *ServiceMetadata) getVersionsByStatus(status APIStatus) []string {
-	if len(m.Versions) == 0 {
+	if len(m.APIVersions) == 0 {
 		return []string{}
 	}
 
 	versions := []string{}
-	for _, v := range m.Versions {
+	for _, v := range m.APIVersions {
 		if v.Status == status {
 			versions = append(versions, v.APIVersion)
 		}

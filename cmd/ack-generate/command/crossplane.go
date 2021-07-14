@@ -78,7 +78,7 @@ func generateCrossplane(_ *cobra.Command, args []string) error {
 		cfgPath = ""
 	}
 	m, err := ackmodel.New(
-		sdkAPI, optGenVersion, optMetadataConfigPath, cfgPath, cpgenerate.DefaultConfig,
+		sdkAPI, optGenVersion, cfgPath, cpgenerate.DefaultConfig,
 	)
 	if err != nil {
 		return err

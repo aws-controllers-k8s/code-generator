@@ -79,7 +79,7 @@ func generateController(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	m, err := ackmodel.New(
-		sdkAPI, latestAPIVersion, optMetadataConfigPath, optGeneratorConfigPath, ackgenerate.DefaultConfig,
+		sdkAPI, latestAPIVersion, optGeneratorConfigPath, ackgenerate.DefaultConfig,
 	)
 	if err != nil {
 		return err

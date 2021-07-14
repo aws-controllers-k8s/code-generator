@@ -16,7 +16,6 @@ require (
 	github.com/spf13/cobra v1.1.1
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/mod v0.4.1
-	golang.org/x/tools v0.0.0-20200616195046-dc31b401abb5
 	gopkg.in/src-d/go-git.v4 v4.13.1
 	k8s.io/apimachinery v0.20.1
 )

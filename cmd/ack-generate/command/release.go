@@ -83,7 +83,7 @@ func generateRelease(cmd *cobra.Command, args []string) error {
 		}
 	}
 	m, err := ackmodel.New(
-		sdkAPI, "", optMetadataConfigPath, optGeneratorConfigPath, ackgenerate.DefaultConfig,
+		sdkAPI, "", optGeneratorConfigPath, ackgenerate.DefaultConfig,
 	)
 	if err != nil {
 		return err

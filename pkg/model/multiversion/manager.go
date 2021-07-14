@@ -51,6 +51,7 @@ func NewAPIVersionManager(
 	sdkCacheDir string,
 	metadataPath string,
 	serviceAlias string,
+	hubVersion string,
 	apisInfo map[string]ackmetadata.APIInfo,
 	defaultConfig ackgenconfig.Config,
 ) (*APIVersionManager, error) {
@@ -59,11 +60,6 @@ func NewAPIVersionManager(
 	}
 
 	metadata, err := ackmetadata.NewServiceMetadata(metadataPath)
-	if err != nil {
-		return nil, err
-	}
-
-	hubVersion, err := metadata.GetLatestAPIVersion()
 	if err != nil {
 		return nil, err
 	}
@@ -79,12 +75,15 @@ func NewAPIVersionManager(
 
 	// create model for each non-deprecated api version
 	models := map[string]*ackmodel.Model{}
-	for _, version := range metadata.Versions {
-		if version.APIVersion == hubVersion || version.Status == ackmetadata.APIStatusDeprecated || version.Status == ackmetadata.APIStatusRemoved {
+	for _, version := range metadata.APIVersions {
+		if version.Status == ackmetadata.APIStatusDeprecated || version.Status == ackmetadata.APIStatusRemoved {
 			continue
 		}
 
-		spokeVersions = append(spokeVersions, version.APIVersion)
+		if version.APIVersion != hubVersion {
+			spokeVersions = append(spokeVersions, version.APIVersion)
+		}
+
 		apiInfo, ok := apisInfo[version.APIVersion]
 		if !ok {
 			return nil, fmt.Errorf("could not find API info for API version %s", version.APIVersion)
@@ -103,7 +102,6 @@ func NewAPIVersionManager(
 		i, err := ackmodel.New(
 			SDKAPI,
 			version.APIVersion,
-			metadataPath,
 			apiInfo.GeneratorConfigPath,
 			defaultConfig,
 		)

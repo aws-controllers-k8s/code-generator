@@ -16,8 +16,7 @@ package metadata
 type APIStatus string
 
 const (
-	APIStatusUnknown       APIStatus = "unknown"
-	APIStatusInDevelopment           = "in_development"
+	APIStatusInDevelopment APIStatus = "development"
 	APIStatusAvailable               = "available"
 	APIStatusRemoved                 = "removed"
 	APIStatusDeprecated              = "deprecated"

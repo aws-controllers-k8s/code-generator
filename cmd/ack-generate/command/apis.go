@@ -110,7 +110,7 @@ func generateAPIs(cmd *cobra.Command, args []string) error {
 		}
 	}
 	model, err := ackmodel.New(
-		sdkAPI, optGenVersion, optMetadataConfigPath, optGeneratorConfigPath, ackgenerate.DefaultConfig,
+		sdkAPI, optGenVersion, optGeneratorConfigPath, ackgenerate.DefaultConfig,
 	)
 	if err != nil {
 		return err

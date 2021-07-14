@@ -21,7 +21,6 @@ import (
 
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate/templateset"
-	ackmetadata "github.com/aws-controllers-k8s/code-generator/pkg/metadata"
 	"github.com/aws-controllers-k8s/code-generator/pkg/names"
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
 )
@@ -41,8 +40,6 @@ type Model struct {
 	typeDefs     []*TypeDef
 	typeImports  map[string]string
 	typeRenames  map[string]string
-	// Metadata for the service
-	meta *ackmetadata.ServiceMetadata
 	// Instructions to the code generator how to handle the API and its
 	// resources
 	cfg *ackgenconfig.Config
@@ -702,15 +699,9 @@ func (m *Model) GetConfig() *ackgenconfig.Config {
 func New(
 	SDKAPI *SDKAPI,
 	apiVersion string,
-	metadataPath string,
 	configPath string,
 	defaultConfig ackgenconfig.Config,
 ) (*Model, error) {
-	metadata, err := ackmetadata.NewServiceMetadata(metadataPath)
-	if err != nil {
-		return nil, err
-	}
-
 	cfg, err := ackgenconfig.New(configPath, defaultConfig)
 	if err != nil {
 		return nil, err
@@ -722,7 +713,6 @@ func New(
 		serviceAlias: SDKAPI.ServiceID(),
 		apiVersion:   apiVersion,
 		cfg:          &cfg,
-		meta:         &metadata,
 	}
 	m.ApplyShapeIgnoreRules()
 	return m, nil
