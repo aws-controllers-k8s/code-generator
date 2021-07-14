@@ -79,3 +79,32 @@ get_latest_version() {
   metadata="$(get_service_metadata $__service_name)"
   yq eval '[.versions[].api_version] | .[-1]' $metadata
 }
+
+# write_new_metadata will write all fields of a new metadata to file 
+# write_new_metadata accepts the following parameters:
+#    $1: template path
+#    $2: output path
+#    $3: full_name
+#    $4: short_name
+#    $5: homepage link
+#    $6: documentation link
+write_new_metadata() {
+  if [[ "$#" -ne 6 ]]; then
+    echo "[FAIL] Usage: write_new_metadata template_path output_path full_name short_name homepage_link documentation_link"
+    exit 1
+  fi
+
+  __template_path="$1"
+  __output_path="$2"
+  export __full_name="$3"
+  export __short_name="$4"
+  export __link="$5"
+  export __documentation="$6"
+
+  cp "$__template_path" "$__output_path"
+
+  yq e '.service.full_name=env(__full_name)' -i $__output_path
+  yq e '.service.short_name=env(__short_name)' -i $__output_path
+  yq e '.service.link=env(__link)' -i $__output_path
+  yq e '.service.documentation=env(__documentation)' -i $__output_path
+}
