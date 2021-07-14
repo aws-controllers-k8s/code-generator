@@ -21,10 +21,8 @@ import (
 )
 
 var (
-	ErrNoServiceMetadataFile      = errors.New("expected metadata file path, none provided")
-	ErrNoAvailableVersions        = errors.New("service metadata contains no available versions")
-	ErrNoDevelopmentVersion       = errors.New("service metadata contains no development versions")
-	ErrMultipleDevelopmentVersion = errors.New("service metadata contains multiple development versions")
+	ErrNoServiceMetadataFile = errors.New("expected metadata file path, none provided")
+	ErrNoAvailableVersions   = errors.New("service metadata contains no available versions")
 )
 
 // ServiceMetadata consists of information about the service and relative links as well
@@ -75,20 +73,6 @@ func (m *ServiceMetadata) GetRemovedAPIVersions() []string {
 
 func (m *ServiceMetadata) GetAvailableAPIVersions() []string {
 	return m.getVersionsByStatus(APIStatusAvailable)
-}
-
-func (m *ServiceMetadata) GetDevelopmentAPIVersion() (string, error) {
-	devVersions := m.getVersionsByStatus(APIStatusInDevelopment)
-
-	if len(devVersions) == 0 {
-		return "", ErrNoDevelopmentVersion
-	}
-
-	if len(devVersions) > 1 {
-		return "", ErrMultipleDevelopmentVersion
-	}
-
-	return devVersions[0], nil
 }
 
 func (m *ServiceMetadata) getVersionsByStatus(status APIStatus) []string {

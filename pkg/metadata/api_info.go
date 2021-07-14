@@ -16,10 +16,9 @@ package metadata
 type APIStatus string
 
 const (
-	APIStatusInDevelopment APIStatus = "development"
-	APIStatusAvailable               = "available"
-	APIStatusRemoved                 = "removed"
-	APIStatusDeprecated              = "deprecated"
+	APIStatusAvailable  APIStatus = "available"
+	APIStatusRemoved              = "removed"
+	APIStatusDeprecated           = "deprecated"
 )
 
 // APIInfo contains information related a specific apiVersion.
