@@ -53,6 +53,9 @@ type ServiceVersion struct {
 	Status     APIStatus `json:"status"`
 }
 
+// GetLatestAPIVersion returns the latest available API version.
+// This should always be used by the generators as the source of truth
+// for what version to build.
 func (m *ServiceMetadata) GetLatestAPIVersion() (string, error) {
 	availableVersions := m.GetAvailableAPIVersions()
 
@@ -63,18 +66,26 @@ func (m *ServiceMetadata) GetLatestAPIVersion() (string, error) {
 	return availableVersions[len(availableVersions)-1], nil
 }
 
+// GetDeprecatedAPIVersions returns all API versions that have been marked as
+// deprecated
 func (m *ServiceMetadata) GetDeprecatedAPIVersions() []string {
 	return m.getVersionsByStatus(APIStatusDeprecated)
 }
 
+// GetRemovedAPIVersions returns all API versions that have been marked as
+// removed
 func (m *ServiceMetadata) GetRemovedAPIVersions() []string {
 	return m.getVersionsByStatus(APIStatusRemoved)
 }
 
+// GetAvailableAPIVersions returns all API versions that have been marked as
+// available
 func (m *ServiceMetadata) GetAvailableAPIVersions() []string {
 	return m.getVersionsByStatus(APIStatusAvailable)
 }
 
+// getVersionsByStatus filters all of the versions by their respective statuses
+// and returns their API versions
 func (m *ServiceMetadata) getVersionsByStatus(status APIStatus) []string {
 	if len(m.APIVersions) == 0 {
 		return []string{}

@@ -5,4 +5,4 @@ service:
   documentation: https://docs.example.com/
 versions:
 - api_version: v1alpha1
-  status: development
+  status: available

@@ -4,6 +4,10 @@ THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 ROOT_DIR="$THIS_DIR/../.."
 SCRIPTS_DIR="$ROOT_DIR/scripts"
 
+source "$SCRIPTS_DIR/lib/common.sh"
+
+check_is_installed yq
+
 # get_service_metadata returns the path of the metadata file for a given service
 # get_service_metadata accepts the following parameters:
 #   $1: service_name
