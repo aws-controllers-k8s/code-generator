@@ -139,11 +139,15 @@ func ReplacePkgName(
 	// alias the Kubernetes API types for the service API with that
 	if strings.Contains(memberType, ".") {
 		pkgName := strings.Split(memberType, ".")[0]
-		typeName := strings.Split(memberType, ".")[1]
+		memberType = strings.Split(memberType, ".")[1]
 		if pkgName == apiPkgName {
-			memberType = replacePkgAlias + "." + typeName
+			if replacePkgAlias != "" {
+				memberType = replacePkgAlias + "." + memberType
+			}
 		} else {
-			memberType = pkgName + "." + typeName
+			if replacePkgAlias != "" {
+				memberType = pkgName + "." + memberType
+			}
 		}
 	}
 	if isPointerType && keepPointer {
