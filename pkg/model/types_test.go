@@ -66,6 +66,13 @@ func TestReplacePkgName(t *testing.T) {
 			true,
 			"[][]*svcsdk.EC2TagFilter",
 		},
+		{ // empty replacePkgAlias
+			"*ecr.Repository",
+			"ecr",
+			"",
+			true,
+			"*Repository",
+		},
 	}
 
 	for _, tc := range testCases {
