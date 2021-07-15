@@ -23,6 +23,7 @@ import (
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate/templateset"
 	"github.com/aws-controllers-k8s/code-generator/pkg/names"
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
+	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
 )
 
 var (
@@ -316,44 +317,7 @@ func (m *Model) GetTypeDefs() ([]*TypeDef, error) {
 			if !m.IsShapeUsedInCRDs(memberShape.ShapeName) {
 				continue
 			}
-			// There are shapes that are called things like DBProxyStatus that are
-			// fields in a DBProxy CRD... we need to ensure the type names don't
-			// conflict. Also, the name of the Go type in the generated code is
-			// Camel-cased and normalized, so we use that as the Go type
-			gt := memberShape.GoType()
-			if memberShape.Type == "structure" {
-				typeNames := names.New(memberShape.ShapeName)
-				if m.SDKAPI.HasConflictingTypeName(memberShape.ShapeName, m.cfg) {
-					typeNames.Camel += ConflictingNameSuffix
-				}
-				gt = "*" + typeNames.Camel
-			} else if memberShape.Type == "list" {
-				// If it's a list type, where the element is a structure, we need to
-				// set the GoType to the cleaned-up Camel-cased name
-				if memberShape.MemberRef.Shape.Type == "structure" {
-					elemType := memberShape.MemberRef.Shape.GoTypeElem()
-					typeNames := names.New(elemType)
-					if m.SDKAPI.HasConflictingTypeName(elemType, m.cfg) {
-						typeNames.Camel += ConflictingNameSuffix
-					}
-					gt = "[]*" + typeNames.Camel
-				}
-			} else if memberShape.Type == "map" {
-				// If it's a map type, where the value element is a structure,
-				// we need to set the GoType to the cleaned-up Camel-cased name
-				if memberShape.ValueRef.Shape.Type == "structure" {
-					valType := memberShape.ValueRef.Shape.GoTypeElem()
-					typeNames := names.New(valType)
-					if m.SDKAPI.HasConflictingTypeName(valType, m.cfg) {
-						typeNames.Camel += ConflictingNameSuffix
-					}
-					gt = "[]map[string]*" + typeNames.Camel
-				}
-			} else if memberShape.Type == "timestamp" {
-				// time.Time needs to be converted to apimachinery/metav1.Time
-				// otherwise there is no DeepCopy support
-				gt = "*metav1.Time"
-			}
+			gt := m.getShapeCleanGoType(memberShape)
 			attrs[memberName] = NewAttr(memberNames, gt, memberShape)
 		}
 		if len(attrs) == 0 {
@@ -373,6 +337,37 @@ func (m *Model) GetTypeDefs() ([]*TypeDef, error) {
 	m.typeDefs = tdefs
 	m.typeRenames = trenames
 	return tdefs, nil
+}
+
+// getShapeCleanGoType returns a cleaned-up and Camel-cased GoType name for a given shape.
+func (m *Model) getShapeCleanGoType(shape *awssdkmodel.Shape) string {
+	switch shape.Type {
+	case "map":
+		// If it's a map type we need to set the GoType to the cleaned-up
+		// Camel-cased name
+		return "map[string]" + m.getShapeCleanGoType(shape.ValueRef.Shape)
+	case "list", "array", "blob":
+		// If it's a list type, we need to set the GoType to the cleaned-up
+		// Camel-cased name
+		return "[]" + m.getShapeCleanGoType(shape.MemberRef.Shape)
+	case "timestamp":
+		// time.Time needs to be converted to apimachinery/metav1.Time
+		// otherwise there is no DeepCopy support
+		return "*metav1.Time"
+	case "structure":
+		// There are shapes that are called things like DBProxyStatus that are
+		// fields in a DBProxy CRD... we need to ensure the type names don't
+		// conflict. Also, the name of the Go type in the generated code is
+		// Camel-cased and normalized, so we use that as the Go type
+		goType := shape.GoType()
+		typeNames := names.New(goType)
+		if m.SDKAPI.HasConflictingTypeName(goType, m.cfg) {
+			typeNames.Camel += ConflictingNameSuffix
+		}
+		return "*" + typeNames.Camel
+	default:
+		return shape.GoType()
+	}
 }
 
 // processNestedFieldTypeDefs updates the supplied TypeDef structs' if a nested
