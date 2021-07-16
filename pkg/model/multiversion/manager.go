@@ -21,6 +21,7 @@ import (
 	"gopkg.in/src-d/go-git.v4"
 
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
+	ackmetadata "github.com/aws-controllers-k8s/code-generator/pkg/metadata"
 	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
 )
@@ -35,31 +36,36 @@ var (
 // of each non-deprecated version with their correspending ackmodel.Model
 // and APIInfos.
 type APIVersionManager struct {
-	gitRepo *git.Repository
+	gitRepo  *git.Repository
+	metadata ackmetadata.ServiceMetadata
 
 	hubVersion    string
 	spokeVersions []string
 
-	deprecatedVersions []string
-	removedVersions    []string
-
-	apiInfos map[string]APIInfo
+	apiInfos map[string]ackmetadata.APIInfo
 	models   map[string]*ackmodel.Model
 }
 
 // NewAPIVersionManager initialises and returns a new APIVersionManager.
 func NewAPIVersionManager(
 	sdkCacheDir string,
+	metadataPath string,
 	serviceAlias string,
 	hubVersion string,
-	apisInfo map[string]APIInfo,
+	apisInfo map[string]ackmetadata.APIInfo,
 	defaultConfig ackgenconfig.Config,
 ) (*APIVersionManager, error) {
 	if len(apisInfo) == 0 {
 		return nil, fmt.Errorf("empty apisInfo")
 	}
 
-	spokeVersions := make([]string, 0, len(apisInfo)-1)
+	metadata, err := ackmetadata.NewServiceMetadata(metadataPath)
+	if err != nil {
+		return nil, err
+	}
+
+	spokeVersions := []string{}
+
 	gitRepo, err := util.LoadRepository(sdkCacheDir)
 	if err != nil {
 		return nil, fmt.Errorf("cannot read sdk git repository: %v", err)
@@ -68,11 +74,19 @@ func NewAPIVersionManager(
 	SDKAPIHelper := ackmodel.NewSDKHelper(sdkCacheDir)
 
 	// create model for each non-deprecated api version
-	models := make(map[string]*ackmodel.Model, len(apisInfo))
-	for apiVersion, apiInfo := range apisInfo {
-		// TODO(a-hilaly) filter deprecated and removed api versions
-		if apiVersion != hubVersion {
-			spokeVersions = append(spokeVersions, apiVersion)
+	models := map[string]*ackmodel.Model{}
+	for _, version := range metadata.APIVersions {
+		if version.Status == ackmetadata.APIStatusDeprecated || version.Status == ackmetadata.APIStatusRemoved {
+			continue
+		}
+
+		if version.APIVersion != hubVersion {
+			spokeVersions = append(spokeVersions, version.APIVersion)
+		}
+
+		apiInfo, ok := apisInfo[version.APIVersion]
+		if !ok {
+			return nil, fmt.Errorf("could not find API info for API version %s", version.APIVersion)
 		}
 
 		err = SDKAPIHelper.WithSDKVersion(apiInfo.AWSSDKVersion)
@@ -87,25 +101,26 @@ func NewAPIVersionManager(
 
 		i, err := ackmodel.New(
 			SDKAPI,
-			apiVersion,
+			version.APIVersion,
 			apiInfo.GeneratorConfigPath,
 			defaultConfig,
 		)
 		if err != nil {
-			return nil, fmt.Errorf("cannot create model for API version %s: %v", apiVersion, err)
+			return nil, fmt.Errorf("cannot create model for API version %s: %v", version.APIVersion, err)
 		}
-		models[apiVersion] = i
+		models[version.APIVersion] = i
 	}
 
 	sort.Strings(spokeVersions)
 	model := &APIVersionManager{
 		gitRepo:       gitRepo,
+		metadata:      metadata,
 		hubVersion:    hubVersion,
 		spokeVersions: spokeVersions,
 		apiInfos:      apisInfo,
 		models:        models,
 	}
-	// TODO(hilalymh): Audit deprecated and removed versions
+
 	return model, nil
 }
 
@@ -140,10 +155,10 @@ func (m *APIVersionManager) VerifyAPIVersions(apiVersions ...string) error {
 		if !ok {
 			return fmt.Errorf("%v: %s", ErrAPIVersionNotFound, apiVersion)
 		}
-		if apiInfo.Status == APIStatusDeprecated {
+		if apiInfo.Status == ackmetadata.APIStatusDeprecated {
 			return fmt.Errorf("%v: %s", ErrAPIVersionDeprecated, apiVersion)
 		}
-		if apiInfo.Status == APIStatusRemoved {
+		if apiInfo.Status == ackmetadata.APIStatusRemoved {
 			return fmt.Errorf("%v: %s", ErrAPIVersionRemoved, apiVersion)
 		}
 	}

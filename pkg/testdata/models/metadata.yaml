@@ -1,0 +1,8 @@
+service:
+  full_name: Amazon Test Service
+  short_name: ATS
+  link: https://example.com/
+  documentation: https://docs.example.com/
+versions:
+- api_version: v1alpha1
+  status: available

@@ -41,6 +41,7 @@ var (
 	optDryRun              bool
 	sdkDir                 string
 	optGeneratorConfigPath string
+	optMetadataConfigPath  string
 	optOutputPath          string
 )
 
@@ -110,6 +111,9 @@ func init() {
 	)
 	rootCmd.PersistentFlags().StringVar(
 		&optGeneratorConfigPath, "generator-config-path", "", "Path to file containing instructions for code generation to use",
+	)
+	rootCmd.PersistentFlags().StringVar(
+		&optMetadataConfigPath, "metadata-config-path", "", "Path to file containing service metadata to use",
 	)
 	rootCmd.PersistentFlags().StringVarP(
 		&optOutputPath, "output", "o", "", "Path to directory to output generated files.",

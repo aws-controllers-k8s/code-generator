@@ -11,17 +11,12 @@
 // express or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
-package multiversion
-
-// TODO(a-hilaly) move this file outside of pkg/model/multiversion. Idealy we
-// Should be able to access APIStatus and APIInfo to prevent regenerating removed or
-// deprecated APIs.
+package metadata
 
 type APIStatus string
 
 const (
-	APIStatusUnknown    APIStatus = "unknown"
-	APIStatusAvailable            = "available"
+	APIStatusAvailable  APIStatus = "available"
 	APIStatusRemoved              = "removed"
 	APIStatusDeprecated           = "deprecated"
 )
