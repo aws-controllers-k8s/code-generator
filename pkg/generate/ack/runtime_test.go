@@ -99,6 +99,26 @@ func (rmf *fakeRMF) ManagerFor(
 func (rmf *fakeRMF) IsAdoptable() bool            { return false }
 func (rmf *fakeRMF) RequeueOnSuccessSeconds() int { return 10 }
 
+type fakeRM struct{}
+
+func (frm *fakeRM) ReadOne(context.Context, acktypes.AWSResource) (acktypes.AWSResource, error) {
+	return nil, nil
+}
+
+func (frm *fakeRM) Create(context.Context, acktypes.AWSResource) (acktypes.AWSResource, error) {
+	return nil, nil
+}
+
+func (frm *fakeRM) Update(context.Context, acktypes.AWSResource, acktypes.AWSResource, *ackcompare.Delta) (acktypes.AWSResource, error) {
+	return nil, nil
+}
+
+func (frm *fakeRM) Delete(context.Context, acktypes.AWSResource) (acktypes.AWSResource, error) {
+	return nil, nil
+}
+
+func (frm *fakeRM) ARNFromName(string) string { return "" }
+
 // This test is mostly just a hack to introduce a Go module dependency between
 // the ACK runtime library and the code generator. The code generator doesn't
 // actually depend on Go code in the ACK runtime, but it *produces* templated
@@ -132,4 +152,7 @@ func TestRuntimeDependency(t *testing.T) {
 		},
 	}
 	_ = ids
+
+	// ACK runtime 0.6.0 modified pkg/types/AWSResourceManager.Delete signature.
+	require.Implements((*acktypes.AWSResourceManager)(nil), new(fakeRM))
 }
