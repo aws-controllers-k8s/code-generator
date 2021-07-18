@@ -13,4 +13,9 @@ func Generate{{ .CRD.Names.Camel }}(resp *svcsdk.{{ .CRD.Ops.GetAttributes.Outpu
 {{ GoCodeGetAttributesSetOutput .CRD "resp" "cr" 1 }}
 return cr
 }
+
+func isUpToDate(cr *svcapitypes.{{ .CRD.Names.Camel }}, resp *svcsdk.{{ .CRD.Ops.GetAttributes.OutputRef.Shape.ShapeName }}) bool {
+	// Not implemented for Attributes-based APIs.
+	return true
+}
 {{- end -}}
