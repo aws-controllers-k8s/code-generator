@@ -362,3 +362,6 @@ func (rm *resourceManager) handleImmutableFieldsChangedCondition(
 	return &resource{ko}
 }
 {{- end }}
+{{- if $hookCode := Hook .CRD "sdk_file_end" }}
+{{ $hookCode }}
+{{- end }}
