@@ -659,13 +659,23 @@ func (m *Model) ApplyShapeIgnoreRules() {
 		return
 	}
 	for sdkShapeID, shape := range m.SDKAPI.API.Shapes {
+	ignoreFields:
 		for _, fieldpath := range m.cfg.Ignore.FieldPaths {
-			sn := strings.Split(fieldpath, ".")[0]
-			fn := strings.Split(fieldpath, ".")[1]
-			if shape.ShapeName != sn {
+			fields := strings.Split(fieldpath, ".")
+			sn := fields[0]
+			if shape.ShapeName != sn || len(fields) < 2 {
 				continue
 			}
-			delete(shape.MemberRefs, fn)
+
+			sh := shape
+			for _, fn := range fields[1 : len(fields)-1] {
+				shapeRef := sh.MemberRefs[fn]
+				if shapeRef == nil {
+					continue ignoreFields
+				}
+				sh = shapeRef.Shape
+			}
+			delete(sh.MemberRefs, fields[len(fields)-1])
 		}
 		for _, sn := range m.cfg.Ignore.ShapeNames {
 			if shape.ShapeName == sn {
