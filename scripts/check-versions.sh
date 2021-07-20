@@ -31,7 +31,7 @@ if [ $# -ne 1 ]; then
 fi
 
 RUNTIME_DEPENDENCY_VERSION="aws-controllers-k8s/runtime"
-GO_MOD_VERSION=$(cat go.mod | grep $RUNTIME_DEPENDENCY_VERSION | cut -d ' ' -f2)
+GO_MOD_VERSION=$(go list -m -f '{{ .Version }}' github.com/aws-controllers-k8s/runtime)
 
 if [[ "$1" != "$GO_MOD_VERSION" ]]; then
     echo "Code-generator version in Makefile $1 does not match $RUNTIME_DEPENDENCY_VERSION version $GO_MOD_VERSION"
