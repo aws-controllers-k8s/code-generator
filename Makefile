@@ -40,6 +40,9 @@ local-build-controller-image: export LOCAL_MODULES = true
 local-build-controller-image:	## Build container image for SERVICE allowing local modules
 	@./scripts/build-controller-image.sh $(AWS_SERVICE)
 
+check-versions: ## Checks the code-generator version matches the runtime dependency version
+	@./scripts/check-versions.sh $(VERSION)
+
 test: 				## Run code tests
 	go test ${GO_TAGS} ./...
 
