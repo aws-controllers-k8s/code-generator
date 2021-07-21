@@ -34,6 +34,7 @@ DEFAULT_ACK_GENERATE_BIN_PATH="$ROOT_DIR/../../aws-controllers-k8s/code-generato
 ACK_GENERATE_BIN_PATH=${ACK_GENERATE_BIN_PATH:-$DEFAULT_ACK_GENERATE_BIN_PATH}
 ACK_GENERATE_API_VERSION=${ACK_GENERATE_API_VERSION:-"v1alpha1"}
 ACK_GENERATE_CONFIG_PATH=${ACK_GENERATE_CONFIG_PATH:-""}
+ACK_METADATA_CONFIG_PATH=${ACK_METADATA_CONFIG_PATH:-""}
 ACK_GENERATE_IMAGE_REPOSITORY=${ACK_GENERATE_IMAGE_REPOSITORY:-"$DEFAULT_IMAGE_REPOSITORY"}
 AWS_SDK_GO_VERSION=${AWS_SDK_GO_VERSION:-"v1.35.5"}
 
@@ -73,6 +74,9 @@ Environment variables:
   ACK_GENERATE_CONFIG_PATH:             Specify a path to the generator config YAML file to
                                         instruct the code generator for the service.
                                         Default: {SERVICE_CONTROLLER_SOURCE_PATH}/generator.yaml
+  ACK_METADATA_CONFIG_PATH:             Specify a path to the metadata config YAML file to 
+                                        instruct the code generator for the service.
+                                        Default: {SERVICE_CONTROLLER_SOURCE_PATH}/metadata.yaml
   ACK_GENERATE_OUTPUT_PATH:             Specify a path for the generator to output
                                         to.
                                         Default: services/{SERVICE}
@@ -139,6 +143,14 @@ if [ -z "$ACK_GENERATE_CONFIG_PATH" ]; then
     fi
 fi
 
+# If there's a metadata.yaml in the service's directory and the caller hasn't
+# specified an override, use that.
+if [ -z "$ACK_METADATA_CONFIG_PATH" ]; then
+    if [ -f "$SERVICE_CONTROLLER_SOURCE_PATH/metadata.yaml" ]; then
+        ACK_METADATA_CONFIG_PATH="$SERVICE_CONTROLLER_SOURCE_PATH/metadata.yaml"
+    fi
+fi
+
 helm_output_dir="$SERVICE_CONTROLLER_SOURCE_PATH/helm"
 ag_args="$SERVICE $RELEASE_VERSION -o $SERVICE_CONTROLLER_SOURCE_PATH --template-dirs $TEMPLATES_DIR --aws-sdk-go-version $AWS_SDK_GO_VERSION"
 if [ -n "$ACK_GENERATE_CACHE_DIR" ]; then
@@ -150,6 +162,9 @@ if [ -n "$ACK_GENERATE_OUTPUT_PATH" ]; then
 fi
 if [ -n "$ACK_GENERATE_CONFIG_PATH" ]; then
     ag_args="$ag_args --generator-config-path $ACK_GENERATE_CONFIG_PATH"
+fi
+if [ -n "$ACK_METADATA_CONFIG_PATH" ]; then
+    ag_args="$ag_args --metadata-config-path $ACK_METADATA_CONFIG_PATH"
 fi
 if [ -n "$ACK_GENERATE_IMAGE_REPOSITORY" ]; then
     ag_args="$ag_args --image-repository $ACK_GENERATE_IMAGE_REPOSITORY"
