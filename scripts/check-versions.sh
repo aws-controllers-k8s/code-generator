@@ -8,20 +8,12 @@ set -eo pipefail
 SCRIPTS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 ROOT_DIR="$SCRIPTS_DIR/.."
 
-DEFAULT_GO_MOD_PATH="$ROOT_DIR/go.mod"
-GO_MOD_PATH=${GO_MOD_PATH:-$DEFAULT_GO_MOD_PATH}
-
 USAGE="
 Usage:
   $(basename "$0") <Makefile version>
 
 Checks that the code-generator version located in the Makefile matches the
 runtime version pinned in go.mod
-
-Environment variables:
-  GO_MOD_PATH:              Overrides the path to the go.mod file containing the
-                            pinned runtime version.
-                            Default: $DEFAULT_GO_MOD_PATH
 "
 
 if [ $# -ne 1 ]; then
