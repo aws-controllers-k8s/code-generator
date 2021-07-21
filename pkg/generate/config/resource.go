@@ -281,16 +281,16 @@ type PrintConfig struct {
 // ReconcileConfig describes options for controlling the reconciliation
 // logic for a particular resource.
 type ReconcileConfig struct {
-    // RequeueOnSuccessSeconds indicates the number of seconds after which to requeue a
-    // resource that has been successfully reconciled (i.e. ConditionTypeResourceSynced=true)
-    // This is useful for resources that are long-lived and may have observable status fields
-    // change over time that would be useful to refresh those field values for users.
-    // This field is optional and the default behaviour of the ACK runtime is to not requeue
-    // resources that have been successfully reconciled. Note that all ACK controllers will
-    // *flush and resync their watch caches* every 10 hours by default, which will end up
-    // causing ACK controllers to refresh the status views of all watched resources, but this
-    // behaviour is expensive and may be turned off in future ACK runtime options.
-    RequeueOnSuccessSeconds int `json:"requeue_on_success_seconds,omitempty"`
+	// RequeueOnSuccessSeconds indicates the number of seconds after which to requeue a
+	// resource that has been successfully reconciled (i.e. ConditionTypeResourceSynced=true)
+	// This is useful for resources that are long-lived and may have observable status fields
+	// change over time that would be useful to refresh those field values for users.
+	// This field is optional and the default behaviour of the ACK runtime is to not requeue
+	// resources that have been successfully reconciled. Note that all ACK controllers will
+	// *flush and resync their watch caches* every 10 hours by default, which will end up
+	// causing ACK controllers to refresh the status views of all watched resources, but this
+	// behaviour is expensive and may be turned off in future ACK runtime options.
+	RequeueOnSuccessSeconds int `json:"requeue_on_success_seconds,omitempty"`
 }
 
 // ResourceConfig returns the ResourceConfig for a given named resource

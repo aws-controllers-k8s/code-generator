@@ -1009,7 +1009,7 @@ func setSDKForSlice(
 	sourceAttributePath := sourceFieldPath
 	if targetShape.MemberRef.Shape.Type == "structure" {
 		containerFieldName = targetFieldName
-		sourceAttributePath = sourceFieldPath+"."
+		sourceAttributePath = sourceFieldPath + "."
 	}
 	out += setSDKForContainer(
 		cfg, r,
