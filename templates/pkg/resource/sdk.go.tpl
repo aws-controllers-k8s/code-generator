@@ -83,7 +83,7 @@ func (rm *resourceManager) sdkCreate(
 {{- if $hookCode := Hook .CRD "sdk_create_pre_set_output" }}
 {{ $hookCode }}
 {{- end }}
-{{ GoCodeSetCreateOutput .CRD "resp" "ko" 1 false }}
+{{ GoCodeSetCreateOutput .CRD "resp" "ko" 1 }}
 	rm.setStatusDefaults(ko)
 {{- if $setOutputCustomMethodName := .CRD.SetOutputCustomMethodName .CRD.Ops.Create }}
 	// custom set output from response

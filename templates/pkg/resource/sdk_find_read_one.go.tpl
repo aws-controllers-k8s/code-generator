@@ -44,7 +44,7 @@ func (rm *resourceManager) sdkFind(
 {{- if $hookCode := Hook .CRD "sdk_read_one_pre_set_output" }}
 {{ $hookCode }}
 {{- end }}
-{{ GoCodeSetReadOneOutput .CRD "resp" "ko" 1 true }}
+{{ GoCodeSetReadOneOutput .CRD "resp" "ko" 1 }}
 	rm.setStatusDefaults(ko)
 {{- if $setOutputCustomMethodName := .CRD.SetOutputCustomMethodName .CRD.Ops.ReadOne }}
 	// custom set output from response
