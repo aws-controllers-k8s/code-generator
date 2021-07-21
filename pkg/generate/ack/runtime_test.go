@@ -27,6 +27,7 @@ import (
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackcfg "github.com/aws-controllers-k8s/runtime/pkg/config"
+	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackmetrics "github.com/aws-controllers-k8s/runtime/pkg/metrics"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
@@ -155,4 +156,7 @@ func TestRuntimeDependency(t *testing.T) {
 
 	// ACK runtime 0.6.0 modified pkg/types/AWSResourceManager.Delete signature.
 	require.Implements((*acktypes.AWSResourceManager)(nil), new(fakeRM))
+
+	// ACK runtime 0.7.0 introduced SecretNotFound error.
+	require.NotNil(ackerr.SecretNotFound)
 }
