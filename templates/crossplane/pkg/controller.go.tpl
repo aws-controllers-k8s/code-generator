@@ -128,7 +128,7 @@ func (e *external) Create(ctx context.Context, mg cpresource.Managed) (managed.E
 	if err != nil {
 		return managed.ExternalCreation{}, awsclient.Wrap(err, errCreate)
 	}
-{{ GoCodeSetCreateOutput .CRD "resp" "cr" 1 false }}
+{{ GoCodeSetCreateOutput .CRD "resp" "cr" 1 }}
 	return e.postCreate(ctx, cr, resp, managed.ExternalCreation{}, err)
 }
 

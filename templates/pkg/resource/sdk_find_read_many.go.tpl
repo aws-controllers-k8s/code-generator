@@ -36,7 +36,7 @@ func (rm *resourceManager) sdkFind(
 {{- if $hookCode := Hook .CRD "sdk_read_many_pre_set_output" }}
 {{ $hookCode }}
 {{- end }}
-{{ GoCodeSetReadManyOutput .CRD "resp" "ko" 1 true }}
+{{ GoCodeSetReadManyOutput .CRD "resp" "ko" 1 }}
 	rm.setStatusDefaults(ko)
 {{- if $setOutputCustomMethodName := .CRD.SetOutputCustomMethodName .CRD.Ops.ReadMany }}
 	// custom set output from response

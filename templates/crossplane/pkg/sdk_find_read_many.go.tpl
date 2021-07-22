@@ -10,7 +10,7 @@ func Generate{{ .CRD.Ops.ReadMany.InputRef.Shape.ShapeName }}(cr *svcapitypes.{{
 // Generate{{ .CRD.Names.Camel }} returns the current state in the form of *svcapitypes.{{ .CRD.Names.Camel }}.
 func Generate{{ .CRD.Names.Camel }}(resp *svcsdk.{{ .CRD.Ops.ReadMany.OutputRef.Shape.ShapeName }}) *svcapitypes.{{ .CRD.Names.Camel }} {
 	cr := &svcapitypes.{{ .CRD.Names.Camel }}{}
-{{ GoCodeSetReadManyOutput .CRD "resp" "cr" 1 false }}
+{{ GoCodeSetReadManyOutput .CRD "resp" "cr" 1 }}
 return cr
 }
 {{- end -}}

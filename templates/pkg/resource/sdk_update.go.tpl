@@ -44,7 +44,7 @@ func (rm *resourceManager) sdkUpdate(
 {{- if $hookCode := Hook .CRD "sdk_update_pre_set_output" }}
 {{ $hookCode }}
 {{- end }}
-{{ GoCodeSetUpdateOutput .CRD "resp" "ko" 1 false }}
+{{ GoCodeSetUpdateOutput .CRD "resp" "ko" 1 }}
 	rm.setStatusDefaults(ko)
 {{- if $setOutputCustomMethodName := .CRD.SetOutputCustomMethodName .CRD.Ops.Update }}
 	// custom set output from response

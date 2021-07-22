@@ -28,7 +28,6 @@ import (
 
 // SetResource returns the Go code that sets a CRD's field value to the value
 // of an output shape's member fields.  Status fields are always updated.
-// Update of Spec fields depends on 'performSpecUpdate' parameter
 //
 // Assume a CRD called Repository that looks like this pseudo-schema:
 //
@@ -89,8 +88,6 @@ func SetResource(
 	targetVarName string,
 	// Number of levels of indentation to use
 	indentLevel int,
-	// boolean to indicate whether Spec fields should be updated from opTypeOutput
-	performSpecUpdate bool,
 ) string {
 	var op *awssdkmodel.Operation
 	switch opType {
@@ -220,9 +217,6 @@ func SetResource(
 		f, found = r.SpecFields[renamedName]
 		if found {
 			targetAdaptedVarName += cfg.PrefixConfig.SpecField
-			if !performSpecUpdate {
-				continue
-			}
 		} else {
 			f, found = r.StatusFields[memberName]
 			if !found {
