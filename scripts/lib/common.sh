@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+CONTROLLER_TOOLS_VERSION="v0.6.1"
+
 # setting the -x option if debugging is true
 if [[ "${DEBUG:-"false"}" = "true" ]]; then
     set -x
@@ -87,4 +89,23 @@ debug_msg() {
         __indent="$( for each in $( seq 0 $__indent_level ); do printf " "; done )"
     fi
     echo "$__debug_prefix$__indent$__msg"
+}
+
+# controller_gen_version_equals accepts a string version and returns 0 if the
+# installed version of controller-gen matches the supplied version, otherwise
+# returns 1
+#
+# Usage:
+#
+#   if controller_gen_version_equals "v0.4.0"; then
+#       echo "controller-gen is at version 0.4.0"
+#   fi
+k8s_controller_gen_version_equals() {
+    currentver="$(controller-gen --version | cut -d' ' -f2 | tr -d '\n')";
+    requiredver="$1";
+    if [ "$currentver" = "$requiredver" ]; then
+        return 0
+    else
+        return 1
+    fi;
 }

@@ -9,7 +9,6 @@ ROOT_DIR="$SCRIPTS_DIR/.."
 BIN_DIR="$ROOT_DIR/bin"
 
 source "$SCRIPTS_DIR/lib/common.sh"
-source "$SCRIPTS_DIR/lib/k8s.sh"
 
 check_is_installed controller-gen "You can install controller-gen with the helper scripts/install-controller-gen.sh"
 

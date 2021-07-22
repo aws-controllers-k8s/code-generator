@@ -12,7 +12,6 @@ DEFAULT_IMAGE_REPOSITORY="public.ecr.aws/aws-controllers-k8s/controller"
 ACK_GENERATE_OLM=${ACK_GENERATE_OLM:-"false"}
 
 source "$SCRIPTS_DIR/lib/common.sh"
-source "$SCRIPTS_DIR/lib/k8s.sh"
 
 check_is_installed controller-gen "You can install controller-gen with the helper scripts/install-controller-gen.sh"
 check_is_installed helm "You can install Helm with the helper scripts/install-helm.sh"
