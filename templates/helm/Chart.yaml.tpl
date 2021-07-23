@@ -1,5 +1,5 @@
 apiVersion: v1
-name: ack-{{ .ServiceIDClean }}-controller
+name: {{ .ServiceIDClean }}-chart
 description: A Helm chart for the ACK service controller for {{ .ServiceIDClean }}
 version: {{ .ReleaseVersion }}
 appVersion: {{ .ReleaseVersion }}

@@ -40,7 +40,7 @@ var releaseCmd = &cobra.Command{
 
 func init() {
 	releaseCmd.PersistentFlags().StringVar(
-		&optImageRepository, "image-repository", "amazon/aws-controllers-k8s", "the Docker image repository to use in release artifacts.",
+		&optImageRepository, "image-repository", "", "the Docker image repository to use in release artifacts. Defaults to 'public.ecr.aws/aws-controllers-k8s/$service-controller'",
 	)
 	releaseCmd.PersistentFlags().StringVar(
 		&optServiceAccountName, "service-account-name", "default", "The name of the ServiceAccount AND ClusterRole used for ACK service controller",
@@ -60,6 +60,9 @@ func generateRelease(cmd *cobra.Command, args []string) error {
 	svcAlias := strings.ToLower(args[0])
 	if optReleaseOutputPath == "" {
 		optReleaseOutputPath = filepath.Join(optServicesDir, svcAlias)
+	}
+	if optImageRepository == "" {
+		optImageRepository = fmt.Sprintf("public.ecr.aws/aws-controllers-k8s/%s-controller", svcAlias)
 	}
 	// TODO(jaypipes): We could do some git-fu here to verify that the release
 	// version supplied hasn't been used (as a Git tag) before...

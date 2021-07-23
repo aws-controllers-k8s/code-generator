@@ -4,7 +4,7 @@
 
 image:
   repository: {{ .ImageRepository }}
-  tag: {{ .ServiceIDClean }}-{{ .ReleaseVersion }}
+  tag: {{ .ReleaseVersion }}
   pullPolicy: IfNotPresent
   pullSecrets: []
 

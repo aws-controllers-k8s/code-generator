@@ -8,7 +8,6 @@ set -eo pipefail
 SCRIPTS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 ROOT_DIR="$SCRIPTS_DIR/.."
 BIN_DIR="$ROOT_DIR/bin"
-DEFAULT_IMAGE_REPOSITORY="public.ecr.aws/aws-controllers-k8s/controller"
 ACK_GENERATE_OLM=${ACK_GENERATE_OLM:-"false"}
 
 source "$SCRIPTS_DIR/lib/common.sh"
@@ -35,7 +34,6 @@ ACK_GENERATE_BIN_PATH=${ACK_GENERATE_BIN_PATH:-$DEFAULT_ACK_GENERATE_BIN_PATH}
 ACK_GENERATE_API_VERSION=${ACK_GENERATE_API_VERSION:-"v1alpha1"}
 ACK_GENERATE_CONFIG_PATH=${ACK_GENERATE_CONFIG_PATH:-""}
 ACK_METADATA_CONFIG_PATH=${ACK_METADATA_CONFIG_PATH:-""}
-ACK_GENERATE_IMAGE_REPOSITORY=${ACK_GENERATE_IMAGE_REPOSITORY:-"$DEFAULT_IMAGE_REPOSITORY"}
 AWS_SDK_GO_VERSION=${AWS_SDK_GO_VERSION:-"v1.35.5"}
 
 DEFAULT_TEMPLATES_DIR="$ROOT_DIR/../../aws-controllers-k8s/code-generator/templates"
@@ -82,7 +80,7 @@ Environment variables:
                                         Default: services/{SERVICE}
   ACK_GENERATE_IMAGE_REPOSITORY:        Specify a Docker image repository to use
                                         for release artifacts
-                                        Default: $DEFAULT_IMAGE_REPOSITORY
+                                        Default: public.ecr.aws/u2r4f3v7/{SERVICE}-controller
   ACK_GENERATE_SERVICE_ACCOUNT_NAME:    Name of the Kubernetes Service Account and
                                         Cluster Role to use in Helm chart.
                                         Default: $ACK_GENERATE_SERVICE_ACCOUNT_NAME
@@ -123,6 +121,10 @@ SERVICE=$(echo "$1" | tr '[:upper:]' '[:lower:]')
 # $GOPATH/src/github.com/aws-controllers-k8s/$AWS_SERVICE-controller/
 DEFAULT_SERVICE_CONTROLLER_SOURCE_PATH="$ROOT_DIR/../$SERVICE-controller"
 SERVICE_CONTROLLER_SOURCE_PATH=${SERVICE_CONTROLLER_SOURCE_PATH:-$DEFAULT_SERVICE_CONTROLLER_SOURCE_PATH}
+
+# TODO(vijat@): replace "u2r4f3v7" with aws-controllers-k8s
+DEFAULT_IMAGE_REPOSITORY="public.ecr.aws/u2r4f3v7/$SERVICE-controller"
+ACK_GENERATE_IMAGE_REPOSITORY=${ACK_GENERATE_IMAGE_REPOSITORY:-"$DEFAULT_IMAGE_REPOSITORY"}
 
 if [[ ! -d $SERVICE_CONTROLLER_SOURCE_PATH ]]; then
     echo "Error evaluating SERVICE_CONTROLLER_SOURCE_PATH environment variable:" 1>&2
