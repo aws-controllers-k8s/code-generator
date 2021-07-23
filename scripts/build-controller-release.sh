@@ -34,7 +34,7 @@ ACK_GENERATE_BIN_PATH=${ACK_GENERATE_BIN_PATH:-$DEFAULT_ACK_GENERATE_BIN_PATH}
 ACK_GENERATE_API_VERSION=${ACK_GENERATE_API_VERSION:-"v1alpha1"}
 ACK_GENERATE_CONFIG_PATH=${ACK_GENERATE_CONFIG_PATH:-""}
 ACK_METADATA_CONFIG_PATH=${ACK_METADATA_CONFIG_PATH:-""}
-AWS_SDK_GO_VERSION=${AWS_SDK_GO_VERSION:-"v1.35.5"}
+AWS_SDK_GO_VERSION=${AWS_SDK_GO_VERSION:-""}
 
 DEFAULT_TEMPLATES_DIR="$ROOT_DIR/../../aws-controllers-k8s/code-generator/templates"
 TEMPLATES_DIR=${TEMPLATES_DIR:-$DEFAULT_TEMPLATES_DIR}
@@ -86,7 +86,7 @@ Environment variables:
                                         Default: $ACK_GENERATE_SERVICE_ACCOUNT_NAME
   AWS_SDK_GO_VERSION:                   Overrides the version of github.com/aws/aws-sdk-go used
                                         by 'ack-generate' to fetch the service API Specifications.
-                                        Default: $AWS_SDK_GO_VERSION
+                                        Default: Version of aws-controllers-k8s/runtime in go.mod
   K8S_RBAC_ROLE_NAME:                   Name of the Kubernetes Role to use when
                                         generating the RBAC manifests for the
                                         custom resource definitions.
@@ -136,6 +136,10 @@ fi
 RELEASE_VERSION="$2"
 K8S_RBAC_ROLE_NAME=${K8S_RBAC_ROLE_NAME:-"ack-$SERVICE-controller"}
 ACK_GENERATE_SERVICE_ACCOUNT_NAME=${ACK_GENERATE_SERVICE_ACCOUNT_NAME:-"ack-$SERVICE-controller"}
+
+if [ -z "$AWS_SDK_GO_VERSION" ]; then
+    AWS_SDK_GO_VERSION=$(go list -m -f '{{ .Version }}' -modfile $SERVICE_CONTROLLER_SOURCE_PATH/go.mod github.com/aws/aws-sdk-go)
+fi
 
 # If there's a generator.yaml in the service's directory and the caller hasn't
 # specified an override, use that.
