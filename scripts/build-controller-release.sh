@@ -86,7 +86,7 @@ Environment variables:
                                         Default: $ACK_GENERATE_SERVICE_ACCOUNT_NAME
   AWS_SDK_GO_VERSION:                   Overrides the version of github.com/aws/aws-sdk-go used
                                         by 'ack-generate' to fetch the service API Specifications.
-                                        Default: Version of aws-controllers-k8s/runtime in go.mod
+                                        Default: Version of aws/aws-sdk-go in service go.mod
   K8S_RBAC_ROLE_NAME:                   Name of the Kubernetes Role to use when
                                         generating the RBAC manifests for the
                                         custom resource definitions.
