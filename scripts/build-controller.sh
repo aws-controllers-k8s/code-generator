@@ -57,6 +57,7 @@ Environment variables:
                             Default: metadata.yaml
   AWS_SDK_GO_VERSION:       Overrides the version of github.com/aws/aws-sdk-go used
                             by 'ack-generate' to fetch the service API Specifications.
+                            Default: Version of aws/aws-sdk-go in service go.mod
   TEMPLATES_DIR:            Overrides the directory containg ack-generate templates
                             Default: $TEMPLATES_DIR
   K8S_RBAC_ROLE_NAME:       Name of the Kubernetes Role to use when generating
@@ -127,6 +128,10 @@ config_output_dir="$SERVICE_CONTROLLER_SOURCE_PATH/config/"
 echo "Copying common custom resource definitions into $SERVICE"
 mkdir -p $config_output_dir/crd/common
 cp -r $RUNTIME_CRD_DIR/crd/* $config_output_dir/crd/common/
+
+if [ -z "$AWS_SDK_GO_VERSION" ]; then
+    AWS_SDK_GO_VERSION=$(go list -m -f '{{ .Version }}' -modfile $SERVICE_CONTROLLER_SOURCE_PATH/go.mod github.com/aws/aws-sdk-go)
+fi
 
 # If there's a generator.yaml in the service's directory and the caller hasn't
 # specified an override, use that.
