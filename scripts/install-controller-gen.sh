@@ -19,12 +19,10 @@ set -eo pipefail
 
 SCRIPTS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 ROOT_DIR="$SCRIPTS_DIR/.."
-CONTROLLER_TOOLS_VERSION="v0.4.0"
 
 source "$SCRIPTS_DIR/lib/common.sh"
-source "$SCRIPTS_DIR/lib/k8s.sh"
 
-if ! is_installed controller-gen; then
+if ! is_installed controller-gen || ! k8s_controller_gen_version_equals "$CONTROLLER_TOOLS_VERSION"; then
     # GOBIN and GOPATH are not always set, so default to GOPATH from `go env`
     __GOPATH=$(go env GOPATH)
     __install_dir=${GOBIN:-$__GOPATH/bin}
