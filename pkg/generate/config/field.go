@@ -136,6 +136,14 @@ type PrintFieldConfig struct {
 	Index int `json:"index"`
 }
 
+// LateInitializeConfig contains instructions for how to handle the
+// retrieval and setting of server-side defaulted fields.
+type LateInitializeConfig struct {
+	// DelaySeconds provides the number of seconds to wait to set
+	// late initialized field after successful Create/Update call
+	DelaySeconds int `json:"delay_seconds,omitempty"`
+}
+
 // FieldConfig contains instructions to the code generator about how
 // to interpret the value of an Attribute and how to map it to a CRD's Spec or
 // Status field
@@ -184,4 +192,7 @@ type FieldConfig struct {
 	// influence hows field are printed in `kubectl get` response. If this field
 	// is not nil, it will be added to the columns of `kubectl get`.
 	Print *PrintFieldConfig `json:"print,omitempty"`
+	// Late Initialize instructs the code generator how to handle the late initialization
+	// of the field.
+	LateInitialize *LateInitializeConfig `json:"late_initialize,omitempty"`
 }

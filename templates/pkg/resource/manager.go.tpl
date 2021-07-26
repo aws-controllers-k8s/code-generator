@@ -5,12 +5,16 @@ package {{ .CRD.Names.Snake }}
 import (
 	"context"
 	"fmt"
+	"time"
 
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
-	ackcfg "github.com/aws-controllers-k8s/runtime/pkg/config"
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
+	ackcfg "github.com/aws-controllers-k8s/runtime/pkg/config"
+	ackcondition "github.com/aws-controllers-k8s/runtime/pkg/condition"
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackmetrics "github.com/aws-controllers-k8s/runtime/pkg/metrics"
+	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
+	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/go-logr/logr"
@@ -22,6 +26,9 @@ import (
 
 // +kubebuilder:rbac:groups={{ .APIGroup }},resources={{ ToLower .CRD.Plural }},verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups={{ .APIGroup }},resources={{ ToLower .CRD.Plural }}/status,verbs=get;update;patch
+
+
+{{ GoCodeFindLateInitializedFields .CRD 0 }}
 
 // resourceManager is responsible for providing a consistent way to perform
 // CRUD operations in a backend AWS service API for Book custom resources.
@@ -154,6 +161,69 @@ func (rm *resourceManager) ARNFromName(name string) string {
 		rm.awsAccountID,
 		name,
 	)
+}
+
+// LateInitialize returns an acktypes.AWSResource after setting the late initialized
+// fields from the readOne call. This method will initialize the optional fields
+// which were not provided by the k8s user but were defaulted by the AWS service.
+// If there are no such fields to be initialized, the returned object is similar to
+// object passed in the parameter.
+func (rm *resourceManager) LateInitialize(
+	ctx context.Context,
+	res acktypes.AWSResource,
+) (acktypes.AWSResource, *ackrequeue.RequeueNeededAfter) {
+	rlog := ackrtlog.FromContext(ctx)
+{{- if $hookCode := Hook .CRD "late_initialize_pre_read_one" }}
+{{ $hookCode }}
+{{- end }}
+	// If there are no fields to late initialize, do nothing
+	if len(lateInitializeFieldToDelaySeconds) == 0 {
+		rlog.Debug("no late initialization required.")
+		return res, nil
+	}
+	r := rm.concreteResource(res)
+	if r.ko == nil {
+		// Should never happen... if it does, it's buggy code.
+		panic("resource manager's LateInitialize() method received resource with nil CR object")
+	}
+	koWithDefaults := r.ko.DeepCopy()
+	latestWithDefaults := &resource{koWithDefaults}
+	lateInitConditionReason := ""
+	lateInitConditionMessage := ""
+	maxDelay := 0
+	// If late initalization is not already in progress, find out max delay for late initialization
+	if !ackcondition.LateInitializationInProgress(res) {
+		for _,delay := range lateInitializeFieldToDelaySeconds {
+			if delay > maxDelay {
+				maxDelay = delay
+			}
+		}
+	}
+	rlog.Info(fmt.Sprintf("calculated late initialization delay is %d seconds", maxDelay))
+	if maxDelay > 0 {
+		// Add the condition with LateInitialized=False
+		lateInitConditionMessage = fmt.Sprintf("Late initialition delayed for %d seconds", maxDelay)
+		lateInitConditionReason = "Delayed Late Initialization"
+		ackcondition.SetLateInitialized(latestWithDefaults, corev1.ConditionFalse, &lateInitConditionMessage, &lateInitConditionReason)
+		return latestWithDefaults, ackrequeue.NeededAfter(nil, time.Duration(maxDelay)*time.Second)
+	}
+	observed, err := rm.sdkFind(ctx, latestWithDefaults)
+	if err != nil {
+        lateInitConditionMessage = "Unable to complete Read operation required for late initialization"
+        lateInitConditionReason = "Late Initialization Failure"
+        ackcondition.SetLateInitialized(latestWithDefaults, corev1.ConditionFalse, &lateInitConditionMessage, &lateInitConditionReason)
+		return latestWithDefaults, ackrequeue.NeededAfter(err, time.Duration(0)*time.Second)
+	}
+	observedKo := observed.ko
+{{ GoCodeLateInitializeFromReadOne .CRD "observedKo" "koWithDefaults" 1 }}
+	// Set LateIntialized condition to True
+	lateInitConditionMessage = "Late initialition successful"
+    lateInitConditionReason = "Late initialition successful"
+	ackcondition.SetLateInitialized(latestWithDefaults, corev1.ConditionFalse, &lateInitConditionMessage, &lateInitConditionReason)
+{{- if $hookCode := Hook .CRD "late_initialize_post_read_one" }}
+{{ $hookCode }}
+{{- end }}
+	return latestWithDefaults, nil
 }
 
 // newResourceManager returns a new struct implementing

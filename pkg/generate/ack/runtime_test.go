@@ -30,6 +30,7 @@ import (
 	ackcfg "github.com/aws-controllers-k8s/runtime/pkg/config"
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackmetrics "github.com/aws-controllers-k8s/runtime/pkg/metrics"
+	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
 )
@@ -116,6 +117,10 @@ func (frm *fakeRM) Delete(context.Context, acktypes.AWSResource) (acktypes.AWSRe
 }
 
 func (frm *fakeRM) ARNFromName(string) string { return "" }
+
+func (frm *fakeRM) LateInitialize(context.Context, acktypes.AWSResource) (acktypes.AWSResource, *ackrequeue.RequeueNeededAfter) {
+	return nil, nil
+}
 
 // This test is mostly just a hack to introduce a Go module dependency between
 // the ACK runtime library and the code generator. The code generator doesn't
