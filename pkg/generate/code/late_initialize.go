@@ -85,7 +85,7 @@ func LateInitializeFromReadOne (
 ) string {
 	//Sample output
 	//if observed.Spec.ImageScanningConfiguration != nil && koWithDefaults.Spec.ImageScanningConfiguration != nil {
-	//	if observed.Spec.ScanOnPush != nil && koWithDefaults.Spec.ScanOnPush == nil {
+	//	if observed.Spec.ImageScanningConfiguration.ScanOnPush != nil && koWithDefaults.Spec.ImageScanningConfiguration.ScanOnPush == nil {
 	//		koWithDefaults.Spec.ImageScanningConfiguration.ScanOnPush = observed.Spec.ImageScanningConfiguration.ScanOnPush
 	//	}
 	//}
@@ -94,32 +94,38 @@ func LateInitializeFromReadOne (
 	//}
 	out := ""
 	lateInitializedFieldNames := lateInitializedFieldNames(cfg, r)
+	// sorting helps produce consistent output for unit test reliability
 	sort.Strings(lateInitializedFieldNames)
 	for _, fName := range lateInitializedFieldNames {
-		if strings.Contains(fName, "..") {
-			// TODO(vijat@): add support for Map and list.
-			continue
-		}
-		// split the field name
+		// split the field name by period
+		// each substring represents a field. No support for '..' currently
 		fNameParts := strings.Split(fName, ".")
+		// fNameIndentLevel tracks the indentation level for every new line added
+		// This variable is incremented when building nested if blocks and decremented when closing those if blocks.
 		fNameIndentLevel := indentLevel
+		// fParentPath keeps track of parent path for any fNamePart
+		fParentPath := ""
 		// for every part except last, perform the nil check
+		// entries in both source and target koVarName should not be nil
 		for i,fNamePart := range fNameParts {
 			indent := strings.Repeat("\t", fNameIndentLevel)
 			// ignore last part
 			if i != len(fNameParts)-1 {
-				out += fmt.Sprintf("%sif %s.Spec.%s != nil && %s.Spec.%s != nil {\n", indent, sourceKoVarName, fNamePart, targetKoVarName, fNamePart)
+				out += fmt.Sprintf("%sif %s.Spec%s.%s != nil && %s.Spec%s.%s != nil {\n", indent, sourceKoVarName, fParentPath, fNamePart, targetKoVarName, fParentPath, fNamePart)
+				// update fParentPath and fNameIndentLevel for next iteration
+				fParentPath = fmt.Sprintf("%s.%s", fParentPath, fNamePart)
 				fNameIndentLevel = fNameIndentLevel + 1
 			}
 		}
 		// for last part, set the lateInitialized field if user did not specify field value and readOne has server side defaulted value.
+		// i.e. field is not nil in sourceKoVarName but is nil in targetkoVarName
 		indent := strings.Repeat("\t", fNameIndentLevel)
 		lastfNamePart := fNameParts[len(fNameParts)-1]
-		out += fmt.Sprintf("%sif %s.Spec.%s != nil && %s.Spec.%s == nil {\n", indent, sourceKoVarName, lastfNamePart,targetKoVarName,lastfNamePart)
+		out += fmt.Sprintf("%sif %s.Spec%s.%s != nil && %s.Spec%s.%s == nil {\n", indent, sourceKoVarName, fParentPath, lastfNamePart,targetKoVarName, fParentPath, lastfNamePart)
 		fNameIndentLevel = fNameIndentLevel + 1
 		indent = strings.Repeat("\t", fNameIndentLevel)
-		out += fmt.Sprintf("%s%s.Spec.%s = %s.Spec.%s\n", indent, targetKoVarName, fName, sourceKoVarName, fName)
-		// Close all if blocks with ptoper indentation
+		out += fmt.Sprintf("%s%s.Spec%s.%s = %s.Spec%s.%s\n", indent, targetKoVarName, fParentPath,lastfNamePart, sourceKoVarName, fParentPath, lastfNamePart)
+		// Close all if blocks with proper indentation
 		fNameIndentLevel = fNameIndentLevel - 1
 		for fNameIndentLevel >= indentLevel {
 			out += fmt.Sprintf("%s}\n", strings.Repeat("\t", fNameIndentLevel))

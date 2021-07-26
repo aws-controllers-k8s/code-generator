@@ -105,7 +105,7 @@ func Test_LateInitializeFromReadOne_NestedPath(t *testing.T) {
 	assert.NotNil(crd.Config().ResourceFields(crd.Names.Original)["ImageScanningConfiguration.ScanOnPush"].LateInitialize)
 	expected :=
 `	if observed.Spec.ImageScanningConfiguration != nil && koWithDefaults.Spec.ImageScanningConfiguration != nil {
-		if observed.Spec.ScanOnPush != nil && koWithDefaults.Spec.ScanOnPush == nil {
+		if observed.Spec.ImageScanningConfiguration.ScanOnPush != nil && koWithDefaults.Spec.ImageScanningConfiguration.ScanOnPush == nil {
 			koWithDefaults.Spec.ImageScanningConfiguration.ScanOnPush = observed.Spec.ImageScanningConfiguration.ScanOnPush
 		}
 	}
