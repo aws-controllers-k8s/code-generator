@@ -143,6 +143,11 @@ func (r *CRD) HasShapeAsMember(toFind string) bool {
 			}
 		}
 	}
+	for _, field := range r.SpecFields {
+		if shapeHasMember(field.ShapeRef.Shape, toFind) {
+			return true
+		}
+	}
 	return false
 }
 
@@ -231,6 +236,17 @@ func (r *CRD) SpecFieldNames() []string {
 	res := make([]string, 0, len(r.SpecFields))
 	for fieldName := range r.SpecFields {
 		res = append(res, fieldName)
+	}
+	sort.Strings(res)
+	return res
+}
+
+// SpecFieldShapeNames returns a sorted slice of shape names for each of the
+// Spec fields
+func (r *CRD) SpecFieldShapeNames() []string {
+	res := make([]string, 0, len(r.SpecFields))
+	for _, field := range r.SpecFields {
+		res = append(res, field.ShapeRef.ShapeName)
 	}
 	sort.Strings(res)
 	return res
