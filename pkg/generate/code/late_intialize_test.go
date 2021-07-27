@@ -112,6 +112,25 @@ func Test_LateInitializeFromReadOne_NestedPath(t *testing.T) {
 	if observed.Spec.Name != nil && koWithDefaults.Spec.Name == nil {
 		koWithDefaults.Spec.Name = observed.Spec.Name
 	}
+	if observed.Spec.another != nil && koWithDefaults.Spec.another != nil {
+		if observed.Spec.another.map != nil && koWithDefaults.Spec.another.map != nil {
+			if observed.Spec.another.map[lastfield] != nil && koWithDefaults.Spec.another.map[lastfield] == nil {
+				koWithDefaults.Spec.another.map[lastfield] = observed.Spec.another.map[lastfield]
+			}
+		}
+	}
+	if observed.Spec.map != nil && koWithDefaults.Spec.map != nil {
+		if observed.Spec.map[subfield] != nil && koWithDefaults.Spec.map[subfield] != nil {
+			if observed.Spec.map[subfield].x != nil && koWithDefaults.Spec.map[subfield].x == nil {
+				koWithDefaults.Spec.map[subfield].x = observed.Spec.map[subfield].x
+			}
+		}
+	}
+	if observed.Spec.some != nil && koWithDefaults.Spec.some != nil {
+		if observed.Spec.some.list != nil && koWithDefaults.Spec.some.list == nil {
+			koWithDefaults.Spec.some.list = observed.Spec.some.list
+		}
+	}
 `
 	assert.Equal(expected, code.LateInitializeFromReadOne(crd.Config(), crd, "observed", "koWithDefaults", 1))
 }

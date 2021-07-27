@@ -74,7 +74,9 @@ func lateInitializedFieldNames(
 }
 
 // LateInitializeFromReadOne returns the gocode to set LateInitialization fields from the ReadOne output
-// TODO(vijat@): add support for Map and list. Currently only structs are supported.
+// Field path separated by '.' indicates members in a struct
+// Field path separated by '..' indicates member/key in a map
+// Note: Unlike Map, updating individual element of a list is not supported. LateInitializing complete list is supported.
 func LateInitializeFromReadOne (
 	cfg *ackgenconfig.Config,
 	r *model.CRD,
@@ -83,7 +85,24 @@ func LateInitializeFromReadOne (
 // Number of levels of indentation to use
 	indentLevel int,
 ) string {
-	//Sample output
+	// Sample generator config:
+	// fields:
+	//      Name:
+	//        late_initialize: {}
+	//      ImageScanningConfiguration.ScanOnPush:
+	//        late_initialize:
+	//          delay_seconds: 5
+	//      map..subfield.x:
+	//        late_initialize:
+	//          delay_seconds: 5
+	//      another.map..lastfield:
+	//        late_initialize:
+	//          delay_seconds: 5
+	//      some.list:
+	//        late_initialize:
+	//          delay_seconds: 10
+	//
+	// Sample output:
 	//if observed.Spec.ImageScanningConfiguration != nil && koWithDefaults.Spec.ImageScanningConfiguration != nil {
 	//	if observed.Spec.ImageScanningConfiguration.ScanOnPush != nil && koWithDefaults.Spec.ImageScanningConfiguration.ScanOnPush == nil {
 	//		koWithDefaults.Spec.ImageScanningConfiguration.ScanOnPush = observed.Spec.ImageScanningConfiguration.ScanOnPush
@@ -91,6 +110,25 @@ func LateInitializeFromReadOne (
 	//}
 	//if observed.Spec.Name != nil && koWithDefaults.Spec.Name == nil {
 	//	koWithDefaults.Spec.Name = observed.Spec.Name
+	//}
+	//if observed.Spec.another != nil && koWithDefaults.Spec.another != nil {
+	//	if observed.Spec.another.map != nil && koWithDefaults.Spec.another.map != nil {
+	//		if observed.Spec.another.map[lastfield] != nil && koWithDefaults.Spec.another.map[lastfield] == nil {
+	//		koWithDefaults.Spec.another.map[lastfield] = observed.Spec.another.map[lastfield]
+	//	}
+	//	}
+	//}
+	//if observed.Spec.map != nil && koWithDefaults.Spec.map != nil {
+	//	if observed.Spec.map[subfield] != nil && koWithDefaults.Spec.map[subfield] != nil {
+	//	if observed.Spec.map[subfield].x != nil && koWithDefaults.Spec.map[subfield].x == nil {
+	//	koWithDefaults.Spec.map[subfield].x = observed.Spec.map[subfield].x
+	//}
+	//}
+	//}
+	//if observed.Spec.some != nil && koWithDefaults.Spec.some != nil {
+	//	if observed.Spec.some.list != nil && koWithDefaults.Spec.some.list == nil {
+	//		koWithDefaults.Spec.some.list = observed.Spec.some.list
+	//	}
 	//}
 	out := ""
 	lateInitializedFieldNames := lateInitializedFieldNames(cfg, r)
@@ -105,26 +143,40 @@ func LateInitializeFromReadOne (
 		fNameIndentLevel := indentLevel
 		// fParentPath keeps track of parent path for any fNamePart
 		fParentPath := ""
+		mapShapedParent := false
 		// for every part except last, perform the nil check
 		// entries in both source and target koVarName should not be nil
 		for i,fNamePart := range fNameParts {
+			if fNamePart == "" {
+				mapShapedParent = true
+				continue
+			}
 			indent := strings.Repeat("\t", fNameIndentLevel)
-			// ignore last part
+			fNamePartAccesor := fmt.Sprintf("Spec%s.%s", fParentPath, fNamePart)
+			if mapShapedParent {
+				fNamePartAccesor = fmt.Sprintf("Spec%s[%s]", fParentPath, fNamePart)
+			}
+			// Handling for all parts except last one
 			if i != len(fNameParts)-1 {
-				out += fmt.Sprintf("%sif %s.Spec%s.%s != nil && %s.Spec%s.%s != nil {\n", indent, sourceKoVarName, fParentPath, fNamePart, targetKoVarName, fParentPath, fNamePart)
+				out += fmt.Sprintf("%sif %s.%s != nil && %s.%s != nil {\n", indent, sourceKoVarName, fNamePartAccesor, targetKoVarName, fNamePartAccesor)
 				// update fParentPath and fNameIndentLevel for next iteration
-				fParentPath = fmt.Sprintf("%s.%s", fParentPath, fNamePart)
+				if mapShapedParent {
+					fParentPath = fmt.Sprintf("%s[%s]", fParentPath, fNamePart)
+					mapShapedParent = false
+				} else {
+					fParentPath = fmt.Sprintf("%s.%s", fParentPath, fNamePart)
+				}
 				fNameIndentLevel = fNameIndentLevel + 1
+			} else {
+				// handle last part here
+				// for last part, set the lateInitialized field if user did not specify field value and readOne has server side defaulted value.
+				// i.e. field is not nil in sourceKoVarName but is nil in targetkoVarName
+				out += fmt.Sprintf("%sif %s.%s != nil && %s.%s == nil {\n", indent, sourceKoVarName, fNamePartAccesor, targetKoVarName, fNamePartAccesor)
+				fNameIndentLevel = fNameIndentLevel + 1
+				indent = strings.Repeat("\t", fNameIndentLevel)
+				out += fmt.Sprintf("%s%s.%s = %s.%s\n", indent, targetKoVarName, fNamePartAccesor, sourceKoVarName, fNamePartAccesor)
 			}
 		}
-		// for last part, set the lateInitialized field if user did not specify field value and readOne has server side defaulted value.
-		// i.e. field is not nil in sourceKoVarName but is nil in targetkoVarName
-		indent := strings.Repeat("\t", fNameIndentLevel)
-		lastfNamePart := fNameParts[len(fNameParts)-1]
-		out += fmt.Sprintf("%sif %s.Spec%s.%s != nil && %s.Spec%s.%s == nil {\n", indent, sourceKoVarName, fParentPath, lastfNamePart,targetKoVarName, fParentPath, lastfNamePart)
-		fNameIndentLevel = fNameIndentLevel + 1
-		indent = strings.Repeat("\t", fNameIndentLevel)
-		out += fmt.Sprintf("%s%s.Spec%s.%s = %s.Spec%s.%s\n", indent, targetKoVarName, fParentPath,lastfNamePart, sourceKoVarName, fParentPath, lastfNamePart)
 		// Close all if blocks with proper indentation
 		fNameIndentLevel = fNameIndentLevel - 1
 		for fNameIndentLevel >= indentLevel {

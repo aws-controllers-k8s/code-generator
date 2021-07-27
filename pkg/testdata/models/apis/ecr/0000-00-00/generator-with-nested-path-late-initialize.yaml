@@ -6,6 +6,15 @@ resources:
       ImageScanningConfiguration.ScanOnPush:
         late_initialize:
           delay_seconds: 5
+      map..subfield.x:
+        late_initialize:
+          delay_seconds: 5
+      another.map..lastfield:
+        late_initialize:
+          delay_seconds: 5
+      some.list:
+        late_initialize:
+          delay_seconds: 10
     exceptions:
       errors:
         404:
