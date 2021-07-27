@@ -15,6 +15,9 @@ resources:
       some.list:
         late_initialize:
           delay_seconds: 10
+      structA.mapB..structC.valueD:
+        late_initialize:
+          delay_seconds: 20
     exceptions:
       errors:
         404:

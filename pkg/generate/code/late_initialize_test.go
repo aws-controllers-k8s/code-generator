@@ -1,6 +1,19 @@
+// Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License"). You may
+// not use this file except in compliance with the License. A copy of the
+// License is located at
+//
+//     http://aws.amazon.com/apache2.0/
+//
+// or in the "license" file accompanying this file. This file is distributed
+// on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+// express or implied. See the License for the specific language governing
+// permissions and limitations under the License.
+
 package code_test
 
-import(
+import (
 	"testing"
 
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate/code"
@@ -80,7 +93,7 @@ func Test_LateInitializeFromReadOne_NonNestedPath(t *testing.T) {
 	assert.NotNil(crd.Config().ResourceFields(crd.Names.Original)["Name"].LateInitialize)
 	assert.NotNil(crd.Config().ResourceFields(crd.Names.Original)["ImageTagMutability"].LateInitialize)
 	expected :=
-`	if observed.Spec.ImageTagMutability != nil && koWithDefaults.Spec.ImageTagMutability == nil {
+		`	if observed.Spec.ImageTagMutability != nil && koWithDefaults.Spec.ImageTagMutability == nil {
 		koWithDefaults.Spec.ImageTagMutability = observed.Spec.ImageTagMutability
 	}
 	if observed.Spec.Name != nil && koWithDefaults.Spec.Name == nil {
@@ -104,7 +117,7 @@ func Test_LateInitializeFromReadOne_NestedPath(t *testing.T) {
 	assert.NotNil(crd.Config().ResourceFields(crd.Names.Original)["Name"].LateInitialize)
 	assert.NotNil(crd.Config().ResourceFields(crd.Names.Original)["ImageScanningConfiguration.ScanOnPush"].LateInitialize)
 	expected :=
-`	if observed.Spec.ImageScanningConfiguration != nil && koWithDefaults.Spec.ImageScanningConfiguration != nil {
+		`	if observed.Spec.ImageScanningConfiguration != nil && koWithDefaults.Spec.ImageScanningConfiguration != nil {
 		if observed.Spec.ImageScanningConfiguration.ScanOnPush != nil && koWithDefaults.Spec.ImageScanningConfiguration.ScanOnPush == nil {
 			koWithDefaults.Spec.ImageScanningConfiguration.ScanOnPush = observed.Spec.ImageScanningConfiguration.ScanOnPush
 		}
@@ -129,6 +142,15 @@ func Test_LateInitializeFromReadOne_NestedPath(t *testing.T) {
 	if observed.Spec.some != nil && koWithDefaults.Spec.some != nil {
 		if observed.Spec.some.list != nil && koWithDefaults.Spec.some.list == nil {
 			koWithDefaults.Spec.some.list = observed.Spec.some.list
+		}
+	}
+	if observed.Spec.structA != nil && koWithDefaults.Spec.structA != nil {
+		if observed.Spec.structA.mapB != nil && koWithDefaults.Spec.structA.mapB != nil {
+			if observed.Spec.structA.mapB[structC] != nil && koWithDefaults.Spec.structA.mapB[structC] != nil {
+				if observed.Spec.structA.mapB[structC].valueD != nil && koWithDefaults.Spec.structA.mapB[structC].valueD == nil {
+					koWithDefaults.Spec.structA.mapB[structC].valueD = observed.Spec.structA.mapB[structC].valueD
+				}
+			}
 		}
 	}
 `
