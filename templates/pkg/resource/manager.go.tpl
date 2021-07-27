@@ -171,7 +171,7 @@ func (rm *resourceManager) ARNFromName(name string) string {
 func (rm *resourceManager) LateInitialize(
 	ctx context.Context,
 	res acktypes.AWSResource,
-) (acktypes.AWSResource, *ackrequeue.RequeueNeededAfter) {
+) (acktypes.AWSResource, error) {
 	rlog := ackrtlog.FromContext(ctx)
 {{- if $hookCode := Hook .CRD "late_initialize_pre_read_one" }}
 {{ $hookCode }}

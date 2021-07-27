@@ -30,7 +30,6 @@ import (
 	ackcfg "github.com/aws-controllers-k8s/runtime/pkg/config"
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackmetrics "github.com/aws-controllers-k8s/runtime/pkg/metrics"
-	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
 )
@@ -118,7 +117,7 @@ func (frm *fakeRM) Delete(context.Context, acktypes.AWSResource) (acktypes.AWSRe
 
 func (frm *fakeRM) ARNFromName(string) string { return "" }
 
-func (frm *fakeRM) LateInitialize(context.Context, acktypes.AWSResource) (acktypes.AWSResource, *ackrequeue.RequeueNeededAfter) {
+func (frm *fakeRM) LateInitialize(context.Context, acktypes.AWSResource) (acktypes.AWSResource, error) {
 	return nil, nil
 }
 
