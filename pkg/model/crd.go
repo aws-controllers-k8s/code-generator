@@ -241,17 +241,6 @@ func (r *CRD) SpecFieldNames() []string {
 	return res
 }
 
-// SpecFieldShapeNames returns a sorted slice of shape names for each of the
-// Spec fields
-func (r *CRD) SpecFieldShapeNames() []string {
-	res := make([]string, 0, len(r.SpecFields))
-	for _, field := range r.SpecFields {
-		res = append(res, field.ShapeRef.ShapeName)
-	}
-	sort.Strings(res)
-	return res
-}
-
 // UnpacksAttributesMap returns true if the underlying API has
 // Get{Resource}Attributes/Set{Resource}Attributes API calls that map real,
 // schema'd fields to a raw `map[string]*string` for this resource (see SNS and

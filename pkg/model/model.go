@@ -279,18 +279,6 @@ func (m *Model) IsShapeUsedInCRDs(shapeName string) bool {
 	return false
 }
 
-// IsShapeInSpec returns true if the supplied shape name is directly used as a 
-// field in the CRD's spec
-func (m *Model) IsShapeInSpec(shapeName string) bool {
-	crds, _ := m.GetCRDs()
-	for _, crd := range crds {
-		if util.InStrings(shapeName, crd.SpecFieldShapeNames()) {
-			return true
-		}
-	}
-	return false
-}
-
 // GetTypeDefs returns a slice of `TypeDef` pointers
 func (m *Model) GetTypeDefs() ([]*TypeDef, error) {
 	if m.typeDefs != nil {
@@ -322,20 +310,17 @@ func (m *Model) GetTypeDefs() ([]*TypeDef, error) {
 			trenames[shapeName] = tdefNames.Camel
 		}
 
-		// Shape is used directly in the spec
-		baseUsed := m.IsShapeInSpec(shapeName)
-
 		attrs := map[string]*Attr{}
 		for memberName, memberRef := range shape.MemberRefs {
 			memberNames := names.New(memberName)
 			memberShape := memberRef.Shape
-			if !baseUsed && !m.IsShapeUsedInCRDs(memberShape.ShapeName) {
+			if !m.IsShapeUsedInCRDs(memberShape.ShapeName) {
 				continue
 			}
 			gt := m.getShapeCleanGoType(memberShape)
 			attrs[memberName] = NewAttr(memberNames, gt, memberShape)
 		}
-		if !baseUsed && len(attrs) == 0 {
+		if len(attrs) == 0 {
 			// Just ignore these...
 			continue
 		}
