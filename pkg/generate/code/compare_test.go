@@ -81,6 +81,29 @@ func TestCompareResource_S3_Bucket(t *testing.T) {
 			delta.Add("Spec.GrantWriteACP", a.ko.Spec.GrantWriteACP, b.ko.Spec.GrantWriteACP)
 		}
 	}
+	if ackcompare.HasNilDifference(a.ko.Spec.Logging, b.ko.Spec.Logging) {
+		delta.Add("Spec.Logging", a.ko.Spec.Logging, b.ko.Spec.Logging)
+	} else if a.ko.Spec.Logging != nil && b.ko.Spec.Logging != nil {
+		if ackcompare.HasNilDifference(a.ko.Spec.Logging.LoggingEnabled, b.ko.Spec.Logging.LoggingEnabled) {
+			delta.Add("Spec.Logging.LoggingEnabled", a.ko.Spec.Logging.LoggingEnabled, b.ko.Spec.Logging.LoggingEnabled)
+		} else if a.ko.Spec.Logging.LoggingEnabled != nil && b.ko.Spec.Logging.LoggingEnabled != nil {
+			if ackcompare.HasNilDifference(a.ko.Spec.Logging.LoggingEnabled.TargetBucket, b.ko.Spec.Logging.LoggingEnabled.TargetBucket) {
+				delta.Add("Spec.Logging.LoggingEnabled.TargetBucket", a.ko.Spec.Logging.LoggingEnabled.TargetBucket, b.ko.Spec.Logging.LoggingEnabled.TargetBucket)
+			} else if a.ko.Spec.Logging.LoggingEnabled.TargetBucket != nil && b.ko.Spec.Logging.LoggingEnabled.TargetBucket != nil {
+				if *a.ko.Spec.Logging.LoggingEnabled.TargetBucket != *b.ko.Spec.Logging.LoggingEnabled.TargetBucket {
+					delta.Add("Spec.Logging.LoggingEnabled.TargetBucket", a.ko.Spec.Logging.LoggingEnabled.TargetBucket, b.ko.Spec.Logging.LoggingEnabled.TargetBucket)
+				}
+			}
+
+			if ackcompare.HasNilDifference(a.ko.Spec.Logging.LoggingEnabled.TargetPrefix, b.ko.Spec.Logging.LoggingEnabled.TargetPrefix) {
+				delta.Add("Spec.Logging.LoggingEnabled.TargetPrefix", a.ko.Spec.Logging.LoggingEnabled.TargetPrefix, b.ko.Spec.Logging.LoggingEnabled.TargetPrefix)
+			} else if a.ko.Spec.Logging.LoggingEnabled.TargetPrefix != nil && b.ko.Spec.Logging.LoggingEnabled.TargetPrefix != nil {
+				if *a.ko.Spec.Logging.LoggingEnabled.TargetPrefix != *b.ko.Spec.Logging.LoggingEnabled.TargetPrefix {
+					delta.Add("Spec.Logging.LoggingEnabled.TargetPrefix", a.ko.Spec.Logging.LoggingEnabled.TargetPrefix, b.ko.Spec.Logging.LoggingEnabled.TargetPrefix)
+				}
+			}
+		}
+	}
 	if ackcompare.HasNilDifference(a.ko.Spec.Name, b.ko.Spec.Name) {
 		delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
 	} else if a.ko.Spec.Name != nil && b.ko.Spec.Name != nil {
