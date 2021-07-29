@@ -75,6 +75,7 @@ func TestS3_Bucket(t *testing.T) {
 		"GrantReadACP",
 		"GrantWrite",
 		"GrantWriteACP",
+		"Logging",
 		// NOTE(jaypipes): Original field name in CreateBucket input is
 		// "Bucket" but should be renamed to "Name" from the generator.yaml (in
 		// order to match with the name of the field in the Output shape for a
@@ -88,4 +89,13 @@ func TestS3_Bucket(t *testing.T) {
 		"Location",
 	}
 	assert.Equal(expStatusFieldCamel, attrCamelNames(statusFields))
+
+	expTypeDefCamel := []string{
+		"BucketLoggingStatus",
+		"LoggingEnabled",
+		"TargetGrant",
+	}
+	for _, typeDef := range expTypeDefCamel {
+		assert.NotNil(testutil.GetTypeDefByName(t, g, typeDef))
+	}
 }
