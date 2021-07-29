@@ -84,6 +84,7 @@ func APIs(
 		crdFileName := strcase.ToSnake(crd.Kind) + ".go"
 		crdVars := &templateCRDVars{
 			metaVars,
+			m.SDKAPI,
 			crd,
 		}
 		if err = ts.Add(crdFileName, "apis/crd.go.tpl", crdVars); err != nil {
@@ -105,5 +106,6 @@ type templateAPIVars struct {
 // code for a single top-level resource's API definition
 type templateCRDVars struct {
 	templateset.MetaVars
-	CRD *ackmodel.CRD
+	SDKAPI *ackmodel.SDKAPI
+	CRD    *ackmodel.CRD
 }
