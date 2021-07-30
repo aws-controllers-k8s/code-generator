@@ -79,7 +79,7 @@ Environment variables:
                                         Default: services/{SERVICE}
   ACK_GENERATE_IMAGE_REPOSITORY:        Specify a Docker image repository to use
                                         for release artifacts
-                                        Default: public.ecr.aws/u2r4f3v7/{SERVICE}-controller
+                                        Default: public.ecr.aws/aws-controllers-k8s/{SERVICE}-controller
   ACK_GENERATE_SERVICE_ACCOUNT_NAME:    Name of the Kubernetes Service Account and
                                         Cluster Role to use in Helm chart.
                                         Default: $ACK_GENERATE_SERVICE_ACCOUNT_NAME
@@ -121,8 +121,7 @@ SERVICE=$(echo "$1" | tr '[:upper:]' '[:lower:]')
 DEFAULT_SERVICE_CONTROLLER_SOURCE_PATH="$ROOT_DIR/../$SERVICE-controller"
 SERVICE_CONTROLLER_SOURCE_PATH=${SERVICE_CONTROLLER_SOURCE_PATH:-$DEFAULT_SERVICE_CONTROLLER_SOURCE_PATH}
 
-# TODO(vijat@): replace "u2r4f3v7" with aws-controllers-k8s
-DEFAULT_IMAGE_REPOSITORY="public.ecr.aws/u2r4f3v7/$SERVICE-controller"
+DEFAULT_IMAGE_REPOSITORY="public.ecr.aws/aws-controllers-k8s/$SERVICE-controller"
 ACK_GENERATE_IMAGE_REPOSITORY=${ACK_GENERATE_IMAGE_REPOSITORY:-"$DEFAULT_IMAGE_REPOSITORY"}
 
 if [[ ! -d $SERVICE_CONTROLLER_SOURCE_PATH ]]; then

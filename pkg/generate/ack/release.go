@@ -23,6 +23,7 @@ import (
 
 var (
 	releaseTemplatePaths = []string{
+		"helm/templates/cluster-role-binding.yaml.tpl",
 		"helm/Chart.yaml.tpl",
 		"helm/values.yaml.tpl",
 		"helm/templates/role-reader.yaml.tpl",
@@ -31,7 +32,6 @@ var (
 	releaseIncludePaths = []string{}
 	releaseCopyPaths    = []string{
 		"helm/templates/_helpers.tpl",
-		"helm/templates/cluster-role-binding.yaml",
 		"helm/templates/deployment.yaml",
 		"helm/templates/metrics-service.yaml",
 		"helm/templates/service-account.yaml",
