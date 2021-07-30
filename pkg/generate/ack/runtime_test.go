@@ -15,6 +15,7 @@ package ack
 
 import (
 	"context"
+	"reflect"
 	"testing"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -159,4 +160,11 @@ func TestRuntimeDependency(t *testing.T) {
 
 	// ACK runtime 0.7.0 introduced SecretNotFound error.
 	require.NotNil(ackerr.SecretNotFound)
+
+	// ACK runtime 0.8.0 removed the unused UpdateCRStatus method from
+	// AWSResourceDescriptor
+	rd := new(acktypes.AWSResourceDescriptor)
+	rdType := reflect.TypeOf(rd)
+	_, found := rdType.MethodByName("UpdateCRStatus")
+	require.False(found)
 }
