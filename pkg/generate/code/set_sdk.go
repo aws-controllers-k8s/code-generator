@@ -739,7 +739,7 @@ func setSDKForContainer(
 ) string {
 	switch targetShapeRef.Shape.Type {
 	case "structure":
-		return setSDKForStruct(
+		return SetSDKForStruct(
 			cfg, r,
 			targetFieldName,
 			targetVarName,
@@ -874,9 +874,9 @@ func setSDKForSecret(
 	return out
 }
 
-// setSDKForStruct returns a string of Go code that sets a target variable
+// SetSDKForStruct returns a string of Go code that sets a target variable
 // value to a source variable when the type of the source variable is a struct.
-func setSDKForStruct(
+func SetSDKForStruct(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,
 	// The name of the CR field we're outputting for

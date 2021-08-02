@@ -990,7 +990,7 @@ func setResourceForContainer(
 ) string {
 	switch sourceShapeRef.Shape.Type {
 	case "structure":
-		return setResourceForStruct(
+		return SetResourceForStruct(
 			cfg, r,
 			targetFieldName,
 			targetVarName,
@@ -1031,9 +1031,9 @@ func setResourceForContainer(
 	}
 }
 
-// setResourceForStruct returns a string of Go code that sets a target variable
+// SetResourceForStruct returns a string of Go code that sets a target variable
 // value to a source variable when the type of the source variable is a struct.
-func setResourceForStruct(
+func SetResourceForStruct(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,
 	// The name of the CR field we're outputting for

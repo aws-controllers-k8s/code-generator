@@ -22,6 +22,7 @@ import (
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate/templateset"
 	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
+	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
 )
 
 var (
@@ -93,6 +94,12 @@ var (
 		"GoCodeSetDeleteInput": func(r *ackmodel.CRD, sourceVarName string, targetVarName string, indentLevel int) string {
 			return code.SetSDK(r.Config(), r, ackmodel.OpTypeDelete, sourceVarName, targetVarName, indentLevel)
 		},
+		"GoCodeSetSDKForStruct": func(r *ackmodel.CRD, targetFieldName string, targetVarName string, targetShapeRef *awssdkmodel.ShapeRef, sourceFieldPath string, sourceVarName string, indentLevel int) string {
+			return code.SetSDKForStruct(r.Config(), r, targetFieldName, targetVarName, targetShapeRef, sourceFieldPath, sourceVarName, indentLevel)
+		},
+		"GoCodeSetResourceForStruct": func(r *ackmodel.CRD, targetFieldName string, targetVarName string, targetShapeRef *awssdkmodel.ShapeRef, sourceVarName string, sourceShapeRef *awssdkmodel.ShapeRef, indentLevel int) string {
+			return code.SetResourceForStruct(r.Config(), r, targetFieldName, targetVarName, targetShapeRef, sourceVarName, sourceShapeRef, indentLevel)
+		},
 		"GoCodeCompare": func(r *ackmodel.CRD, deltaVarName string, sourceVarName string, targetVarName string, indentLevel int) string {
 			return code.CompareResource(r.Config(), r, deltaVarName, sourceVarName, targetVarName, indentLevel)
 		},
@@ -132,6 +139,7 @@ func Controller(
 	controllerFuncMap["Hook"] = func(r *ackmodel.CRD, hookID string) string {
 		crdVars := &templateCRDVars{
 			metaVars,
+			m.SDKAPI,
 			r,
 		}
 		code, err := ResourceHookCode(templateBasePaths, r, hookID, crdVars, controllerFuncMap)
@@ -165,6 +173,7 @@ func Controller(
 			tplPath := filepath.Join("pkg/resource", target)
 			crdVars := &templateCRDVars{
 				metaVars,
+				m.SDKAPI,
 				crd,
 			}
 			if err = ts.Add(outPath, tplPath, crdVars); err != nil {
