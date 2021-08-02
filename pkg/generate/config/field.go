@@ -139,9 +139,14 @@ type PrintFieldConfig struct {
 // LateInitializeConfig contains instructions for how to handle the
 // retrieval and setting of server-side defaulted fields.
 type LateInitializeConfig struct {
-	// DelaySeconds provides the number of seconds to wait to set
-	// late initialized field after successful Create/Update call
-	DelaySeconds int `json:"delay_seconds,omitempty"`
+	// MinBackoffSeconds provides the minimum backoff to attempt late initialization again after an unsuccessful
+	// attempt to late initialized fields from ReadOne output
+	// For every attempt, the reconciler will calculate the delay between MinBackoffSeconds and MaxBackoffSeconds
+	// using exponential backoff and retry strategy
+	MinBackoffSeconds int `json:"min_backoff_seconds,omitempty"`
+	// MaxBackoffSeconds provide the maximum allowed backoff when retrying late initialization after an
+	// unsuccessful attempt.
+	MaxBackoffSeconds int `json:"max_backoff_seconds"`
 }
 
 // FieldConfig contains instructions to the code generator about how

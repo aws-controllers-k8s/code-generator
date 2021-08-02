@@ -22,7 +22,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test_FindLateInitializedFieldsWithDelay_EmptyFieldConfig(t *testing.T) {
+func Test_FindLateInitializedFieldNames_EmptyFieldConfig(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
@@ -32,10 +32,10 @@ func Test_FindLateInitializedFieldsWithDelay_EmptyFieldConfig(t *testing.T) {
 	require.NotNil(crd)
 	// NO fieldConfig
 	assert.Empty(crd.Config().ResourceFields(crd.Names.Original))
-	assert.Empty(code.FindLateInitializedFieldsWithDelay(crd.Config(), crd, 1))
+	assert.Empty(code.FindLateInitializedFieldNames(crd.Config(), crd, "lateInitializeFieldNames", 1))
 }
 
-func Test_FindLateInitializedFieldsWithDelay_NoLateInitializations(t *testing.T) {
+func Test_FindLateInitializedFieldNames_NoLateInitializations(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
@@ -46,10 +46,10 @@ func Test_FindLateInitializedFieldsWithDelay_NoLateInitializations(t *testing.T)
 	// FieldConfig without lateInitialize
 	assert.NotEmpty(crd.Config().ResourceFields(crd.Names.Original)["Name"])
 	assert.Nil(crd.Config().ResourceFields(crd.Names.Original)["Name"].LateInitialize)
-	assert.Empty(code.FindLateInitializedFieldsWithDelay(crd.Config(), crd, 1))
+	assert.Empty(code.FindLateInitializedFieldNames(crd.Config(), crd, "lateInitializeFieldNames", 1))
 }
 
-func Test_FindLateInitializedFieldsWithDelay(t *testing.T) {
+func Test_FindLateInitializedFieldNames(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
@@ -57,13 +57,14 @@ func Test_FindLateInitializedFieldsWithDelay(t *testing.T) {
 
 	crd := testutil.GetCRDByName(t, g, "Repository")
 	require.NotNil(crd)
-	// FieldConfig without lateInitialize
 	assert.NotEmpty(crd.Config().ResourceFields(crd.Names.Original)["Name"])
 	assert.NotEmpty(crd.Config().ResourceFields(crd.Names.Original)["ImageTagMutability"])
 	assert.NotNil(crd.Config().ResourceFields(crd.Names.Original)["Name"].LateInitialize)
 	assert.NotNil(crd.Config().ResourceFields(crd.Names.Original)["ImageTagMutability"].LateInitialize)
-	expected := "\tvar lateInitializeFieldToDelaySeconds = map[string]int{\"ImageTagMutability\":5,\"Name\":0,}\n"
-	assert.Equal(expected, code.FindLateInitializedFieldsWithDelay(crd.Config(), crd, 1))
+	expected :=
+		`	var lateInitializeFieldNames = []string{"ImageTagMutability","Name",}
+`
+	assert.Equal(expected, code.FindLateInitializedFieldNames(crd.Config(), crd, "lateInitializeFieldNames", 1))
 }
 
 func Test_LateInitializeFromReadOne_NoFieldsToLateInitialize(t *testing.T) {
@@ -87,7 +88,6 @@ func Test_LateInitializeFromReadOne_NonNestedPath(t *testing.T) {
 
 	crd := testutil.GetCRDByName(t, g, "Repository")
 	require.NotNil(crd)
-	// FieldConfig without lateInitialize
 	assert.NotEmpty(crd.Config().ResourceFields(crd.Names.Original)["Name"])
 	assert.NotEmpty(crd.Config().ResourceFields(crd.Names.Original)["ImageTagMutability"])
 	assert.NotNil(crd.Config().ResourceFields(crd.Names.Original)["Name"].LateInitialize)
@@ -111,7 +111,6 @@ func Test_LateInitializeFromReadOne_NestedPath(t *testing.T) {
 
 	crd := testutil.GetCRDByName(t, g, "Repository")
 	require.NotNil(crd)
-	// FieldConfig without lateInitialize
 	assert.NotEmpty(crd.Config().ResourceFields(crd.Names.Original)["Name"])
 	assert.NotEmpty(crd.Config().ResourceFields(crd.Names.Original)["ImageScanningConfiguration.ScanOnPush"])
 	assert.NotNil(crd.Config().ResourceFields(crd.Names.Original)["Name"].LateInitialize)
@@ -127,15 +126,15 @@ func Test_LateInitializeFromReadOne_NestedPath(t *testing.T) {
 	}
 	if observed.Spec.another != nil && koWithDefaults.Spec.another != nil {
 		if observed.Spec.another.map != nil && koWithDefaults.Spec.another.map != nil {
-			if observed.Spec.another.map[lastfield] != nil && koWithDefaults.Spec.another.map[lastfield] == nil {
-				koWithDefaults.Spec.another.map[lastfield] = observed.Spec.another.map[lastfield]
+			if observed.Spec.another.map["lastfield"] != nil && koWithDefaults.Spec.another.map["lastfield"] == nil {
+				koWithDefaults.Spec.another.map["lastfield"] = observed.Spec.another.map["lastfield"]
 			}
 		}
 	}
 	if observed.Spec.map != nil && koWithDefaults.Spec.map != nil {
-		if observed.Spec.map[subfield] != nil && koWithDefaults.Spec.map[subfield] != nil {
-			if observed.Spec.map[subfield].x != nil && koWithDefaults.Spec.map[subfield].x == nil {
-				koWithDefaults.Spec.map[subfield].x = observed.Spec.map[subfield].x
+		if observed.Spec.map["subfield"] != nil && koWithDefaults.Spec.map["subfield"] != nil {
+			if observed.Spec.map["subfield"].x != nil && koWithDefaults.Spec.map["subfield"].x == nil {
+				koWithDefaults.Spec.map["subfield"].x = observed.Spec.map["subfield"].x
 			}
 		}
 	}
@@ -146,13 +145,131 @@ func Test_LateInitializeFromReadOne_NestedPath(t *testing.T) {
 	}
 	if observed.Spec.structA != nil && koWithDefaults.Spec.structA != nil {
 		if observed.Spec.structA.mapB != nil && koWithDefaults.Spec.structA.mapB != nil {
-			if observed.Spec.structA.mapB[structC] != nil && koWithDefaults.Spec.structA.mapB[structC] != nil {
-				if observed.Spec.structA.mapB[structC].valueD != nil && koWithDefaults.Spec.structA.mapB[structC].valueD == nil {
-					koWithDefaults.Spec.structA.mapB[structC].valueD = observed.Spec.structA.mapB[structC].valueD
+			if observed.Spec.structA.mapB["structC"] != nil && koWithDefaults.Spec.structA.mapB["structC"] != nil {
+				if observed.Spec.structA.mapB["structC"].valueD != nil && koWithDefaults.Spec.structA.mapB["structC"].valueD == nil {
+					koWithDefaults.Spec.structA.mapB["structC"].valueD = observed.Spec.structA.mapB["structC"].valueD
 				}
 			}
 		}
 	}
 `
 	assert.Equal(expected, code.LateInitializeFromReadOne(crd.Config(), crd, "observed", "koWithDefaults", 1))
+}
+
+//func Test_FindUninitializedFieldNames(t *testing.T) {
+//	assert := assert.New(t)
+//	require := require.New(t)
+//
+//	g := testutil.NewModelForServiceWithOptions(t, "ecr", &testutil.TestingModelOptions{GeneratorConfigFile: "generator-with-nested-path-late-initialize.yaml"})
+//
+//	crd := testutil.GetCRDByName(t, g, "Repository")
+//	require.NotNil(crd)
+//	assert.NotEmpty(crd.Config().ResourceFields(crd.Names.Original)["Name"])
+//	assert.NotEmpty(crd.Config().ResourceFields(crd.Names.Original)["ImageScanningConfiguration.ScanOnPush"])
+//	assert.NotNil(crd.Config().ResourceFields(crd.Names.Original)["Name"].LateInitialize)
+//	assert.NotNil(crd.Config().ResourceFields(crd.Names.Original)["ImageScanningConfiguration.ScanOnPush"].LateInitialize)
+//	expected :=
+//		`	if koWithDefaults.Spec.ImageScanningConfiguration != nil {
+//		if koWithDefaults.Spec.ImageScanningConfiguration.ScanOnPush == nil {
+//			uninitializedFieldNames = append(uninitializedFieldNames,"ImageScanningConfiguration.ScanOnPush")
+//		}
+//	}
+//	if koWithDefaults.Spec.Name == nil {
+//		uninitializedFieldNames = append(uninitializedFieldNames,"Name")
+//	}
+//	if koWithDefaults.Spec.another != nil {
+//		if koWithDefaults.Spec.another.map != nil {
+//			if koWithDefaults.Spec.another.map["lastfield"] == nil {
+//				uninitializedFieldNames = append(uninitializedFieldNames,"another.map..lastfield")
+//			}
+//		}
+//	}
+//	if koWithDefaults.Spec.map != nil {
+//		if koWithDefaults.Spec.map["subfield"] != nil {
+//			if koWithDefaults.Spec.map["subfield"].x == nil {
+//				uninitializedFieldNames = append(uninitializedFieldNames,"map..subfield.x")
+//			}
+//		}
+//	}
+//	if koWithDefaults.Spec.some != nil {
+//		if koWithDefaults.Spec.some.list == nil {
+//			uninitializedFieldNames = append(uninitializedFieldNames,"some.list")
+//		}
+//	}
+//	if koWithDefaults.Spec.structA != nil {
+//		if koWithDefaults.Spec.structA.mapB != nil {
+//			if koWithDefaults.Spec.structA.mapB["structC"] != nil {
+//				if koWithDefaults.Spec.structA.mapB["structC"].valueD == nil {
+//					uninitializedFieldNames = append(uninitializedFieldNames,"structA.mapB..structC.valueD")
+//				}
+//			}
+//		}
+//	}
+//`
+//	assert.Equal(expected, code.FindUninitializedFieldNames(crd.Config(), crd, "koWithDefaults", "uninitializedFieldNames", 1))
+//}
+
+func Test_CalculateRequeueDelay(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "ecr", &testutil.TestingModelOptions{GeneratorConfigFile: "generator-with-nested-path-late-initialize.yaml"})
+
+	crd := testutil.GetCRDByName(t, g, "Repository")
+	require.NotNil(crd)
+	assert.NotEmpty(crd.Config().ResourceFields(crd.Names.Original)["Name"])
+	assert.NotEmpty(crd.Config().ResourceFields(crd.Names.Original)["ImageScanningConfiguration.ScanOnPush"])
+	assert.NotNil(crd.Config().ResourceFields(crd.Names.Original)["Name"].LateInitialize)
+	assert.NotNil(crd.Config().ResourceFields(crd.Names.Original)["ImageScanningConfiguration.ScanOnPush"].LateInitialize)
+	expected :=
+		`	if koWithDefaults.Spec.ImageScanningConfiguration != nil {
+		if koWithDefaults.Spec.ImageScanningConfiguration.ScanOnPush == nil {
+			delay := (&acktypes.LateInitializationRetryConfig{MinBackoffSeconds:5, MaxBackoffSeconds: 15,}).GetExponentialBackoffSeconds(numInitAttempt)
+			requeueDelay = int(math.Max(float64(requeueDelay), float64(delay)))
+			incompleteInitialization = true
+		}
+	}
+	if koWithDefaults.Spec.Name == nil {
+		delay := (&acktypes.LateInitializationRetryConfig{MinBackoffSeconds:0, MaxBackoffSeconds: 0,}).GetExponentialBackoffSeconds(numInitAttempt)
+		requeueDelay = int(math.Max(float64(requeueDelay), float64(delay)))
+		incompleteInitialization = true
+	}
+	if koWithDefaults.Spec.another != nil {
+		if koWithDefaults.Spec.another.map != nil {
+			if koWithDefaults.Spec.another.map["lastfield"] == nil {
+				delay := (&acktypes.LateInitializationRetryConfig{MinBackoffSeconds:5, MaxBackoffSeconds: 0,}).GetExponentialBackoffSeconds(numInitAttempt)
+				requeueDelay = int(math.Max(float64(requeueDelay), float64(delay)))
+				incompleteInitialization = true
+			}
+		}
+	}
+	if koWithDefaults.Spec.map != nil {
+		if koWithDefaults.Spec.map["subfield"] != nil {
+			if koWithDefaults.Spec.map["subfield"].x == nil {
+				delay := (&acktypes.LateInitializationRetryConfig{MinBackoffSeconds:5, MaxBackoffSeconds: 0,}).GetExponentialBackoffSeconds(numInitAttempt)
+				requeueDelay = int(math.Max(float64(requeueDelay), float64(delay)))
+				incompleteInitialization = true
+			}
+		}
+	}
+	if koWithDefaults.Spec.some != nil {
+		if koWithDefaults.Spec.some.list == nil {
+			delay := (&acktypes.LateInitializationRetryConfig{MinBackoffSeconds:10, MaxBackoffSeconds: 0,}).GetExponentialBackoffSeconds(numInitAttempt)
+			requeueDelay = int(math.Max(float64(requeueDelay), float64(delay)))
+			incompleteInitialization = true
+		}
+	}
+	if koWithDefaults.Spec.structA != nil {
+		if koWithDefaults.Spec.structA.mapB != nil {
+			if koWithDefaults.Spec.structA.mapB["structC"] != nil {
+				if koWithDefaults.Spec.structA.mapB["structC"].valueD == nil {
+					delay := (&acktypes.LateInitializationRetryConfig{MinBackoffSeconds:20, MaxBackoffSeconds: 0,}).GetExponentialBackoffSeconds(numInitAttempt)
+					requeueDelay = int(math.Max(float64(requeueDelay), float64(delay)))
+					incompleteInitialization = true
+				}
+			}
+		}
+	}
+`
+	assert.Equal(expected, code.CalculateRequeueDelay(crd.Config(), crd, "koWithDefaults", "numInitAttempt", "requeueDelay", "incompleteInitialization", 1))
 }

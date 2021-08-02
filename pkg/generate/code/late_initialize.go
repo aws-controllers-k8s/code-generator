@@ -22,55 +22,51 @@ import (
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 )
 
-// FindLateInitializedFieldsWithDelay outputs the code to create a map of fieldName to
-// late intialization delay in seconds.
-func FindLateInitializedFieldsWithDelay(
+// FindLateInitializedFieldNames outputs the code to create a sorted slice of fieldNames to
+// late initialize. This slice helps with short circuiting the AWSResourceManager.LateInitialize()
+// method if there are no fields to late initialize.
+//
+// Sample Output:
+// var lateInitializeFieldNames = []string{"Name"}
+func FindLateInitializedFieldNames(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,
+	resVarName string,
 	// Number of levels of indentation to use
 	indentLevel int,
 ) string {
-	//Sample output
-	//var lateInitializeFieldToDelaySeconds = map[string]int{"Name": 0}
 	out := ""
 	indent := strings.Repeat("\t", indentLevel)
-	fieldNameToConfig := cfg.ResourceFields(r.Names.Original)
-	if len(fieldNameToConfig) > 0 {
-		fieldNameToDelaySeconds := make(map[string]int)
-		sortedLateInitFieldNames := make([]string, 0)
-		for fName, fConfig := range fieldNameToConfig {
-			if fConfig != nil && fConfig.LateInitialize != nil {
-				fieldNameToDelaySeconds[fName] = fConfig.LateInitialize.DelaySeconds
-				sortedLateInitFieldNames = append(sortedLateInitFieldNames, fName)
-			}
+	sortedFieldNames, _ := getSortedLateInitFieldsAndConfig(cfg, r)
+	if len(sortedFieldNames) > 0 {
+		out += fmt.Sprintf("%svar %s = []string{", indent, resVarName)
+		for _, fName := range sortedFieldNames {
+			out += fmt.Sprintf("%q,", fName)
 		}
-		sort.Strings(sortedLateInitFieldNames)
-		lateInitFieldToDelayValues := ""
-		if len(sortedLateInitFieldNames) > 0 {
-			for _, fName := range sortedLateInitFieldNames {
-				lateInitFieldToDelayValues += fmt.Sprintf("%q:%d,", fName, fieldNameToDelaySeconds[fName])
-			}
-			out += fmt.Sprintf("%svar lateInitializeFieldToDelaySeconds = map[string]int{%s}\n", indent, lateInitFieldToDelayValues)
-		}
+		out += "}\n"
 	}
 	return out
 }
 
-// findLateInitializedFieldNames returns the field names which have LateInitialization configuration inside generator config
-func findLateInitializedFieldNames(
+// getSortedLateInitFieldsAndConfig returns the field names in alphabetically sorted order which have LateInitialization
+// configuration inside generator config and also a map from fieldName to LateInitializationConfig.
+func getSortedLateInitFieldsAndConfig(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,
-) []string {
-	fieldNames := make([]string, 0)
+) ([]string, map[string]*ackgenconfig.LateInitializeConfig) {
 	fieldNameToConfig := cfg.ResourceFields(r.Names.Original)
+	fieldNameToLateInitConfig := make(map[string]*ackgenconfig.LateInitializeConfig)
+	sortedLateInitFieldNames := make([]string, 0)
 	if len(fieldNameToConfig) > 0 {
 		for fName, fConfig := range fieldNameToConfig {
 			if fConfig != nil && fConfig.LateInitialize != nil {
-				fieldNames = append(fieldNames, fName)
+				fieldNameToLateInitConfig[fName] = fConfig.LateInitialize
+				sortedLateInitFieldNames = append(sortedLateInitFieldNames, fName)
 			}
 		}
+		sort.Strings(sortedLateInitFieldNames)
 	}
-	return fieldNames
+	return sortedLateInitFieldNames, fieldNameToLateInitConfig
 }
 
 // LateInitializeFromReadOne returns the gocode to set LateInitialization fields from the ReadOne output
@@ -132,13 +128,11 @@ func LateInitializeFromReadOne(
 	indentLevel int,
 ) string {
 	out := ""
-	lateInitializedFieldNames := findLateInitializedFieldNames(cfg, r)
-	// sorting helps produce consistent output for unit test reliability
-	sort.Strings(lateInitializedFieldNames)
+	lateInitializedFieldNames, _ := getSortedLateInitFieldsAndConfig(cfg, r)
 	// TODO(vijat@): Add validation for correct field path in lateInitializedFieldNames
 	for _, fName := range lateInitializedFieldNames {
 		// split the field name by period
-		// each substring represents a field. No support for '..' currently
+		// each substring represents a field.
 		fNameParts := strings.Split(fName, ".")
 		// fNameIndentLevel tracks the indentation level for every new line added
 		// This variable is incremented when building nested if blocks and decremented when closing those if blocks.
@@ -156,14 +150,14 @@ func LateInitializeFromReadOne(
 			indent := strings.Repeat("\t", fNameIndentLevel)
 			fNamePartAccesor := fmt.Sprintf("Spec%s.%s", fParentPath, fNamePart)
 			if mapShapedParent {
-				fNamePartAccesor = fmt.Sprintf("Spec%s[%s]", fParentPath, fNamePart)
+				fNamePartAccesor = fmt.Sprintf("Spec%s[%q]", fParentPath, fNamePart)
 			}
 			// Handling for all parts except last one
 			if i != len(fNameParts)-1 {
 				out += fmt.Sprintf("%sif %s.%s != nil && %s.%s != nil {\n", indent, sourceKoVarName, fNamePartAccesor, targetKoVarName, fNamePartAccesor)
 				// update fParentPath and fNameIndentLevel for next iteration
 				if mapShapedParent {
-					fParentPath = fmt.Sprintf("%s[%s]", fParentPath, fNamePart)
+					fParentPath = fmt.Sprintf("%s[%q]", fParentPath, fNamePart)
 					mapShapedParent = false
 				} else {
 					fParentPath = fmt.Sprintf("%s.%s", fParentPath, fNamePart)
@@ -177,6 +171,149 @@ func LateInitializeFromReadOne(
 				fNameIndentLevel = fNameIndentLevel + 1
 				indent = strings.Repeat("\t", fNameIndentLevel)
 				out += fmt.Sprintf("%s%s.%s = %s.%s\n", indent, targetKoVarName, fNamePartAccesor, sourceKoVarName, fNamePartAccesor)
+			}
+		}
+		// Close all if blocks with proper indentation
+		fNameIndentLevel = fNameIndentLevel - 1
+		for fNameIndentLevel >= indentLevel {
+			out += fmt.Sprintf("%s}\n", strings.Repeat("\t", fNameIndentLevel))
+			fNameIndentLevel = fNameIndentLevel - 1
+		}
+	}
+	return out
+}
+
+// CalculateRequeueDelay returns the go code which
+// a) checks whether all the fields are late initialized and
+// b) if any fields are not initialized, updates the 'delayVarNameInt' and 'incompleteInitializationVarNameBool', which
+//    are used to requeue the requests based on the delay configured in LateInitializationConfig.
+//
+// Sample GeneratorConfig:
+// fields:
+//      Name:
+//        late_initialize: {}
+//      ImageScanningConfiguration.ScanOnPush:
+//        late_initialize:
+//          min_backoff_seconds: 5
+//          max_backoff_seconds: 15
+//      map..subfield.x:
+//        late_initialize:
+//          min_backoff_seconds: 5
+//      another.map..lastfield:
+//        late_initialize:
+//          min_backoff_seconds: 5
+//      some.list:
+//        late_initialize:
+//          min_backoff_seconds: 10
+//      structA.mapB..structC.valueD:
+//        late_initialize:
+//          min_backoff_seconds: 20
+//
+//
+// Sample Output:
+// if koWithDefaults.Spec.ImageScanningConfiguration != nil {
+//		if koWithDefaults.Spec.ImageScanningConfiguration.ScanOnPush == nil {
+//			delay := (&acktypes.LateInitializationRetryConfig{MinBackoffSeconds:5, MaxBackoffSeconds: 15,}).GetExponentialBackoffSeconds(numInitAttempt)
+//			requeueDelay = int(math.Max(float64(requeueDelay), float64(delay)))
+//			incompleteInitialization = true
+//		}
+//	}
+//	if koWithDefaults.Spec.Name == nil {
+//		delay := (&acktypes.LateInitializationRetryConfig{MinBackoffSeconds:0, MaxBackoffSeconds: 0,}).GetExponentialBackoffSeconds(numInitAttempt)
+//		requeueDelay = int(math.Max(float64(requeueDelay), float64(delay)))
+//		incompleteInitialization = true
+//	}
+//	if koWithDefaults.Spec.another != nil {
+//		if koWithDefaults.Spec.another.map != nil {
+//			if koWithDefaults.Spec.another.map["lastfield"] == nil {
+//				delay := (&acktypes.LateInitializationRetryConfig{MinBackoffSeconds:5, MaxBackoffSeconds: 0,}).GetExponentialBackoffSeconds(numInitAttempt)
+//				requeueDelay = int(math.Max(float64(requeueDelay), float64(delay)))
+//				incompleteInitialization = true
+//			}
+//		}
+//	}
+//	if koWithDefaults.Spec.map != nil {
+//		if koWithDefaults.Spec.map["subfield"] != nil {
+//			if koWithDefaults.Spec.map["subfield"].x == nil {
+//				delay := (&acktypes.LateInitializationRetryConfig{MinBackoffSeconds:5, MaxBackoffSeconds: 0,}).GetExponentialBackoffSeconds(numInitAttempt)
+//				requeueDelay = int(math.Max(float64(requeueDelay), float64(delay)))
+//				incompleteInitialization = true
+//			}
+//		}
+//	}
+//	if koWithDefaults.Spec.some != nil {
+//		if koWithDefaults.Spec.some.list == nil {
+//			delay := (&acktypes.LateInitializationRetryConfig{MinBackoffSeconds:10, MaxBackoffSeconds: 0,}).GetExponentialBackoffSeconds(numInitAttempt)
+//			requeueDelay = int(math.Max(float64(requeueDelay), float64(delay)))
+//			incompleteInitialization = true
+//		}
+//	}
+//	if koWithDefaults.Spec.structA != nil {
+//		if koWithDefaults.Spec.structA.mapB != nil {
+//			if koWithDefaults.Spec.structA.mapB["structC"] != nil {
+//				if koWithDefaults.Spec.structA.mapB["structC"].valueD == nil {
+//					delay := (&acktypes.LateInitializationRetryConfig{MinBackoffSeconds:20, MaxBackoffSeconds: 0,}).GetExponentialBackoffSeconds(numInitAttempt)
+//					requeueDelay = int(math.Max(float64(requeueDelay), float64(delay)))
+//					incompleteInitialization = true
+//				}
+//			}
+//		}
+//	}
+func CalculateRequeueDelay(
+	cfg *ackgenconfig.Config,
+	r *model.CRD,
+	koVarName string,
+	initAttemptVarName string,
+	delayVarNameInt string,
+	incompleteInitializationVarNameBool string,
+	// Number of levels of indentation to use
+	indentLevel int,
+) string {
+	out := ""
+	sortedLateInitFieldNames, fieldNameToLateInitConfig := getSortedLateInitFieldsAndConfig(cfg, r)
+	for _, fName := range sortedLateInitFieldNames {
+		// split the field name by period
+		// each substring represents a field.
+		fNameParts := strings.Split(fName, ".")
+		// fNameIndentLevel tracks the indentation level for every new line added
+		// This variable is incremented when building nested if blocks and decremented when closing those if blocks.
+		fNameIndentLevel := indentLevel
+		// fParentPath keeps track of parent path for any fNamePart
+		fParentPath := ""
+		mapShapedParent := false
+		for i, fNamePart := range fNameParts {
+			if fNamePart == "" {
+				mapShapedParent = true
+				continue
+			}
+			indent := strings.Repeat("\t", fNameIndentLevel)
+			fNamePartAccesor := fmt.Sprintf("Spec%s.%s", fParentPath, fNamePart)
+			if mapShapedParent {
+				fNamePartAccesor = fmt.Sprintf("Spec%s[%q]", fParentPath, fNamePart)
+			}
+			// Handling for all parts except last one
+			if i != len(fNameParts)-1 {
+				out += fmt.Sprintf("%sif %s.%s != nil {\n", indent, koVarName, fNamePartAccesor)
+				// update fParentPath and fNameIndentLevel for next iteration
+				if mapShapedParent {
+					fParentPath = fmt.Sprintf("%s[%q]", fParentPath, fNamePart)
+					mapShapedParent = false
+				} else {
+					fParentPath = fmt.Sprintf("%s.%s", fParentPath, fNamePart)
+				}
+				fNameIndentLevel = fNameIndentLevel + 1
+			} else {
+				// handle last part here
+				// for last part, if the late initialized field is still nil, calculate the retry backoff using
+				// acktypes.LateInitializationRetryConfig abstraction and set the incompleteInitialization flag to true
+				out += fmt.Sprintf("%sif %s.%s == nil {\n", indent, koVarName, fNamePartAccesor)
+				fNameIndentLevel = fNameIndentLevel + 1
+				indent = strings.Repeat("\t", fNameIndentLevel)
+				minBackoffSeconds := fieldNameToLateInitConfig[fName].MinBackoffSeconds
+				maxBackoffSeconds := fieldNameToLateInitConfig[fName].MaxBackoffSeconds
+				out += fmt.Sprintf("%sdelay := (&acktypes.LateInitializationRetryConfig{MinBackoffSeconds:%d, MaxBackoffSeconds: %d,}).GetExponentialBackoffSeconds(%s)\n", indent, minBackoffSeconds, maxBackoffSeconds, initAttemptVarName)
+				out += fmt.Sprintf("%s%s = int(math.Max(float64(%s), float64(delay)))\n", indent, delayVarNameInt, delayVarNameInt)
+				out += fmt.Sprintf("%s%s = true\n", indent, incompleteInitializationVarNameBool)
 			}
 		}
 		// Close all if blocks with proper indentation

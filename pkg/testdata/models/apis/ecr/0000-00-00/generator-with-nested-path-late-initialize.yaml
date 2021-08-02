@@ -5,19 +5,20 @@ resources:
         late_initialize: {}
       ImageScanningConfiguration.ScanOnPush:
         late_initialize:
-          delay_seconds: 5
+          min_backoff_seconds: 5
+          max_backoff_seconds: 15
       map..subfield.x:
         late_initialize:
-          delay_seconds: 5
+          min_backoff_seconds: 5
       another.map..lastfield:
         late_initialize:
-          delay_seconds: 5
+          min_backoff_seconds: 5
       some.list:
         late_initialize:
-          delay_seconds: 10
+          min_backoff_seconds: 10
       structA.mapB..structC.valueD:
         late_initialize:
-          delay_seconds: 20
+          min_backoff_seconds: 20
     exceptions:
       errors:
         404:
