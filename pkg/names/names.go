@@ -76,6 +76,7 @@ var (
 		{"Aws", "AWS", "aws", nil},
 		{"Az", "AZ", "az", nil},
 		{"Bgp", "BGP", "bgp", nil},
+		{"Cors", "CORS", "cors", nil},
 		{"Cidr", "CIDR", "cidr", nil},
 		{"Cpu", "CPU", "cpu", nil},
 		{"Dhcp", "DHCP", "dhcp", nil},
