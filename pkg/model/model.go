@@ -293,8 +293,8 @@ func (m *Model) GetTypeDefs() ([]*TypeDef, error) {
 	payloads := m.SDKAPI.GetPayloads()
 
 	for shapeName, shape := range m.SDKAPI.API.Shapes {
-		if util.InStrings(shapeName, payloads) {
-			// Payloads are not type defs
+		if util.InStrings(shapeName, payloads) && !m.IsShapeUsedInCRDs(shapeName) {
+			// Payloads are not type defs, unless explicitly used
 			continue
 		}
 		if shape.Type != "structure" {
