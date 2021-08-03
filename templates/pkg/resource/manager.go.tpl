@@ -5,11 +5,9 @@ package {{ .CRD.Names.Snake }}
 import (
 	"context"
 	"fmt"
-	"math"
 	"time"
 
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
-	ackannotation "github.com/aws-controllers-k8s/runtime/pkg/annotation"
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackcfg "github.com/aws-controllers-k8s/runtime/pkg/config"
 	ackcondition "github.com/aws-controllers-k8s/runtime/pkg/condition"
@@ -201,34 +199,30 @@ func (rm *resourceManager) LateInitialize(
 	}
 	observedKo := observed.ko
 {{ GoCodeLateInitializeFromReadOne .CRD "observedKo" "koWithDefaults" 1 }}
-	requeueDelay, incompleteInitialization := rm.calculateLateInitializationDelay(latestWithDefaults)
+	incompleteInitialization := rm.incompleteLateInitialization(latestWithDefaults)
 	if incompleteInitialization {
 		// Add the condition with LateInitialized=False
-		lateInitConditionMessage = fmt.Sprintf("Late initialization did not complete, requeuing with delay of %d seconds", requeueDelay)
+		lateInitConditionMessage = "Late initialization did not complete, requeuing with delay of 5 seconds"
 		lateInitConditionReason = "Delayed Late Initialization"
 		ackcondition.SetLateInitialized(latestWithDefaults, corev1.ConditionFalse, &lateInitConditionMessage, &lateInitConditionReason)
-		// increment 'services.k8s.aws/late-initialization-attempt' annotation
-		ackannotation.IncrementNumLateInitializationAttempt(koWithDefaults)
-		return latestWithDefaults, ackrequeue.NeededAfter(nil, requeueDelay)
+		return latestWithDefaults, ackrequeue.NeededAfter(nil, time.Duration(5)*time.Second)
 	}
 	// Set LateIntialized condition to True
 	lateInitConditionMessage = "Late initialization successful"
     lateInitConditionReason = "Late initialization successful"
 	ackcondition.SetLateInitialized(latestWithDefaults, corev1.ConditionTrue, &lateInitConditionMessage, &lateInitConditionReason)
-	// On successful late initialization remove the 'services.k8s.aws/late-initialization-attempt' annotation
-	ackannotation.RemoveLateInitializationAttempt(koWithDefaults)
 {{- if $hookCode := Hook .CRD "late_initialize_post_read_one" }}
 {{ $hookCode }}
 {{- end }}
 	return latestWithDefaults, nil
 }
 
-// calculateLateInitializationDelay return the (requeueDelay, true) if there are fields which were supposed to be
-// be late initialized but are not. If all the fields are late initialized, (0, false) is returned
-func (rm *resourceManager) calculateLateInitializationDelay(
+// incompleteLateInitialization return true if there are fields which were supposed to be
+// late initialized but are not. If all the fields are late initialized, false is returned
+func (rm *resourceManager) incompleteLateInitialization(
 	latestWithDefaults *resource,
-) (time.Duration, bool) {
-{{ GoCodeCalculateRequeueDelay .CRD "latestWithDefaults" 1 }}
+) bool {
+{{ GoCodeIncompleteLateInitialization .CRD "latestWithDefaults" 1 }}
 }
 
 // newResourceManager returns a new struct implementing

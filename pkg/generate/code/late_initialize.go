@@ -187,7 +187,7 @@ func LateInitializeFromReadOne(
 	return out
 }
 
-// CalculateRequeueDelay returns the go code which checks whether all the fields are late initialized.
+// IncompleteLateInitialization returns the go code which checks whether all the fields are late initialized.
 // If all the fields are not late initialized, this method also returns the requeue delay needed to attempt
 // late initialization again.
 //
@@ -214,55 +214,46 @@ func LateInitializeFromReadOne(
 //
 //
 // Sample Output:
-// if koWithDefaults.Spec.ImageScanningConfiguration != nil {
-//		if koWithDefaults.Spec.ImageScanningConfiguration.ScanOnPush == nil {
-//			delay := (&acktypes.LateInitializationRetryConfig{MinBackoffSeconds:5, MaxBackoffSeconds: 15,}).GetExponentialBackoffSeconds(numInitAttempt)
-//			requeueDelay = int(math.Max(float64(requeueDelay), float64(delay)))
-//			incompleteInitialization = true
+//	ko := latestWithDefaults.ko
+//	if ko.Spec.ImageScanningConfiguration != nil {
+//		if ko.Spec.ImageScanningConfiguration.ScanOnPush == nil {
+//			return true
 //		}
 //	}
-//	if koWithDefaults.Spec.Name == nil {
-//		delay := (&acktypes.LateInitializationRetryConfig{MinBackoffSeconds:0, MaxBackoffSeconds: 0,}).GetExponentialBackoffSeconds(numInitAttempt)
-//		requeueDelay = int(math.Max(float64(requeueDelay), float64(delay)))
-//		incompleteInitialization = true
+//	if ko.Spec.Name == nil {
+//		return true
 //	}
-//	if koWithDefaults.Spec.another != nil {
-//		if koWithDefaults.Spec.another.map != nil {
-//			if koWithDefaults.Spec.another.map["lastfield"] == nil {
-//				delay := (&acktypes.LateInitializationRetryConfig{MinBackoffSeconds:5, MaxBackoffSeconds: 0,}).GetExponentialBackoffSeconds(numInitAttempt)
-//				requeueDelay = int(math.Max(float64(requeueDelay), float64(delay)))
-//				incompleteInitialization = true
+//	if ko.Spec.another != nil {
+//		if ko.Spec.another.map != nil {
+//			if ko.Spec.another.map["lastfield"] == nil {
+//				return true
 //			}
 //		}
 //	}
-//	if koWithDefaults.Spec.map != nil {
-//		if koWithDefaults.Spec.map["subfield"] != nil {
-//			if koWithDefaults.Spec.map["subfield"].x == nil {
-//				delay := (&acktypes.LateInitializationRetryConfig{MinBackoffSeconds:5, MaxBackoffSeconds: 0,}).GetExponentialBackoffSeconds(numInitAttempt)
-//				requeueDelay = int(math.Max(float64(requeueDelay), float64(delay)))
-//				incompleteInitialization = true
+//	if ko.Spec.map != nil {
+//		if ko.Spec.map["subfield"] != nil {
+//			if ko.Spec.map["subfield"].x == nil {
+//				return true
 //			}
 //		}
 //	}
-//	if koWithDefaults.Spec.some != nil {
-//		if koWithDefaults.Spec.some.list == nil {
-//			delay := (&acktypes.LateInitializationRetryConfig{MinBackoffSeconds:10, MaxBackoffSeconds: 0,}).GetExponentialBackoffSeconds(numInitAttempt)
-//			requeueDelay = int(math.Max(float64(requeueDelay), float64(delay)))
-//			incompleteInitialization = true
+//	if ko.Spec.some != nil {
+//		if ko.Spec.some.list == nil {
+//			return true
 //		}
 //	}
-//	if koWithDefaults.Spec.structA != nil {
-//		if koWithDefaults.Spec.structA.mapB != nil {
-//			if koWithDefaults.Spec.structA.mapB["structC"] != nil {
-//				if koWithDefaults.Spec.structA.mapB["structC"].valueD == nil {
-//					delay := (&acktypes.LateInitializationRetryConfig{MinBackoffSeconds:20, MaxBackoffSeconds: 0,}).GetExponentialBackoffSeconds(numInitAttempt)
-//					requeueDelay = int(math.Max(float64(requeueDelay), float64(delay)))
-//					incompleteInitialization = true
+//	if ko.Spec.structA != nil {
+//		if ko.Spec.structA.mapB != nil {
+//			if ko.Spec.structA.mapB["structC"] != nil {
+//				if ko.Spec.structA.mapB["structC"].valueD == nil {
+//					return true
 //				}
 //			}
 //		}
 //	}
-func CalculateRequeueDelay(
+//	return false
+//
+func IncompleteLateInitialization(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,
 	resVarName string,
@@ -271,15 +262,12 @@ func CalculateRequeueDelay(
 ) string {
 	out := ""
 	indent := strings.Repeat("\t", indentLevel)
-	sortedLateInitFieldNames, fieldNameToLateInitConfig := getSortedLateInitFieldsAndConfig(cfg, r)
+	sortedLateInitFieldNames, _ := getSortedLateInitFieldsAndConfig(cfg, r)
 	if len(sortedLateInitFieldNames) == 0 {
-		out += fmt.Sprintf("%sreturn time.Duration(0), false\n", indent)
+		out += fmt.Sprintf("%sreturn false\n", indent)
 		return out
 	}
 	out += fmt.Sprintf("%sko := %s.ko\n", indent, resVarName)
-	out += fmt.Sprintf("%snumLateInitializationAttempt := ackannotation.GetNumLateInitializationAttempt(ko)\n", indent)
-	out += fmt.Sprintf("%srequeueDelay := time.Duration(0)*time.Second\n", indent)
-	out += fmt.Sprintf("%sincompleteInitialization := false\n", indent)
 	for _, fName := range sortedLateInitFieldNames {
 		// split the field name by period
 		// each substring represents a field.
@@ -318,11 +306,7 @@ func CalculateRequeueDelay(
 				out += fmt.Sprintf("%sif ko.%s == nil {\n", indent, fNamePartAccesor)
 				fNameIndentLevel = fNameIndentLevel + 1
 				indent = strings.Repeat("\t", fNameIndentLevel)
-				minBackoffSeconds := fieldNameToLateInitConfig[fName].MinBackoffSeconds
-				maxBackoffSeconds := fieldNameToLateInitConfig[fName].MaxBackoffSeconds
-				out += fmt.Sprintf("%sfDelay := (&acktypes.Exponential{Initial:time.Duration(%d)*time.Second, Factor: 2, MaxDelay: time.Duration(%d)*time.Second,}).GetBackoff(numLateInitializationAttempt)\n", indent, minBackoffSeconds, maxBackoffSeconds)
-				out += fmt.Sprintf("%srequeueDelay = time.Duration(math.Max(requeueDelay.Seconds(), fDelay.Seconds()))*time.Second\n", indent)
-				out += fmt.Sprintf("%sincompleteInitialization= true\n", indent)
+				out += fmt.Sprintf("%sreturn true\n", indent)
 			}
 		}
 		// Close all if blocks with proper indentation
@@ -332,6 +316,6 @@ func CalculateRequeueDelay(
 			fNameIndentLevel = fNameIndentLevel - 1
 		}
 	}
-	out += fmt.Sprintf("%sreturn requeueDelay, incompleteInitialization\n", indent)
+	out += fmt.Sprintf("%sreturn false\n", indent)
 	return out
 }

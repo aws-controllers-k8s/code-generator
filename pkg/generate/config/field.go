@@ -138,6 +138,9 @@ type PrintFieldConfig struct {
 
 // LateInitializeConfig contains instructions for how to handle the
 // retrieval and setting of server-side defaulted fields.
+// NOTE: Currently the members of this have no effect on late initialization of fields.
+// Currently the late initialization is requeued with static delay of 5 second.
+// TODO: (vijat@) Add support of retry/backoff for late initialization.
 type LateInitializeConfig struct {
 	// MinBackoffSeconds provides the minimum backoff to attempt late initialization again after an unsuccessful
 	// attempt to late initialized fields from ReadOne output
