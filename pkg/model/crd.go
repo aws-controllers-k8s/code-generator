@@ -458,27 +458,26 @@ func (r *CRD) GetWrapperOutputShape(
 		return shape, nil
 	}
 	fieldPathParts := strings.Split(fieldPath, ".")
-	for x, wrapperField := range fieldPathParts {
-		for memberName, memberRef := range shape.MemberRefs {
-			if memberName == wrapperField {
-				if memberRef.Shape.Type != "structure" {
-					// All the mentionned shapes must be structure
-					return nil, fmt.Errorf(
-						"Expected SetOutput.WrapperFieldPath to only contain fields of type 'structure'."+
-							" Found %s of type '%s'",
-						memberName, memberRef.Shape.Type,
-					)
-				}
-				remainPath := strings.Join(fieldPathParts[x+1:], ".")
-				return r.GetWrapperOutputShape(memberRef.Shape, remainPath)
-			}
-		}
+	wrapperField := fieldPathParts[0]
+
+	memberRef, ok := shape.MemberRefs[wrapperField]
+	if !ok {
 		return nil, fmt.Errorf(
 			"Incorrect SetOutput.WrapperFieldPath. Could not find %s in Shape %s",
 			wrapperField, shape.ShapeName,
 		)
 	}
-	return shape, nil
+
+	if memberRef.Shape.Type != "structure" {
+		// All the mentioned shapes must be structure
+		return nil, fmt.Errorf(
+			"Expected SetOutput.WrapperFieldPath to only contain fields of type 'structure'."+
+				" Found %s of type '%s'",
+			wrapperField, memberRef.Shape.Type,
+		)
+	}
+	remainPath := strings.Join(fieldPathParts[1:], ".")
+	return r.GetWrapperOutputShape(memberRef.Shape, remainPath)
 }
 
 // GetCustomImplementation returns custom implementation method name for the
