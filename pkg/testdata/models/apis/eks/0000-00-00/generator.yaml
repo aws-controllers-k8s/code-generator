@@ -1,3 +1,10 @@
+ignore:
+  field_paths:
+    # Test nested field path of multiple levels
+    - Nodegroup.Version
+    - CreateNodegroupInput.Version
+    - CreateNodegroupInput.ScalingConfig.DesiredSize
+
 resources:
   FargateProfile:
     renames:

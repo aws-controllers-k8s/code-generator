@@ -23,6 +23,7 @@ import (
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate/templateset"
 	"github.com/aws-controllers-k8s/code-generator/pkg/names"
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
+	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
 )
 
 var (
@@ -657,6 +658,28 @@ func (m *Model) GetEnumDefs() ([]*EnumDef, error) {
 	return edefs, nil
 }
 
+// getShapeMember recursively traverses the requested fieldpath. It
+// does not support the .. syntax for lists. If the field cannot be
+// resolved, nil is returned.
+func getShapeMember(shape *awssdkmodel.Shape, fieldPath string) *awssdkmodel.Shape {
+	if fieldPath == "" {
+		return shape
+	}
+
+	fields := strings.Split(fieldPath, ".")
+
+	sh := shape
+	for _, fn := range fields {
+		shapeRef, _ := sh.MemberRefs[fn]
+		if shapeRef == nil {
+			return nil
+		}
+		sh = shapeRef.Shape
+	}
+
+	return sh
+}
+
 // ApplyShapeIgnoreRules removes the ignored shapes and fields from the API object
 // so that they are not considered in any of the calculations of code generator.
 func (m *Model) ApplyShapeIgnoreRules() {
@@ -665,12 +688,22 @@ func (m *Model) ApplyShapeIgnoreRules() {
 	}
 	for sdkShapeID, shape := range m.SDKAPI.API.Shapes {
 		for _, fieldpath := range m.cfg.Ignore.FieldPaths {
-			sn := strings.Split(fieldpath, ".")[0]
-			fn := strings.Split(fieldpath, ".")[1]
-			if shape.ShapeName != sn {
+			fields := strings.Split(fieldpath, ".")
+
+			shapeName := fields[0]
+			nestedFieldPath := strings.Join(fields[1:len(fields)-1], ".")
+			fieldName := fields[len(fields)-1]
+
+			if shape.ShapeName != shapeName {
 				continue
 			}
-			delete(shape.MemberRefs, fn)
+
+			sh := getShapeMember(shape, nestedFieldPath)
+			if sh == nil {
+				continue
+			}
+
+			delete(sh.MemberRefs, fieldName)
 		}
 		for _, sn := range m.cfg.Ignore.ShapeNames {
 			if shape.ShapeName == sn {
