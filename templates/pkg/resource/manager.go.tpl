@@ -191,7 +191,6 @@ func (rm *resourceManager) LateInitialize(
 	latestWithDefaults := &resource{koWithDefaults}
 	lateInitConditionReason := ""
 	lateInitConditionMessage := ""
-	numLateInitializationAttempt := ackannotation.GetNumLateInitializationAttempt(koWithDefaults)
 
 	observed, err := rm.sdkFind(ctx, latestWithDefaults)
 	if err != nil {
@@ -202,10 +201,7 @@ func (rm *resourceManager) LateInitialize(
 	}
 	observedKo := observed.ko
 {{ GoCodeLateInitializeFromReadOne .CRD "observedKo" "koWithDefaults" 1 }}
-	requeueDelay := 0
-	incompleteInitialization := false
-{{ GoCodeCalculateRequeueDelay .CRD "koWithDefaults" "numLateInitializationAttempt" "requeueDelay" "incompleteInitialization" 1 }}
-
+	requeueDelay, incompleteInitialization := rm.calculateLateInitializationDelay(latestWithDefaults)
 	if incompleteInitialization {
 		// Add the condition with LateInitialized=False
 		lateInitConditionMessage = fmt.Sprintf("Late initialization did not complete, requeuing with delay of %d seconds", requeueDelay)
@@ -213,7 +209,7 @@ func (rm *resourceManager) LateInitialize(
 		ackcondition.SetLateInitialized(latestWithDefaults, corev1.ConditionFalse, &lateInitConditionMessage, &lateInitConditionReason)
 		// increment 'services.k8s.aws/late-initialization-attempt' annotation
 		ackannotation.IncrementNumLateInitializationAttempt(koWithDefaults)
-		return latestWithDefaults, ackrequeue.NeededAfter(nil, time.Duration(requeueDelay)*time.Second)
+		return latestWithDefaults, ackrequeue.NeededAfter(nil, requeueDelay)
 	}
 	// Set LateIntialized condition to True
 	lateInitConditionMessage = "Late initialization successful"
@@ -225,6 +221,14 @@ func (rm *resourceManager) LateInitialize(
 {{ $hookCode }}
 {{- end }}
 	return latestWithDefaults, nil
+}
+
+// calculateLateInitializationDelay return the (requeueDelay, true) if there are fields which were supposed to be
+// be late initialized but are not. If all the fields are late initialized, (0, false) is returned
+func (rm *resourceManager) calculateLateInitializationDelay(
+	latestWithDefaults *resource,
+) (time.Duration, bool) {
+{{ GoCodeCalculateRequeueDelay .CRD "latestWithDefaults" 1 }}
 }
 
 // newResourceManager returns a new struct implementing

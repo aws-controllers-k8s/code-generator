@@ -124,8 +124,8 @@ var (
 		"GoCodeLateInitializeFromReadOne": func(r *ackmodel.CRD, koSourceVarName string, koTargetVarName string, indentLevel int) string {
 			return code.LateInitializeFromReadOne(r.Config(), r, koSourceVarName, koTargetVarName, indentLevel)
 		},
-		"GoCodeCalculateRequeueDelay": func(r *ackmodel.CRD, koVarName string, numLateInitAttemptVarName string, requeueDelayVarName string, incompleteInitializationVarName string, indentLevel int) string {
-			return code.CalculateRequeueDelay(r.Config(), r, koVarName, numLateInitAttemptVarName, requeueDelayVarName, incompleteInitializationVarName, indentLevel)
+		"GoCodeCalculateRequeueDelay": func(r *ackmodel.CRD, resVarName string, indentLevel int) string {
+			return code.CalculateRequeueDelay(r.Config(), r, resVarName, indentLevel)
 		},
 	}
 )

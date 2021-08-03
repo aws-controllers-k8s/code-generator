@@ -80,16 +80,20 @@ func getSortedLateInitFieldsAndConfig(
 //        late_initialize: {}
 //      ImageScanningConfiguration.ScanOnPush:
 //        late_initialize:
-//          delay_seconds: 5
+//          min_backoff_seconds: 5
+//          max_backoff_seconds: 15
 //      map..subfield.x:
 //        late_initialize:
-//          delay_seconds: 5
+//          min_backoff_seconds: 5
 //      another.map..lastfield:
 //        late_initialize:
-//          delay_seconds: 5
+//          min_backoff_seconds: 5
 //      some.list:
 //        late_initialize:
-//          delay_seconds: 10
+//          min_backoff_seconds: 10
+//      structA.mapB..structC.valueD:
+//        late_initialize:
+//          min_backoff_seconds: 20
 //
 // Sample output:
 //if observed.Spec.ImageScanningConfiguration != nil && koWithDefaults.Spec.ImageScanningConfiguration != nil {
@@ -183,10 +187,9 @@ func LateInitializeFromReadOne(
 	return out
 }
 
-// CalculateRequeueDelay returns the go code which
-// a) checks whether all the fields are late initialized and
-// b) if any fields are not initialized, updates the 'delayVarNameInt' and 'incompleteInitializationVarNameBool', which
-//    are used to requeue the requests based on the delay configured in LateInitializationConfig.
+// CalculateRequeueDelay returns the go code which checks whether all the fields are late initialized.
+// If all the fields are not late initialized, this method also returns the requeue delay needed to attempt
+// late initialization again.
 //
 // Sample GeneratorConfig:
 // fields:
@@ -262,15 +265,21 @@ func LateInitializeFromReadOne(
 func CalculateRequeueDelay(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,
-	koVarName string,
-	initAttemptVarName string,
-	delayVarNameInt string,
-	incompleteInitializationVarNameBool string,
+	resVarName string,
 	// Number of levels of indentation to use
 	indentLevel int,
 ) string {
 	out := ""
+	indent := strings.Repeat("\t", indentLevel)
 	sortedLateInitFieldNames, fieldNameToLateInitConfig := getSortedLateInitFieldsAndConfig(cfg, r)
+	if len(sortedLateInitFieldNames) == 0 {
+		out += fmt.Sprintf("%sreturn time.Duration(0), false\n", indent)
+		return out
+	}
+	out += fmt.Sprintf("%sko := %s.ko\n", indent, resVarName)
+	out += fmt.Sprintf("%snumLateInitializationAttempt := ackannotation.GetNumLateInitializationAttempt(ko)\n", indent)
+	out += fmt.Sprintf("%srequeueDelay := time.Duration(0)*time.Second\n", indent)
+	out += fmt.Sprintf("%sincompleteInitialization := false\n", indent)
 	for _, fName := range sortedLateInitFieldNames {
 		// split the field name by period
 		// each substring represents a field.
@@ -293,7 +302,7 @@ func CalculateRequeueDelay(
 			}
 			// Handling for all parts except last one
 			if i != len(fNameParts)-1 {
-				out += fmt.Sprintf("%sif %s.%s != nil {\n", indent, koVarName, fNamePartAccesor)
+				out += fmt.Sprintf("%sif ko.%s != nil {\n", indent, fNamePartAccesor)
 				// update fParentPath and fNameIndentLevel for next iteration
 				if mapShapedParent {
 					fParentPath = fmt.Sprintf("%s[%q]", fParentPath, fNamePart)
@@ -306,14 +315,14 @@ func CalculateRequeueDelay(
 				// handle last part here
 				// for last part, if the late initialized field is still nil, calculate the retry backoff using
 				// acktypes.LateInitializationRetryConfig abstraction and set the incompleteInitialization flag to true
-				out += fmt.Sprintf("%sif %s.%s == nil {\n", indent, koVarName, fNamePartAccesor)
+				out += fmt.Sprintf("%sif ko.%s == nil {\n", indent, fNamePartAccesor)
 				fNameIndentLevel = fNameIndentLevel + 1
 				indent = strings.Repeat("\t", fNameIndentLevel)
 				minBackoffSeconds := fieldNameToLateInitConfig[fName].MinBackoffSeconds
 				maxBackoffSeconds := fieldNameToLateInitConfig[fName].MaxBackoffSeconds
-				out += fmt.Sprintf("%sdelay := (&acktypes.LateInitializationRetryConfig{MinBackoffSeconds:%d, MaxBackoffSeconds: %d,}).GetExponentialBackoffSeconds(%s)\n", indent, minBackoffSeconds, maxBackoffSeconds, initAttemptVarName)
-				out += fmt.Sprintf("%s%s = int(math.Max(float64(%s), float64(delay)))\n", indent, delayVarNameInt, delayVarNameInt)
-				out += fmt.Sprintf("%s%s = true\n", indent, incompleteInitializationVarNameBool)
+				out += fmt.Sprintf("%sfDelay := (&acktypes.Exponential{Initial:time.Duration(%d)*time.Second, Factor: 2, MaxDelay: time.Duration(%d)*time.Second,}).GetBackoff(numLateInitializationAttempt)\n", indent, minBackoffSeconds, maxBackoffSeconds)
+				out += fmt.Sprintf("%srequeueDelay = time.Duration(math.Max(requeueDelay.Seconds(), fDelay.Seconds()))*time.Second\n", indent)
+				out += fmt.Sprintf("%sincompleteInitialization= true\n", indent)
 			}
 		}
 		// Close all if blocks with proper indentation
@@ -323,5 +332,6 @@ func CalculateRequeueDelay(
 			fNameIndentLevel = fNameIndentLevel - 1
 		}
 	}
+	out += fmt.Sprintf("%sreturn requeueDelay, incompleteInitialization\n", indent)
 	return out
 }

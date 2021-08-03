@@ -156,59 +156,6 @@ func Test_LateInitializeFromReadOne_NestedPath(t *testing.T) {
 	assert.Equal(expected, code.LateInitializeFromReadOne(crd.Config(), crd, "observed", "koWithDefaults", 1))
 }
 
-//func Test_FindUninitializedFieldNames(t *testing.T) {
-//	assert := assert.New(t)
-//	require := require.New(t)
-//
-//	g := testutil.NewModelForServiceWithOptions(t, "ecr", &testutil.TestingModelOptions{GeneratorConfigFile: "generator-with-nested-path-late-initialize.yaml"})
-//
-//	crd := testutil.GetCRDByName(t, g, "Repository")
-//	require.NotNil(crd)
-//	assert.NotEmpty(crd.Config().ResourceFields(crd.Names.Original)["Name"])
-//	assert.NotEmpty(crd.Config().ResourceFields(crd.Names.Original)["ImageScanningConfiguration.ScanOnPush"])
-//	assert.NotNil(crd.Config().ResourceFields(crd.Names.Original)["Name"].LateInitialize)
-//	assert.NotNil(crd.Config().ResourceFields(crd.Names.Original)["ImageScanningConfiguration.ScanOnPush"].LateInitialize)
-//	expected :=
-//		`	if koWithDefaults.Spec.ImageScanningConfiguration != nil {
-//		if koWithDefaults.Spec.ImageScanningConfiguration.ScanOnPush == nil {
-//			uninitializedFieldNames = append(uninitializedFieldNames,"ImageScanningConfiguration.ScanOnPush")
-//		}
-//	}
-//	if koWithDefaults.Spec.Name == nil {
-//		uninitializedFieldNames = append(uninitializedFieldNames,"Name")
-//	}
-//	if koWithDefaults.Spec.another != nil {
-//		if koWithDefaults.Spec.another.map != nil {
-//			if koWithDefaults.Spec.another.map["lastfield"] == nil {
-//				uninitializedFieldNames = append(uninitializedFieldNames,"another.map..lastfield")
-//			}
-//		}
-//	}
-//	if koWithDefaults.Spec.map != nil {
-//		if koWithDefaults.Spec.map["subfield"] != nil {
-//			if koWithDefaults.Spec.map["subfield"].x == nil {
-//				uninitializedFieldNames = append(uninitializedFieldNames,"map..subfield.x")
-//			}
-//		}
-//	}
-//	if koWithDefaults.Spec.some != nil {
-//		if koWithDefaults.Spec.some.list == nil {
-//			uninitializedFieldNames = append(uninitializedFieldNames,"some.list")
-//		}
-//	}
-//	if koWithDefaults.Spec.structA != nil {
-//		if koWithDefaults.Spec.structA.mapB != nil {
-//			if koWithDefaults.Spec.structA.mapB["structC"] != nil {
-//				if koWithDefaults.Spec.structA.mapB["structC"].valueD == nil {
-//					uninitializedFieldNames = append(uninitializedFieldNames,"structA.mapB..structC.valueD")
-//				}
-//			}
-//		}
-//	}
-//`
-//	assert.Equal(expected, code.FindUninitializedFieldNames(crd.Config(), crd, "koWithDefaults", "uninitializedFieldNames", 1))
-//}
-
 func Test_CalculateRequeueDelay(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
@@ -222,54 +169,59 @@ func Test_CalculateRequeueDelay(t *testing.T) {
 	assert.NotNil(crd.Config().ResourceFields(crd.Names.Original)["Name"].LateInitialize)
 	assert.NotNil(crd.Config().ResourceFields(crd.Names.Original)["ImageScanningConfiguration.ScanOnPush"].LateInitialize)
 	expected :=
-		`	if koWithDefaults.Spec.ImageScanningConfiguration != nil {
-		if koWithDefaults.Spec.ImageScanningConfiguration.ScanOnPush == nil {
-			delay := (&acktypes.LateInitializationRetryConfig{MinBackoffSeconds:5, MaxBackoffSeconds: 15,}).GetExponentialBackoffSeconds(numInitAttempt)
-			requeueDelay = int(math.Max(float64(requeueDelay), float64(delay)))
-			incompleteInitialization = true
+		`	ko := latestWithDefaults.ko
+	numLateInitializationAttempt := ackannotation.GetNumLateInitializationAttempt(ko)
+	requeueDelay := time.Duration(0)*time.Second
+	incompleteInitialization := false
+	if ko.Spec.ImageScanningConfiguration != nil {
+		if ko.Spec.ImageScanningConfiguration.ScanOnPush == nil {
+			fDelay := (&acktypes.Exponential{Initial:time.Duration(5)*time.Second, Factor: 2, MaxDelay: time.Duration(15)*time.Second,}).GetBackoff(numLateInitializationAttempt)
+			requeueDelay = time.Duration(math.Max(requeueDelay.Seconds(), fDelay.Seconds()))*time.Second
+			incompleteInitialization= true
 		}
 	}
-	if koWithDefaults.Spec.Name == nil {
-		delay := (&acktypes.LateInitializationRetryConfig{MinBackoffSeconds:0, MaxBackoffSeconds: 0,}).GetExponentialBackoffSeconds(numInitAttempt)
-		requeueDelay = int(math.Max(float64(requeueDelay), float64(delay)))
-		incompleteInitialization = true
+	if ko.Spec.Name == nil {
+		fDelay := (&acktypes.Exponential{Initial:time.Duration(0)*time.Second, Factor: 2, MaxDelay: time.Duration(0)*time.Second,}).GetBackoff(numLateInitializationAttempt)
+		requeueDelay = time.Duration(math.Max(requeueDelay.Seconds(), fDelay.Seconds()))*time.Second
+		incompleteInitialization= true
 	}
-	if koWithDefaults.Spec.another != nil {
-		if koWithDefaults.Spec.another.map != nil {
-			if koWithDefaults.Spec.another.map["lastfield"] == nil {
-				delay := (&acktypes.LateInitializationRetryConfig{MinBackoffSeconds:5, MaxBackoffSeconds: 0,}).GetExponentialBackoffSeconds(numInitAttempt)
-				requeueDelay = int(math.Max(float64(requeueDelay), float64(delay)))
-				incompleteInitialization = true
+	if ko.Spec.another != nil {
+		if ko.Spec.another.map != nil {
+			if ko.Spec.another.map["lastfield"] == nil {
+				fDelay := (&acktypes.Exponential{Initial:time.Duration(5)*time.Second, Factor: 2, MaxDelay: time.Duration(0)*time.Second,}).GetBackoff(numLateInitializationAttempt)
+				requeueDelay = time.Duration(math.Max(requeueDelay.Seconds(), fDelay.Seconds()))*time.Second
+				incompleteInitialization= true
 			}
 		}
 	}
-	if koWithDefaults.Spec.map != nil {
-		if koWithDefaults.Spec.map["subfield"] != nil {
-			if koWithDefaults.Spec.map["subfield"].x == nil {
-				delay := (&acktypes.LateInitializationRetryConfig{MinBackoffSeconds:5, MaxBackoffSeconds: 0,}).GetExponentialBackoffSeconds(numInitAttempt)
-				requeueDelay = int(math.Max(float64(requeueDelay), float64(delay)))
-				incompleteInitialization = true
+	if ko.Spec.map != nil {
+		if ko.Spec.map["subfield"] != nil {
+			if ko.Spec.map["subfield"].x == nil {
+				fDelay := (&acktypes.Exponential{Initial:time.Duration(5)*time.Second, Factor: 2, MaxDelay: time.Duration(0)*time.Second,}).GetBackoff(numLateInitializationAttempt)
+				requeueDelay = time.Duration(math.Max(requeueDelay.Seconds(), fDelay.Seconds()))*time.Second
+				incompleteInitialization= true
 			}
 		}
 	}
-	if koWithDefaults.Spec.some != nil {
-		if koWithDefaults.Spec.some.list == nil {
-			delay := (&acktypes.LateInitializationRetryConfig{MinBackoffSeconds:10, MaxBackoffSeconds: 0,}).GetExponentialBackoffSeconds(numInitAttempt)
-			requeueDelay = int(math.Max(float64(requeueDelay), float64(delay)))
-			incompleteInitialization = true
+	if ko.Spec.some != nil {
+		if ko.Spec.some.list == nil {
+			fDelay := (&acktypes.Exponential{Initial:time.Duration(10)*time.Second, Factor: 2, MaxDelay: time.Duration(0)*time.Second,}).GetBackoff(numLateInitializationAttempt)
+			requeueDelay = time.Duration(math.Max(requeueDelay.Seconds(), fDelay.Seconds()))*time.Second
+			incompleteInitialization= true
 		}
 	}
-	if koWithDefaults.Spec.structA != nil {
-		if koWithDefaults.Spec.structA.mapB != nil {
-			if koWithDefaults.Spec.structA.mapB["structC"] != nil {
-				if koWithDefaults.Spec.structA.mapB["structC"].valueD == nil {
-					delay := (&acktypes.LateInitializationRetryConfig{MinBackoffSeconds:20, MaxBackoffSeconds: 0,}).GetExponentialBackoffSeconds(numInitAttempt)
-					requeueDelay = int(math.Max(float64(requeueDelay), float64(delay)))
-					incompleteInitialization = true
+	if ko.Spec.structA != nil {
+		if ko.Spec.structA.mapB != nil {
+			if ko.Spec.structA.mapB["structC"] != nil {
+				if ko.Spec.structA.mapB["structC"].valueD == nil {
+					fDelay := (&acktypes.Exponential{Initial:time.Duration(20)*time.Second, Factor: 2, MaxDelay: time.Duration(0)*time.Second,}).GetBackoff(numLateInitializationAttempt)
+					requeueDelay = time.Duration(math.Max(requeueDelay.Seconds(), fDelay.Seconds()))*time.Second
+					incompleteInitialization= true
 				}
 			}
 		}
 	}
+	return requeueDelay, incompleteInitialization
 `
-	assert.Equal(expected, code.CalculateRequeueDelay(crd.Config(), crd, "koWithDefaults", "numInitAttempt", "requeueDelay", "incompleteInitialization", 1))
+	assert.Equal(expected, code.CalculateRequeueDelay(crd.Config(), crd, "latestWithDefaults", 1))
 }
