@@ -197,8 +197,7 @@ func (rm *resourceManager) LateInitialize(
 		ackcondition.SetLateInitialized(latestWithDefaults, corev1.ConditionFalse, &lateInitConditionMessage, &lateInitConditionReason)
 		return latestWithDefaults, ackrequeue.NeededAfter(err, time.Duration(0)*time.Second)
 	}
-	observedKo := observed.ko
-{{ GoCodeLateInitializeFromReadOne .CRD "observedKo" "koWithDefaults" 1 }}
+	latestWithDefaults = rm.lateInitializeFromReadOneOutput(observed, latestWithDefaults)
 	incompleteInitialization := rm.incompleteLateInitialization(latestWithDefaults)
 	if incompleteInitialization {
 		// Add the condition with LateInitialized=False
@@ -209,7 +208,7 @@ func (rm *resourceManager) LateInitialize(
 	}
 	// Set LateIntialized condition to True
 	lateInitConditionMessage = "Late initialization successful"
-    lateInitConditionReason = "Late initialization successful"
+	lateInitConditionReason = "Late initialization successful"
 	ackcondition.SetLateInitialized(latestWithDefaults, corev1.ConditionTrue, &lateInitConditionMessage, &lateInitConditionReason)
 {{- if $hookCode := Hook .CRD "late_initialize_post_read_one" }}
 {{ $hookCode }}
@@ -223,6 +222,15 @@ func (rm *resourceManager) incompleteLateInitialization(
 	latestWithDefaults *resource,
 ) bool {
 {{ GoCodeIncompleteLateInitialization .CRD "latestWithDefaults" 1 }}
+}
+
+// lateInitializeFromReadOneOutput late initializes the 'latest' resource from the 'observed'
+// resource and returns 'latest' resource
+func (rm *resourceManager) lateInitializeFromReadOneOutput(
+	observed *resource,
+	latest *resource,
+) *resource {
+{{ GoCodeLateInitializeFromReadOne .CRD "observed" "latest" 1 }}
 }
 
 // newResourceManager returns a new struct implementing

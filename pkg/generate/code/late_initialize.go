@@ -44,6 +44,8 @@ func FindLateInitializedFieldNames(
 			out += fmt.Sprintf("%q,", fName)
 		}
 		out += "}\n"
+	} else {
+		out += fmt.Sprintf("%svar %s = []string{}\n", indent, resVarName)
 	}
 	return out
 }
@@ -96,43 +98,61 @@ func getSortedLateInitFieldsAndConfig(
 //          min_backoff_seconds: 20
 //
 // Sample output:
-//if observed.Spec.ImageScanningConfiguration != nil && koWithDefaults.Spec.ImageScanningConfiguration != nil {
-//	if observed.Spec.ImageScanningConfiguration.ScanOnPush != nil && koWithDefaults.Spec.ImageScanningConfiguration.ScanOnPush == nil {
-//		koWithDefaults.Spec.ImageScanningConfiguration.ScanOnPush = observed.Spec.ImageScanningConfiguration.ScanOnPush
+//	observedKo := observed.ko
+//	latestKo := latest.ko
+//	if observedKo.Spec.ImageScanningConfiguration != nil && latestKo.Spec.ImageScanningConfiguration != nil {
+//		if observedKo.Spec.ImageScanningConfiguration.ScanOnPush != nil && latestKo.Spec.ImageScanningConfiguration.ScanOnPush == nil {
+//			latestKo.Spec.ImageScanningConfiguration.ScanOnPush = observedKo.Spec.ImageScanningConfiguration.ScanOnPush
+//		}
 //	}
-//}
-//if observed.Spec.Name != nil && koWithDefaults.Spec.Name == nil {
-//	koWithDefaults.Spec.Name = observed.Spec.Name
-//}
-//if observed.Spec.another != nil && koWithDefaults.Spec.another != nil {
-//	if observed.Spec.another.map != nil && koWithDefaults.Spec.another.map != nil {
-//		if observed.Spec.another.map[lastfield] != nil && koWithDefaults.Spec.another.map[lastfield] == nil {
-//		koWithDefaults.Spec.another.map[lastfield] = observed.Spec.another.map[lastfield]
+//	if observedKo.Spec.Name != nil && latestKo.Spec.Name == nil {
+//		latestKo.Spec.Name = observedKo.Spec.Name
 //	}
+//	if observedKo.Spec.another != nil && latestKo.Spec.another != nil {
+//		if observedKo.Spec.another.map != nil && latestKo.Spec.another.map != nil {
+//			if observedKo.Spec.another.map["lastfield"] != nil && latestKo.Spec.another.map["lastfield"] == nil {
+//				latestKo.Spec.another.map["lastfield"] = observedKo.Spec.another.map["lastfield"]
+//			}
+//		}
 //	}
-//}
-//if observed.Spec.map != nil && koWithDefaults.Spec.map != nil {
-//	if observed.Spec.map[subfield] != nil && koWithDefaults.Spec.map[subfield] != nil {
-//	if observed.Spec.map[subfield].x != nil && koWithDefaults.Spec.map[subfield].x == nil {
-//	koWithDefaults.Spec.map[subfield].x = observed.Spec.map[subfield].x
-//}
-//}
-//}
-//if observed.Spec.some != nil && koWithDefaults.Spec.some != nil {
-//	if observed.Spec.some.list != nil && koWithDefaults.Spec.some.list == nil {
-//		koWithDefaults.Spec.some.list = observed.Spec.some.list
+//	if observedKo.Spec.map != nil && latestKo.Spec.map != nil {
+//		if observedKo.Spec.map["subfield"] != nil && latestKo.Spec.map["subfield"] != nil {
+//			if observedKo.Spec.map["subfield"].x != nil && latestKo.Spec.map["subfield"].x == nil {
+//				latestKo.Spec.map["subfield"].x = observedKo.Spec.map["subfield"].x
+//			}
+//		}
 //	}
-//}
+//	if observedKo.Spec.some != nil && latestKo.Spec.some != nil {
+//		if observedKo.Spec.some.list != nil && latestKo.Spec.some.list == nil {
+//			latestKo.Spec.some.list = observedKo.Spec.some.list
+//		}
+//	}
+//	if observedKo.Spec.structA != nil && latestKo.Spec.structA != nil {
+//		if observedKo.Spec.structA.mapB != nil && latestKo.Spec.structA.mapB != nil {
+//			if observedKo.Spec.structA.mapB["structC"] != nil && latestKo.Spec.structA.mapB["structC"] != nil {
+//				if observedKo.Spec.structA.mapB["structC"].valueD != nil && latestKo.Spec.structA.mapB["structC"].valueD == nil {
+//					latestKo.Spec.structA.mapB["structC"].valueD = observedKo.Spec.structA.mapB["structC"].valueD
+//				}
+//			}
+//		}
+//	}
+//	return latest
 func LateInitializeFromReadOne(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,
-	sourceKoVarName string,
-	targetKoVarName string,
+	sourceResVarName string,
+	targetResVarName string,
 	// Number of levels of indentation to use
 	indentLevel int,
 ) string {
 	out := ""
+	indent := strings.Repeat("\t", indentLevel)
 	lateInitializedFieldNames, _ := getSortedLateInitFieldsAndConfig(cfg, r)
+	if len(lateInitializedFieldNames) == 0 {
+		return fmt.Sprintf("%sreturn %s", indent, targetResVarName)
+	}
+	out += fmt.Sprintf("%sobservedKo := %s.ko\n", indent, sourceResVarName)
+	out += fmt.Sprintf("%slatestKo := %s.ko\n", indent, targetResVarName)
 	// TODO(vijat@): Add validation for correct field path in lateInitializedFieldNames
 	for _, fName := range lateInitializedFieldNames {
 		// split the field name by period
@@ -158,7 +178,7 @@ func LateInitializeFromReadOne(
 			}
 			// Handling for all parts except last one
 			if i != len(fNameParts)-1 {
-				out += fmt.Sprintf("%sif %s.%s != nil && %s.%s != nil {\n", indent, sourceKoVarName, fNamePartAccesor, targetKoVarName, fNamePartAccesor)
+				out += fmt.Sprintf("%sif observedKo.%s != nil && latestKo.%s != nil {\n", indent, fNamePartAccesor, fNamePartAccesor)
 				// update fParentPath and fNameIndentLevel for next iteration
 				if mapShapedParent {
 					fParentPath = fmt.Sprintf("%s[%q]", fParentPath, fNamePart)
@@ -171,10 +191,10 @@ func LateInitializeFromReadOne(
 				// handle last part here
 				// for last part, set the lateInitialized field if user did not specify field value and readOne has server side defaulted value.
 				// i.e. field is not nil in sourceKoVarName but is nil in targetkoVarName
-				out += fmt.Sprintf("%sif %s.%s != nil && %s.%s == nil {\n", indent, sourceKoVarName, fNamePartAccesor, targetKoVarName, fNamePartAccesor)
+				out += fmt.Sprintf("%sif observedKo.%s != nil && latestKo.%s == nil {\n", indent, fNamePartAccesor, fNamePartAccesor)
 				fNameIndentLevel = fNameIndentLevel + 1
 				indent = strings.Repeat("\t", fNameIndentLevel)
-				out += fmt.Sprintf("%s%s.%s = %s.%s\n", indent, targetKoVarName, fNamePartAccesor, sourceKoVarName, fNamePartAccesor)
+				out += fmt.Sprintf("%slatestKo.%s = observedKo.%s\n", indent, fNamePartAccesor, fNamePartAccesor)
 			}
 		}
 		// Close all if blocks with proper indentation
@@ -184,6 +204,7 @@ func LateInitializeFromReadOne(
 			fNameIndentLevel = fNameIndentLevel - 1
 		}
 	}
+	out += fmt.Sprintf("%sreturn %s", indent, targetResVarName)
 	return out
 }
 
@@ -264,7 +285,7 @@ func IncompleteLateInitialization(
 	indent := strings.Repeat("\t", indentLevel)
 	sortedLateInitFieldNames, _ := getSortedLateInitFieldsAndConfig(cfg, r)
 	if len(sortedLateInitFieldNames) == 0 {
-		out += fmt.Sprintf("%sreturn false\n", indent)
+		out += fmt.Sprintf("%sreturn false", indent)
 		return out
 	}
 	out += fmt.Sprintf("%sko := %s.ko\n", indent, resVarName)
@@ -316,6 +337,6 @@ func IncompleteLateInitialization(
 			fNameIndentLevel = fNameIndentLevel - 1
 		}
 	}
-	out += fmt.Sprintf("%sreturn false\n", indent)
+	out += fmt.Sprintf("%sreturn false", indent)
 	return out
 }

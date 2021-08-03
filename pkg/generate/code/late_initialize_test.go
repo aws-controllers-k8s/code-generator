@@ -32,7 +32,10 @@ func Test_FindLateInitializedFieldNames_EmptyFieldConfig(t *testing.T) {
 	require.NotNil(crd)
 	// NO fieldConfig
 	assert.Empty(crd.Config().ResourceFields(crd.Names.Original))
-	assert.Empty(code.FindLateInitializedFieldNames(crd.Config(), crd, "lateInitializeFieldNames", 1))
+	expected :=
+		`	var lateInitializeFieldNames = []string{}
+`
+	assert.Equal(expected, code.FindLateInitializedFieldNames(crd.Config(), crd, "lateInitializeFieldNames", 1))
 }
 
 func Test_FindLateInitializedFieldNames_NoLateInitializations(t *testing.T) {
@@ -46,7 +49,10 @@ func Test_FindLateInitializedFieldNames_NoLateInitializations(t *testing.T) {
 	// FieldConfig without lateInitialize
 	assert.NotEmpty(crd.Config().ResourceFields(crd.Names.Original)["Name"])
 	assert.Nil(crd.Config().ResourceFields(crd.Names.Original)["Name"].LateInitialize)
-	assert.Empty(code.FindLateInitializedFieldNames(crd.Config(), crd, "lateInitializeFieldNames", 1))
+	expected :=
+		`	var lateInitializeFieldNames = []string{}
+`
+	assert.Equal(expected, code.FindLateInitializedFieldNames(crd.Config(), crd, "lateInitializeFieldNames", 1))
 }
 
 func Test_FindLateInitializedFieldNames(t *testing.T) {
@@ -77,7 +83,8 @@ func Test_LateInitializeFromReadOne_NoFieldsToLateInitialize(t *testing.T) {
 	require.NotNil(crd)
 	// NO fieldConfig
 	assert.Empty(crd.Config().ResourceFields(crd.Names.Original))
-	assert.Empty(code.LateInitializeFromReadOne(crd.Config(), crd, "observed", "koWithDefaults", 1))
+	expected := "	return latest"
+	assert.Equal(expected, code.LateInitializeFromReadOne(crd.Config(), crd, "observed", "latest", 1))
 }
 
 func Test_LateInitializeFromReadOne_NonNestedPath(t *testing.T) {
@@ -93,14 +100,16 @@ func Test_LateInitializeFromReadOne_NonNestedPath(t *testing.T) {
 	assert.NotNil(crd.Config().ResourceFields(crd.Names.Original)["Name"].LateInitialize)
 	assert.NotNil(crd.Config().ResourceFields(crd.Names.Original)["ImageTagMutability"].LateInitialize)
 	expected :=
-		`	if observed.Spec.ImageTagMutability != nil && koWithDefaults.Spec.ImageTagMutability == nil {
-		koWithDefaults.Spec.ImageTagMutability = observed.Spec.ImageTagMutability
+		`	observedKo := observed.ko
+	latestKo := latest.ko
+	if observedKo.Spec.ImageTagMutability != nil && latestKo.Spec.ImageTagMutability == nil {
+		latestKo.Spec.ImageTagMutability = observedKo.Spec.ImageTagMutability
 	}
-	if observed.Spec.Name != nil && koWithDefaults.Spec.Name == nil {
-		koWithDefaults.Spec.Name = observed.Spec.Name
+	if observedKo.Spec.Name != nil && latestKo.Spec.Name == nil {
+		latestKo.Spec.Name = observedKo.Spec.Name
 	}
-`
-	assert.Equal(expected, code.LateInitializeFromReadOne(crd.Config(), crd, "observed", "koWithDefaults", 1))
+	return latest`
+	assert.Equal(expected, code.LateInitializeFromReadOne(crd.Config(), crd, "observed", "latest", 1))
 }
 
 func Test_LateInitializeFromReadOne_NestedPath(t *testing.T) {
@@ -116,44 +125,59 @@ func Test_LateInitializeFromReadOne_NestedPath(t *testing.T) {
 	assert.NotNil(crd.Config().ResourceFields(crd.Names.Original)["Name"].LateInitialize)
 	assert.NotNil(crd.Config().ResourceFields(crd.Names.Original)["ImageScanningConfiguration.ScanOnPush"].LateInitialize)
 	expected :=
-		`	if observed.Spec.ImageScanningConfiguration != nil && koWithDefaults.Spec.ImageScanningConfiguration != nil {
-		if observed.Spec.ImageScanningConfiguration.ScanOnPush != nil && koWithDefaults.Spec.ImageScanningConfiguration.ScanOnPush == nil {
-			koWithDefaults.Spec.ImageScanningConfiguration.ScanOnPush = observed.Spec.ImageScanningConfiguration.ScanOnPush
+		`	observedKo := observed.ko
+	latestKo := latest.ko
+	if observedKo.Spec.ImageScanningConfiguration != nil && latestKo.Spec.ImageScanningConfiguration != nil {
+		if observedKo.Spec.ImageScanningConfiguration.ScanOnPush != nil && latestKo.Spec.ImageScanningConfiguration.ScanOnPush == nil {
+			latestKo.Spec.ImageScanningConfiguration.ScanOnPush = observedKo.Spec.ImageScanningConfiguration.ScanOnPush
 		}
 	}
-	if observed.Spec.Name != nil && koWithDefaults.Spec.Name == nil {
-		koWithDefaults.Spec.Name = observed.Spec.Name
+	if observedKo.Spec.Name != nil && latestKo.Spec.Name == nil {
+		latestKo.Spec.Name = observedKo.Spec.Name
 	}
-	if observed.Spec.another != nil && koWithDefaults.Spec.another != nil {
-		if observed.Spec.another.map != nil && koWithDefaults.Spec.another.map != nil {
-			if observed.Spec.another.map["lastfield"] != nil && koWithDefaults.Spec.another.map["lastfield"] == nil {
-				koWithDefaults.Spec.another.map["lastfield"] = observed.Spec.another.map["lastfield"]
+	if observedKo.Spec.another != nil && latestKo.Spec.another != nil {
+		if observedKo.Spec.another.map != nil && latestKo.Spec.another.map != nil {
+			if observedKo.Spec.another.map["lastfield"] != nil && latestKo.Spec.another.map["lastfield"] == nil {
+				latestKo.Spec.another.map["lastfield"] = observedKo.Spec.another.map["lastfield"]
 			}
 		}
 	}
-	if observed.Spec.map != nil && koWithDefaults.Spec.map != nil {
-		if observed.Spec.map["subfield"] != nil && koWithDefaults.Spec.map["subfield"] != nil {
-			if observed.Spec.map["subfield"].x != nil && koWithDefaults.Spec.map["subfield"].x == nil {
-				koWithDefaults.Spec.map["subfield"].x = observed.Spec.map["subfield"].x
+	if observedKo.Spec.map != nil && latestKo.Spec.map != nil {
+		if observedKo.Spec.map["subfield"] != nil && latestKo.Spec.map["subfield"] != nil {
+			if observedKo.Spec.map["subfield"].x != nil && latestKo.Spec.map["subfield"].x == nil {
+				latestKo.Spec.map["subfield"].x = observedKo.Spec.map["subfield"].x
 			}
 		}
 	}
-	if observed.Spec.some != nil && koWithDefaults.Spec.some != nil {
-		if observed.Spec.some.list != nil && koWithDefaults.Spec.some.list == nil {
-			koWithDefaults.Spec.some.list = observed.Spec.some.list
+	if observedKo.Spec.some != nil && latestKo.Spec.some != nil {
+		if observedKo.Spec.some.list != nil && latestKo.Spec.some.list == nil {
+			latestKo.Spec.some.list = observedKo.Spec.some.list
 		}
 	}
-	if observed.Spec.structA != nil && koWithDefaults.Spec.structA != nil {
-		if observed.Spec.structA.mapB != nil && koWithDefaults.Spec.structA.mapB != nil {
-			if observed.Spec.structA.mapB["structC"] != nil && koWithDefaults.Spec.structA.mapB["structC"] != nil {
-				if observed.Spec.structA.mapB["structC"].valueD != nil && koWithDefaults.Spec.structA.mapB["structC"].valueD == nil {
-					koWithDefaults.Spec.structA.mapB["structC"].valueD = observed.Spec.structA.mapB["structC"].valueD
+	if observedKo.Spec.structA != nil && latestKo.Spec.structA != nil {
+		if observedKo.Spec.structA.mapB != nil && latestKo.Spec.structA.mapB != nil {
+			if observedKo.Spec.structA.mapB["structC"] != nil && latestKo.Spec.structA.mapB["structC"] != nil {
+				if observedKo.Spec.structA.mapB["structC"].valueD != nil && latestKo.Spec.structA.mapB["structC"].valueD == nil {
+					latestKo.Spec.structA.mapB["structC"].valueD = observedKo.Spec.structA.mapB["structC"].valueD
 				}
 			}
 		}
 	}
-`
-	assert.Equal(expected, code.LateInitializeFromReadOne(crd.Config(), crd, "observed", "koWithDefaults", 1))
+	return latest`
+	assert.Equal(expected, code.LateInitializeFromReadOne(crd.Config(), crd, "observed", "latest", 1))
+}
+
+func Test_IncompleteLateInitialization_NoFieldsToLateInitialization(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "ecr", &testutil.TestingModelOptions{GeneratorConfigFile: "generator-with-field-config.yaml"})
+
+	crd := testutil.GetCRDByName(t, g, "Repository")
+	require.NotNil(crd)
+	expected :=
+		`	return false`
+	assert.Equal(expected, code.IncompleteLateInitialization(crd.Config(), crd, "latestWithDefaults", 1))
 }
 
 func Test_IncompleteLateInitialization(t *testing.T) {
@@ -206,7 +230,6 @@ func Test_IncompleteLateInitialization(t *testing.T) {
 			}
 		}
 	}
-	return false
-`
+	return false`
 	assert.Equal(expected, code.IncompleteLateInitialization(crd.Config(), crd, "latestWithDefaults", 1))
 }
