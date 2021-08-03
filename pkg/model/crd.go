@@ -148,6 +148,11 @@ func (r *CRD) HasShapeAsMember(toFind string) bool {
 			return true
 		}
 	}
+	for _, field := range r.StatusFields {
+		if shapeHasMember(field.ShapeRef.Shape, toFind) {
+			return true
+		}
+	}
 	return false
 }
 
