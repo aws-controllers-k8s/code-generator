@@ -101,3 +101,54 @@ func TestEC2_LaunchTemplate(t *testing.T) {
 	assert.Nil(crd.Ops.ReadOne)
 	assert.NotNil(crd.Ops.ReadMany)
 }
+
+func TestEC2_Volume(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "ec2")
+
+	crds, err := g.GetCRDs()
+	require.Nil(err)
+
+	crd := getCRDByName("Volume", crds)
+	require.NotNil(crd)
+
+	assert.Equal("Volume", crd.Names.Camel)
+	assert.Equal("volume", crd.Names.CamelLower)
+	assert.Equal("volume", crd.Names.Snake)
+
+	specFields := crd.SpecFields
+	statusFields := crd.StatusFields
+
+	expSpecFieldCamel := []string{
+		"AvailabilityZone",
+		"DryRun",
+		"Encrypted",
+		"IOPS",
+		"KMSKeyID",
+		"MultiAttachEnabled",
+		"OutpostARN",
+		"Size",
+		"SnapshotID",
+		"TagSpecifications",
+		"VolumeType",
+	}
+	assert.Equal(expSpecFieldCamel, attrCamelNames(specFields))
+
+	expStatusFieldCamel := []string{
+		"Attachments",
+		"CreateTime",
+		"FastRestored",
+		"State",
+		"Tags",
+		"VolumeID",
+	}
+	assert.Equal(expStatusFieldCamel, attrCamelNames(statusFields))
+
+	// Ensure that we generate TypeDefs for the VolumeAttachment field.
+	// This field is the payload of the `AttachVolume` payload, but should
+	// be included because it is the field value for the `attachments` status
+	// field
+	assert.NotNil(testutil.GetTypeDefByName(t, g, "VolumeAttachment"))
+}
