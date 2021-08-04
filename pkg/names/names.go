@@ -81,6 +81,7 @@ var (
 		{"Cpu", "CPU", "cpu", nil},
 		{"Dhcp", "DHCP", "dhcp", nil},
 		{"Dns", "DNS", "dns", nil},
+		{"Dpd", "DPD", "dpd", nil},
 		{"Ebs", "EBS", "ebs", nil},
 		{"Ec2", "EC2", "ec2", nil},
 		{"Ecr", "ECR", "ecr", nil},
@@ -93,6 +94,8 @@ var (
 		{"Https", "HTTPS", "https", nil},
 		{"Iam", "IAM", "iam", nil},
 		{"Icmp", "ICMP", "icmp", nil},
+		// Prevent "IOPS" from becoming "IOps"
+		{"Io", "IO", "io", regexp.MustCompile("Io(?!ps)", regexp.None)},
 		{"Iops", "IOPS", "iops", nil},
 		{"Json", "JSON", "json", nil},
 		{"Jwt", "JWT", "jwt", nil},

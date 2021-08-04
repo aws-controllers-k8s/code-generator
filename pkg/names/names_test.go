@@ -50,6 +50,9 @@ func TestNames(t *testing.T) {
 		{"MultipartUpload", "MultipartUpload", "multipartUpload", "multipart_upload"},
 		{"Package", "Package", "package_", "package_"},
 		{"LdapServerMetadata", "LDAPServerMetadata", "ldapServerMetadata", "ldap_server_metadata"},
+		{"DpdTimeoutAction", "DPDTimeoutAction", "dpdTimeoutAction", "dpd_timeout_action"},
+		{"Iops", "IOPS", "iops", "iops"},
+		{"IoPerformance", "IOPerformance", "ioPerformance", "io_performance"},
 	}
 	for _, tc := range testCases {
 		n := names.New(tc.original)
