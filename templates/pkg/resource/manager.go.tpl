@@ -169,59 +169,53 @@ func (rm *resourceManager) ARNFromName(name string) string {
 // object passed in the parameter.
 func (rm *resourceManager) LateInitialize(
 	ctx context.Context,
-	res acktypes.AWSResource,
+	resLatest acktypes.AWSResource,
 ) (acktypes.AWSResource, error) {
 	rlog := ackrtlog.FromContext(ctx)
-{{- if $hookCode := Hook .CRD "late_initialize_pre_read_one" }}
-{{ $hookCode }}
-{{- end }}
+	latest := rm.concreteResource(resLatest)
 	// If there are no fields to late initialize, do nothing
 	if len(lateInitializeFieldNames) == 0 {
 		rlog.Debug("no late initialization required.")
-		return res, nil
+		return latest, nil
 	}
-	r := rm.concreteResource(res)
-	if r.ko == nil {
-		// Should never happen... if it does, it's buggy code.
-		panic("resource manager's LateInitialize() method received resource with nil CR object")
-	}
-	koWithDefaults := r.ko.DeepCopy()
-	latestWithDefaults := &resource{koWithDefaults}
 	lateInitConditionReason := ""
 	lateInitConditionMessage := ""
-
-	observed, err := rm.sdkFind(ctx, latestWithDefaults)
+{{- if $hookCode := Hook .CRD "late_initialize_pre_read_one" }}
+{{ $hookCode }}
+{{- end }}
+	observedRes, err := rm.ReadOne(ctx, latest)
 	if err != nil {
 		lateInitConditionMessage = "Unable to complete Read operation required for late initialization"
 		lateInitConditionReason = "Late Initialization Failure"
-		ackcondition.SetLateInitialized(latestWithDefaults, corev1.ConditionFalse, &lateInitConditionMessage, &lateInitConditionReason)
-		return latestWithDefaults, ackrequeue.NeededAfter(err, time.Duration(0)*time.Second)
+		ackcondition.SetLateInitialized(latest, corev1.ConditionFalse, &lateInitConditionMessage, &lateInitConditionReason)
+		return latest, ackrequeue.NeededAfter(err, time.Duration(0)*time.Second)
 	}
-	latestWithDefaults = rm.lateInitializeFromReadOneOutput(observed, latestWithDefaults)
-	incompleteInitialization := rm.incompleteLateInitialization(latestWithDefaults)
+{{- if $hookCode := Hook .CRD "late_initialize_post_read_one" }}
+{{ $hookCode }}
+{{- end }}
+	observed := rm.concreteResource(observedRes)
+	latest = rm.lateInitializeFromReadOneOutput(observed, latest)
+	incompleteInitialization := rm.incompleteLateInitialization(latest)
 	if incompleteInitialization {
 		// Add the condition with LateInitialized=False
 		lateInitConditionMessage = "Late initialization did not complete, requeuing with delay of 5 seconds"
 		lateInitConditionReason = "Delayed Late Initialization"
-		ackcondition.SetLateInitialized(latestWithDefaults, corev1.ConditionFalse, &lateInitConditionMessage, &lateInitConditionReason)
-		return latestWithDefaults, ackrequeue.NeededAfter(nil, time.Duration(5)*time.Second)
+		ackcondition.SetLateInitialized(latest, corev1.ConditionFalse, &lateInitConditionMessage, &lateInitConditionReason)
+		return latest, ackrequeue.NeededAfter(nil, time.Duration(5)*time.Second)
 	}
 	// Set LateIntialized condition to True
 	lateInitConditionMessage = "Late initialization successful"
 	lateInitConditionReason = "Late initialization successful"
-	ackcondition.SetLateInitialized(latestWithDefaults, corev1.ConditionTrue, &lateInitConditionMessage, &lateInitConditionReason)
-{{- if $hookCode := Hook .CRD "late_initialize_post_read_one" }}
-{{ $hookCode }}
-{{- end }}
-	return latestWithDefaults, nil
+	ackcondition.SetLateInitialized(latest, corev1.ConditionTrue, &lateInitConditionMessage, &lateInitConditionReason)
+	return latest, nil
 }
 
 // incompleteLateInitialization return true if there are fields which were supposed to be
 // late initialized but are not. If all the fields are late initialized, false is returned
 func (rm *resourceManager) incompleteLateInitialization(
-	latestWithDefaults *resource,
+	latest *resource,
 ) bool {
-{{ GoCodeIncompleteLateInitialization .CRD "latestWithDefaults" 1 }}
+{{ GoCodeIncompleteLateInitialization .CRD "latest" 1 }}
 }
 
 // lateInitializeFromReadOneOutput late initializes the 'latest' resource from the 'observed'
