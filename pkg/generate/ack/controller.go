@@ -121,8 +121,8 @@ var (
 		"GoCodeFindLateInitializedFieldNames": func(r *ackmodel.CRD, resVarName string, indentLevel int) string {
 			return code.FindLateInitializedFieldNames(r.Config(), r, resVarName, indentLevel)
 		},
-		"GoCodeLateInitializeFromReadOne": func(r *ackmodel.CRD, koSourceVarName string, koTargetVarName string, indentLevel int) string {
-			return code.LateInitializeFromReadOne(r.Config(), r, koSourceVarName, koTargetVarName, indentLevel)
+		"GoCodeLateInitializeFromReadOne": func(r *ackmodel.CRD, sourceResVarName string, targetResVarName string, indentLevel int) string {
+			return code.LateInitializeFromReadOne(r.Config(), r, sourceResVarName, targetResVarName, indentLevel)
 		},
 		"GoCodeIncompleteLateInitialization": func(r *ackmodel.CRD, resVarName string, indentLevel int) string {
 			return code.IncompleteLateInitialization(r.Config(), r, resVarName, indentLevel)

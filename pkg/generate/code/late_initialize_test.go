@@ -100,8 +100,8 @@ func Test_LateInitializeFromReadOne_NonNestedPath(t *testing.T) {
 	assert.NotNil(crd.Config().ResourceFields(crd.Names.Original)["Name"].LateInitialize)
 	assert.NotNil(crd.Config().ResourceFields(crd.Names.Original)["ImageTagMutability"].LateInitialize)
 	expected :=
-		`	observedKo := observed.ko
-	latestKo := latest.ko
+		`	observedKo := rm.concreteResource(observed).ko
+	latestKo := rm.concreteResource(latest).ko
 	if observedKo.Spec.ImageTagMutability != nil && latestKo.Spec.ImageTagMutability == nil {
 		latestKo.Spec.ImageTagMutability = observedKo.Spec.ImageTagMutability
 	}
@@ -125,8 +125,8 @@ func Test_LateInitializeFromReadOne_NestedPath(t *testing.T) {
 	assert.NotNil(crd.Config().ResourceFields(crd.Names.Original)["Name"].LateInitialize)
 	assert.NotNil(crd.Config().ResourceFields(crd.Names.Original)["ImageScanningConfiguration.ScanOnPush"].LateInitialize)
 	expected :=
-		`	observedKo := observed.ko
-	latestKo := latest.ko
+		`	observedKo := rm.concreteResource(observed).ko
+	latestKo := rm.concreteResource(latest).ko
 	if observedKo.Spec.ImageScanningConfiguration != nil && latestKo.Spec.ImageScanningConfiguration != nil {
 		if observedKo.Spec.ImageScanningConfiguration.ScanOnPush != nil && latestKo.Spec.ImageScanningConfiguration.ScanOnPush == nil {
 			latestKo.Spec.ImageScanningConfiguration.ScanOnPush = observedKo.Spec.ImageScanningConfiguration.ScanOnPush
@@ -193,7 +193,7 @@ func Test_IncompleteLateInitialization(t *testing.T) {
 	assert.NotNil(crd.Config().ResourceFields(crd.Names.Original)["Name"].LateInitialize)
 	assert.NotNil(crd.Config().ResourceFields(crd.Names.Original)["ImageScanningConfiguration.ScanOnPush"].LateInitialize)
 	expected :=
-		`	ko := latestWithDefaults.ko
+		`	ko := rm.concreteResource(latest).ko
 	if ko.Spec.ImageScanningConfiguration != nil {
 		if ko.Spec.ImageScanningConfiguration.ScanOnPush == nil {
 			return true
@@ -231,5 +231,5 @@ func Test_IncompleteLateInitialization(t *testing.T) {
 		}
 	}
 	return false`
-	assert.Equal(expected, code.IncompleteLateInitialization(crd.Config(), crd, "latestWithDefaults", 1))
+	assert.Equal(expected, code.IncompleteLateInitialization(crd.Config(), crd, "latest", 1))
 }

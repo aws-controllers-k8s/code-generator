@@ -169,10 +169,9 @@ func (rm *resourceManager) ARNFromName(name string) string {
 // object passed in the parameter.
 func (rm *resourceManager) LateInitialize(
 	ctx context.Context,
-	resLatest acktypes.AWSResource,
+	latest acktypes.AWSResource,
 ) (acktypes.AWSResource, error) {
 	rlog := ackrtlog.FromContext(ctx)
-	latest := rm.concreteResource(resLatest)
 	// If there are no fields to late initialize, do nothing
 	if len(lateInitializeFieldNames) == 0 {
 		rlog.Debug("no late initialization required.")
@@ -183,7 +182,7 @@ func (rm *resourceManager) LateInitialize(
 {{- if $hookCode := Hook .CRD "late_initialize_pre_read_one" }}
 {{ $hookCode }}
 {{- end }}
-	observedRes, err := rm.ReadOne(ctx, latest)
+	observed, err := rm.ReadOne(ctx, latest)
 	if err != nil {
 		lateInitConditionMessage = "Unable to complete Read operation required for late initialization"
 		lateInitConditionReason = "Late Initialization Failure"
@@ -193,7 +192,6 @@ func (rm *resourceManager) LateInitialize(
 {{- if $hookCode := Hook .CRD "late_initialize_post_read_one" }}
 {{ $hookCode }}
 {{- end }}
-	observed := rm.concreteResource(observedRes)
 	latest = rm.lateInitializeFromReadOneOutput(observed, latest)
 	incompleteInitialization := rm.incompleteLateInitialization(latest)
 	if incompleteInitialization {
@@ -213,7 +211,7 @@ func (rm *resourceManager) LateInitialize(
 // incompleteLateInitialization return true if there are fields which were supposed to be
 // late initialized but are not. If all the fields are late initialized, false is returned
 func (rm *resourceManager) incompleteLateInitialization(
-	latest *resource,
+	latest acktypes.AWSResource,
 ) bool {
 {{ GoCodeIncompleteLateInitialization .CRD "latest" 1 }}
 }
@@ -221,9 +219,9 @@ func (rm *resourceManager) incompleteLateInitialization(
 // lateInitializeFromReadOneOutput late initializes the 'latest' resource from the 'observed'
 // resource and returns 'latest' resource
 func (rm *resourceManager) lateInitializeFromReadOneOutput(
-	observed *resource,
-	latest *resource,
-) *resource {
+	observed acktypes.AWSResource,
+	latest acktypes.AWSResource,
+) acktypes.AWSResource {
 {{ GoCodeLateInitializeFromReadOne .CRD "observed" "latest" 1 }}
 }
 

@@ -98,8 +98,8 @@ func getSortedLateInitFieldsAndConfig(
 //          min_backoff_seconds: 20
 //
 // Sample output:
-//	observedKo := observed.ko
-//	latestKo := latest.ko
+//	observedKo := rm.concreteResource(observed).ko
+//	latestKo := rm.concreteResource(latest).ko
 //	if observedKo.Spec.ImageScanningConfiguration != nil && latestKo.Spec.ImageScanningConfiguration != nil {
 //		if observedKo.Spec.ImageScanningConfiguration.ScanOnPush != nil && latestKo.Spec.ImageScanningConfiguration.ScanOnPush == nil {
 //			latestKo.Spec.ImageScanningConfiguration.ScanOnPush = observedKo.Spec.ImageScanningConfiguration.ScanOnPush
@@ -151,8 +151,8 @@ func LateInitializeFromReadOne(
 	if len(lateInitializedFieldNames) == 0 {
 		return fmt.Sprintf("%sreturn %s", indent, targetResVarName)
 	}
-	out += fmt.Sprintf("%sobservedKo := %s.ko\n", indent, sourceResVarName)
-	out += fmt.Sprintf("%slatestKo := %s.ko\n", indent, targetResVarName)
+	out += fmt.Sprintf("%sobservedKo := rm.concreteResource(%s).ko\n", indent, sourceResVarName)
+	out += fmt.Sprintf("%slatestKo := rm.concreteResource(%s).ko\n", indent, targetResVarName)
 	// TODO(vijat@): Add validation for correct field path in lateInitializedFieldNames
 	for _, fName := range lateInitializedFieldNames {
 		// split the field name by period
@@ -235,7 +235,7 @@ func LateInitializeFromReadOne(
 //
 //
 // Sample Output:
-//	ko := latestWithDefaults.ko
+//	ko := rm.concreteResource(latest).ko
 //	if ko.Spec.ImageScanningConfiguration != nil {
 //		if ko.Spec.ImageScanningConfiguration.ScanOnPush == nil {
 //			return true
@@ -288,7 +288,7 @@ func IncompleteLateInitialization(
 		out += fmt.Sprintf("%sreturn false", indent)
 		return out
 	}
-	out += fmt.Sprintf("%sko := %s.ko\n", indent, resVarName)
+	out += fmt.Sprintf("%sko := rm.concreteResource(%s).ko\n", indent, resVarName)
 	for _, fName := range sortedLateInitFieldNames {
 		// split the field name by period
 		// each substring represents a field.
