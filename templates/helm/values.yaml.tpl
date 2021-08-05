@@ -47,6 +47,10 @@ log:
 # If specified, the service controller will watch for object creation only in the provided namespace
 watchNamespace: ""
 
+# If specified, the service controller will use Role/Rolebinding instead of ClusterRole/ClusterRoleBindings
+# If set to true, user must set watchNamespace as well.
+namespacedInstallation: false
+
 resourceTags:
   # Configures the ACK service controller to always set key/value pairs tags on resources that it manages.
   - services.k8s.aws/managed=true

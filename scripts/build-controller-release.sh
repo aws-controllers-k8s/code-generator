@@ -201,8 +201,12 @@ controller-gen rbac:roleName=$K8S_RBAC_ROLE_NAME paths=./... output:rbac:artifac
 # controller-gen rbac outputs a ClusterRole definition in a
 # $config_output_dir/rbac/role.yaml file. We have some other standard Role
 # files for a reader and writer role, so here we rename the `role.yaml` file to
-# `cluster-role-controller.yaml` to better reflect what is in that file.
-mv $helm_output_dir/templates/role.yaml $helm_output_dir/templates/cluster-role-controller.yaml
+# `cluster-role-controller.yaml` to better reflect what is in that file. We additionally add the ability
+# for the user to specify if they want the role to be ClusterRole or Role by specifying installation scope
+# in the helm values.yaml
+cp -r $ROOT_DIR/templates/helm/templates/_namespaced-install.tpl $helm_output_dir/templates/
+sed -e '1r '"$helm_output_dir/templates/_namespaced-install.tpl"''  -e '1, 7d'  $helm_output_dir/templates/role.yaml > $helm_output_dir/templates/cluster-role-controller.yaml
+rm $helm_output_dir/templates/role.yaml
 
 popd 1>/dev/null
 
