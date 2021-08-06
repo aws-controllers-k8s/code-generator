@@ -1,9 +1,9 @@
-  [{"op": "replace",
-   "path": "/kind",
-   "value": "Role"},
-
-   
-  {"op": "add",
-   "path": "/metadata/namespace",
-   "value": "ack-system"}
-  ]
+[
+{"op": "replace",
+"path": "/kind",
+"value": "Role"},
+ 
+{"op": "add",
+"path": "/metadata/namespace",
+"value": "ack-system"}
+]

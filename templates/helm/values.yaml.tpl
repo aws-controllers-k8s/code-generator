@@ -47,7 +47,7 @@ log:
 # If specified, the service controller will watch for object creation only in the provided namespace
 watchNamespace: ""
 
-# If specified, the service controller will use Role/Rolebinding instead of ClusterRole/ClusterRoleBindings
+# If specified, the service controller will only be able to operate in a single namespace. Set by default to K8S_NAMESPACE
 # If set to true, user must set watchNamespace as well.
 namespacedInstallation: false
 
