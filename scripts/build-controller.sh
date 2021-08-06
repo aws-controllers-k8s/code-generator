@@ -213,7 +213,7 @@ mv $config_output_dir/rbac/role.yaml $config_output_dir/rbac/cluster-role-contro
 # with Role/Rolebinding and be purely namespaced scoped instead of using Cluster/ClusterRoleBinding
 # using kustomize
 mkdir -p $config_output_dir/overlays/namespaced
-cp -r $ROOT_DIR/templates/config/overlays/namespaced/* $config_output_dir/overlays/namespaced
+cp -r $ROOT_DIR/templates/config/overlays/namespaced/*.json $config_output_dir/overlays/namespaced
 
 popd 1>/dev/null
 

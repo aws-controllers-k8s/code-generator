@@ -204,7 +204,7 @@ controller-gen rbac:roleName=$K8S_RBAC_ROLE_NAME paths=./... output:rbac:artifac
 # `cluster-role-controller.yaml` to better reflect what is in that file. We additionally add the ability
 # for the user to specify if they want the role to be ClusterRole or Role by specifying installation scope
 # in the helm values.yaml
-sed -e '1r '"$ROOT_DIR/templates/helm/templates/_controller-role-kind-patch.yaml"''  -e '1, 7d'  $helm_output_dir/templates/role.yaml > $helm_output_dir/templates/cluster-role-controller.yaml
+sed -e '1r '"$helm_output_dir/templates/_controller-role-kind-patch.yaml"''  -e '1, 7d'  $helm_output_dir/templates/role.yaml > $helm_output_dir/templates/cluster-role-controller.yaml
 rm $helm_output_dir/templates/role.yaml
 
 popd 1>/dev/null
