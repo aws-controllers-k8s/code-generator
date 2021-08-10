@@ -206,6 +206,7 @@ controller-gen rbac:roleName=$K8S_RBAC_ROLE_NAME paths=./... output:rbac:artifac
 # in the helm values.yaml
 sed -e '1r '"$helm_output_dir/templates/_controller-role-kind-patch.yaml"''  -e '1, 7d'  $helm_output_dir/templates/role.yaml > $helm_output_dir/templates/cluster-role-controller.yaml
 rm $helm_output_dir/templates/role.yaml
+rm $helm_output_dir/templates/_controller-role-kind-patch.yaml
 
 popd 1>/dev/null
 
