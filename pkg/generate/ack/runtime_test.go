@@ -64,10 +64,6 @@ func (fd *fakeDescriptor) Delta(a, b acktypes.AWSResource) *ackcompare.Delta {
 	return nil
 }
 
-func (fd *fakeDescriptor) UpdateCRStatus(acktypes.AWSResource) (bool, error) {
-	return false, nil
-}
-
 func (fd *fakeDescriptor) IsManaged(acktypes.AWSResource) bool {
 	return false
 }
@@ -163,8 +159,12 @@ func TestRuntimeDependency(t *testing.T) {
 
 	// ACK runtime 0.8.0 removed the unused UpdateCRStatus method from
 	// AWSResourceDescriptor
-	rd := new(acktypes.AWSResourceDescriptor)
-	rdType := reflect.TypeOf(rd)
+	rdType := reflect.TypeOf((*acktypes.AWSResourceDescriptor)(nil)).Elem()
 	_, found := rdType.MethodByName("UpdateCRStatus")
 	require.False(found)
+
+	// ACK runtime 0.9.2 introduced the SetStatus method into AWSResource
+	resType := reflect.TypeOf((*acktypes.AWSResource)(nil)).Elem()
+	_, found = resType.MethodByName("SetStatus")
+	require.True(found)
 }
