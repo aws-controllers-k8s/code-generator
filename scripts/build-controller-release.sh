@@ -199,14 +199,17 @@ pushd $SERVICE_CONTROLLER_SOURCE_PATH/pkg/resource 1>/dev/null
 echo "Generating RBAC manifests for $SERVICE"
 controller-gen rbac:roleName=$K8S_RBAC_ROLE_NAME paths=./... output:rbac:artifacts:config=$helm_output_dir/templates
 # controller-gen rbac outputs a ClusterRole definition in a
-# $config_output_dir/rbac/role.yaml file. We have some other standard Role
-# files for a reader and writer role, so here we rename the `role.yaml` file to
-# `cluster-role-controller.yaml` to better reflect what is in that file. We additionally add the ability
+# $config_output_dir/rbac/role.yaml file. We additionally add the ability by 
 # for the user to specify if they want the role to be ClusterRole or Role by specifying installation scope
-# in the helm values.yaml
-sed -e '1r '"$helm_output_dir/templates/_controller-role-kind-patch.yaml"''  -e '1, 7d'  $helm_output_dir/templates/role.yaml > $helm_output_dir/templates/cluster-role-controller.yaml
+# in the helm values.yaml. We do this by having a custom helm template named _controller-role-kind-patch.yaml 
+# which utilizes the template langauge and adding the auto generated rules to that template. 
+tail -n +8  $helm_output_dir/templates/role.yaml >> $helm_output_dir/templates/_controller-role-kind-patch.yaml
+
+# We have some other standard Role files for a reader and writer role, so here we rename 
+# the `_controller-role-kind-patch.yaml ` file to `cluster-role-controller.yaml` 
+# to better reflect what is in that file. 
+mv $helm_output_dir/templates/_controller-role-kind-patch.yaml  $helm_output_dir/templates/cluster-role-controller.yaml
 rm $helm_output_dir/templates/role.yaml
-rm $helm_output_dir/templates/_controller-role-kind-patch.yaml
 
 popd 1>/dev/null
 
