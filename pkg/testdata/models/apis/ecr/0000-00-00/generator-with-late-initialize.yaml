@@ -5,7 +5,7 @@ resources:
         late_initialize: {}
       ImageTagMutability:
         late_initialize:
-          delay_seconds: 5
+          min_backoff_seconds: 5
     exceptions:
       errors:
         404:
