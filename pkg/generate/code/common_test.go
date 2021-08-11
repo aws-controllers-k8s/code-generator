@@ -17,13 +17,15 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/aws-controllers-k8s/code-generator/pkg/generate/code"
-	"github.com/aws-controllers-k8s/code-generator/pkg/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/aws-controllers-k8s/code-generator/pkg/generate/code"
+	"github.com/aws-controllers-k8s/code-generator/pkg/testutil"
+	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 )
 
-func TestFindIdentifierInShape_EC2_VPC_ReadMany(t *testing.T) {
+func TestFindIdentifiersInShape_EC2_VPC_ReadMany(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
@@ -33,15 +35,16 @@ func TestFindIdentifierInShape_EC2_VPC_ReadMany(t *testing.T) {
 	require.NotNil(crd)
 
 	expIdentifier := "VpcIds"
-	actualIdentifier, _ := code.FindIdentifierInShape(crd,
+	actualIdentifiers := code.FindIdentifiersInShape(crd,
 		crd.Ops.ReadMany.InputRef.Shape)
+	assert.Len(actualIdentifiers, 1)
 	assert.Equal(
 		strings.TrimSpace(expIdentifier),
-		strings.TrimSpace(actualIdentifier),
+		strings.TrimSpace(actualIdentifiers[0]),
 	)
 }
 
-func TestFindIdentifierInCRD_S3_Bucket_ReadMany_Empty(t *testing.T) {
+func TestFindIdentifiersInCRD_S3_Bucket_ReadMany_Empty(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
@@ -50,16 +53,12 @@ func TestFindIdentifierInCRD_S3_Bucket_ReadMany_Empty(t *testing.T) {
 	crd := testutil.GetCRDByName(t, g, "Bucket")
 	require.NotNil(crd)
 
-	expIdentifier := ""
-	actualIdentifier, _ := code.FindIdentifierInShape(crd,
+	actualIdentifiers := code.FindIdentifiersInShape(crd,
 		crd.Ops.ReadMany.InputRef.Shape)
-	assert.Equal(
-		strings.TrimSpace(expIdentifier),
-		strings.TrimSpace(actualIdentifier),
-	)
+	assert.Len(actualIdentifiers, 0)
 }
 
-func TestFindIdentifierInCRD_EC2_VPC_StatusField(t *testing.T) {
+func TestFindIdentifiersInCRD_EC2_VPC_StatusField(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
@@ -69,14 +68,15 @@ func TestFindIdentifierInCRD_EC2_VPC_StatusField(t *testing.T) {
 	require.NotNil(crd)
 
 	expIdentifier := "VpcId"
-	actualIdentifier, _ := code.FindIdentifierInCRD(crd)
+	actualIdentifiers := code.FindIdentifiersInCRD(crd)
+	assert.Len(actualIdentifiers, 1)
 	assert.Equal(
 		strings.TrimSpace(expIdentifier),
-		strings.TrimSpace(actualIdentifier),
+		strings.TrimSpace(actualIdentifiers[0]),
 	)
 }
 
-func TestFindIdentifierInCRD_S3_Bucket_SpecField(t *testing.T) {
+func TestFindIdentifiersInCRD_S3_Bucket_SpecField(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
@@ -86,9 +86,24 @@ func TestFindIdentifierInCRD_S3_Bucket_SpecField(t *testing.T) {
 	require.NotNil(crd)
 
 	expIdentifier := "Name"
-	actualIdentifier, _ := code.FindIdentifierInCRD(crd)
+	actualIdentifiers := code.FindIdentifiersInCRD(crd)
+	assert.Len(actualIdentifiers, 1)
 	assert.Equal(
 		strings.TrimSpace(expIdentifier),
-		strings.TrimSpace(actualIdentifier),
+		strings.TrimSpace(actualIdentifiers[0]),
 	)
+}
+
+func TestFindIdentifiersInCRD_APIGatewayV2_API_Multiple(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "apigatewayv2")
+	crd := testutil.GetCRDByName(t, g, "Api")
+	require.NotNil(crd)
+
+	expIdentifiers := []string{"ApiId", "Name"}
+	actualIdentifiers := code.FindIdentifiersInCRD(crd)
+	assert.Len(actualIdentifiers, 2)
+	assert.True(ackcompare.SliceStringEqual(expIdentifiers, actualIdentifiers))
 }

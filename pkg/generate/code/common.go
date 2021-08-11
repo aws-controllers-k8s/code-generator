@@ -14,22 +14,21 @@
 package code
 
 import (
-	"errors"
-	"fmt"
+	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
 
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
-
-	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
 )
 
-// FindIdentifierInShape returns the identifier field of a given shape which
+// FindIdentifiersInShape returns the identifier fields of a given shape which
 // can be singular or plural. Errors iff multiple identifier fields detected
 // in the shape.
-func FindIdentifierInShape(
+func FindIdentifiersInShape(
 	r *model.CRD,
-	shape *awssdkmodel.Shape) (string, error) {
+	shape *awssdkmodel.Shape) []string {
 	identifierLookup := []string{
+		"Id",
+		"Ids",
 		"Name",
 		"Names",
 		r.Names.Original + "Name",
@@ -37,29 +36,25 @@ func FindIdentifierInShape(
 		r.Names.Original + "Id",
 		r.Names.Original + "Ids",
 	}
-	identifier := ""
+	var identifiers []string
 
 	for _, memberName := range shape.MemberNames() {
 		if util.InStrings(memberName, identifierLookup) {
-			if identifier == "" {
-				identifier = memberName
-			} else {
-				return "", errors.New(fmt.Sprintf(
-					"Found multiple possible identifiers for %s: %s, %s ",
-					r.Names.Original, identifier, memberName))
-			}
+			identifiers = append(identifiers, memberName)
 		}
 	}
 
-	return identifier, nil
+	return identifiers
 }
 
-// FindIdentifierInCRD returns the identifier field of a given CRD which
+// FindIdentifiersInCRD returns the identifier field of a given CRD which
 // can be singular or plural. Errors iff multiple identifier fields detected
 // in the CRD.
-func FindIdentifierInCRD(
-	r *model.CRD) (string, error) {
+func FindIdentifiersInCRD(
+	r *model.CRD) []string {
 	identifierLookup := []string{
+		"Id",
+		"Ids",
 		"Name",
 		"Names",
 		r.Names.Original + "Name",
@@ -67,7 +62,7 @@ func FindIdentifierInCRD(
 		r.Names.Original + "Id",
 		r.Names.Original + "Ids",
 	}
-	identifier := ""
+	var identifiers []string
 
 	for _, id := range identifierLookup {
 		_, found := r.SpecFields[id]
@@ -75,15 +70,9 @@ func FindIdentifierInCRD(
 			_, found = r.StatusFields[id]
 		}
 		if found {
-			if identifier == "" {
-				identifier = id
-			} else {
-				return "", errors.New(fmt.Sprintf(
-					"Found multiple possible identifiers for %s: %s, %s ",
-					r.Names.Original, identifier, id))
-			}
+			identifiers = append(identifiers, id)
 		}
 	}
 
-	return identifier, nil
+	return identifiers
 }
