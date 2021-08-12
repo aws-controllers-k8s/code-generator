@@ -132,32 +132,17 @@ func checkRequiredFieldsMissingFromShape(
 			missing = append(missing, primaryARNCondition)
 			continue
 		}
-		cleanMemberNames := names.New(memberName)
-		cleanMemberName := cleanMemberNames.Camel
 
-		resVarPath := koVarName
-		// Check that the field has potentially been renamed
-		renamedName, wasRenamed := r.InputFieldRename(
-			op.Name, memberName,
-		)
-		_, found := r.SpecFields[renamedName]
-		if found && !wasRenamed {
-			resVarPath = resVarPath + r.Config().PrefixConfig.SpecField + "." + cleanMemberName
-		} else if found {
-			resVarPath = resVarPath + r.Config().PrefixConfig.SpecField + "." + renamedName
-		} else {
-			_, found = r.StatusFields[memberName]
-			if !found {
-				// If it isn't in our spec/status fields, we have a problem!
-				msg := fmt.Sprintf(
-					"GENERATION FAILURE! there's a required field %s in "+
-						"Shape %s that isn't in either the CR's Spec or "+
-						"Status structs!",
-					memberName, shape.ShapeName,
-				)
-				panic(msg)
-			}
-			resVarPath = resVarPath + r.Config().PrefixConfig.StatusField + "." + cleanMemberName
+		resVarPath, err := getSanitizedMemberPath(memberName, r, op, koVarName)
+		if err != nil {
+			// If it isn't in our spec/status fields, we have a problem!
+			msg := fmt.Sprintf(
+				"GENERATION FAILURE! there's a required field %s in "+
+					"Shape %s that isn't in either the CR's Spec or "+
+					"Status structs!",
+				memberName, shape.ShapeName,
+			)
+			panic(msg)
 		}
 		missing = append(missing, fmt.Sprintf("%s == nil", resVarPath))
 	}
@@ -165,4 +150,35 @@ func checkRequiredFieldsMissingFromShape(
 	// is not created yet
 	missingCondition := strings.Join(missing, " || ")
 	return fmt.Sprintf("%sreturn %s\n", indent, missingCondition)
+}
+
+// getSanitizedMemberPath takes a shape member field, checks for renames, checks
+// for existence in Spec and Status, then constructs and returns the var path.
+// Returns error if memberName is not present in either Spec or Status.
+func getSanitizedMemberPath(
+	memberName string,
+	r *model.CRD,
+	op *awssdkmodel.Operation,
+	koVarName string) (string, error) {
+	resVarPath := koVarName
+	cleanMemberNames := names.New(memberName)
+	cleanMemberName := cleanMemberNames.Camel
+	// Check that the field has potentially been renamed
+	renamedName, wasRenamed := r.InputFieldRename(
+		op.Name, memberName,
+	)
+	_, found := r.SpecFields[renamedName]
+	if found && !wasRenamed {
+		resVarPath = resVarPath + r.Config().PrefixConfig.SpecField + "." + cleanMemberName
+	} else if found {
+		resVarPath = resVarPath + r.Config().PrefixConfig.SpecField + "." + renamedName
+	} else {
+		_, found = r.StatusFields[memberName]
+		if !found {
+			return "", fmt.Errorf(
+				"the required field %s is NOT present in CR's Spec or Status", memberName)
+		}
+		resVarPath = resVarPath + r.Config().PrefixConfig.StatusField + "." + cleanMemberName
+	}
+	return resVarPath, nil
 }
