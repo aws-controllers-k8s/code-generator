@@ -52,7 +52,7 @@ ignore:
     - VpcEndpointConnectionNotification
     - VpcEndpointServiceConfiguration
     - VpcEndpoint
-    - Vpc
+    # - Vpc
     - VpcCidrBlock
     - VpcPeeringConnection
     - VpnConnectionRoute
