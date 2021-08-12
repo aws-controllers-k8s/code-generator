@@ -21,11 +21,14 @@ import (
 )
 
 // FindIdentifiersInShape returns the identifier fields of a given shape which
-// can be singular or plural. Errors iff multiple identifier fields detected
-// in the shape.
+// can be singular or plural.
 func FindIdentifiersInShape(
 	r *model.CRD,
 	shape *awssdkmodel.Shape) []string {
+	var identifiers []string
+	if r == nil || shape == nil {
+		return identifiers
+	}
 	identifierLookup := []string{
 		"Id",
 		"Ids",
@@ -36,7 +39,6 @@ func FindIdentifiersInShape(
 		r.Names.Original + "Id",
 		r.Names.Original + "Ids",
 	}
-	var identifiers []string
 
 	for _, memberName := range shape.MemberNames() {
 		if util.InStrings(memberName, identifierLookup) {
@@ -47,11 +49,14 @@ func FindIdentifiersInShape(
 	return identifiers
 }
 
-// FindIdentifiersInCRD returns the identifier field of a given CRD which
-// can be singular or plural. Errors iff multiple identifier fields detected
-// in the CRD.
+// FindIdentifiersInCRD returns the identifier fields of a given CRD which
+// can be singular or plural.
 func FindIdentifiersInCRD(
 	r *model.CRD) []string {
+	var identifiers []string
+	if r == nil {
+		return identifiers
+	}
 	identifierLookup := []string{
 		"Id",
 		"Ids",
@@ -62,7 +67,6 @@ func FindIdentifiersInCRD(
 		r.Names.Original + "Id",
 		r.Names.Original + "Ids",
 	}
-	var identifiers []string
 
 	for _, id := range identifierLookup {
 		_, found := r.SpecFields[id]
