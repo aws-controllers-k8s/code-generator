@@ -18,6 +18,7 @@ import (
 	"strings"
 
 	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
+	"github.com/gertd/go-pluralize"
 
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
@@ -74,6 +75,10 @@ func CheckRequiredFieldsMissingFromShape(
 	switch opType {
 	case model.OpTypeGet:
 		op = r.Ops.ReadOne
+	case model.OpTypeList:
+		op = r.Ops.ReadMany
+		return checkRequiredFieldsMissingFromShapeReadMany(
+			r, koVarName, indentLevel, op, op.InputRef.Shape)
 	case model.OpTypeGetAttributes:
 		op = r.Ops.GetAttributes
 	case model.OpTypeSetAttributes:
@@ -150,6 +155,70 @@ func checkRequiredFieldsMissingFromShape(
 	// is not created yet
 	missingCondition := strings.Join(missing, " || ")
 	return fmt.Sprintf("%sreturn %s\n", indent, missingCondition)
+}
+
+// checkRequiredFieldsMissingFromShapeReadMany is a special-case handling
+// of those APIs where there is no ReadOne operation and instead the only way to
+// grab information for a single object is to call the ReadMany/List operation
+// with one of more filtering fields-- specifically identifier(s). This method
+// locates an identifier field in the shape that can be populated with an
+// identifier value from the CR.
+//
+//
+// As an example, DescribeVpcs EC2 API call doesn't have a ReadOne operation or
+// required fields. However, the input shape has a VpcIds field which can be
+// populated using a VpcId, a field in the VPC CR's Status. Therefore, require
+// the VpcId field to be present to ensure the returned array from the API call
+// consists only of the desired Vpc.
+//
+// Sample Output:
+//
+// return r.ko.Status.VPCID == nil
+func checkRequiredFieldsMissingFromShapeReadMany(
+	r *model.CRD,
+	koVarName string,
+	indentLevel int,
+	op *awssdkmodel.Operation,
+	shape *awssdkmodel.Shape,
+) string {
+	indent := strings.Repeat("\t", indentLevel)
+	result := fmt.Sprintf("%sreturn false", indent)
+
+	shapeIdentifiers := FindIdentifiersInShape(r, shape)
+	crIdentifiers := FindIdentifiersInCRD(r)
+	if len(shapeIdentifiers) == 0 || len(crIdentifiers) == 0 {
+		return result
+	}
+
+	pluralize := pluralize.NewClient()
+	reqIdentifier := ""
+	for _, si := range shapeIdentifiers {
+		for _, ci := range crIdentifiers {
+			if strings.EqualFold(pluralize.Singular(si),
+				pluralize.Singular(ci)) {
+				if reqIdentifier == "" {
+					reqIdentifier = ci
+				} else {
+					// If there are multiple identifiers, then prioritize the
+					// 'Id' identifier. Checking 'Id' to determine resource
+					// creation should be safe as the field is usually
+					// present in CR.Status.
+					if !strings.HasSuffix(reqIdentifier, "Id") ||
+						!strings.HasSuffix(reqIdentifier, "Ids") {
+						reqIdentifier = ci
+					}
+				}
+			}
+		}
+	}
+
+	resVarPath, err := getSanitizedMemberPath(reqIdentifier, r, op, koVarName)
+	if err != nil {
+		return result
+	}
+
+	result = fmt.Sprintf("%s == nil", resVarPath)
+	return fmt.Sprintf("%sreturn %s\n", indent, result)
 }
 
 // getSanitizedMemberPath takes a shape member field, checks for renames, checks

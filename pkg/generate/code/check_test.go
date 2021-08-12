@@ -115,3 +115,24 @@ func TestCheckRequiredFields_RenamedSpecField(t *testing.T) {
 		strings.TrimSpace(gotCode),
 	)
 }
+
+func TestCheckRequiredFields_StatusField_ReadMany(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "ec2")
+
+	crd := testutil.GetCRDByName(t, g, "Vpc")
+	require.NotNil(crd)
+
+	expRequiredFieldsCode := `
+	return r.ko.Status.VPCID == nil
+`
+	gotCode := code.CheckRequiredFieldsMissingFromShape(
+		crd, model.OpTypeList, "r.ko", 1,
+	)
+	assert.Equal(
+		strings.TrimSpace(expRequiredFieldsCode),
+		strings.TrimSpace(gotCode),
+	)
+}

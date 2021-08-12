@@ -10,6 +10,13 @@ func (rm *resourceManager) sdkFind(
 {{- if $hookCode := Hook .CRD "sdk_read_many_pre_build_request" }}
 {{ $hookCode }}
 {{- end }}
+	// If any required fields in the input shape are missing, AWS resource is
+	// not created yet. Return NotFound here to indicate to callers that the
+	// resource isn't yet created.
+	if rm.requiredFieldsMissingFromReadManyInput(r) {
+		return nil, ackerr.NotFound
+	}
+
 	input, err := rm.newListRequestPayload(r)
 	if err != nil {
 		return nil, err
@@ -49,6 +56,19 @@ func (rm *resourceManager) sdkFind(
 {{ $hookCode }}
 {{- end }}
 	return &resource{ko}, nil
+}
+
+// requiredFieldsMissingFromReadManyInput returns true if there are any fields
+// for the ReadMany Input shape that are required but not present in the
+// resource's Spec or Status
+func (rm *resourceManager) requiredFieldsMissingFromReadManyInput(
+	r *resource,
+) bool {
+{{- if $customCheckMethod := .CRD.GetCustomCheckRequiredFieldsMissingMethod .CRD.Ops.ReadMany }}
+    return rm.{{ $customCheckMethod }}(r)
+{{- else }}
+{{ GoCodeRequiredFieldsMissingFromReadManyInput .CRD "r.ko" 1 }}
+{{- end }}
 }
 
 // newListRequestPayload returns SDK-specific struct for the HTTP request
