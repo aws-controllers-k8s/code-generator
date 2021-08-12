@@ -14,6 +14,7 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrlrt "sigs.k8s.io/controller-runtime"
 	ctrlrtmetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
+	"github.com/aws/aws-sdk-go/service/{{ .ServiceIDClean }}"
 
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
 	svcresource "github.com/aws-controllers-k8s/{{ .ServiceIDClean }}-controller/pkg/resource"
@@ -26,6 +27,7 @@ import (
 var (
 	awsServiceAPIGroup = "{{ .APIGroup }}"
 	awsServiceAlias	= "{{ .ServiceIDClean }}"
+	awsServiceEndpointsID = {{ .ServiceIDClean }}.EndpointsID
 	scheme			 = runtime.NewScheme()
 	setupLog		   = ctrlrt.Log.WithName("setup")
 )
@@ -84,7 +86,7 @@ func main() {
 		"aws.service", awsServiceAlias,
 	)
 	sc := ackrt.NewServiceController(
-		awsServiceAlias, awsServiceAPIGroup,
+		awsServiceAlias, awsServiceAPIGroup, awsServiceEndpointsID,
 		ackrt.VersionInfo{},	// TODO: populate version info
 	).WithLogger(
 		ctrlrt.Log,
