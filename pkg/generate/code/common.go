@@ -32,12 +32,12 @@ func FindIdentifiersInShape(
 	identifierLookup := []string{
 		"Id",
 		"Ids",
+		r.Names.Original + "Id",
+		r.Names.Original + "Ids",
 		"Name",
 		"Names",
 		r.Names.Original + "Name",
 		r.Names.Original + "Names",
-		r.Names.Original + "Id",
-		r.Names.Original + "Ids",
 	}
 
 	for _, memberName := range shape.MemberNames() {
@@ -50,7 +50,8 @@ func FindIdentifiersInShape(
 }
 
 // FindIdentifiersInCRD returns the identifier fields of a given CRD which
-// can be singular or plural.
+// can be singular or plural. Note, these fields will be the *original* field
+// names from the API model shape, not renamed field names.
 func FindIdentifiersInCRD(
 	r *model.CRD) []string {
 	var identifiers []string
@@ -60,12 +61,12 @@ func FindIdentifiersInCRD(
 	identifierLookup := []string{
 		"Id",
 		"Ids",
+		r.Names.Original + "Id",
+		r.Names.Original + "Ids",
 		"Name",
 		"Names",
 		r.Names.Original + "Name",
 		r.Names.Original + "Names",
-		r.Names.Original + "Id",
-		r.Names.Original + "Ids",
 	}
 
 	for _, id := range identifierLookup {

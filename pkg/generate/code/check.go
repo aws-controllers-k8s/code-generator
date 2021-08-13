@@ -196,6 +196,10 @@ func checkRequiredFieldsMissingFromShapeReadMany(
 		for _, ci := range crIdentifiers {
 			if strings.EqualFold(pluralize.Singular(si),
 				pluralize.Singular(ci)) {
+				// The CRD identifiers being used for comparison reflect the
+				// *original* field names in the API model shape.
+				// Field renames are handled below in the call to
+				// getSanitizedMemberPath.
 				if reqIdentifier == "" {
 					reqIdentifier = ci
 				} else {
