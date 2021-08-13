@@ -187,7 +187,7 @@ func (rm *resourceManager) LateInitialize(
 		lateInitConditionMessage = "Unable to complete Read operation required for late initialization"
 		lateInitConditionReason = "Late Initialization Failure"
 		ackcondition.SetLateInitialized(latest, corev1.ConditionFalse, &lateInitConditionMessage, &lateInitConditionReason)
-		return latest, ackrequeue.NeededAfter(err, time.Duration(0)*time.Second)
+		return latest, err
 	}
 {{- if $hookCode := Hook .CRD "late_initialize_post_read_one" }}
 {{ $hookCode }}
