@@ -1,5 +1,5 @@
 apiVersion: rbac.authorization.k8s.io/v1
-{{ "{{ if not .Values.namespacedInstallation }}" }}
+{{ "{{ if eq .Values.installScope \"cluster\" }}" }}
 kind: ClusterRoleBinding
 metadata:
   name: {{ "{{ include \"app.fullname\" . }}" }}

@@ -1,10 +1,10 @@
 apiVersion: rbac.authorization.k8s.io/v1
-{{ "{{ if not .Values.namespacedInstallation }}" }}
+{{ "{{ if eq .Values.installScope \"cluster\" }}" }}
 kind: ClusterRole
 metadata:
   creationTimestamp: null
   name: ack-{{ .ServiceIDClean }}-controller
-{{ "{{ else if and .Values.namespacedInstallation (required \"watchNamespace must be set for namespaced installation\"  .Values.watchNamespace) }}" }}
+{{ "{{ else }}" }}
 kind: Role
 metadata:
   creationTimestamp: null

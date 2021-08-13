@@ -44,12 +44,9 @@ log:
   enable_development_logging: false
   level: info
 
-# If specified, the service controller will watch for object creation only in the provided namespace
-watchNamespace: ""
-
-# If specified, the service controller will only be able to operate in a single namespace. Set by default to K8S_NAMESPACE
-# If set to true, user must set watchNamespace as well.
-namespacedInstallation: false
+# Set to namespace to install the controller in a namespaced scope, will only watch for object creation 
+# in the namespace. By default installScope is cluster wide.
+installScope: cluster
 
 resourceTags:
   # Configures the ACK service controller to always set key/value pairs tags on resources that it manages.
