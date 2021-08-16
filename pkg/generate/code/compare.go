@@ -399,10 +399,15 @@ func compareMap(
 			indent, firstResVarName, secondResVarName,
 		)
 	case "structure":
-		// TODO(jaypipes): Implement this by walking the keys and struct values
-		// and comparing each struct individually, building up the fieldPath
-		// appropriately...
-		return ""
+		// NOTE(jaypipes): Using reflect here is really punting. We should
+		// implement this in a cleaner, more efficient fashion by walking the
+		// keys and struct values and comparing each struct individually,
+		// building up the fieldPath appropriately and calling into a
+		// struct-specific comparator function...
+		out += fmt.Sprintf(
+			"%sif !reflect.DeepEqual(%s, %s) {\n",
+			indent, firstResVarName, secondResVarName,
+		)
 	default:
 		panic("Unsupported shape type in generate.code.compareMap: " + shape.Type)
 	}
@@ -467,10 +472,16 @@ func compareSlice(
 			indent, firstResVarName, secondResVarName,
 		)
 	case "structure":
-		// TODO(jaypipes): Implement this by walking the slice of struct values
-		// and comparing each struct individually, building up the fieldPath
-		// appropriately...
-		return ""
+		// NOTE(jaypipes): Using reflect here is really punting. We should
+		// implement this in a cleaner, more efficient fashion by walking the
+		// struct values and comparing each struct individually, building up
+		// the fieldPath appropriately and calling into a struct-specific
+		// comparator function...the tricky part of this is figuring out how to
+		// sort the slice of structs...
+		out += fmt.Sprintf(
+			"%sif !reflect.DeepEqual(%s, %s) {\n",
+			indent, firstResVarName, secondResVarName,
+		)
 	default:
 		panic("Unsupported shape type in generate.code.compareSlice: " + shape.Type)
 	}
