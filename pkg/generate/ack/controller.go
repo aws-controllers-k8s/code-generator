@@ -118,6 +118,15 @@ var (
 		"GoCodeSetResourceIdentifiers": func(r *ackmodel.CRD, sourceVarName string, targetVarName string, indentLevel int) string {
 			return code.SetResourceIdentifiers(r.Config(), r, sourceVarName, targetVarName, indentLevel)
 		},
+		"GoCodeFindLateInitializedFieldNames": func(r *ackmodel.CRD, resVarName string, indentLevel int) string {
+			return code.FindLateInitializedFieldNames(r.Config(), r, resVarName, indentLevel)
+		},
+		"GoCodeLateInitializeFromReadOne": func(r *ackmodel.CRD, sourceResVarName string, targetResVarName string, indentLevel int) string {
+			return code.LateInitializeFromReadOne(r.Config(), r, sourceResVarName, targetResVarName, indentLevel)
+		},
+		"GoCodeIncompleteLateInitialization": func(r *ackmodel.CRD, resVarName string, indentLevel int) string {
+			return code.IncompleteLateInitialization(r.Config(), r, resVarName, indentLevel)
+		},
 	}
 )
 

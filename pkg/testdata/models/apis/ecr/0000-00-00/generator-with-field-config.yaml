@@ -1,0 +1,12 @@
+resources:
+  Repository:
+    fields:
+      Name:
+        is_name: true
+    exceptions:
+      errors:
+        404:
+          code: RepositoryNotFoundException
+    list_operation:
+      match_fields:
+        - RepositoryName

@@ -59,6 +59,8 @@ code paths:
 * sdk_file_end
 * delta_pre_compare
 * delta_post_compare
+* late_initialize_pre_read_one
+* late_initialize_post_read_one
 
 The "pre_build_request" hooks are called BEFORE the call to construct
 the Input shape that is used in the API operation and therefore BEFORE
@@ -101,6 +103,12 @@ compares two resources.
 
 The "delta_post_compare" hooks are called AFTER the generated code that
 compares two resources.
+
+The "late_initialize_pre_read_one" hooks are called BEFORE making the
+readOne call inside AWSResourceManager.LateInitialize() method
+
+The "late_initialize_post_read_one" hooks are called AFTER making the
+readOne call inside AWSResourceManager.LateInitialize() method
 
 */
 
