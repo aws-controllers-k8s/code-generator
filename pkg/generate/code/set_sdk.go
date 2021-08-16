@@ -1106,7 +1106,7 @@ func SetSDKForStruct(
 }
 
 // setSDKForSlice returns a string of Go code that sets a target variable value
-// to a source variable when the type of the source variable is a struct.
+// to a source variable when the type of the source variable is a slice.
 func setSDKForSlice(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,
@@ -1171,7 +1171,7 @@ func setSDKForSlice(
 }
 
 // setSDKForMap returns a string of Go code that sets a target variable value
-// to a source variable when the type of the source variable is a struct.
+// to a source variable when the type of the source variable is a map.
 func setSDKForMap(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,
