@@ -136,6 +136,22 @@ type PrintFieldConfig struct {
 	Index int `json:"index"`
 }
 
+// LateInitializeConfig contains instructions for how to handle the
+// retrieval and setting of server-side defaulted fields.
+// NOTE: Currently the members of this have no effect on late initialization of fields.
+// Currently the late initialization is requeued with static delay of 5 second.
+// TODO: (vijat@) Add support of retry/backoff for late initialization.
+type LateInitializeConfig struct {
+	// MinBackoffSeconds provides the minimum backoff to attempt late initialization again after an unsuccessful
+	// attempt to late initialized fields from ReadOne output
+	// For every attempt, the reconciler will calculate the delay between MinBackoffSeconds and MaxBackoffSeconds
+	// using exponential backoff and retry strategy
+	MinBackoffSeconds int `json:"min_backoff_seconds,omitempty"`
+	// MaxBackoffSeconds provide the maximum allowed backoff when retrying late initialization after an
+	// unsuccessful attempt.
+	MaxBackoffSeconds int `json:"max_backoff_seconds"`
+}
+
 // FieldConfig contains instructions to the code generator about how
 // to interpret the value of an Attribute and how to map it to a CRD's Spec or
 // Status field
@@ -184,4 +200,7 @@ type FieldConfig struct {
 	// influence hows field are printed in `kubectl get` response. If this field
 	// is not nil, it will be added to the columns of `kubectl get`.
 	Print *PrintFieldConfig `json:"print,omitempty"`
+	// Late Initialize instructs the code generator how to handle the late initialization
+	// of the field.
+	LateInitialize *LateInitializeConfig `json:"late_initialize,omitempty"`
 }

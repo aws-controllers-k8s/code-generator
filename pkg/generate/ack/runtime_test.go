@@ -117,6 +117,10 @@ func (frm *fakeRM) Delete(context.Context, acktypes.AWSResource) (acktypes.AWSRe
 
 func (frm *fakeRM) ARNFromName(string) string { return "" }
 
+func (frm *fakeRM) LateInitialize(context.Context, acktypes.AWSResource) (acktypes.AWSResource, error) {
+	return nil, nil
+}
+
 // This test is mostly just a hack to introduce a Go module dependency between
 // the ACK runtime library and the code generator. The code generator doesn't
 // actually depend on Go code in the ACK runtime, but it *produces* templated
