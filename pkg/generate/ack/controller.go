@@ -36,6 +36,7 @@ var (
 		"config/rbac/role-writer.yaml.tpl",
 		"config/rbac/kustomization.yaml.tpl",
 		"config/crd/kustomization.yaml.tpl",
+		"config/overlays/namespaced/kustomization.yaml.tpl",
 	}
 	controllerIncludePaths = []string{
 		"config/controller/kustomization_def.yaml.tpl",

@@ -44,8 +44,9 @@ log:
   enable_development_logging: false
   level: info
 
-# If specified, the service controller will watch for object creation only in the provided namespace
-watchNamespace: ""
+# Set to "namespace" to install the controller in a namespaced scope, will only watch for object creation 
+# in the namespace. By default installScope is cluster wide.
+installScope: cluster
 
 resourceTags:
   # Configures the ACK service controller to always set key/value pairs tags on resources that it manages.

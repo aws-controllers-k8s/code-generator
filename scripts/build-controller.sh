@@ -209,6 +209,11 @@ controller-gen rbac:roleName=$K8S_RBAC_ROLE_NAME paths=./... output:rbac:artifac
 # files for a reader and writer role, so here we rename the `role.yaml` file to
 # `cluster-role-controller.yaml` to better reflect what is in that file.
 mv $config_output_dir/rbac/role.yaml $config_output_dir/rbac/cluster-role-controller.yaml
+# Copy definitions for json patches which allow the user to patch the controller
+# with Role/Rolebinding and be purely namespaced scoped instead of using Cluster/ClusterRoleBinding
+# using kustomize
+mkdir -p $config_output_dir/overlays/namespaced
+cp -r $ROOT_DIR/templates/config/overlays/namespaced/*.json $config_output_dir/overlays/namespaced
 
 popd 1>/dev/null
 

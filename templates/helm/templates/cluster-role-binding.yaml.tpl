@@ -1,10 +1,19 @@
 apiVersion: rbac.authorization.k8s.io/v1
+{{ "{{ if eq .Values.installScope \"cluster\" }}" }}
 kind: ClusterRoleBinding
 metadata:
   name: {{ "{{ include \"app.fullname\" . }}" }}
 roleRef:
-  apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
+{{ "{{ else }}" }}
+kind: RoleBinding
+metadata:
+  name: {{ "{{ include \"app.fullname\" . }}" }}
+  namespace: {{ "{{ .Release.Namespace }}" }}
+roleRef:
+  kind: Role
+{{ "{{ end }}" }}
+  apiGroup: rbac.authorization.k8s.io
   name: ack-{{ .ServiceIDClean }}-controller
 subjects:
 - kind: ServiceAccount

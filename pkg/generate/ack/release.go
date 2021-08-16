@@ -28,6 +28,7 @@ var (
 		"helm/values.yaml.tpl",
 		"helm/templates/role-reader.yaml.tpl",
 		"helm/templates/role-writer.yaml.tpl",
+		"helm/templates/_controller-role-kind-patch.yaml.tpl",
 	}
 	releaseIncludePaths = []string{}
 	releaseCopyPaths    = []string{
