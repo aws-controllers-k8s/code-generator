@@ -4,19 +4,17 @@ kind: ClusterRoleBinding
 metadata:
   name: {{ "{{ include \"app.fullname\" . }}" }}
 roleRef:
-  apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: ack-{{ .ServiceIDClean }}-controller
 {{ "{{ else }}" }}
 kind: RoleBinding
 metadata:
   name: {{ "{{ include \"app.fullname\" . }}" }}
   namespace: {{ "{{ .Release.Namespace }}" }}
 roleRef:
-  apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: ack-{{ .ServiceIDClean }}-controller
 {{ "{{ end }}" }}
+  apiGroup: rbac.authorization.k8s.io
+  name: ack-{{ .ServiceIDClean }}-controller
 subjects:
 - kind: ServiceAccount
   name: {{ "{{ include \"service-account.name\" . }}" }}

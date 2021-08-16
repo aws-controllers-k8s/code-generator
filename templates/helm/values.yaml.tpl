@@ -44,7 +44,7 @@ log:
   enable_development_logging: false
   level: info
 
-# Set to namespace to install the controller in a namespaced scope, will only watch for object creation 
+# Set to "namespace" to install the controller in a namespaced scope, will only watch for object creation 
 # in the namespace. By default installScope is cluster wide.
 installScope: cluster
 
