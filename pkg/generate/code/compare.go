@@ -36,6 +36,44 @@ import (
 // constructed from the Read operation, is compared to the Resource we got from
 // the Kubernetes API server's event bus. The code that is returned from this
 // function is the code that compares those two Resources.
+//
+// The Go code we return depends on the Go type of the various fields for the
+// resource being compared.
+//
+// For *scalar* Go types, the output Go code looks like this:
+//
+// if ackcompare.HasNilDifference(a.ko.Spec.GrantFullControl, b.ko.Spec.GrantFullControl) {
+//     delta.Add("Spec.GrantFullControl", a.ko.Spec.GrantFullControl, b.ko.Spec.GrantFullControl)
+// } else if a.ko.Spec.GrantFullControl != nil && b.ko.Spec.GrantFullControl != nil {
+//     if *a.ko.Spec.GrantFullControl != *b.ko.Spec.GrantFullControl {
+//         delta.Add("Spec.GrantFullControl", a.ko.Spec.GrantFullControl, b.ko.Spec.GrantFullControl)
+//     }
+// }
+//
+// For *struct* Go types, the output Go code looks like this (note that it is a
+// simple recursive-descent output of all the struct's fields...):
+//
+// if ackcompare.HasNilDifference(a.ko.Spec.CreateBucketConfiguration, b.ko.Spec.CreateBucketConfiguration) {
+//     delta.Add("Spec.CreateBucketConfiguration", a.ko.Spec.CreateBucketConfiguration, b.ko.Spec.CreateBucketConfiguration)
+// } else if a.ko.Spec.CreateBucketConfiguration != nil && b.ko.Spec.CreateBucketConfiguration != nil {
+//     if ackcompare.HasNilDifference(a.ko.Spec.CreateBucketConfiguration.LocationConstraint, b.ko.Spec.CreateBucketConfiguration.LocationConstraint) {
+//         delta.Add("Spec.CreateBucketConfiguration.LocationConstraint", a.ko.Spec.CreateBucketConfiguration.LocationConstraint, b.ko.Spec.CreateBucketConfiguration.LocationConstraint)
+//     } else if a.ko.Spec.CreateBucketConfiguration.LocationConstraint != nil && b.ko.Spec.CreateBucketConfiguration.LocationConstraint != nil {
+//         if *a.ko.Spec.CreateBucketConfiguration.LocationConstraint != *b.ko.Spec.CreateBucketConfiguration.LocationConstraint {
+//             delta.Add("Spec.CreateBucketConfiguration.LocationConstraint", a.ko.Spec.CreateBucketConfiguration.LocationConstraint, b.ko.Spec.CreateBucketConfiguration.LocationConstraint)
+//         }
+//     }
+// }
+//
+// For *slice of strings* Go types, the output Go code looks like this:
+//
+// if ackcompare.HasNilDifference(a.ko.Spec.AllowedPublishers, b.ko.Spec.AllowedPublishers) {
+//     delta.Add("Spec.AllowedPublishers", a.ko.Spec.AllowedPublishers, b.ko.Spec.AllowedPublishers)
+// } else if a.ko.Spec.AllowedPublishers != nil && b.ko.Spec.AllowedPublishers != nil {
+//     if !ackcompare.SliceStringPEqual(a.ko.Spec.AllowedPublishers.SigningProfileVersionARNs, b.ko.Spec.AllowedPublishers.SigningProfileVersionARNs) {
+//         delta.Add("Spec.AllowedPublishers.SigningProfileVersionARNs", a.ko.Spec.AllowedPublishers.SigningProfileVersionARNs, b.ko.Spec.AllowedPublishers.SigningProfileVersionARNs)
+//     }
+// }
 func CompareResource(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,
@@ -113,8 +151,6 @@ func CompareResource(
 				nilCode, firstResAdaptedVarName, secondResAdaptedVarName,
 			)
 			indentLevel++
-		} else {
-			out += "\n"
 		}
 
 		switch memberShape.Type {
@@ -363,10 +399,15 @@ func compareMap(
 			indent, firstResVarName, secondResVarName,
 		)
 	case "structure":
-		// TODO(jaypipes): Implement this by walking the keys and struct values
-		// and comparing each struct individually, building up the fieldPath
-		// appropriately...
-		return ""
+		// NOTE(jaypipes): Using reflect here is really punting. We should
+		// implement this in a cleaner, more efficient fashion by walking the
+		// keys and struct values and comparing each struct individually,
+		// building up the fieldPath appropriately and calling into a
+		// struct-specific comparator function...
+		out += fmt.Sprintf(
+			"%sif !reflect.DeepEqual(%s, %s) {\n",
+			indent, firstResVarName, secondResVarName,
+		)
 	default:
 		panic("Unsupported shape type in generate.code.compareMap: " + shape.Type)
 	}
@@ -431,10 +472,16 @@ func compareSlice(
 			indent, firstResVarName, secondResVarName,
 		)
 	case "structure":
-		// TODO(jaypipes): Implement this by walking the slice of struct values
-		// and comparing each struct individually, building up the fieldPath
-		// appropriately...
-		return ""
+		// NOTE(jaypipes): Using reflect here is really punting. We should
+		// implement this in a cleaner, more efficient fashion by walking the
+		// struct values and comparing each struct individually, building up
+		// the fieldPath appropriately and calling into a struct-specific
+		// comparator function...the tricky part of this is figuring out how to
+		// sort the slice of structs...
+		out += fmt.Sprintf(
+			"%sif !reflect.DeepEqual(%s, %s) {\n",
+			indent, firstResVarName, secondResVarName,
+		)
 	default:
 		panic("Unsupported shape type in generate.code.compareSlice: " + shape.Type)
 	}
@@ -531,8 +578,6 @@ func compareStruct(
 				nilCode, firstResAdaptedVarName, secondResAdaptedVarName,
 			)
 			indentLevel++
-		} else {
-			out += "\n"
 		}
 		switch memberShape.Type {
 		case "structure":
