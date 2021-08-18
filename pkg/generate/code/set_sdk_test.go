@@ -1789,9 +1789,6 @@ func TestSetSDK_EC2_VPC_ReadMany(t *testing.T) {
 	require.NotNil(crd)
 
 	expected := `
-	if r.ko.Spec.DryRun != nil {
-		res.SetDryRun(*r.ko.Spec.DryRun)
-	}
 	if r.ko.Status.VPCID != nil {
 		f4 := []*string{}
 		f4 = append(f4, r.ko.Status.VPCID)

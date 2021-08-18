@@ -735,6 +735,14 @@ func SetSDKSetAttributes(
 // a VpcId, a field in the VPC CR's Status. Therefore, populate VpcIds field
 // with the *single* VpcId value to ensure the returned array from the API call
 // consists only of the desired Vpc.
+//
+// Sample Output:
+//
+// 	if r.ko.Status.VPCID != nil {
+//		f4 := []*string{}
+//		f4 = append(f4, r.ko.Status.VPCID)
+//		res.SetVpcIds(f4)
+//	}
 func setSDKReadMany(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,
@@ -767,7 +775,8 @@ func setSDKReadMany(
 				case "string":
 					value = "\"" + value + "\""
 				default:
-					panic("Member type not handled")
+					panic(fmt.Sprintf("Unsupported shape type %s in "+
+						"generate.code.setSDKReadMany", memberShape.Type))
 				}
 
 				out += fmt.Sprintf("%s%s.Set%s(%s)\n", indent, targetVarName, memberName, value)
@@ -791,6 +800,11 @@ func setSDKReadMany(
 				if resVarPath == "" || (!strings.HasSuffix(resVarPath, "Id") ||
 					!strings.HasSuffix(resVarPath, "Ids")) {
 					resVarPath, err = getSanitizedMemberPath(flipped, r, op, sourceVarName)
+					if err != nil {
+						panic(fmt.Sprintf(
+							"Unable to locate identifier field %s in "+
+								"%s Spec/Status in generate.code.setSDKReadMany", flipped, r.Kind))
+					}
 				}
 			} else {
 				// TODO(jaypipes): check generator config for exceptions?
@@ -807,34 +821,32 @@ func setSDKReadMany(
 		switch memberShape.Type {
 		case "list":
 			// Expecting slice of identifiers
-			{
-				memberVarName := fmt.Sprintf("f%d", memberIndex)
-				// f0 := []*string{}
-				out += varEmptyConstructorSDKType(
-					cfg, r,
-					memberVarName,
-					memberShape,
-					indentLevel+1,
-				)
+			memberVarName := fmt.Sprintf("f%d", memberIndex)
+			// f0 := []*string{}
+			out += varEmptyConstructorSDKType(
+				cfg, r,
+				memberVarName,
+				memberShape,
+				indentLevel+1,
+			)
 
-				//  f0 = append(f0, sourceVarName)
-				out += fmt.Sprintf("%s\t%s = append(%s, %s)\n", indent,
-					memberVarName, memberVarName, resVarPath)
+			//  f0 = append(f0, sourceVarName)
+			out += fmt.Sprintf("%s\t%s = append(%s, %s)\n", indent,
+				memberVarName, memberVarName, resVarPath)
 
-				// res.SetIds(f0)
-				out += setSDKForScalar(
-					cfg, r,
-					memberName,
-					targetVarName,
-					inputShape.Type,
-					sourceVarName,
-					memberVarName,
-					memberShapeRef,
-					indentLevel+1,
-				)
-			}
+			// res.SetIds(f0)
+			out += setSDKForScalar(
+				cfg, r,
+				memberName,
+				targetVarName,
+				inputShape.Type,
+				sourceVarName,
+				memberVarName,
+				memberShapeRef,
+				indentLevel+1,
+			)
 		default:
-			// For rare ReadMany that have a singular identifier field.
+			// For ReadMany that have a singular identifier field.
 			// ex: DescribeReplicationGroups
 			out += setSDKForScalar(
 				cfg, r,
