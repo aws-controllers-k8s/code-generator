@@ -69,7 +69,7 @@ spec:
         - name: AWS_ENDPOINT_URL
           value: {{ .Values.aws.endpoint_url | quote }}
         - name: ACK_WATCH_NAMESPACE
-          value: {{ include "watch-namespace" . }}   
+          value: {{ include "watch-namespace" . }}
         - name: ACK_ENABLE_DEVELOPMENT_LOGGING
           value: {{ .Values.log.enable_development_logging | quote }}
         - name: ACK_LOG_LEVEL
