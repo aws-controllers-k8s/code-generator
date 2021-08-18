@@ -44,12 +44,14 @@ log:
   enable_development_logging: false
   level: info
 
-# Set to "namespace" to install the controller in a namespaced scope, will only watch for object creation 
-# in the namespace. By default installScope is cluster wide.
+# Set to "namespace" to install the controller in a namespaced scope, will only
+# watch for object creation in the namespace. By default installScope is
+# cluster wide.
 installScope: cluster
 
 resourceTags:
-  # Configures the ACK service controller to always set key/value pairs tags on resources that it manages.
+  # Configures the ACK service controller to always set key/value pairs tags on
+  # resources that it manages.
   - services.k8s.aws/managed=true
   - services.k8s.aws/created=%UTCNOW%
   - services.k8s.aws/namespace=%KUBERNETES_NAMESPACE%
