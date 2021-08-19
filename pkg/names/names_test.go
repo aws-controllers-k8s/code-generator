@@ -53,6 +53,7 @@ func TestNames(t *testing.T) {
 		{"DpdTimeoutAction", "DPDTimeoutAction", "dpdTimeoutAction", "dpd_timeout_action"},
 		{"Iops", "IOPS", "iops", "iops"},
 		{"IoPerformance", "IOPerformance", "ioPerformance", "io_performance"},
+		{"Vlan", "VLAN", "vlan", "vlan"},
 	}
 	for _, tc := range testCases {
 		n := names.New(tc.original)
