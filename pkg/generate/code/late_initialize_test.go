@@ -33,7 +33,7 @@ func Test_FindLateInitializedFieldNames_EmptyFieldConfig(t *testing.T) {
 	// NO fieldConfig
 	assert.Empty(crd.Config().ResourceFields(crd.Names.Original))
 	expected :=
-		`	var lateInitializeFieldNames = []string{}
+		`	lateInitializeFieldNames = []string{}
 `
 	assert.Equal(expected, code.FindLateInitializedFieldNames(crd.Config(), crd, "lateInitializeFieldNames", 1))
 }
@@ -50,7 +50,7 @@ func Test_FindLateInitializedFieldNames_NoLateInitializations(t *testing.T) {
 	assert.NotEmpty(crd.Config().ResourceFields(crd.Names.Original)["Name"])
 	assert.Nil(crd.Config().ResourceFields(crd.Names.Original)["Name"].LateInitialize)
 	expected :=
-		`	var lateInitializeFieldNames = []string{}
+		`	lateInitializeFieldNames = []string{}
 `
 	assert.Equal(expected, code.FindLateInitializedFieldNames(crd.Config(), crd, "lateInitializeFieldNames", 1))
 }
@@ -68,7 +68,7 @@ func Test_FindLateInitializedFieldNames(t *testing.T) {
 	assert.NotNil(crd.Config().ResourceFields(crd.Names.Original)["Name"].LateInitialize)
 	assert.NotNil(crd.Config().ResourceFields(crd.Names.Original)["ImageTagMutability"].LateInitialize)
 	expected :=
-		`	var lateInitializeFieldNames = []string{"ImageTagMutability","Name",}
+		`	lateInitializeFieldNames = []string{"ImageTagMutability","Name",}
 `
 	assert.Equal(expected, code.FindLateInitializedFieldNames(crd.Config(), crd, "lateInitializeFieldNames", 1))
 }
@@ -167,7 +167,7 @@ func Test_LateInitializeFromReadOne_NestedPath(t *testing.T) {
 	assert.Equal(expected, code.LateInitializeFromReadOne(crd.Config(), crd, "observed", "latest", 1))
 }
 
-func Test_IncompleteLateInitialization_NoFieldsToLateInitialization(t *testing.T) {
+func Test_CalculateRequeueDelay_NoFieldsToLateInitialization(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
@@ -176,11 +176,11 @@ func Test_IncompleteLateInitialization_NoFieldsToLateInitialization(t *testing.T
 	crd := testutil.GetCRDByName(t, g, "Repository")
 	require.NotNil(crd)
 	expected :=
-		`	return false`
-	assert.Equal(expected, code.IncompleteLateInitialization(crd.Config(), crd, "latestWithDefaults", 1))
+		`	return time.Duration(0), false`
+	assert.Equal(expected, code.CalculateRequeueDelay(crd.Config(), crd, "latest", 1))
 }
 
-func Test_IncompleteLateInitialization(t *testing.T) {
+func Test_CalculateRequeueDelay(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
@@ -194,42 +194,57 @@ func Test_IncompleteLateInitialization(t *testing.T) {
 	assert.NotNil(crd.Config().ResourceFields(crd.Names.Original)["ImageScanningConfiguration.ScanOnPush"].LateInitialize)
 	expected :=
 		`	ko := rm.concreteResource(latest).ko
+	numLateInitializationAttempt := ackannotation.GetNumLateInitializationAttempt(latest.MetaObject())
+	requeueDelay := time.Duration(0)*time.Second
+	incompleteInitialization := false
 	if ko.Spec.ImageScanningConfiguration != nil {
 		if ko.Spec.ImageScanningConfiguration.ScanOnPush == nil {
-			return true
+			fDelay := (&acktypes.Exponential{Initial:time.Duration(5)*time.Second, Factor: 2, MaxDelay: time.Duration(15)*time.Second,}).GetBackoff(numLateInitializationAttempt)
+			requeueDelay = time.Duration(math.Max(requeueDelay.Seconds(), fDelay.Seconds()))*time.Second
+			incompleteInitialization= true
 		}
 	}
 	if ko.Spec.Name == nil {
-		return true
+		fDelay := (&acktypes.Exponential{Initial:time.Duration(0)*time.Second, Factor: 2, MaxDelay: time.Duration(0)*time.Second,}).GetBackoff(numLateInitializationAttempt)
+		requeueDelay = time.Duration(math.Max(requeueDelay.Seconds(), fDelay.Seconds()))*time.Second
+		incompleteInitialization= true
 	}
 	if ko.Spec.another != nil {
 		if ko.Spec.another.map != nil {
 			if ko.Spec.another.map["lastfield"] == nil {
-				return true
+				fDelay := (&acktypes.Exponential{Initial:time.Duration(5)*time.Second, Factor: 2, MaxDelay: time.Duration(0)*time.Second,}).GetBackoff(numLateInitializationAttempt)
+				requeueDelay = time.Duration(math.Max(requeueDelay.Seconds(), fDelay.Seconds()))*time.Second
+				incompleteInitialization= true
 			}
 		}
 	}
 	if ko.Spec.map != nil {
 		if ko.Spec.map["subfield"] != nil {
 			if ko.Spec.map["subfield"].x == nil {
-				return true
+				fDelay := (&acktypes.Exponential{Initial:time.Duration(5)*time.Second, Factor: 2, MaxDelay: time.Duration(0)*time.Second,}).GetBackoff(numLateInitializationAttempt)
+				requeueDelay = time.Duration(math.Max(requeueDelay.Seconds(), fDelay.Seconds()))*time.Second
+				incompleteInitialization= true
 			}
 		}
 	}
 	if ko.Spec.some != nil {
 		if ko.Spec.some.list == nil {
-			return true
+			fDelay := (&acktypes.Exponential{Initial:time.Duration(10)*time.Second, Factor: 2, MaxDelay: time.Duration(0)*time.Second,}).GetBackoff(numLateInitializationAttempt)
+			requeueDelay = time.Duration(math.Max(requeueDelay.Seconds(), fDelay.Seconds()))*time.Second
+			incompleteInitialization= true
 		}
 	}
 	if ko.Spec.structA != nil {
 		if ko.Spec.structA.mapB != nil {
 			if ko.Spec.structA.mapB["structC"] != nil {
 				if ko.Spec.structA.mapB["structC"].valueD == nil {
-					return true
+					fDelay := (&acktypes.Exponential{Initial:time.Duration(20)*time.Second, Factor: 2, MaxDelay: time.Duration(0)*time.Second,}).GetBackoff(numLateInitializationAttempt)
+					requeueDelay = time.Duration(math.Max(requeueDelay.Seconds(), fDelay.Seconds()))*time.Second
+					incompleteInitialization= true
 				}
 			}
 		}
 	}
-	return false`
-	assert.Equal(expected, code.IncompleteLateInitialization(crd.Config(), crd, "latest", 1))
+	return requeueDelay, incompleteInitialization`
+	assert.Equal(expected, code.CalculateRequeueDelay(crd.Config(), crd, "latest", 1))
 }

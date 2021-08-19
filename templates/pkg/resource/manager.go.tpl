@@ -5,9 +5,11 @@ package {{ .CRD.Names.Snake }}
 import (
 	"context"
 	"fmt"
+	"math"
 	"time"
 
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
+	ackannotation "github.com/aws-controllers-k8s/runtime/pkg/annotation"
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackcfg "github.com/aws-controllers-k8s/runtime/pkg/config"
 	ackcondition "github.com/aws-controllers-k8s/runtime/pkg/condition"
@@ -27,7 +29,10 @@ import (
 // +kubebuilder:rbac:groups={{ .APIGroup }},resources={{ ToLower .CRD.Plural }},verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups={{ .APIGroup }},resources={{ ToLower .CRD.Plural }}/status,verbs=get;update;patch
 
+var (
+	_ = math.E // to avoid unused import error
 {{ GoCodeFindLateInitializedFieldNames .CRD "lateInitializeFieldNames" 1 }}
+)
 
 // resourceManager is responsible for providing a consistent way to perform
 // CRUD operations in a backend AWS service API for Book custom resources.
@@ -193,27 +198,34 @@ func (rm *resourceManager) LateInitialize(
 {{ $hookCode }}
 {{- end }}
 	latest = rm.lateInitializeFromReadOneOutput(observed, latest)
-	incompleteInitialization := rm.incompleteLateInitialization(latest)
+	requeueDelay, incompleteInitialization := rm.calculateLateInitializationDelay(latest)
 	if incompleteInitialization {
 		// Add the condition with LateInitialized=False
-		lateInitConditionMessage = "Late initialization did not complete, requeuing with delay of 5 seconds"
+		lateInitConditionMessage = fmt.Sprintf("Late initialization did not complete, requeuing with delay of %d seconds", int64(requeueDelay.Seconds()))
 		lateInitConditionReason = "Delayed Late Initialization"
 		ackcondition.SetLateInitialized(latest, corev1.ConditionFalse, &lateInitConditionMessage, &lateInitConditionReason)
-		return latest, ackrequeue.NeededAfter(nil, time.Duration(5)*time.Second)
+		// increment 'services.k8s.aws/late-initialization-attempt' annotation
+		if err := ackannotation.IncrementNumLateInitializationAttempt(latest.MetaObject()); err != nil {
+			return latest, err
+		}
+		return latest, ackrequeue.NeededAfter(nil, requeueDelay)
 	}
 	// Set LateIntialized condition to True
 	lateInitConditionMessage = "Late initialization successful"
 	lateInitConditionReason = "Late initialization successful"
 	ackcondition.SetLateInitialized(latest, corev1.ConditionTrue, &lateInitConditionMessage, &lateInitConditionReason)
+	// On successful late initialization remove the 'services.k8s.aws/late-initialization-attempt' annotation
+	ackannotation.RemoveLateInitializationAttempt(latest.MetaObject())
 	return latest, nil
 }
 
-// incompleteLateInitialization return true if there are fields which were supposed to be
-// late initialized but are not. If all the fields are late initialized, false is returned
-func (rm *resourceManager) incompleteLateInitialization(
+// calculateLateInitializationDelay return (requeueDelay, true) if there are
+// fields which were supposed to be late initialized but are not.
+// If all the fields are late initialized, (false, 0) is returned
+func (rm *resourceManager) calculateLateInitializationDelay(
 	latest acktypes.AWSResource,
-) bool {
-{{ GoCodeIncompleteLateInitialization .CRD "latest" 1 }}
+) (time.Duration, bool) {
+{{ GoCodeCalculateRequeueDelay .CRD "latest" 1 }}
 }
 
 // lateInitializeFromReadOneOutput late initializes the 'latest' resource from the 'observed'
