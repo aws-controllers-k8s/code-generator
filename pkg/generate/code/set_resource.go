@@ -845,22 +845,14 @@ func SetResourceIdentifiers(
 	primaryKeyConditionalOut += fmt.Sprintf("%s\treturn ackerrors.MissingNameIdentifier\n", indent)
 	primaryKeyConditionalOut += fmt.Sprintf("%s}\n", indent)
 
-	arnOut := ""
+	arnOut := "\n"
 	// if r.ko.Status.ACKResourceMetadata == nil {
 	//  r.ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
 	// }
 	// r.ko.Status.ACKResourceMetadata.ARN = identifier.ARN
+	arnOut += ackResourceMetadataGuardConstructor(fmt.Sprintf("%s.Status", targetVarName), indentLevel)
 	arnOut += fmt.Sprintf(
-		"\n%sif %s.Status.ACKResourceMetadata == nil {",
-		indent, targetVarName,
-	)
-	arnOut += fmt.Sprintf(
-		"\n\t%s%s.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}",
-		indent, targetVarName,
-	)
-	arnOut += fmt.Sprintf("\n%s}", indent)
-	arnOut += fmt.Sprintf(
-		"\n%s%s.Status.ACKResourceMetadata.ARN = %s.ARN\n",
+		"%s%s.Status.ACKResourceMetadata.ARN = %s.ARN\n",
 		indent, targetVarName, sourceVarName,
 	)
 
@@ -959,6 +951,7 @@ func SetResourceIdentifiers(
 			// throwing an error accessible to the user
 			additionalKeyOut += fmt.Sprintf("%s%s, %sok := %s\n", indent, fieldIndexName, fieldIndexName, sourceAdaptedVarName)
 			additionalKeyOut += fmt.Sprintf("%sif %sok {\n", indent, fieldIndexName)
+
 			additionalKeyOut += fmt.Sprintf("%s\t%s%s.%s = &%s\n", indent, targetVarName, memberPath, cleanMemberName, fieldIndexName)
 			additionalKeyOut += fmt.Sprintf("%s}\n", indent)
 
