@@ -832,15 +832,37 @@ func SetResourceIdentifiers(
 		return ""
 	}
 
-	primaryKeyOut := "\n"
-	arnOut := ""
+	primaryKeyOut := ""
+	primaryKeyConditionalOut := "\n"
 	additionalKeyOut := "\n"
 
 	indent := strings.Repeat("\t", indentLevel)
 
-	primaryKeyOut += fmt.Sprintf("%sif %s.NameOrID == \"\" {\n", indent, sourceVarName)
-	primaryKeyOut += fmt.Sprintf("%s\treturn ackerrors.MissingNameIdentifier\n", indent)
-	primaryKeyOut += fmt.Sprintf("%s}\n", indent)
+	// if identifier.NameOrID == "" {
+	//  return ackerrors.MissingNameIdentifier
+	// }
+	primaryKeyConditionalOut += fmt.Sprintf("%sif %s.NameOrID == \"\" {\n", indent, sourceVarName)
+	primaryKeyConditionalOut += fmt.Sprintf("%s\treturn ackerrors.MissingNameIdentifier\n", indent)
+	primaryKeyConditionalOut += fmt.Sprintf("%s}\n", indent)
+
+	arnOut := ""
+	// if r.ko.Status.ACKResourceMetadata == nil {
+	//  r.ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
+	// }
+	// r.ko.Status.ACKResourceMetadata.ARN = identifier.ARN
+	arnOut += fmt.Sprintf(
+		"\n%sif %s.Status.ACKResourceMetadata == nil {",
+		indent, targetVarName,
+	)
+	arnOut += fmt.Sprintf(
+		"\n\t%s%s.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}",
+		indent, targetVarName,
+	)
+	arnOut += fmt.Sprintf("\n%s}", indent)
+	arnOut += fmt.Sprintf(
+		"\n%s%s.Status.ACKResourceMetadata.ARN = %s.ARN\n",
+		indent, targetVarName, sourceVarName,
+	)
 
 	primaryIdentifier := ""
 
@@ -852,32 +874,19 @@ func SetResourceIdentifiers(
 
 	// Determine the "primary identifier" based on the names of each field
 	if primaryIdentifier == "" {
-		primaryIdentifierLookup := []string{
-			"Name",
-			"Names",
-			r.Names.Original + "Name",
-			r.Names.Original + "Names",
-			r.Names.Original + "Id",
-			r.Names.Original + "Ids",
-		}
+		identifiers := FindIdentifiersInShape(r, inputShape)
 
-		for _, memberName := range inputShape.MemberNames() {
-			if util.InStrings(memberName, primaryIdentifierLookup) {
-				if primaryIdentifier == "" {
-					primaryIdentifier = memberName
-				} else {
-					panic("Found multiple possible primary identifiers for " +
-						r.Names.Original + ". Set " +
-						"`primary_identifier_field_name` for the " + op.Name +
-						" operation in the generator config.")
-				}
-			}
-		}
-
-		// Still haven't determined the identifier? Panic
-		if primaryIdentifier == "" {
+		switch len(identifiers) {
+		case 0:
 			panic("Could not find primary identifier for " + r.Names.Original +
 				". Set `primary_identifier_field_name` for the " + op.Name +
+				" operation in the generator config.")
+		case 1:
+			primaryIdentifier = identifiers[0]
+		default:
+			panic("Found multiple possible primary identifiers for " +
+				r.Names.Original + ". Set " +
+				"`primary_identifier_field_name` for the " + op.Name +
 				" operation in the generator config.")
 		}
 	}
@@ -908,14 +917,9 @@ func SetResourceIdentifiers(
 		}
 
 		if r.IsPrimaryARNField(memberName) {
-			// r.ko.Status.ACKResourceMetadata.ARN = identifier.ARN
-			arnOut += fmt.Sprintf(
-				"\n%s%s.Status.ACKResourceMetadata.ARN = %s.ARN\n",
-				indent, targetVarName, sourceVarName,
-			)
 			continue
-
 		}
+
 		// Check that the field has potentially been renamed
 		renamedName, _ := r.InputFieldRename(
 			op.Name, memberName,
@@ -963,10 +967,10 @@ func SetResourceIdentifiers(
 	}
 
 	// Only use at most one of ARN or nameOrID as primary identifier outputs
-	if arnOut != "" {
+	if primaryIdentifier == "ARN" || primaryKeyOut == "" {
 		return arnOut + additionalKeyOut
 	}
-	return primaryKeyOut + additionalKeyOut
+	return primaryKeyConditionalOut + primaryKeyOut + additionalKeyOut
 }
 
 // setResourceForContainer returns a string of Go code that sets the value of a

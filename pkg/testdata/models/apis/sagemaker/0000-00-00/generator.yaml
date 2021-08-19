@@ -22,6 +22,9 @@ resources:
   Endpoint:
     reconcile: 
       requeue_on_success_seconds: 10
+operations:
+  DescribeModelPackage:
+    primary_identifier_field_name: ARN
 ignore:
     resource_names:
       - Algorithm
@@ -50,7 +53,7 @@ ignore:
       - Model
       - ModelBiasJobDefinition
       - ModelExplainabilityJobDefinition
-      - ModelPackage
+      # - ModelPackage
       # ModelPackageGroup
       - ModelQualityJobDefinition
       - MonitoringSchedule
