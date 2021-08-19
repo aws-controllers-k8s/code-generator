@@ -115,6 +115,7 @@ var (
 		// Need to prevent "security" from becoming "SecURIty"
 		{"Uri", "URI", "uri", regexp.MustCompile("(?!sec)uri(?!ty)|(Uri)", regexp.None)},
 		{"Url", "URL", "url", nil},
+		{"Vlan", "VLAN", "vlan", nil},
 		{"Vpc", "VPC", "vpc", nil},
 		{"Vpn", "VPN", "vpn", nil},
 		{"Vgw", "VGW", "vgw", nil},
