@@ -801,6 +801,19 @@ func SetResourceGetAttributes(
 // 	  r.ko.Spec.ServiceNamespace = f1
 // }
 // ```
+// An example of code that uses the ARN:
+//
+// ```
+// if r.ko.Status.ACKResourceMetadata == nil {
+// 	r.ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
+// }
+// r.ko.Status.ACKResourceMetadata.ARN = identifier.ARN
+//
+// f0, f0ok := identifier.AdditionalKeys["modelPackageName"]
+// if f0ok {
+// 	r.ko.Spec.ModelPackageName = &f0
+// }
+// ```
 func SetResourceIdentifiers(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,
