@@ -41,16 +41,26 @@ TEMPLATES_DIR=${TEMPLATES_DIR:-$DEFAULT_TEMPLATES_DIR}
 DEFAULT_RUNTIME_DIR="$ROOT_DIR/../runtime"
 RUNTIME_DIR=${RUNTIME_DIR:-$DEFAULT_RUNTIME_DIR}
 RUNTIME_API_VERSION=${RUNTIME_API_VERSION:-"v1alpha1"}
+DEFAULT_RELEASE_VERSION="v0.0.0-non-release-version"
+# If the release version is not provided, use "v0.0.0-non-release-version".
+# This non-release version will allow generation of release artifacts and
+# executing presubmit 'release-test' job on those artifacts.
+# ACK postsubmit release job makes sure this version does not get released to
+# public ecr repository.
+#
+# Using a static non-release version works because this is only a placeholder
+# value which gets replaced during presubmit 'release-test' job. Having a
+# default non-release value also helps AWS service teams to develop the
+# controller without worrying about the version until actual controller
+# release.
+RELEASE_VERSION=${RELEASE_VERSION:-$DEFAULT_RELEASE_VERSION}
 
 USAGE="
 Usage:
-  $(basename "$0") <service> [<release_version>]
+  $(basename "$0") <service>
 
 <service> should be an AWS service API aliases that you wish to build -- e.g.
 's3' 'sns' or 'sqs'
-
-<release_version> should be the SemVer version tag for the release -- e.g.
-'v0.1.3' . If no release_version is specified 'v0.0.0-non-release-version' is used.
 
 Environment variables:
   ACK_GENERATE_CACHE_DIR                Overrides the directory used for caching
@@ -90,15 +100,11 @@ Environment variables:
                                         generating the RBAC manifests for the
                                         custom resource definitions.
                                         Default: $K8S_RBAC_ROLE_NAME
+  RELEASE_VERSION:                      SemVer version tag for the release.
+                                        Default: v0.0.0-non-release-version
 "
-if [ $# -lt 1 ]; then
-    echo "ERROR: $(basename "$0") needs one required parameter, the SERVICE" 1>&2
-    echo "$USAGE"
-    exit 1
-fi
-
-if [ $# -gt 2 ]; then
-    echo "ERROR: $(basename "$0") accepts atmost two parameters, the SERVICE(required) and the RELEASE_VERSION(optional)" 1>&2
+if [ $# -ne 1 ]; then
+    echo "ERROR: $(basename "$0") accepts only one required parameter, the SERVICE" 1>&2
     echo "$USAGE"
     exit 1
 fi
@@ -136,28 +142,15 @@ if [[ ! -d $SERVICE_CONTROLLER_SOURCE_PATH ]]; then
     exit 1
 fi
 
-if [[ $# -eq 2 ]]; then
-  RELEASE_VERSION="$2"
+if [[ $RELEASE_VERSION != $DEFAULT_RELEASE_VERSION ]]; then
   # validate that release version is in the format vx.y.z , where x,y,z are
   # positive real numbers
   if ! (echo "$RELEASE_VERSION" | grep -Eq "^v[0-9]+\.[0-9]+\.[0-9]+$"); then
     echo "Release version should have following regex format: ^v[0-9]+\.[0-9]+\.[0-9]+$"
     exit 1
   fi
-else
-  # If the release version is not provided, use "v0.0.0-non-release-version".
-  # This non-release version will allow generation of release artifacts and
-  # executing presubmit 'release-test' job on those artifacts.
-  # ACK postsubmit release job makes sure this version does not get released to
-  # public ecr repository.
-  #
-  # Using a static non-release version works because this is only a placeholder
-  # value which gets replaced during presubmit 'release-test' job. Having a
-  # default non-release value also helps AWS service teams to develop the
-  # controller without worrying about the version until actual controller
-  # release.
-  RELEASE_VERSION="v0.0.0-non-release-version"
 fi
+
 K8S_RBAC_ROLE_NAME=${K8S_RBAC_ROLE_NAME:-"ack-$SERVICE-controller"}
 ACK_GENERATE_SERVICE_ACCOUNT_NAME=${ACK_GENERATE_SERVICE_ACCOUNT_NAME:-"ack-$SERVICE-controller"}
 
