@@ -895,11 +895,11 @@ func SetResourceIdentifiers(
 		}
 
 		memberShapeRef, _ := inputShape.MemberRefs[memberName]
-		memberShape := memberShapeRef.Shape
+		sourceMemberShape := memberShapeRef.Shape
 
 		// Only strings are currently accepted as valid inputs for
 		// additional key fields
-		if memberShape.Type != "string" {
+		if sourceMemberShape.Type != "string" {
 			continue
 		}
 
@@ -919,25 +919,44 @@ func SetResourceIdentifiers(
 
 		isPrimaryIdentifier := memberName == primaryIdentifier
 		cleanMemberNames := names.New(renamedName)
-		cleanMemberName := cleanMemberNames.Camel
 
 		memberPath := ""
-		_, inSpec := r.SpecFields[renamedName]
-		_, inStatus := r.StatusFields[renamedName]
+		var targetField *model.Field
+
+		specField, inSpec := r.SpecFields[renamedName]
+		statusField, inStatus := r.StatusFields[renamedName]
 		switch {
 		case inSpec:
 			memberPath = cfg.PrefixConfig.SpecField
+			targetField = specField
 		case inStatus:
 			memberPath = cfg.PrefixConfig.StatusField
+			targetField = statusField
 		case isPrimaryIdentifier:
 			panic("Primary identifier field '" + memberName + "' in operation '" + op.Name + "' cannot be found in either spec or status.")
 		default:
 			continue
 		}
 
+		targetVarPath := fmt.Sprintf("%s%s", targetVarName, memberPath)
 		if isPrimaryIdentifier {
-			// r.ko.Status.BrokerID = identifier.NameOrID
-			primaryKeyOut += fmt.Sprintf("%s%s%s.%s = &%s.NameOrID\n", indent, targetVarName, memberPath, cleanMemberName, sourceVarName)
+			// r.ko.Status.BrokerID = &identifier.NameOrID
+			adaptedMemberPath := fmt.Sprintf("&%s.NameOrID", sourceVarName)
+			switch sourceMemberShape.Type {
+			case "list", "structure", "map":
+				// TODO(RedbackThomson): Add support for slices and maps
+				// in ReadMany operations
+				break
+			default:
+				primaryKeyOut += setResourceForScalar(
+					cfg, r,
+					targetField.Path,
+					targetVarPath,
+					adaptedMemberPath,
+					memberShapeRef,
+					indentLevel,
+				)
+			}
 		} else {
 			// f0, f0ok := identifier.AdditionalKeys["scalableDimension"]
 			// if f0ok {
@@ -952,7 +971,21 @@ func SetResourceIdentifiers(
 			additionalKeyOut += fmt.Sprintf("%s%s, %sok := %s\n", indent, fieldIndexName, fieldIndexName, sourceAdaptedVarName)
 			additionalKeyOut += fmt.Sprintf("%sif %sok {\n", indent, fieldIndexName)
 
-			additionalKeyOut += fmt.Sprintf("%s\t%s%s.%s = &%s\n", indent, targetVarName, memberPath, cleanMemberName, fieldIndexName)
+			switch sourceMemberShape.Type {
+			case "list", "structure", "map":
+				// TODO(RedbackThomson): Add support for slices and maps
+				// in ReadMany operations
+				break
+			default:
+				additionalKeyOut += setResourceForScalar(
+					cfg, r,
+					targetField.Path,
+					targetVarPath,
+					fmt.Sprintf("&%s", fieldIndexName),
+					memberShapeRef,
+					indentLevel+1,
+				)
+			}
 			additionalKeyOut += fmt.Sprintf("%s}\n", indent)
 
 			additionalKeyCount++
