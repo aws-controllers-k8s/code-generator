@@ -3092,3 +3092,29 @@ func TestSetResource_APIGWV2_ApiMapping_SetResourceIdentifiers(t *testing.T) {
 		code.SetResourceIdentifiers(crd.Config(), crd, "identifier", "r.ko", 1),
 	)
 }
+
+func TestSetResource_SageMaker_ModelPackage_SetResourceIdentifiers(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "sagemaker")
+
+	crd := testutil.GetCRDByName(t, g, "ModelPackage")
+	require.NotNil(crd)
+
+	expected := `
+	if r.ko.Status.ACKResourceMetadata == nil {
+		r.ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
+	}
+	r.ko.Status.ACKResourceMetadata.ARN = identifier.ARN
+
+	f0, f0ok := identifier.AdditionalKeys["modelPackageName"]
+	if f0ok {
+		r.ko.Spec.ModelPackageName = &f0
+	}
+`
+	assert.Equal(
+		expected,
+		code.SetResourceIdentifiers(crd.Config(), crd, "identifier", "r.ko", 1),
+	)
+}
