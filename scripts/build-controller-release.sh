@@ -41,19 +41,7 @@ TEMPLATES_DIR=${TEMPLATES_DIR:-$DEFAULT_TEMPLATES_DIR}
 DEFAULT_RUNTIME_DIR="$ROOT_DIR/../runtime"
 RUNTIME_DIR=${RUNTIME_DIR:-$DEFAULT_RUNTIME_DIR}
 RUNTIME_API_VERSION=${RUNTIME_API_VERSION:-"v1alpha1"}
-DEFAULT_RELEASE_VERSION="v0.0.0-non-release-version"
-# If the release version is not provided, use "v0.0.0-non-release-version".
-# This non-release version will allow generation of release artifacts and
-# executing presubmit 'release-test' job on those artifacts.
-# ACK postsubmit release job makes sure this version does not get released to
-# public ecr repository.
-#
-# Using a static non-release version works because this is only a placeholder
-# value which gets replaced during presubmit 'release-test' job. Having a
-# default non-release value also helps AWS service teams to develop the
-# controller without worrying about the version until actual controller
-# release.
-RELEASE_VERSION=${RELEASE_VERSION:-$DEFAULT_RELEASE_VERSION}
+NON_RELEASE_VERSION="v0.0.0-non-release-version"
 
 USAGE="
 Usage:
@@ -142,7 +130,25 @@ if [[ ! -d $SERVICE_CONTROLLER_SOURCE_PATH ]]; then
     exit 1
 fi
 
-if [[ $RELEASE_VERSION != $DEFAULT_RELEASE_VERSION ]]; then
+# If the release version is not provided, check if the source controller
+# repository has a Git tag on it. If it does, use that as the version. If it
+# does not, use "v0.0.0-non-release-version".
+#
+# This non-release version will allow generation of release artifacts and
+# executing presubmit 'release-test' job on those artifacts.
+# ACK postsubmit release job makes sure this version does not get released to
+# public ecr repository.
+#
+# Using a static non-release version works because this is only a placeholder
+# value which gets replaced during presubmit 'release-test' job. Having a
+# default non-release value also helps AWS service teams to develop the
+# controller without worrying about the version until actual controller
+# release.
+pushd $SERVICE_CONTROLLER_SOURCE_PATH 1>/dev/null
+    RELEASE_VERSION=${RELEASE_VERSION:-`git describe --tags --abbrev=0 2>/dev/null || echo $NON_RELEASE_VERSION`}
+popd 1>/dev/null
+
+if [[ $RELEASE_VERSION != $NON_RELEASE_VERSION ]]; then
   # validate that release version is in the format vx.y.z , where x,y,z are
   # positive real numbers
   if ! (echo "$RELEASE_VERSION" | grep -Eq "^v[0-9]+\.[0-9]+\.[0-9]+$"); then
