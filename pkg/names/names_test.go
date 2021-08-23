@@ -31,6 +31,7 @@ func TestNames(t *testing.T) {
 		expectCamelLower string
 		expectSnake      string
 	}{
+		{"Ami", "AMI", "ami", "ami"},
 		{"Identifier", "Identifier", "identifier", "identifier"},
 		{"Id", "ID", "id", "id"},
 		{"ID", "ID", "id", "id"},
