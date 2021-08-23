@@ -68,6 +68,7 @@ var (
 		// Prevent "MultipartUpload" from becoming "MultIPartUpload"
 		{"Ip", "IP", "ip", regexp.MustCompile("Ip(?!art)", regexp.None)},
 		// Easy find-and-replacements...
+		{"Ami", "AMI", "ami", nil},
 		{"Acl", "ACL", "acl", nil},
 		{"Acp", "ACP", "acp", nil},
 		{"Api", "API", "api", nil},
