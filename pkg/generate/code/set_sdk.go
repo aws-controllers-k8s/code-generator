@@ -19,10 +19,12 @@ import (
 	"strings"
 
 	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
+	"github.com/gertd/go-pluralize"
 
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 	"github.com/aws-controllers-k8s/code-generator/pkg/names"
+	"github.com/aws-controllers-k8s/code-generator/pkg/util"
 )
 
 // SetSDK returns the Go code that sets an SDK input shape's member fields from
@@ -98,6 +100,8 @@ func SetSDK(
 		op = r.Ops.ReadOne
 	case model.OpTypeList:
 		op = r.Ops.ReadMany
+		return setSDKReadMany(cfg, r, op,
+			sourceVarName, targetVarName, indentLevel)
 	case model.OpTypeUpdate:
 		op = r.Ops.Update
 	case model.OpTypeDelete:
@@ -718,6 +722,151 @@ func SetSDKSetAttributes(
 	return out
 }
 
+// setSDKReadMany is a special-case handling of those APIs where there is no
+// ReadOne operation and instead the only way to grab information for a single
+// object is to call the ReadMany/List operation with one of more filtering
+// fields-- specifically identifier(s). This method populates this identifier
+// field with the identifier shared between the shape and the CR. Note, in the
+// case of multiple matching identifiers, the identifier field containing 'Id'
+// will be the only field populated.
+//
+// As an example, DescribeVpcs EC2 API call doesn't have a ReadOne operation or
+// required fields. However, the input shape VpcIds field can be populated using
+// a VpcId, a field in the VPC CR's Status. Therefore, populate VpcIds field
+// with the *single* VpcId value to ensure the returned array from the API call
+// consists only of the desired Vpc.
+//
+// Sample Output:
+//
+// 	if r.ko.Status.VPCID != nil {
+//		f4 := []*string{}
+//		f4 = append(f4, r.ko.Status.VPCID)
+//		res.SetVpcIds(f4)
+//	}
+func setSDKReadMany(
+	cfg *ackgenconfig.Config,
+	r *model.CRD,
+	op *awssdkmodel.Operation,
+	sourceVarName string,
+	targetVarName string,
+	indentLevel int,
+) string {
+	inputShape := op.InputRef.Shape
+	if inputShape == nil {
+		return ""
+	}
+
+	out := "\n"
+	indent := strings.Repeat("\t", indentLevel)
+
+	resVarPath := ""
+	pluralize := pluralize.NewClient()
+	opConfig, override := cfg.OverrideValues(op.Name)
+	shapeIdentifiers := FindIdentifiersInShape(r, inputShape)
+	var err error
+	for memberIndex, memberName := range inputShape.MemberNames() {
+		if override {
+			value, ok := opConfig[memberName]
+			memberShapeRef, _ := inputShape.MemberRefs[memberName]
+			memberShape := memberShapeRef.Shape
+			if ok {
+				switch memberShape.Type {
+				case "boolean", "integer":
+				case "string":
+					value = "\"" + value + "\""
+				default:
+					panic(fmt.Sprintf("Unsupported shape type %s in "+
+						"generate.code.setSDKReadMany", memberShape.Type))
+				}
+
+				out += fmt.Sprintf("%s%s.Set%s(%s)\n", indent, targetVarName, memberName, value)
+				continue
+			}
+		}
+
+		// Field renames are handled in getSanitizedMemberPath
+		resVarPath, err = getSanitizedMemberPath(memberName, r, op, sourceVarName)
+		if err != nil {
+			// if it's an identifier field check for singular/plural
+			if util.InStrings(memberName, shapeIdentifiers) {
+				var flipped string
+				if pluralize.IsPlural(memberName) {
+					flipped = pluralize.Singular(memberName)
+				} else {
+					flipped = pluralize.Plural(memberName)
+				}
+				// If there are multiple identifiers, then prioritize the
+				// 'Id' identifier.
+				if resVarPath == "" || (!strings.HasSuffix(resVarPath, "Id") ||
+					!strings.HasSuffix(resVarPath, "Ids")) {
+					resVarPath, err = getSanitizedMemberPath(flipped, r, op, sourceVarName)
+					if err != nil {
+						panic(fmt.Sprintf(
+							"Unable to locate identifier field %s in "+
+								"%s Spec/Status in generate.code.setSDKReadMany", flipped, r.Kind))
+					}
+				}
+			} else {
+				// TODO(jaypipes): check generator config for exceptions?
+				continue
+			}
+		}
+
+		memberShapeRef, _ := inputShape.MemberRefs[memberName]
+		memberShape := memberShapeRef.Shape
+		out += fmt.Sprintf(
+			"%sif %s != nil {\n", indent, resVarPath,
+		)
+
+		switch memberShape.Type {
+		case "list":
+			// Expecting slice of identifiers
+			memberVarName := fmt.Sprintf("f%d", memberIndex)
+			// f0 := []*string{}
+			out += varEmptyConstructorSDKType(
+				cfg, r,
+				memberVarName,
+				memberShape,
+				indentLevel+1,
+			)
+
+			//  f0 = append(f0, sourceVarName)
+			out += fmt.Sprintf("%s\t%s = append(%s, %s)\n", indent,
+				memberVarName, memberVarName, resVarPath)
+
+			// res.SetIds(f0)
+			out += setSDKForScalar(
+				cfg, r,
+				memberName,
+				targetVarName,
+				inputShape.Type,
+				sourceVarName,
+				memberVarName,
+				memberShapeRef,
+				indentLevel+1,
+			)
+		default:
+			// For ReadMany that have a singular identifier field.
+			// ex: DescribeReplicationGroups
+			out += setSDKForScalar(
+				cfg, r,
+				memberName,
+				targetVarName,
+				inputShape.Type,
+				sourceVarName,
+				resVarPath,
+				memberShapeRef,
+				indentLevel+1,
+			)
+		}
+		out += fmt.Sprintf(
+			"%s}\n", indent,
+		)
+	}
+
+	return out
+}
+
 // setSDKForContainer returns a string of Go code that sets the value of a
 // target variable to that of a source variable. When the source variable type
 // is a map, struct or slice type, then this function is called recursively on
@@ -969,7 +1118,7 @@ func SetSDKForStruct(
 }
 
 // setSDKForSlice returns a string of Go code that sets a target variable value
-// to a source variable when the type of the source variable is a struct.
+// to a source variable when the type of the source variable is a slice.
 func setSDKForSlice(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,
@@ -1034,7 +1183,7 @@ func setSDKForSlice(
 }
 
 // setSDKForMap returns a string of Go code that sets a target variable value
-// to a source variable when the type of the source variable is a struct.
+// to a source variable when the type of the source variable is a map.
 func setSDKForMap(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,

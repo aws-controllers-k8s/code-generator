@@ -1778,3 +1778,25 @@ func TestSetSDK_MQ_Broker_Create(t *testing.T) {
 		code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1),
 	)
 }
+
+func TestSetSDK_EC2_VPC_ReadMany(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "ec2")
+
+	crd := testutil.GetCRDByName(t, g, "Vpc")
+	require.NotNil(crd)
+
+	expected := `
+	if r.ko.Status.VPCID != nil {
+		f4 := []*string{}
+		f4 = append(f4, r.ko.Status.VPCID)
+		res.SetVpcIds(f4)
+	}
+`
+	assert.Equal(
+		expected,
+		code.SetSDK(crd.Config(), crd, model.OpTypeList, "r.ko", "res", 1),
+	)
+}
