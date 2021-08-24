@@ -35,6 +35,7 @@ func TestNames(t *testing.T) {
 		{"Identifier", "Identifier", "identifier", "identifier"},
 		{"Id", "ID", "id", "id"},
 		{"ID", "ID", "id", "id"},
+		{"Family", "Family", "family", "family"},
 		{"KeyIdentifier", "KeyIdentifier", "keyIdentifier", "key_identifier"},
 		{"KeyId", "KeyID", "keyID", "key_id"},
 		{"KeyID", "KeyID", "keyID", "key_id"},
