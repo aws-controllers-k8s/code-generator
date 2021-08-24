@@ -82,3 +82,9 @@ func (r *resource) SetIdentifiers(identifier *ackv1alpha1.AWSIdentifiers) error 
 {{- GoCodeSetResourceIdentifiers .CRD "identifier" "r.ko" 1}}
 	return nil
 }
+
+// DeepCopy will return a copy of the resource
+func (r *resource) DeepCopy() acktypes.AWSResource {
+	koCopy := r.ko.DeepCopy()
+	return &resource{koCopy}
+}
