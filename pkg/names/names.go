@@ -67,8 +67,9 @@ var (
 		{"MD5Of", "MD5Of", "md5Of", regexp.MustCompile("M[dD]5Of", regexp.None)},
 		// Prevent "MultipartUpload" from becoming "MultIPartUpload"
 		{"Ip", "IP", "ip", regexp.MustCompile("Ip(?!art)", regexp.None)},
+		// Prevent "Family" from becoming "FAMIly"
+		{"Ami", "AMI", "ami", regexp.MustCompile("(?!f)ami(?!ly)|(Ami)", regexp.None)},
 		// Easy find-and-replacements...
-		{"Ami", "AMI", "ami", nil},
 		{"Acl", "ACL", "acl", nil},
 		{"Acp", "ACP", "acp", nil},
 		{"Api", "API", "api", nil},
