@@ -67,8 +67,10 @@ var (
 		{"MD5Of", "MD5Of", "md5Of", regexp.MustCompile("M[dD]5Of", regexp.None)},
 		// Prevent "MultipartUpload" from becoming "MultIPartUpload"
 		{"Ip", "IP", "ip", regexp.MustCompile("Ip(?!art)", regexp.None)},
-		// Prevent "Family" from becoming "FAMIly"
-		{"Ami", "AMI", "ami", regexp.MustCompile("(?!f)ami(?!ly)|(Ami)", regexp.None)},
+		// Model fields containing AMI will always capitalize the 'A' hence we don't
+		// have to look for words starting with a lowercase 'A'
+		{"Amis", "AMIs", "amis", regexp.MustCompile("Amis", regexp.None)},
+		{"Ami", "AMI", "ami", regexp.MustCompile("Ami", regexp.None)},
 		// Easy find-and-replacements...
 		{"Acl", "ACL", "acl", nil},
 		{"Acp", "ACP", "acp", nil},
