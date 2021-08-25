@@ -645,6 +645,26 @@ func ackResourceMetadataGuardConstructor(
 	return out
 }
 
+// identifierNameOrIDGuardConstructor returns Go code representing a nil-guard
+// and returns a `MissingNameIdentifier` error:
+//
+// if identifier.NameOrID == "" {
+//  return ackerrors.MissingNameIdentifier
+// }
+func identifierNameOrIDGuardConstructor(
+	// String representing the name of the identifier that should have the
+	// `NameOrID` pointer defined
+	sourceVarName string,
+	// Number of levels of indentation to use
+	indentLevel int,
+) string {
+	indent := strings.Repeat("\t", indentLevel)
+	out := fmt.Sprintf("%sif %s.NameOrID == \"\" {\n", indent, sourceVarName)
+	out += fmt.Sprintf("%s\treturn ackerrors.MissingNameIdentifier\n", indent)
+	out += fmt.Sprintf("%s}\n", indent)
+	return out
+}
+
 // SetResourceGetAttributes returns the Go code that sets the Status fields
 // from the Output shape returned from a resource's GetAttributes operation.
 //
@@ -846,39 +866,34 @@ func SetResourceIdentifiers(
 	}
 
 	primaryKeyOut := ""
-	primaryKeyConditionalOut := "\n"
 	additionalKeyOut := "\n"
 
 	indent := strings.Repeat("\t", indentLevel)
 
-	// if identifier.NameOrID == "" {
-	//  return ackerrors.MissingNameIdentifier
-	// }
-	primaryKeyConditionalOut += fmt.Sprintf("%sif %s.NameOrID == \"\" {\n", indent, sourceVarName)
-	primaryKeyConditionalOut += fmt.Sprintf("%s\treturn ackerrors.MissingNameIdentifier\n", indent)
-	primaryKeyConditionalOut += fmt.Sprintf("%s}\n", indent)
+	primaryKeyConditionalOut := "\n"
+	primaryKeyConditionalOut += identifierNameOrIDGuardConstructor(sourceVarName, indentLevel)
 
-	arnOut := "\n"
 	// if r.ko.Status.ACKResourceMetadata == nil {
 	//  r.ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
 	// }
 	// r.ko.Status.ACKResourceMetadata.ARN = identifier.ARN
+	arnOut := "\n"
 	arnOut += ackResourceMetadataGuardConstructor(fmt.Sprintf("%s.Status", targetVarName), indentLevel)
 	arnOut += fmt.Sprintf(
 		"%s%s.Status.ACKResourceMetadata.ARN = %s.ARN\n",
 		indent, targetVarName, sourceVarName,
 	)
 
-	primaryIdentifier := ""
+	primaryIdentifierFieldName := ""
 
 	// Attempt to fetch the primary identifier from the configuration
 	opConfig, ok := cfg.Operations[op.Name]
 	if ok {
-		primaryIdentifier = opConfig.PrimaryIdentifierFieldName
+		primaryIdentifierFieldName = opConfig.PrimaryIdentifierFieldName
 	}
 
 	// Determine the "primary identifier" based on the names of each field
-	if primaryIdentifier == "" {
+	if primaryIdentifierFieldName == "" {
 		identifiers := FindIdentifiersInShape(r, inputShape)
 
 		switch len(identifiers) {
@@ -887,7 +902,7 @@ func SetResourceIdentifiers(
 				". Set `primary_identifier_field_name` for the " + op.Name +
 				" operation in the generator config.")
 		case 1:
-			primaryIdentifier = identifiers[0]
+			primaryIdentifierFieldName = identifiers[0]
 		default:
 			panic("Found multiple possible primary identifiers for " +
 				r.Names.Original + ". Set " +
@@ -907,7 +922,7 @@ func SetResourceIdentifiers(
 			continue
 		}
 
-		memberShapeRef, _ := inputShape.MemberRefs[memberName]
+		memberShapeRef := inputShape.MemberRefs[memberName]
 		sourceMemberShape := memberShapeRef.Shape
 
 		// Only strings are currently accepted as valid inputs for
@@ -930,8 +945,7 @@ func SetResourceIdentifiers(
 			op.Name, memberName,
 		)
 
-		isPrimaryIdentifier := memberName == primaryIdentifier
-		cleanMemberNames := names.New(renamedName)
+		isPrimaryIdentifier := memberName == primaryIdentifierFieldName
 
 		memberPath := ""
 		var targetField *model.Field
@@ -953,63 +967,126 @@ func SetResourceIdentifiers(
 
 		targetVarPath := fmt.Sprintf("%s%s", targetVarName, memberPath)
 		if isPrimaryIdentifier {
-			// r.ko.Status.BrokerID = &identifier.NameOrID
-			adaptedMemberPath := fmt.Sprintf("&%s.NameOrID", sourceVarName)
-			switch sourceMemberShape.Type {
-			case "list", "structure", "map":
-				// TODO(RedbackThomson): Add support for slices and maps
-				// in ReadMany operations
-				break
-			default:
-				primaryKeyOut += setResourceForScalar(
-					cfg, r,
-					targetField.Path,
-					targetVarPath,
-					adaptedMemberPath,
-					memberShapeRef,
-					indentLevel,
-				)
-			}
+			primaryKeyOut += setResourceIdentifierPrimaryIdentifier(cfg, r,
+				targetField.Path,
+				targetVarPath,
+				sourceVarName,
+				memberShapeRef,
+				indentLevel)
 		} else {
-			// f0, f0ok := identifier.AdditionalKeys["scalableDimension"]
-			// if f0ok {
-			// 	r.ko.Spec.ScalableDimension = f0
-			// }
+			cleanMemberNames := names.New(renamedName)
 
-			fieldIndexName := fmt.Sprintf("f%d", additionalKeyCount)
-			sourceAdaptedVarName := fmt.Sprintf("%s.AdditionalKeys[\"%s\"]", sourceVarName, cleanMemberNames.CamelLower)
-
-			// TODO(RedbackThomson): If the identifiers don't exist, we should be
-			// throwing an error accessible to the user
-			additionalKeyOut += fmt.Sprintf("%s%s, %sok := %s\n", indent, fieldIndexName, fieldIndexName, sourceAdaptedVarName)
-			additionalKeyOut += fmt.Sprintf("%sif %sok {\n", indent, fieldIndexName)
-
-			switch sourceMemberShape.Type {
-			case "list", "structure", "map":
-				// TODO(RedbackThomson): Add support for slices and maps
-				// in ReadMany operations
-				break
-			default:
-				additionalKeyOut += setResourceForScalar(
-					cfg, r,
-					targetField.Path,
-					targetVarPath,
-					fmt.Sprintf("&%s", fieldIndexName),
-					memberShapeRef,
-					indentLevel+1,
-				)
-			}
-			additionalKeyOut += fmt.Sprintf("%s}\n", indent)
+			additionalKeyOut += setResourceIdentifierAdditionalKey(
+				cfg, r,
+				additionalKeyCount,
+				targetField.Path,
+				targetVarPath,
+				sourceVarName,
+				cleanMemberNames.CamelLower,
+				memberShapeRef,
+				indentLevel)
 
 			additionalKeyCount++
 		}
 	}
 
 	// Only use at most one of ARN or nameOrID as primary identifier outputs
-	if primaryIdentifier == "ARN" || primaryKeyOut == "" {
+	if primaryIdentifierFieldName == "ARN" || primaryKeyOut == "" {
 		return arnOut + additionalKeyOut
 	}
 	return primaryKeyConditionalOut + primaryKeyOut + additionalKeyOut
+}
+
+// setResourceIdentifierPrimaryIdentifier returns a string of Go code that sets
+// the primary identifier Spec or Status field on a given resource to the value
+// in the identifier `NameOrID` field:
+//
+// r.ko.Status.BrokerID = &identifier.NameOrID
+func setResourceIdentifierPrimaryIdentifier(
+	cfg *ackgenconfig.Config,
+	r *model.CRD,
+	// The name of the Input SDK Shape member we're outputting for
+	targetFieldName string,
+	// The variable name that we want to set a value to
+	targetVarName string,
+	// The struct or struct field that we access our source value from
+	sourceVarName string,
+	shapeRef *awssdkmodel.ShapeRef,
+	// Number of levels of indentation to use
+	indentLevel int,
+) string {
+	adaptedMemberPath := fmt.Sprintf("&%s.NameOrID", sourceVarName)
+	switch shapeRef.Shape.Type {
+	case "list", "structure", "map":
+		// TODO(RedbackThomson): Add support for slices and maps
+		// in ReadMany operations
+		return ""
+	default:
+		return setResourceForScalar(
+			cfg, r,
+			targetFieldName,
+			targetVarName,
+			adaptedMemberPath,
+			shapeRef,
+			indentLevel,
+		)
+	}
+}
+
+// setResourceIdentifierAdditionalKey returns a string of Go code that sets a
+// Spec or Status field on a given resource to the value in the identifier's
+// `AdditionalKeys` mapping:
+//
+// f0, f0ok := identifier.AdditionalKeys["scalableDimension"]
+// if f0ok {
+// 	r.ko.Spec.ScalableDimension = f0
+// }
+func setResourceIdentifierAdditionalKey(
+	cfg *ackgenconfig.Config,
+	r *model.CRD,
+	fieldIndex int,
+	// The name of the Input SDK Shape member we're outputting for
+	targetFieldName string,
+	// The variable name that we want to set a value to
+	targetVarName string,
+	// The struct or struct field that we access our source value from
+	sourceVarName string,
+	// The key in the `AdditionalKeys` map storing the source variable
+	sourceVarKey string,
+	shapeRef *awssdkmodel.ShapeRef,
+	// Number of levels of indentation to use
+	indentLevel int,
+) string {
+	indent := strings.Repeat("\t", indentLevel)
+
+	additionalKeyOut := ""
+
+	fieldIndexName := fmt.Sprintf("f%d", fieldIndex)
+	sourceAdaptedVarName := fmt.Sprintf("%s.AdditionalKeys[\"%s\"]", sourceVarName, sourceVarKey)
+
+	// TODO(RedbackThomson): If the identifiers don't exist, we should be
+	// throwing an error accessible to the user
+	additionalKeyOut += fmt.Sprintf("%s%s, %sok := %s\n", indent, fieldIndexName, fieldIndexName, sourceAdaptedVarName)
+	additionalKeyOut += fmt.Sprintf("%sif %sok {\n", indent, fieldIndexName)
+
+	switch shapeRef.Shape.Type {
+	case "list", "structure", "map":
+		// TODO(RedbackThomson): Add support for slices and maps
+		// in ReadMany operations
+		break
+	default:
+		additionalKeyOut += setResourceForScalar(
+			cfg, r,
+			targetFieldName,
+			targetVarName,
+			fmt.Sprintf("&%s", fieldIndexName),
+			shapeRef,
+			indentLevel+1,
+		)
+	}
+	additionalKeyOut += fmt.Sprintf("%s}\n", indent)
+
+	return additionalKeyOut
 }
 
 // setResourceForContainer returns a string of Go code that sets the value of a
