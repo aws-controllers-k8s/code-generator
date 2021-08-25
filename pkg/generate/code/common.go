@@ -14,8 +14,12 @@
 package code
 
 import (
-	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
+	"strings"
 
+	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
+	"github.com/gertd/go-pluralize"
+
+	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
 )
@@ -80,4 +84,110 @@ func FindIdentifiersInCRD(
 	}
 
 	return identifiers
+}
+
+// FindPluralizedIdentifiersInShape returns the name of a Spec OR Status field
+// that has a matching pluralized field in the given shape and the name of
+// the corresponding shape field name.
+// For example, DescribeVpcsInput has a `VpcIds` field which would be matched
+// to the `Status.VPCID` CRD field - the return value would be "VPCID", "VpcIds"
+func FindPluralizedIdentifiersInShape(
+	r *model.CRD,
+	shape *awssdkmodel.Shape,
+) (crField string, shapeField string) {
+	shapeIdentifiers := FindIdentifiersInShape(r, shape)
+	crIdentifiers := FindIdentifiersInCRD(r)
+	if len(shapeIdentifiers) == 0 || len(crIdentifiers) == 0 {
+		return "", ""
+	}
+
+	pluralize := pluralize.NewClient()
+	for _, si := range shapeIdentifiers {
+		for _, ci := range crIdentifiers {
+			if strings.EqualFold(pluralize.Singular(si),
+				pluralize.Singular(ci)) {
+				// The CRD identifiers being used for comparison reflect the
+				// *original* field names in the API model shape.
+				// Field renames are handled below in the call to
+				// getSanitizedMemberPath.
+				if crField == "" {
+					crField = ci
+					shapeField = si
+				} else {
+					// If there are multiple identifiers, then prioritize the
+					// 'Id' identifier. Checking 'Id' to determine resource
+					// creation should be safe as the field is usually
+					// present in CR.Status.
+					if !strings.HasSuffix(crField, "Id") ||
+						!strings.HasSuffix(crField, "Ids") {
+						crField = ci
+						shapeField = si
+					}
+				}
+			}
+		}
+	}
+	return crField, shapeField
+}
+
+// FindPrimaryIdentifierFieldNames returns the resource identifier field name
+// for the primary identifier used in a given operation and its corresponding
+// shape field name.
+func FindPrimaryIdentifierFieldNames(
+	cfg *ackgenconfig.Config,
+	r *model.CRD,
+	op *awssdkmodel.Operation,
+) (crField string, shapeField string) {
+	shape := op.InputRef.Shape
+
+	// Attempt to fetch the primary identifier override from the configuration
+	opConfig, ok := cfg.Operations[op.Name]
+	if ok {
+		shapeField = opConfig.PrimaryIdentifierFieldName
+	}
+
+	if shapeField == "" {
+		// For ReadOne, search for a direct identifier
+		if op == r.Ops.ReadOne {
+			identifiers := FindIdentifiersInShape(r, shape)
+
+			switch len(identifiers) {
+			case 0:
+				break
+			case 1:
+				shapeField = identifiers[0]
+			default:
+				panic("Found multiple possible primary identifiers for " +
+					r.Names.Original + ". Set " +
+					"`primary_identifier_field_name` for the " + op.Name +
+					" operation in the generator config.")
+			}
+		} else {
+			// For ReadMany, search for pluralized identifiers
+			crField, shapeField = FindPluralizedIdentifiersInShape(r, shape)
+		}
+
+		// Require override if still can't find any identifiers
+		if shapeField == "" {
+			panic("Could not find primary identifier for " + r.Names.Original +
+				". Set `primary_identifier_field_name` for the " + op.Name +
+				" operation in the generator config.")
+		}
+	}
+
+	if crField == "" {
+		renamedName, _ := r.InputFieldRename(
+			op.Name, shapeField,
+		)
+
+		_, inSpec := r.SpecFields[renamedName]
+		_, inStatus := r.StatusFields[renamedName]
+		if inSpec || inStatus {
+			crField = renamedName
+		} else {
+
+		}
+	}
+
+	return crField, shapeField
 }

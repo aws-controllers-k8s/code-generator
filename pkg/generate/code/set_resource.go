@@ -884,32 +884,7 @@ func SetResourceIdentifiers(
 		indent, targetVarName, sourceVarName,
 	)
 
-	primaryIdentifierFieldName := ""
-
-	// Attempt to fetch the primary identifier from the configuration
-	opConfig, ok := cfg.Operations[op.Name]
-	if ok {
-		primaryIdentifierFieldName = opConfig.PrimaryIdentifierFieldName
-	}
-
-	// Determine the "primary identifier" based on the names of each field
-	if primaryIdentifierFieldName == "" {
-		identifiers := FindIdentifiersInShape(r, inputShape)
-
-		switch len(identifiers) {
-		case 0:
-			panic("Could not find primary identifier for " + r.Names.Original +
-				". Set `primary_identifier_field_name` for the " + op.Name +
-				" operation in the generator config.")
-		case 1:
-			primaryIdentifierFieldName = identifiers[0]
-		default:
-			panic("Found multiple possible primary identifiers for " +
-				r.Names.Original + ". Set " +
-				"`primary_identifier_field_name` for the " + op.Name +
-				" operation in the generator config.")
-		}
-	}
+	primaryCRField, primaryShapeField := FindPrimaryIdentifierFieldNames(cfg, r, op)
 
 	paginatorFieldLookup := []string{
 		"NextToken",
@@ -922,12 +897,14 @@ func SetResourceIdentifiers(
 			continue
 		}
 
-		memberShapeRef := inputShape.MemberRefs[memberName]
-		sourceMemberShape := memberShapeRef.Shape
+		inputShapeRef := inputShape.MemberRefs[memberName]
+		inputMemberShape := inputShapeRef.Shape
 
-		// Only strings are currently accepted as valid inputs for
-		// additional key fields
-		if sourceMemberShape.Type != "string" {
+		// Only strings and list of strings are currently accepted as valid
+		// inputs for additional key fields
+		if inputMemberShape.Type != "string" &&
+			(inputMemberShape.Type != "list" ||
+				inputMemberShape.MemberRef.Shape.Type != "string") {
 			continue
 		}
 
@@ -945,33 +922,27 @@ func SetResourceIdentifiers(
 			op.Name, memberName,
 		)
 
-		isPrimaryIdentifier := memberName == primaryIdentifierFieldName
+		isPrimaryIdentifier := memberName == primaryShapeField
 
-		memberPath := ""
-		var targetField *model.Field
+		searchField := ""
+		if isPrimaryIdentifier {
+			searchField = primaryCRField
+		} else {
+			searchField = renamedName
+		}
 
-		specField, inSpec := r.SpecFields[renamedName]
-		statusField, inStatus := r.StatusFields[renamedName]
-		switch {
-		case inSpec:
-			memberPath = cfg.PrefixConfig.SpecField
-			targetField = specField
-		case inStatus:
-			memberPath = cfg.PrefixConfig.StatusField
-			targetField = statusField
-		case isPrimaryIdentifier:
-			panic("Primary identifier field '" + memberName + "' in operation '" + op.Name + "' cannot be found in either spec or status.")
-		default:
+		memberPath, targetField := findFieldInCR(cfg, r, searchField)
+		if targetField == nil {
 			continue
 		}
 
 		targetVarPath := fmt.Sprintf("%s%s", targetVarName, memberPath)
 		if isPrimaryIdentifier {
 			primaryKeyOut += setResourceIdentifierPrimaryIdentifier(cfg, r,
-				targetField.Path,
+				targetField,
 				targetVarPath,
 				sourceVarName,
-				memberShapeRef,
+				&awssdkmodel.ShapeRef{Shape: &awssdkmodel.Shape{Type: "string"}},
 				indentLevel)
 		} else {
 			cleanMemberNames := names.New(renamedName)
@@ -983,7 +954,7 @@ func SetResourceIdentifiers(
 				targetVarPath,
 				sourceVarName,
 				cleanMemberNames.CamelLower,
-				memberShapeRef,
+				&awssdkmodel.ShapeRef{Shape: &awssdkmodel.Shape{Type: "string"}},
 				indentLevel)
 
 			additionalKeyCount++
@@ -991,10 +962,33 @@ func SetResourceIdentifiers(
 	}
 
 	// Only use at most one of ARN or nameOrID as primary identifier outputs
-	if primaryIdentifierFieldName == "ARN" || primaryKeyOut == "" {
+	if primaryShapeField == "ARN" || primaryKeyOut == "" {
 		return arnOut + additionalKeyOut
 	}
 	return primaryKeyConditionalOut + primaryKeyOut + additionalKeyOut
+}
+
+// findFieldInCR will search for a given field, by its name, in a CR and returns
+// the member path and Field type if one is found.
+func findFieldInCR(
+	cfg *ackgenconfig.Config,
+	r *model.CRD,
+	// The name of the field to search for
+	searchField string,
+) (memberPath string, targetField *model.Field) {
+	specField, inSpec := r.SpecFields[searchField]
+	statusField, inStatus := r.StatusFields[searchField]
+	switch {
+	case inSpec:
+		memberPath = cfg.PrefixConfig.SpecField
+		targetField = specField
+	case inStatus:
+		memberPath = cfg.PrefixConfig.StatusField
+		targetField = statusField
+	default:
+		return "", nil
+	}
+	return memberPath, targetField
 }
 
 // setResourceIdentifierPrimaryIdentifier returns a string of Go code that sets
@@ -1005,8 +999,8 @@ func SetResourceIdentifiers(
 func setResourceIdentifierPrimaryIdentifier(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,
-	// The name of the Input SDK Shape member we're outputting for
-	targetFieldName string,
+	// The field that will be set on the target variable
+	targetField *model.Field,
 	// The variable name that we want to set a value to
 	targetVarName string,
 	// The struct or struct field that we access our source value from
@@ -1018,13 +1012,11 @@ func setResourceIdentifierPrimaryIdentifier(
 	adaptedMemberPath := fmt.Sprintf("&%s.NameOrID", sourceVarName)
 	switch shapeRef.Shape.Type {
 	case "list", "structure", "map":
-		// TODO(RedbackThomson): Add support for slices and maps
-		// in ReadMany operations
-		return ""
+		panic("primary identifier must be a scalar type since NameOrID is a string")
 	default:
 		return setResourceForScalar(
 			cfg, r,
-			targetFieldName,
+			targetField.Path,
 			targetVarName,
 			adaptedMemberPath,
 			shapeRef,
@@ -1071,8 +1063,7 @@ func setResourceIdentifierAdditionalKey(
 
 	switch shapeRef.Shape.Type {
 	case "list", "structure", "map":
-		// TODO(RedbackThomson): Add support for slices and maps
-		// in ReadMany operations
+		// TODO(RedbackThomson): Add support for additional keys to add to slices and maps
 		break
 	default:
 		additionalKeyOut += setResourceForScalar(

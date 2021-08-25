@@ -3053,7 +3053,7 @@ func TestSetResource_RDS_DBSubnetGroup_SetResourceIdentifiers(t *testing.T) {
 	require.NotNil(crd)
 
 	// In our testdata generator.yaml file, we've renamed the original
-	// DBSubnetGroupName to just Name...
+	// `DBSubnetGroupName` to just `Name`
 	expected := `
 	if identifier.NameOrID == "" {
 		return ackerrors.MissingNameIdentifier
@@ -3112,6 +3112,28 @@ func TestSetResource_SageMaker_ModelPackage_SetResourceIdentifiers(t *testing.T)
 	if f0ok {
 		r.ko.Spec.ModelPackageName = &f0
 	}
+`
+	assert.Equal(
+		expected,
+		code.SetResourceIdentifiers(crd.Config(), crd, "identifier", "r.ko", 1),
+	)
+}
+
+func TestSetResource_EC2_VPC_SetResourceIdentifiers(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "ec2")
+
+	crd := testutil.GetCRDByName(t, g, "Vpc")
+	require.NotNil(crd)
+
+	expected := `
+	if identifier.NameOrID == "" {
+		return ackerrors.MissingNameIdentifier
+	}
+	r.ko.Status.VPCID = &identifier.NameOrID
+
 `
 	assert.Equal(
 		expected,
