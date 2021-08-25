@@ -185,7 +185,7 @@ func FindPrimaryIdentifierFieldNames(
 		if inSpec || inStatus {
 			crField = renamedName
 		} else {
-
+			panic("Could not find corresponding spec or status field for primary identifier " + shapeField)
 		}
 	}
 
