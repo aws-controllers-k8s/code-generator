@@ -131,19 +131,19 @@ func TestRuntimeDependency(t *testing.T) {
 	require.Implements((*acktypes.AWSResourceIdentifiers)(nil), new(fakeIdentifiers))
 	require.Implements((*acktypes.AWSResourceDescriptor)(nil), new(fakeDescriptor))
 
-	// ACK runtime 0.2.3 introduced a new logger that is now passed into the
+	// ACK runtime v0.2.3 introduced a new logger that is now passed into the
 	// Context and retrievable using the `pkg/runtime/log.FromContext`
 	// function.  This function returns NoopLogger if no such logger is found
 	// in the context, but this check here is mostly to ensure that the new
-	// function used in ACK runtime 0.2.3 and templates in code-generator
-	// consuming 0.2.3 are properly pinned.
+	// function used in ACK runtime v0.2.3 and templates in code-generator
+	// consuming v0.2.3 are properly pinned.
 	require.Implements((*acktypes.Logger)(nil), ackrtlog.FromContext(context.TODO()))
 
-	// ACK runtime 0.3.0 introduced a new RequeueOnSuccessSeconds method to the
+	// ACK runtime v0.3.0 introduced a new RequeueOnSuccessSeconds method to the
 	// resource manager factory
 	require.Implements((*acktypes.AWSResourceManagerFactory)(nil), new(fakeRMF))
 
-	// ACK runtime 0.4.0 introduced a new AdditionalKeys field to the
+	// ACK runtime v0.4.0 introduced a new AdditionalKeys field to the
 	// AWSIdentifiers type. By simply referring to the new AdditionalKeys field
 	// here, we have a compile-time test of the pinning of code-generator to
 	// ACK runtime v0.4.0...
@@ -155,20 +155,24 @@ func TestRuntimeDependency(t *testing.T) {
 	}
 	_ = ids
 
-	// ACK runtime 0.6.0 modified pkg/types/AWSResourceManager.Delete signature.
+	// ACK runtime v0.6.0 modified pkg/types/AWSResourceManager.Delete signature.
 	require.Implements((*acktypes.AWSResourceManager)(nil), new(fakeRM))
 
-	// ACK runtime 0.7.0 introduced SecretNotFound error.
+	// ACK runtime v0.7.0 introduced SecretNotFound error.
 	require.NotNil(ackerr.SecretNotFound)
 
-	// ACK runtime 0.8.0 removed the unused UpdateCRStatus method from
+	// ACK runtime v0.8.0 removed the unused UpdateCRStatus method from
 	// AWSResourceDescriptor
 	rdType := reflect.TypeOf((*acktypes.AWSResourceDescriptor)(nil)).Elem()
 	_, found := rdType.MethodByName("UpdateCRStatus")
 	require.False(found)
 
-	// ACK runtime 0.9.2 introduced the SetStatus method into AWSResource
+	// ACK runtime v0.9.2 introduced the SetStatus method into AWSResource
 	resType := reflect.TypeOf((*acktypes.AWSResource)(nil)).Elem()
 	_, found = resType.MethodByName("SetStatus")
+	require.True(found)
+
+	// ACK runtime v0.13.0 introduced the DeepCopy method into AWSResource
+	_, found = resType.MethodByName("DeepCopy")
 	require.True(found)
 }
