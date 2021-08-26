@@ -346,7 +346,7 @@ func (m *Model) getShapeCleanGoType(shape *awssdkmodel.Shape) string {
 		// If it's a map type we need to set the GoType to the cleaned-up
 		// Camel-cased name
 		return "map[string]" + m.getShapeCleanGoType(shape.ValueRef.Shape)
-	case "list", "array", "blob":
+	case "list", "array":
 		// If it's a list type, we need to set the GoType to the cleaned-up
 		// Camel-cased name
 		return "[]" + m.getShapeCleanGoType(shape.MemberRef.Shape)
