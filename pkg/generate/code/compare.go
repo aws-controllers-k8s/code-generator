@@ -323,6 +323,11 @@ func compareScalar(
 			"%sif *%s != *%s {\n",
 			indent, firstResVarName, secondResVarName,
 		)
+	case "blob":
+		out += fmt.Sprintf(
+			"%sif !bytes.Equal(%s, %s) {\n",
+			indent, firstResVarName, secondResVarName,
+		)
 	case "timestamp":
 		// if !a.ko.Spec.CreatedAt.Equal(b.ko.Spec.CreatedAt) {
 		out += fmt.Sprintf(
