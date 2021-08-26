@@ -3107,11 +3107,6 @@ func TestSetResource_SageMaker_ModelPackage_SetResourceIdentifiers(t *testing.T)
 		r.ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
 	}
 	r.ko.Status.ACKResourceMetadata.ARN = identifier.ARN
-
-	f0, f0ok := identifier.AdditionalKeys["modelPackageName"]
-	if f0ok {
-		r.ko.Spec.ModelPackageName = &f0
-	}
 `
 	assert.Equal(
 		expected,

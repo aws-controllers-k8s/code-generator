@@ -873,18 +873,21 @@ func SetResourceIdentifiers(
 	primaryKeyConditionalOut := "\n"
 	primaryKeyConditionalOut += identifierNameOrIDGuardConstructor(sourceVarName, indentLevel)
 
-	// if r.ko.Status.ACKResourceMetadata == nil {
-	//  r.ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
-	// }
-	// r.ko.Status.ACKResourceMetadata.ARN = identifier.ARN
-	arnOut := "\n"
-	arnOut += ackResourceMetadataGuardConstructor(fmt.Sprintf("%s.Status", targetVarName), indentLevel)
-	arnOut += fmt.Sprintf(
-		"%s%s.Status.ACKResourceMetadata.ARN = %s.ARN\n",
-		indent, targetVarName, sourceVarName,
-	)
-
 	primaryCRField, primaryShapeField := FindPrimaryIdentifierFieldNames(cfg, r, op)
+	if primaryShapeField == PrimaryIdentifierARNOverride {
+		// if r.ko.Status.ACKResourceMetadata == nil {
+		//  r.ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
+		// }
+		// r.ko.Status.ACKResourceMetadata.ARN = identifier.ARN
+		arnOut := "\n"
+		arnOut += ackResourceMetadataGuardConstructor(fmt.Sprintf("%s.Status", targetVarName), indentLevel)
+		arnOut += fmt.Sprintf(
+			"%s%s.Status.ACKResourceMetadata.ARN = %s.ARN\n",
+			indent, targetVarName, sourceVarName,
+		)
+
+		return arnOut
+	}
 
 	paginatorFieldLookup := []string{
 		"NextToken",
@@ -961,10 +964,6 @@ func SetResourceIdentifiers(
 		}
 	}
 
-	// Only use at most one of ARN or nameOrID as primary identifier outputs
-	if primaryShapeField == "ARN" || primaryKeyOut == "" {
-		return arnOut + additionalKeyOut
-	}
 	return primaryKeyConditionalOut + primaryKeyOut + additionalKeyOut
 }
 

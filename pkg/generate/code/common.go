@@ -24,6 +24,10 @@ import (
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
 )
 
+var (
+	PrimaryIdentifierARNOverride = "ARN"
+)
+
 // FindIdentifiersInShape returns the identifier fields of a given shape which
 // can be singular or plural.
 func FindIdentifiersInShape(
@@ -46,6 +50,26 @@ func FindIdentifiersInShape(
 
 	for _, memberName := range shape.MemberNames() {
 		if util.InStrings(memberName, identifierLookup) {
+			identifiers = append(identifiers, memberName)
+		}
+	}
+
+	return identifiers
+}
+
+// FindIdentifiersInShape returns the identifier fields of a given shape which
+// fit expect an ARN.
+func FindARNIdentifiersInShape(
+	r *model.CRD,
+	shape *awssdkmodel.Shape,
+) []string {
+	var identifiers []string
+	if r == nil || shape == nil {
+		return identifiers
+	}
+
+	for _, memberName := range shape.MemberNames() {
+		if r.IsPrimaryARNField(memberName) {
 			identifiers = append(identifiers, memberName)
 		}
 	}
@@ -90,7 +114,8 @@ func FindIdentifiersInCRD(
 // that has a matching pluralized field in the given shape and the name of
 // the corresponding shape field name.
 // For example, DescribeVpcsInput has a `VpcIds` field which would be matched
-// to the `Status.VPCID` CRD field - the return value would be "VPCID", "VpcIds"
+// to the `Status.VPCID` CRD field - the return value would be
+// "VPCID", "VpcIds".
 func FindPluralizedIdentifiersInShape(
 	r *model.CRD,
 	shape *awssdkmodel.Shape,
@@ -150,6 +175,7 @@ func FindPrimaryIdentifierFieldNames(
 		// For ReadOne, search for a direct identifier
 		if op == r.Ops.ReadOne {
 			identifiers := FindIdentifiersInShape(r, shape)
+			identifiers = append(identifiers, FindARNIdentifiersInShape(r, shape)...)
 
 			switch len(identifiers) {
 			case 0:
@@ -173,6 +199,10 @@ func FindPrimaryIdentifierFieldNames(
 				". Set `primary_identifier_field_name` for the " + op.Name +
 				" operation in the generator config.")
 		}
+	}
+
+	if r.IsPrimaryARNField(shapeField) || shapeField == PrimaryIdentifierARNOverride {
+		return "", PrimaryIdentifierARNOverride
 	}
 
 	if crField == "" {
