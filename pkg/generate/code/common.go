@@ -112,7 +112,8 @@ func FindIdentifiersInCRD(
 
 // FindPluralizedIdentifiersInShape returns the name of a Spec OR Status field
 // that has a matching pluralized field in the given shape and the name of
-// the corresponding shape field name.
+// the corresponding shape field name. This method will returns the original
+// field name - renames will need to be handled separately.
 // For example, DescribeVpcsInput has a `VpcIds` field which would be matched
 // to the `Status.VPCID` CRD field - the return value would be
 // "VPCID", "VpcIds".
@@ -133,8 +134,6 @@ func FindPluralizedIdentifiersInShape(
 				pluralize.Singular(ci)) {
 				// The CRD identifiers being used for comparison reflect the
 				// *original* field names in the API model shape.
-				// Field renames are handled below in the call to
-				// getSanitizedMemberPath.
 				if crField == "" {
 					crField = ci
 					shapeField = si

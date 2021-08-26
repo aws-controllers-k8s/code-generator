@@ -953,7 +953,7 @@ func SetResourceIdentifiers(
 			additionalKeyOut += setResourceIdentifierAdditionalKey(
 				cfg, r,
 				additionalKeyCount,
-				targetField.Path,
+				targetField,
 				targetVarPath,
 				sourceVarName,
 				cleanMemberNames.CamelLower,
@@ -1009,7 +1009,7 @@ func setResourceIdentifierPrimaryIdentifier(
 	indentLevel int,
 ) string {
 	adaptedMemberPath := fmt.Sprintf("&%s.NameOrID", sourceVarName)
-	switch shapeRef.Shape.Type {
+	switch targetField.ShapeRef.Shape.Type {
 	case "list", "structure", "map":
 		panic("primary identifier must be a scalar type since NameOrID is a string")
 	default:
@@ -1036,8 +1036,8 @@ func setResourceIdentifierAdditionalKey(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,
 	fieldIndex int,
-	// The name of the Input SDK Shape member we're outputting for
-	targetFieldName string,
+	// The field that will be set on the target variable
+	targetField *model.Field,
 	// The variable name that we want to set a value to
 	targetVarName string,
 	// The struct or struct field that we access our source value from
@@ -1059,15 +1059,13 @@ func setResourceIdentifierAdditionalKey(
 	// throwing an error accessible to the user
 	additionalKeyOut += fmt.Sprintf("%s%s, %sok := %s\n", indent, fieldIndexName, fieldIndexName, sourceAdaptedVarName)
 	additionalKeyOut += fmt.Sprintf("%sif %sok {\n", indent, fieldIndexName)
-
-	switch shapeRef.Shape.Type {
+	switch targetField.ShapeRef.Shape.Type {
 	case "list", "structure", "map":
-		// TODO(RedbackThomson): Add support for additional keys to add to slices and maps
-		break
+		panic("primary identifier must be a scalar type since NameOrID is a string")
 	default:
 		additionalKeyOut += setResourceForScalar(
 			cfg, r,
-			targetFieldName,
+			targetField.Path,
 			targetVarName,
 			fmt.Sprintf("&%s", fieldIndexName),
 			shapeRef,
