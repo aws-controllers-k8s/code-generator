@@ -136,7 +136,7 @@ func getSortedLateInitFieldsAndConfig(
 //			}
 //		}
 //	}
-//	return latest
+//	return &resource{latestKo}
 func LateInitializeFromReadOne(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,
@@ -151,8 +151,8 @@ func LateInitializeFromReadOne(
 	if len(lateInitializedFieldNames) == 0 {
 		return fmt.Sprintf("%sreturn %s", indent, targetResVarName)
 	}
-	out += fmt.Sprintf("%sobservedKo := rm.concreteResource(%s).ko\n", indent, sourceResVarName)
-	out += fmt.Sprintf("%slatestKo := rm.concreteResource(%s).ko\n", indent, targetResVarName)
+	out += fmt.Sprintf("%sobservedKo := rm.concreteResource(%s).ko.DeepCopy()\n", indent, sourceResVarName)
+	out += fmt.Sprintf("%slatestKo := rm.concreteResource(%s).ko.DeepCopy()\n", indent, targetResVarName)
 	// TODO(vijat@): Add validation for correct field path in lateInitializedFieldNames
 	for _, fName := range lateInitializedFieldNames {
 		// split the field name by period
@@ -204,7 +204,7 @@ func LateInitializeFromReadOne(
 			fNameIndentLevel = fNameIndentLevel - 1
 		}
 	}
-	out += fmt.Sprintf("%sreturn %s", indent, targetResVarName)
+	out += fmt.Sprintf("%sreturn &resource{latestKo}", indent)
 	return out
 }
 
@@ -235,7 +235,7 @@ func LateInitializeFromReadOne(
 //
 //
 // Sample Output:
-//	ko := rm.concreteResource(latest).ko
+//	ko := rm.concreteResource(latest).ko.DeepCopy()
 //	if ko.Spec.ImageScanningConfiguration != nil {
 //		if ko.Spec.ImageScanningConfiguration.ScanOnPush == nil {
 //			return true
@@ -288,7 +288,7 @@ func IncompleteLateInitialization(
 		out += fmt.Sprintf("%sreturn false", indent)
 		return out
 	}
-	out += fmt.Sprintf("%sko := rm.concreteResource(%s).ko\n", indent, resVarName)
+	out += fmt.Sprintf("%sko := rm.concreteResource(%s).ko.DeepCopy()\n", indent, resVarName)
 	for _, fName := range sortedLateInitFieldNames {
 		// split the field name by period
 		// each substring represents a field.

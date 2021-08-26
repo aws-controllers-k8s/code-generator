@@ -100,15 +100,15 @@ func Test_LateInitializeFromReadOne_NonNestedPath(t *testing.T) {
 	assert.NotNil(crd.Config().ResourceFields(crd.Names.Original)["Name"].LateInitialize)
 	assert.NotNil(crd.Config().ResourceFields(crd.Names.Original)["ImageTagMutability"].LateInitialize)
 	expected :=
-		`	observedKo := rm.concreteResource(observed).ko
-	latestKo := rm.concreteResource(latest).ko
+		`	observedKo := rm.concreteResource(observed).ko.DeepCopy()
+	latestKo := rm.concreteResource(latest).ko.DeepCopy()
 	if observedKo.Spec.ImageTagMutability != nil && latestKo.Spec.ImageTagMutability == nil {
 		latestKo.Spec.ImageTagMutability = observedKo.Spec.ImageTagMutability
 	}
 	if observedKo.Spec.Name != nil && latestKo.Spec.Name == nil {
 		latestKo.Spec.Name = observedKo.Spec.Name
 	}
-	return latest`
+	return &resource{latestKo}`
 	assert.Equal(expected, code.LateInitializeFromReadOne(crd.Config(), crd, "observed", "latest", 1))
 }
 
@@ -125,8 +125,8 @@ func Test_LateInitializeFromReadOne_NestedPath(t *testing.T) {
 	assert.NotNil(crd.Config().ResourceFields(crd.Names.Original)["Name"].LateInitialize)
 	assert.NotNil(crd.Config().ResourceFields(crd.Names.Original)["ImageScanningConfiguration.ScanOnPush"].LateInitialize)
 	expected :=
-		`	observedKo := rm.concreteResource(observed).ko
-	latestKo := rm.concreteResource(latest).ko
+		`	observedKo := rm.concreteResource(observed).ko.DeepCopy()
+	latestKo := rm.concreteResource(latest).ko.DeepCopy()
 	if observedKo.Spec.ImageScanningConfiguration != nil && latestKo.Spec.ImageScanningConfiguration != nil {
 		if observedKo.Spec.ImageScanningConfiguration.ScanOnPush != nil && latestKo.Spec.ImageScanningConfiguration.ScanOnPush == nil {
 			latestKo.Spec.ImageScanningConfiguration.ScanOnPush = observedKo.Spec.ImageScanningConfiguration.ScanOnPush
@@ -163,7 +163,7 @@ func Test_LateInitializeFromReadOne_NestedPath(t *testing.T) {
 			}
 		}
 	}
-	return latest`
+	return &resource{latestKo}`
 	assert.Equal(expected, code.LateInitializeFromReadOne(crd.Config(), crd, "observed", "latest", 1))
 }
 
@@ -193,7 +193,7 @@ func Test_IncompleteLateInitialization(t *testing.T) {
 	assert.NotNil(crd.Config().ResourceFields(crd.Names.Original)["Name"].LateInitialize)
 	assert.NotNil(crd.Config().ResourceFields(crd.Names.Original)["ImageScanningConfiguration.ScanOnPush"].LateInitialize)
 	expected :=
-		`	ko := rm.concreteResource(latest).ko
+		`	ko := rm.concreteResource(latest).ko.DeepCopy()
 	if ko.Spec.ImageScanningConfiguration != nil {
 		if ko.Spec.ImageScanningConfiguration.ScanOnPush == nil {
 			return true
