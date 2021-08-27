@@ -894,8 +894,7 @@ func SetResourceIdentifiers(
 		"MaxResults",
 	}
 
-	additionalKeyCount := 0
-	for _, memberName := range inputShape.MemberNames() {
+	for memberIndex, memberName := range inputShape.MemberNames() {
 		if util.InStrings(memberName, paginatorFieldLookup) {
 			continue
 		}
@@ -939,28 +938,29 @@ func SetResourceIdentifiers(
 			continue
 		}
 
+		switch targetField.ShapeRef.Shape.Type {
+		case "list", "structure", "map":
+			panic("primary identifier '" + targetField.Path + "' must be a scalar type since NameOrID is a string")
+		default:
+			break
+		}
+
 		targetVarPath := fmt.Sprintf("%s%s", targetVarName, memberPath)
 		if isPrimaryIdentifier {
 			primaryKeyOut += setResourceIdentifierPrimaryIdentifier(cfg, r,
 				targetField,
 				targetVarPath,
 				sourceVarName,
-				&awssdkmodel.ShapeRef{Shape: &awssdkmodel.Shape{Type: "string"}},
 				indentLevel)
 		} else {
-			cleanMemberNames := names.New(renamedName)
-
 			additionalKeyOut += setResourceIdentifierAdditionalKey(
 				cfg, r,
-				additionalKeyCount,
+				memberIndex,
 				targetField,
 				targetVarPath,
 				sourceVarName,
-				cleanMemberNames.CamelLower,
-				&awssdkmodel.ShapeRef{Shape: &awssdkmodel.Shape{Type: "string"}},
+				names.New(renamedName).CamelLower,
 				indentLevel)
-
-			additionalKeyCount++
 		}
 	}
 
@@ -1004,24 +1004,18 @@ func setResourceIdentifierPrimaryIdentifier(
 	targetVarName string,
 	// The struct or struct field that we access our source value from
 	sourceVarName string,
-	shapeRef *awssdkmodel.ShapeRef,
 	// Number of levels of indentation to use
 	indentLevel int,
 ) string {
 	adaptedMemberPath := fmt.Sprintf("&%s.NameOrID", sourceVarName)
-	switch targetField.ShapeRef.Shape.Type {
-	case "list", "structure", "map":
-		panic("primary identifier must be a scalar type since NameOrID is a string")
-	default:
-		return setResourceForScalar(
-			cfg, r,
-			targetField.Path,
-			targetVarName,
-			adaptedMemberPath,
-			shapeRef,
-			indentLevel,
-		)
-	}
+	return setResourceForScalar(
+		cfg, r,
+		targetField.Path,
+		targetVarName,
+		adaptedMemberPath,
+		targetField.ShapeRef,
+		indentLevel,
+	)
 }
 
 // setResourceIdentifierAdditionalKey returns a string of Go code that sets a
@@ -1044,7 +1038,6 @@ func setResourceIdentifierAdditionalKey(
 	sourceVarName string,
 	// The key in the `AdditionalKeys` map storing the source variable
 	sourceVarKey string,
-	shapeRef *awssdkmodel.ShapeRef,
 	// Number of levels of indentation to use
 	indentLevel int,
 ) string {
@@ -1059,19 +1052,14 @@ func setResourceIdentifierAdditionalKey(
 	// throwing an error accessible to the user
 	additionalKeyOut += fmt.Sprintf("%s%s, %sok := %s\n", indent, fieldIndexName, fieldIndexName, sourceAdaptedVarName)
 	additionalKeyOut += fmt.Sprintf("%sif %sok {\n", indent, fieldIndexName)
-	switch targetField.ShapeRef.Shape.Type {
-	case "list", "structure", "map":
-		panic("primary identifier must be a scalar type since NameOrID is a string")
-	default:
-		additionalKeyOut += setResourceForScalar(
-			cfg, r,
-			targetField.Path,
-			targetVarName,
-			fmt.Sprintf("&%s", fieldIndexName),
-			shapeRef,
-			indentLevel+1,
-		)
-	}
+	additionalKeyOut += setResourceForScalar(
+		cfg, r,
+		targetField.Path,
+		targetVarName,
+		fmt.Sprintf("&%s", fieldIndexName),
+		targetField.ShapeRef,
+		indentLevel+1,
+	)
 	additionalKeyOut += fmt.Sprintf("%s}\n", indent)
 
 	return additionalKeyOut

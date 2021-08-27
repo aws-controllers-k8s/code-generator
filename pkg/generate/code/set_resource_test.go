@@ -3082,9 +3082,9 @@ func TestSetResource_APIGWV2_ApiMapping_SetResourceIdentifiers(t *testing.T) {
 	}
 	r.ko.Status.APIMappingID = &identifier.NameOrID
 
-	f0, f0ok := identifier.AdditionalKeys["domainName"]
-	if f0ok {
-		r.ko.Spec.DomainName = &f0
+	f1, f1ok := identifier.AdditionalKeys["domainName"]
+	if f1ok {
+		r.ko.Spec.DomainName = &f1
 	}
 `
 	assert.Equal(
