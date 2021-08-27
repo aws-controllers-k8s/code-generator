@@ -37,7 +37,7 @@ var (
 // and APIInfos.
 type APIVersionManager struct {
 	gitRepo  *git.Repository
-	metadata ackmetadata.ServiceMetadata
+	metadata *ackmetadata.ServiceMetadata
 
 	hubVersion    string
 	spokeVersions []string
