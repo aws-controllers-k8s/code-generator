@@ -3053,7 +3053,7 @@ func TestSetResource_RDS_DBSubnetGroup_SetResourceIdentifiers(t *testing.T) {
 	require.NotNil(crd)
 
 	// In our testdata generator.yaml file, we've renamed the original
-	// DBSubnetGroupName to just Name...
+	// `DBSubnetGroupName` to just `Name`
 	expected := `
 	if identifier.NameOrID == "" {
 		return ackerrors.MissingNameIdentifier
@@ -3082,9 +3082,9 @@ func TestSetResource_APIGWV2_ApiMapping_SetResourceIdentifiers(t *testing.T) {
 	}
 	r.ko.Status.APIMappingID = &identifier.NameOrID
 
-	f0, f0ok := identifier.AdditionalKeys["domainName"]
-	if f0ok {
-		r.ko.Spec.DomainName = &f0
+	f1, f1ok := identifier.AdditionalKeys["domainName"]
+	if f1ok {
+		r.ko.Spec.DomainName = &f1
 	}
 `
 	assert.Equal(
@@ -3107,11 +3107,28 @@ func TestSetResource_SageMaker_ModelPackage_SetResourceIdentifiers(t *testing.T)
 		r.ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
 	}
 	r.ko.Status.ACKResourceMetadata.ARN = identifier.ARN
+`
+	assert.Equal(
+		expected,
+		code.SetResourceIdentifiers(crd.Config(), crd, "identifier", "r.ko", 1),
+	)
+}
 
-	f0, f0ok := identifier.AdditionalKeys["modelPackageName"]
-	if f0ok {
-		r.ko.Spec.ModelPackageName = &f0
+func TestSetResource_EC2_VPC_SetResourceIdentifiers(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "ec2")
+
+	crd := testutil.GetCRDByName(t, g, "Vpc")
+	require.NotNil(crd)
+
+	expected := `
+	if identifier.NameOrID == "" {
+		return ackerrors.MissingNameIdentifier
 	}
+	r.ko.Status.VPCID = &identifier.NameOrID
+
 `
 	assert.Equal(
 		expected,

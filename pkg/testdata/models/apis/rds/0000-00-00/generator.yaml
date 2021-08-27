@@ -4,6 +4,8 @@ ignore:
 operations:
   DescribeDBInstances:
     primary_identifier_field_name: DBInstanceIdentifier
+  DescribeDBSubnetGroups:
+    primary_identifier_field_name: DBSubnetGroupName
 resources:
   DBSubnetGroup:
     renames:

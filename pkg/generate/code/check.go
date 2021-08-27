@@ -18,7 +18,6 @@ import (
 	"strings"
 
 	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
-	"github.com/gertd/go-pluralize"
 
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
@@ -184,37 +183,7 @@ func checkRequiredFieldsMissingFromShapeReadMany(
 	indent := strings.Repeat("\t", indentLevel)
 	result := fmt.Sprintf("%sreturn false", indent)
 
-	shapeIdentifiers := FindIdentifiersInShape(r, shape)
-	crIdentifiers := FindIdentifiersInCRD(r)
-	if len(shapeIdentifiers) == 0 || len(crIdentifiers) == 0 {
-		return result
-	}
-
-	pluralize := pluralize.NewClient()
-	reqIdentifier := ""
-	for _, si := range shapeIdentifiers {
-		for _, ci := range crIdentifiers {
-			if strings.EqualFold(pluralize.Singular(si),
-				pluralize.Singular(ci)) {
-				// The CRD identifiers being used for comparison reflect the
-				// *original* field names in the API model shape.
-				// Field renames are handled below in the call to
-				// getSanitizedMemberPath.
-				if reqIdentifier == "" {
-					reqIdentifier = ci
-				} else {
-					// If there are multiple identifiers, then prioritize the
-					// 'Id' identifier. Checking 'Id' to determine resource
-					// creation should be safe as the field is usually
-					// present in CR.Status.
-					if !strings.HasSuffix(reqIdentifier, "Id") ||
-						!strings.HasSuffix(reqIdentifier, "Ids") {
-						reqIdentifier = ci
-					}
-				}
-			}
-		}
-	}
+	reqIdentifier, _ := FindPluralizedIdentifiersInShape(r, shape)
 
 	resVarPath, err := getSanitizedMemberPath(reqIdentifier, r, op, koVarName)
 	if err != nil {
