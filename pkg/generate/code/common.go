@@ -77,39 +77,6 @@ func FindARNIdentifiersInShape(
 	return identifiers
 }
 
-// FindIdentifiersInCRD returns the identifier fields of a given CRD which
-// can be singular or plural. Note, these fields will be the *original* field
-// names from the API model shape, not renamed field names.
-func FindIdentifiersInCRD(
-	r *model.CRD) []string {
-	var identifiers []string
-	if r == nil {
-		return identifiers
-	}
-	identifierLookup := []string{
-		"Id",
-		"Ids",
-		r.Names.Original + "Id",
-		r.Names.Original + "Ids",
-		"Name",
-		"Names",
-		r.Names.Original + "Name",
-		r.Names.Original + "Names",
-	}
-
-	for _, id := range identifierLookup {
-		_, found := r.SpecFields[id]
-		if !found {
-			_, found = r.StatusFields[id]
-		}
-		if found {
-			identifiers = append(identifiers, id)
-		}
-	}
-
-	return identifiers
-}
-
 // FindPluralizedIdentifiersInShape returns the name of a Spec OR Status field
 // that has a matching pluralized field in the given shape and the name of
 // the corresponding shape field name. This method will returns the original
@@ -122,7 +89,7 @@ func FindPluralizedIdentifiersInShape(
 	shape *awssdkmodel.Shape,
 ) (crField string, shapeField string) {
 	shapeIdentifiers := FindIdentifiersInShape(r, shape)
-	crIdentifiers := FindIdentifiersInCRD(r)
+	crIdentifiers := r.GetIdentifiers()
 	if len(shapeIdentifiers) == 0 || len(crIdentifiers) == 0 {
 		return "", ""
 	}

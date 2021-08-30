@@ -657,6 +657,38 @@ func (r *CRD) GetAllRenames(op OpType) (map[string]string, error) {
 	return renames, nil
 }
 
+// GetIdentifiers returns the identifier fields of a given CRD which
+// can be singular or plural. Note, these fields will be the *original* field
+// names from the API model shape, not renamed field names.
+func (r *CRD) GetIdentifiers() []string {
+	var identifiers []string
+	if r == nil {
+		return identifiers
+	}
+	identifierLookup := []string{
+		"Id",
+		"Ids",
+		r.Names.Original + "Id",
+		r.Names.Original + "Ids",
+		"Name",
+		"Names",
+		r.Names.Original + "Name",
+		r.Names.Original + "Names",
+	}
+
+	for _, id := range identifierLookup {
+		_, found := r.SpecFields[id]
+		if !found {
+			_, found = r.StatusFields[id]
+		}
+		if found {
+			identifiers = append(identifiers, id)
+		}
+	}
+
+	return identifiers
+}
+
 // GetSanitizedMemberPath takes a shape member field, checks for renames, checks
 // for existence in Spec and Status, then constructs and returns the var path.
 // Returns error if memberName is not present in either Spec or Status.

@@ -58,7 +58,7 @@ func TestFindIdentifiersInCRD_S3_Bucket_ReadMany_Empty(t *testing.T) {
 	assert.Len(actualIdentifiers, 0)
 }
 
-func TestFindIdentifiersInCRD_EC2_VPC_StatusField(t *testing.T) {
+func TestGetIdentifiers_EC2_VPC_StatusField(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
@@ -68,7 +68,7 @@ func TestFindIdentifiersInCRD_EC2_VPC_StatusField(t *testing.T) {
 	require.NotNil(crd)
 
 	expIdentifier := "VpcId"
-	actualIdentifiers := code.FindIdentifiersInCRD(crd)
+	actualIdentifiers := crd.GetIdentifiers()
 	assert.Len(actualIdentifiers, 1)
 	assert.Equal(
 		strings.TrimSpace(expIdentifier),
@@ -76,7 +76,7 @@ func TestFindIdentifiersInCRD_EC2_VPC_StatusField(t *testing.T) {
 	)
 }
 
-func TestFindIdentifiersInCRD_S3_Bucket_SpecField(t *testing.T) {
+func TestGetIdentifiers_S3_Bucket_SpecField(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
@@ -86,7 +86,7 @@ func TestFindIdentifiersInCRD_S3_Bucket_SpecField(t *testing.T) {
 	require.NotNil(crd)
 
 	expIdentifier := "Name"
-	actualIdentifiers := code.FindIdentifiersInCRD(crd)
+	actualIdentifiers := crd.GetIdentifiers()
 	assert.Len(actualIdentifiers, 1)
 	assert.Equal(
 		strings.TrimSpace(expIdentifier),
@@ -94,7 +94,7 @@ func TestFindIdentifiersInCRD_S3_Bucket_SpecField(t *testing.T) {
 	)
 }
 
-func TestFindIdentifiersInCRD_APIGatewayV2_API_Multiple(t *testing.T) {
+func TestGetIdentifiers_APIGatewayV2_API_Multiple(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
@@ -103,7 +103,7 @@ func TestFindIdentifiersInCRD_APIGatewayV2_API_Multiple(t *testing.T) {
 	require.NotNil(crd)
 
 	expIdentifiers := []string{"ApiId", "Name"}
-	actualIdentifiers := code.FindIdentifiersInCRD(crd)
+	actualIdentifiers := crd.GetIdentifiers()
 	assert.Len(actualIdentifiers, 2)
 	assert.True(ackcompare.SliceStringEqual(expIdentifiers, actualIdentifiers))
 }
