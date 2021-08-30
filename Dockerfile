@@ -13,7 +13,8 @@ ARG build_date
 ARG work_dir=/github.com/aws-controllers-k8s/$service_alias-controller
 WORKDIR $work_dir
 # For building Go Module required
-ENV GOPROXY=direct
+# TODO(vijtrip2): After golang update to 1.15 or later, replace ',' with '|'
+ENV GOPROXY=https://proxy.golang.org,direct
 ENV GO111MODULE=on
 ENV GOARCH=amd64
 ENV GOOS=linux
