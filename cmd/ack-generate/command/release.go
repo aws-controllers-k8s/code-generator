@@ -23,6 +23,7 @@ import (
 	"github.com/spf13/cobra"
 
 	ackgenerate "github.com/aws-controllers-k8s/code-generator/pkg/generate/ack"
+	ackmetadata "github.com/aws-controllers-k8s/code-generator/pkg/metadata"
 	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
 )
 
@@ -91,8 +92,14 @@ func generateRelease(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+
+	metadata, err := ackmetadata.NewServiceMetadata(optMetadataConfigPath)
+	if err != nil {
+		return err
+	}
+
 	ts, err := ackgenerate.Release(
-		m, optTemplateDirs,
+		m, metadata, optTemplateDirs,
 		releaseVersion, optImageRepository, optServiceAccountName,
 	)
 	if err != nil {

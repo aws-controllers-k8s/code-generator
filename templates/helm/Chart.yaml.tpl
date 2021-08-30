@@ -1,6 +1,6 @@
 apiVersion: v1
 name: {{ .ServiceIDClean }}-chart
-description: A Helm chart for the ACK service controller for {{ .ServiceIDClean }}
+description: A Helm chart for the ACK service controller for {{ .Metadata.Service.FullName }} ({{ .Metadata.Service.ShortName }})
 version: {{ .ReleaseVersion }}
 appVersion: {{ .ReleaseVersion }}
 home: https://github.com/aws-controllers-k8s/{{ .ServiceIDClean }}-controller
@@ -10,7 +10,7 @@ sources:
 maintainers:
   - name: ACK Admins
     url: https://github.com/orgs/aws-controllers-k8s/teams/ack-admin
-  - name: {{ .ServiceIDClean }} Admins
+  - name: {{ .Metadata.Service.ShortName }} Admins
     url: https://github.com/orgs/aws-controllers-k8s/teams/{{ .ServiceIDClean }}-maintainer
 keywords:
   - aws

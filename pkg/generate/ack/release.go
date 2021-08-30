@@ -18,6 +18,7 @@ import (
 	ttpl "text/template"
 
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate/templateset"
+	ackmetadata "github.com/aws-controllers-k8s/code-generator/pkg/metadata"
 	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
 )
 
@@ -49,6 +50,7 @@ var (
 // generating an ACK service controller release (Helm artifacts, etc)
 func Release(
 	m *ackmodel.Model,
+	metadata *ackmetadata.ServiceMetadata,
 	templateBasePaths []string,
 	// releaseVersion is the SemVer string describing the release that the Helm
 	// chart will install
@@ -70,6 +72,7 @@ func Release(
 	metaVars := m.MetaVars()
 	releaseVars := &templateReleaseVars{
 		metaVars,
+		metadata,
 		releaseVersion,
 		imageRepository,
 		serviceAccountName,
@@ -88,6 +91,7 @@ func Release(
 // outputs Go code for a release artifact
 type templateReleaseVars struct {
 	templateset.MetaVars
+	Metadata *ackmetadata.ServiceMetadata
 	// ReleaseVersion is the semver release tag (or Git SHA1 commit) that is
 	// used for the binary image artifacts and Helm release version
 	ReleaseVersion string

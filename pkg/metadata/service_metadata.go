@@ -104,17 +104,17 @@ func (m *ServiceMetadata) getVersionsByStatus(status APIStatus) []string {
 // path to a metadata file
 func NewServiceMetadata(
 	metadataPath string,
-) (ServiceMetadata, error) {
+) (*ServiceMetadata, error) {
 	if metadataPath == "" {
-		return ServiceMetadata{}, ErrNoServiceMetadataFile
+		return &ServiceMetadata{}, ErrNoServiceMetadataFile
 	}
 	content, err := ioutil.ReadFile(metadataPath)
 	if err != nil {
-		return ServiceMetadata{}, err
+		return &ServiceMetadata{}, err
 	}
 	gc := ServiceMetadata{}
 	if err = yaml.Unmarshal(content, &gc); err != nil {
-		return ServiceMetadata{}, err
+		return &ServiceMetadata{}, err
 	}
-	return gc, nil
+	return &gc, nil
 }
