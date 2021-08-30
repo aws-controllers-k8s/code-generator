@@ -784,8 +784,8 @@ func setSDKReadMany(
 			}
 		}
 
-		// Field renames are handled in getSanitizedMemberPath
-		resVarPath, err = getSanitizedMemberPath(memberName, r, op, sourceVarName)
+		// Field renames are handled in GetSanitizedMemberPath
+		resVarPath, err = r.GetSanitizedMemberPath(memberName, op, sourceVarName)
 		if err != nil {
 			// if it's an identifier field check for singular/plural
 			if util.InStrings(memberName, shapeIdentifiers) {
@@ -799,7 +799,7 @@ func setSDKReadMany(
 				// 'Id' identifier.
 				if resVarPath == "" || (!strings.HasSuffix(resVarPath, "Id") ||
 					!strings.HasSuffix(resVarPath, "Ids")) {
-					resVarPath, err = getSanitizedMemberPath(flipped, r, op, sourceVarName)
+					resVarPath, err = r.GetSanitizedMemberPath(flipped, op, sourceVarName)
 					if err != nil {
 						panic(fmt.Sprintf(
 							"Unable to locate identifier field %s in "+
