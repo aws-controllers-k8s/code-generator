@@ -14,7 +14,6 @@
 package model
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -387,7 +386,6 @@ func (a *SDKAPI) SDKAPIInterfaceTypeName() string {
 
 // Override the operation type and/or resource name if specified in config
 func getOpTypeAndResourceName(opID string, cfg *ackgenconfig.Config) ([]OpType, string) {
-	var unmarshaledOpTypes ackgenconfig.StringArray
 	opType, resName := GetOpTypeAndResourceNameFromOpID(opID)
 	opTypes := []OpType{opType}
 
@@ -399,12 +397,9 @@ func getOpTypeAndResourceName(opID string, cfg *ackgenconfig.Config) ([]OpType, 
 			resName = operationConfig.ResourceName
 		}
 
-		if b, err := json.Marshal(operationConfig.OperationType); err == nil {
-			json.Unmarshal(b, &unmarshaledOpTypes)
-			for _, operationType := range unmarshaledOpTypes {
-				opType = OpTypeFromString(operationType)
-				opTypes = append(opTypes, opType)
-			}
+		for _, operationType := range operationConfig.OperationType {
+			opType = OpTypeFromString(operationType)
+			opTypes = append(opTypes, opType)
 		}
 	}
 	return opTypes, resName
