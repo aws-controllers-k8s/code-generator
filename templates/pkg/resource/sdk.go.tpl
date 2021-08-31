@@ -224,7 +224,7 @@ func (rm *resourceManager) updateConditions (
 			errorMessage = err.Error()
 		} else {
 			awsErr, _ := ackerr.AWSError(err)
-			errorMessage = awsErr.Code() + ": " + awsErr.Message()
+			errorMessage = awsErr.Message()
 		}
 		terminalCondition.Status = corev1.ConditionTrue
 		terminalCondition.Message = &errorMessage
@@ -247,7 +247,7 @@ func (rm *resourceManager) updateConditions (
 			awsErr, _ := ackerr.AWSError(err)
 			errorMessage := err.Error()
 			if awsErr != nil {
-				errorMessage = awsErr.Code() + ": " + awsErr.Message()
+				errorMessage = awsErr.Message()
 			}
 			recoverableCondition.Message = &errorMessage
 		} else if recoverableCondition != nil {
