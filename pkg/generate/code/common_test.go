@@ -107,3 +107,52 @@ func TestGetIdentifiers_APIGatewayV2_API_Multiple(t *testing.T) {
 	assert.Len(actualIdentifiers, 2)
 	assert.True(ackcompare.SliceStringEqual(expIdentifiers, actualIdentifiers))
 }
+
+func TestFindARNIdentifiersInShape_SNS_Topic_GetAttributes(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "sns")
+	crd := testutil.GetCRDByName(t, g, "Topic")
+	require.NotNil(crd)
+
+	expIdentifiers := []string{"TopicArn"}
+	actualIdentifiers := code.FindARNIdentifiersInShape(crd,
+		crd.Ops.GetAttributes.InputRef.Shape)
+
+	assert.True(ackcompare.SliceStringEqual(expIdentifiers, actualIdentifiers))
+}
+
+func TestFindPluralizedIdentifiersInShape_EC2_VPC_ReadMany(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "ec2")
+	crd := testutil.GetCRDByName(t, g, "Vpc")
+	require.NotNil(crd)
+
+	expModelIdentifier := "VpcId"
+	expShapeIdentifier := "VpcIds"
+	crIdentifier, shapeIdentifier := code.FindPluralizedIdentifiersInShape(crd,
+		crd.Ops.ReadMany.InputRef.Shape)
+
+	assert.Equal(expModelIdentifier, crIdentifier)
+	assert.Equal(expShapeIdentifier, shapeIdentifier)
+}
+
+func TestFindPrimaryIdentifierFieldNames_APIGatewayV2_API_ReadOne(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "apigatewayv2")
+	crd := testutil.GetCRDByName(t, g, "Api")
+	require.NotNil(crd)
+
+	expModelIdentifier := "ApiId"
+	expShapeIdentifier := "ApiId"
+	crIdentifier, shapeIdentifier := code.FindPrimaryIdentifierFieldNames(
+		crd.Config(), crd, crd.Ops.ReadOne)
+
+	assert.Equal(expModelIdentifier, crIdentifier)
+	assert.Equal(expShapeIdentifier, shapeIdentifier)
+}
