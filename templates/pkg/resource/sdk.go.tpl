@@ -212,7 +212,7 @@ func (rm *resourceManager) updateConditions (
 		}
 	}
 
-	if rm.terminalAWSError(err) || err ==  ackerr.SecretTypeNotSupported || err == ackerr.SecretNotFound {
+	if !r.IsBeingDeleted() && (rm.terminalAWSError(err) || err ==  ackerr.SecretTypeNotSupported || err == ackerr.SecretNotFound) {
 		if terminalCondition == nil {
 			terminalCondition = &ackv1alpha1.Condition{
 				Type:   ackv1alpha1.ConditionTypeTerminal,
@@ -224,7 +224,7 @@ func (rm *resourceManager) updateConditions (
 			errorMessage = err.Error()
 		} else {
 			awsErr, _ := ackerr.AWSError(err)
-			errorMessage = awsErr.Message()
+			errorMessage = awsErr.Code() + ": " + awsErr.Message()
 		}
 		terminalCondition.Status = corev1.ConditionTrue
 		terminalCondition.Message = &errorMessage
@@ -247,7 +247,7 @@ func (rm *resourceManager) updateConditions (
 			awsErr, _ := ackerr.AWSError(err)
 			errorMessage := err.Error()
 			if awsErr != nil {
-				errorMessage = awsErr.Message()
+				errorMessage = awsErr.Code() + ": " + awsErr.Message()
 			}
 			recoverableCondition.Message = &errorMessage
 		} else if recoverableCondition != nil {

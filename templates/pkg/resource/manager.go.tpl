@@ -146,7 +146,14 @@ func (rm *resourceManager) Delete(
 		// Should never happen... if it does, it's buggy code.
 		panic("resource manager's Update() method received resource with nil CR object")
 	}
-	return rm.sdkDelete(ctx, r)
+	observed, err := rm.sdkDelete(ctx, r)
+	if err != nil {
+		if observed != nil {
+			return rm.onError(observed, err)
+		}
+		return rm.onError(r, err)
+	}
+	return rm.onSuccess(observed)
 }
 
 // ARNFromName returns an AWS Resource Name from a given string name. This
