@@ -212,7 +212,7 @@ func (rm *resourceManager) updateConditions (
 		}
 	}
 
-	if !r.IsBeingDeleted() && (rm.terminalAWSError(err) || err ==  ackerr.SecretTypeNotSupported || err == ackerr.SecretNotFound) {
+	if rm.terminalAWSError(err) || err ==  ackerr.SecretTypeNotSupported || err == ackerr.SecretNotFound {
 		if terminalCondition == nil {
 			terminalCondition = &ackv1alpha1.Condition{
 				Type:   ackv1alpha1.ConditionTypeTerminal,
