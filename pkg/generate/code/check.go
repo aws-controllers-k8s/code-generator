@@ -21,7 +21,6 @@ import (
 
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
-	"github.com/aws-controllers-k8s/code-generator/pkg/names"
 )
 
 // CheckExceptionMessage returns Go code that contains a condition to
@@ -137,7 +136,7 @@ func checkRequiredFieldsMissingFromShape(
 			continue
 		}
 
-		resVarPath, err := getSanitizedMemberPath(memberName, r, op, koVarName)
+		resVarPath, err := r.GetSanitizedMemberPath(memberName, op, koVarName)
 		if err != nil {
 			// If it isn't in our spec/status fields, we have a problem!
 			msg := fmt.Sprintf(
@@ -185,7 +184,7 @@ func checkRequiredFieldsMissingFromShapeReadMany(
 
 	reqIdentifier, _ := FindPluralizedIdentifiersInShape(r, shape)
 
-	resVarPath, err := getSanitizedMemberPath(reqIdentifier, r, op, koVarName)
+	resVarPath, err := r.GetSanitizedMemberPath(reqIdentifier, op, koVarName)
 	if err != nil {
 		return result
 	}
@@ -194,33 +193,4 @@ func checkRequiredFieldsMissingFromShapeReadMany(
 	return fmt.Sprintf("%sreturn %s\n", indent, result)
 }
 
-// getSanitizedMemberPath takes a shape member field, checks for renames, checks
-// for existence in Spec and Status, then constructs and returns the var path.
-// Returns error if memberName is not present in either Spec or Status.
-func getSanitizedMemberPath(
-	memberName string,
-	r *model.CRD,
-	op *awssdkmodel.Operation,
-	koVarName string) (string, error) {
-	resVarPath := koVarName
-	cleanMemberNames := names.New(memberName)
-	cleanMemberName := cleanMemberNames.Camel
-	// Check that the field has potentially been renamed
-	renamedName, wasRenamed := r.InputFieldRename(
-		op.Name, memberName,
-	)
-	_, found := r.SpecFields[renamedName]
-	if found && !wasRenamed {
-		resVarPath = resVarPath + r.Config().PrefixConfig.SpecField + "." + cleanMemberName
-	} else if found {
-		resVarPath = resVarPath + r.Config().PrefixConfig.SpecField + "." + renamedName
-	} else {
-		_, found = r.StatusFields[memberName]
-		if !found {
-			return "", fmt.Errorf(
-				"the required field %s is NOT present in CR's Spec or Status", memberName)
-		}
-		resVarPath = resVarPath + r.Config().PrefixConfig.StatusField + "." + cleanMemberName
-	}
-	return resVarPath, nil
-}
+
