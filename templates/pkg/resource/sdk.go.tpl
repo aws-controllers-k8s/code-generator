@@ -5,6 +5,7 @@ package {{ .CRD.Names.Snake }}
 import (
 	"context"
 	"strings"
+	"fmt"
 
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
@@ -224,7 +225,7 @@ func (rm *resourceManager) updateConditions (
 			errorMessage = err.Error()
 		} else {
 			awsErr, _ := ackerr.AWSError(err)
-			errorMessage = awsErr.Code() + ": " + awsErr.Message()
+			errorMessage = fmt.Sprintf("%s: %s", awsErr.Code(), awsErr.Message()) 
 		}
 		terminalCondition.Status = corev1.ConditionTrue
 		terminalCondition.Message = &errorMessage
@@ -247,7 +248,7 @@ func (rm *resourceManager) updateConditions (
 			awsErr, _ := ackerr.AWSError(err)
 			errorMessage := err.Error()
 			if awsErr != nil {
-				errorMessage = awsErr.Code() + ": " + awsErr.Message()
+				errorMessage = fmt.Sprintf("%s: %s", awsErr.Code(), awsErr.Message()) 
 			}
 			recoverableCondition.Message = &errorMessage
 		} else if recoverableCondition != nil {
