@@ -27,6 +27,7 @@ import (
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/names"
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
+
 	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
 )
 
@@ -206,11 +207,13 @@ func (a *SDKAPI) GetOperationMap(cfg *ackgenconfig.Config) *OperationMap {
 	// create an index of Operations by operation types and resource name
 	opMap := OperationMap{}
 	for opID, op := range a.API.Operations {
-		opType, resName := getOpTypeAndResourceName(opID, cfg)
-		if _, found := opMap[opType]; !found {
-			opMap[opType] = map[string]*awssdkmodel.Operation{}
+		opTypeArray, resName := getOpTypeAndResourceName(opID, cfg)
+		for _, opType := range opTypeArray {
+			if _, found := opMap[opType]; !found {
+				opMap[opType] = map[string]*awssdkmodel.Operation{}
+			}
+			opMap[opType][resName] = op
 		}
-		opMap[opType][resName] = op
 	}
 	a.opMap = &opMap
 	return &opMap
@@ -382,20 +385,22 @@ func (a *SDKAPI) SDKAPIInterfaceTypeName() string {
 }
 
 // Override the operation type and/or resource name if specified in config
-func getOpTypeAndResourceName(opID string, cfg *ackgenconfig.Config) (OpType, string) {
+func getOpTypeAndResourceName(opID string, cfg *ackgenconfig.Config) ([]OpType, string) {
 	opType, resName := GetOpTypeAndResourceNameFromOpID(opID)
+	opTypes := []OpType{opType}
 
-	if cfg != nil {
-		if operationConfig, exists := cfg.Operations[opID]; exists {
-			if operationConfig.OperationType != "" {
-				opType = OpTypeFromString(operationConfig.OperationType)
-			}
+	if cfg == nil {
+		return opTypes, resName
+	}
+	if operationConfig, exists := cfg.Operations[opID]; exists {
+		if operationConfig.ResourceName != "" {
+			resName = operationConfig.ResourceName
+		}
 
-			if operationConfig.ResourceName != "" {
-				resName = operationConfig.ResourceName
-			}
+		for _, operationType := range operationConfig.OperationType {
+			opType = OpTypeFromString(operationType)
+			opTypes = append(opTypes, opType)
 		}
 	}
-
-	return opType, resName
+	return opTypes, resName
 }

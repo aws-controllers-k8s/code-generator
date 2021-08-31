@@ -14,10 +14,16 @@
 package config
 
 import (
+	"encoding/json"
+
 	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
 
-	"github.com/aws-controllers-k8s/code-generator/pkg/util"
+	"github.com/aws-controllers-k8s/code-generator/pkg/util"	
 )
+
+// StringArray is a type that can be represented in JSON as *either* a string
+// *or* an array of strings
+type StringArray []string
 
 // OperationConfig represents instructions to the ACK code generator to
 // specify the overriding values for API operation parameters and its custom implementation.
@@ -37,7 +43,8 @@ type OperationConfig struct {
 	ResourceName string `json:"resource_name"`
 	// Override for operation type in case of heuristic failure
 	// An example of this is `Put...` or `Register...` API operations not being correctly classified as `Create` op type
-	OperationType string `json:"operation_type"`
+	// OperationType []string `json:"operation_type"`
+	OperationType StringArray `json:"operation_type"`
 	// PrimaryIdentifierFieldName provides the name of the field that should be
 	// interpreted as the "primary" identifier field. This field will be used as
 	// the primary field for resource adoption.
@@ -74,4 +81,22 @@ func (c *Config) ListOpMatchFieldNames(
 		return res
 	}
 	return rConfig.ListOperation.MatchFields
+}
+
+// UnmarshalJSON parses input for a either a string or
+// or a list and returns a StringArray.
+func (a *StringArray) UnmarshalJSON(b []byte) error {
+	var multi []string
+	err := json.Unmarshal(b, &multi)
+	if err != nil {
+		var single string
+		err := json.Unmarshal(b, &single)
+		if err != nil {
+			return err
+		}
+		*a = []string{single}
+	} else {
+		*a = multi
+	}
+	return nil
 }
