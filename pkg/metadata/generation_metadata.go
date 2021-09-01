@@ -20,7 +20,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/ghodss/yaml"
 
@@ -82,8 +81,6 @@ type generatorConfigInfo struct {
 
 // last modification information
 type lastModificationInfo struct {
-	// UTC Timestamp
-	Timestamp string `json:"timestamp"`
 	// Modification reason
 	Reason UpdateReason `json:"reason"`
 }
@@ -112,8 +109,7 @@ func CreateGenerationMetadata(
 		APIVersion:           apiVersion,
 		APIDirectoryChecksum: hash,
 		LastModification: lastModificationInfo{
-			Timestamp: time.Now().UTC().String(),
-			Reason:    modificationReason,
+			Reason: modificationReason,
 		},
 		AWSSDKGoVersion: awsSDKGo,
 		ACKGenerateInfo: ackGenerateInfo{
