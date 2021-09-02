@@ -20,6 +20,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 
 	"github.com/ghodss/yaml"
 
@@ -116,7 +117,7 @@ func CreateGenerationMetadata(
 			Version:   version.Version,
 			BuildDate: version.BuildDate,
 			BuildHash: version.BuildHash,
-			GoVersion: version.GoVersion,
+			GoVersion: runtime.Version(),
 		},
 		GeneratorConfigInfo: generatorConfigInfo{
 			OriginalFileName: filepath.Base(generatorFileName),
