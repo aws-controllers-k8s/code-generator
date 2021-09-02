@@ -74,6 +74,9 @@ if [[ $QUIET = "false" ]]; then
     echo " git commit: $SERVICE_CONTROLLER_GIT_COMMIT"
 fi
 
+# Log into ECR public to access base images
+aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
+
 # if local build
 # then use Dockerfile which allows references to local modules from service controller
 DOCKER_BUILD_CONTEXT="$ACK_DIR"

@@ -1,7 +1,7 @@
 # Base image to use at runtime
-ARG base_image=amazonlinux:2
+ARG base_image=public.ecr.aws/amazonlinux/amazonlinux:2
 # Build the manager binary
-FROM golang:1.14.1 as builder
+FROM public.ecr.aws/bitnami/golang:1.15.15 as builder
 
 ARG service_alias
 # The tuple of controller image version information
@@ -12,8 +12,7 @@ ARG build_date
 # service controller code.
 ARG work_dir=/github.com/aws-controllers-k8s/$service_alias-controller
 WORKDIR $work_dir
-# For building Go Module required
-ENV GOPROXY=https://proxy.golang.org,direct
+ENV GOPROXY=https://proxy.golang.org|direct
 ENV GO111MODULE=on
 ENV GOARCH=amd64
 ENV GOOS=linux
