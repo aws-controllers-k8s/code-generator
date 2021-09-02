@@ -258,6 +258,9 @@ func SetResource(
 		out += fmt.Sprintf(
 			"%sif %s != nil {\n", indent, sourceAdaptedVarName,
 		)
+		qualifiedTargetVar := fmt.Sprintf(
+			"%s.%s", targetAdaptedVarName, f.Names.Camel,
+		)
 
 		switch sourceMemberShape.Type {
 		case "list", "structure", "map":
@@ -279,9 +282,7 @@ func SetResource(
 					indentLevel+1,
 				)
 				out += setResourceForScalar(
-					cfg, r,
-					f.Names.Camel,
-					targetAdaptedVarName,
+					qualifiedTargetVar,
 					memberVarName,
 					sourceMemberShapeRef,
 					indentLevel+1,
@@ -289,9 +290,7 @@ func SetResource(
 			}
 		default:
 			out += setResourceForScalar(
-				cfg, r,
-				f.Names.Camel,
-				targetAdaptedVarName,
+				qualifiedTargetVar,
 				sourceAdaptedVarName,
 				sourceMemberShapeRef,
 				indentLevel+1,
@@ -514,6 +513,11 @@ func setResourceReadMany(
 		out += fmt.Sprintf(
 			"%s\tif %s != nil {\n", indent, sourceAdaptedVarName,
 		)
+
+		//ex: r.ko.Spec.CacheClusterID
+		qualifiedTargetVar := fmt.Sprintf(
+			"%s.%s", targetAdaptedVarName, f.Names.Camel,
+		)
 		switch sourceMemberShape.Type {
 		case "list", "structure", "map":
 			{
@@ -534,9 +538,7 @@ func setResourceReadMany(
 					indentLevel+2,
 				)
 				out += setResourceForScalar(
-					cfg, r,
-					f.Names.Camel,
-					targetAdaptedVarName,
+					qualifiedTargetVar,
 					memberVarName,
 					sourceMemberShapeRef,
 					indentLevel+2,
@@ -574,9 +576,7 @@ func setResourceReadMany(
 			}
 			//          r.ko.Spec.CacheClusterID = elem.CacheClusterId
 			out += setResourceForScalar(
-				cfg, r,
-				f.Names.Camel,
-				targetAdaptedVarName,
+				qualifiedTargetVar,
 				sourceAdaptedVarName,
 				sourceMemberShapeRef,
 				indentLevel+2,
@@ -1008,10 +1008,10 @@ func setResourceIdentifierPrimaryIdentifier(
 	indentLevel int,
 ) string {
 	adaptedMemberPath := fmt.Sprintf("&%s.NameOrID", sourceVarName)
+	qualifiedTargetVar := fmt.Sprintf("%s.%s", targetVarName, targetField.Path)
+
 	return setResourceForScalar(
-		cfg, r,
-		targetField.Path,
-		targetVarName,
+		qualifiedTargetVar,
 		adaptedMemberPath,
 		targetField.ShapeRef,
 		indentLevel,
@@ -1052,10 +1052,9 @@ func setResourceIdentifierAdditionalKey(
 	// throwing an error accessible to the user
 	additionalKeyOut += fmt.Sprintf("%s%s, %sok := %s\n", indent, fieldIndexName, fieldIndexName, sourceAdaptedVarName)
 	additionalKeyOut += fmt.Sprintf("%sif %sok {\n", indent, fieldIndexName)
+	qualifiedTargetVar := fmt.Sprintf("%s.%s", targetVarName, targetField.Path)
 	additionalKeyOut += setResourceForScalar(
-		cfg, r,
-		targetField.Path,
-		targetVarName,
+		qualifiedTargetVar,
 		fmt.Sprintf("&%s", fieldIndexName),
 		targetField.ShapeRef,
 		indentLevel+1,
@@ -1117,9 +1116,7 @@ func setResourceForContainer(
 		)
 	default:
 		return setResourceForScalar(
-			cfg, r,
-			targetFieldName,
-			targetVarName,
+			fmt.Sprintf("%s.%s", targetFieldName, targetVarName),
 			sourceVarName,
 			sourceShapeRef,
 			indentLevel,
@@ -1162,6 +1159,9 @@ func SetResourceForStruct(
 		out += fmt.Sprintf(
 			"%sif %s != nil {\n", indent, sourceAdaptedVarName,
 		)
+		qualifiedTargetVar := fmt.Sprintf(
+			"%s.%s", targetVarName, cleanNames.Camel,
+		)
 		switch memberShape.Type {
 		case "list", "structure", "map":
 			{
@@ -1181,9 +1181,7 @@ func SetResourceForStruct(
 					indentLevel+1,
 				)
 				out += setResourceForScalar(
-					cfg, r,
-					cleanNames.Camel,
-					targetVarName,
+					qualifiedTargetVar,
 					memberVarName,
 					memberShapeRef,
 					indentLevel+1,
@@ -1191,9 +1189,7 @@ func SetResourceForStruct(
 			}
 		default:
 			out += setResourceForScalar(
-				cfg, r,
-				cleanNames.Camel,
-				targetVarName,
+				qualifiedTargetVar,
 				sourceAdaptedVarName,
 				memberShapeRef,
 				indentLevel+1,
@@ -1334,30 +1330,24 @@ func setResourceForMap(
 // value to a source variable when the type of the source variable is a scalar
 // type (not a map, slice or struct).
 func setResourceForScalar(
-	cfg *ackgenconfig.Config,
-	r *model.CRD,
-	// The name of the Input SDK Shape member we're outputting for
-	targetFieldName string,
-	// The variable name that we want to set a value to
-	targetVarName string,
+	// The fully-qualified variable that will be set to sourceVar
+	targetVar string,
 	// The struct or struct field that we access our source value from
-	sourceVarName string,
+	sourceVar string,
 	shapeRef *awssdkmodel.ShapeRef,
 	indentLevel int,
 ) string {
 	out := ""
 	indent := strings.Repeat("\t", indentLevel)
-	setTo := sourceVarName
+	setTo := sourceVar
 	shape := shapeRef.Shape
 	if shape.Type == "timestamp" {
-		setTo = "&metav1.Time{*" + sourceVarName + "}"
+		setTo = "&metav1.Time{*" + sourceVar + "}"
 	}
-	targetVarPath := targetVarName
-	if targetFieldName != "" {
-		targetVarPath += "." + targetFieldName
-	} else {
+	if strings.HasPrefix(targetVar, ".") {
+		targetVar = targetVar[1:]
 		setTo = "*" + setTo
 	}
-	out += fmt.Sprintf("%s%s = %s\n", indent, targetVarPath, setTo)
+	out += fmt.Sprintf("%s%s = %s\n", indent, targetVar, setTo)
 	return out
 }

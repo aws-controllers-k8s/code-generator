@@ -19,12 +19,10 @@ import (
 	"strings"
 
 	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
-	"github.com/gertd/go-pluralize"
 
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 	"github.com/aws-controllers-k8s/code-generator/pkg/names"
-	"github.com/aws-controllers-k8s/code-generator/pkg/util"
 )
 
 // SetSDK returns the Go code that sets an SDK input shape's member fields from
@@ -760,9 +758,7 @@ func setSDKReadMany(
 	indent := strings.Repeat("\t", indentLevel)
 
 	resVarPath := ""
-	pluralize := pluralize.NewClient()
 	opConfig, override := cfg.OverrideValues(op.Name)
-	shapeIdentifiers := FindIdentifiersInShape(r, inputShape)
 	var err error
 	for memberIndex, memberName := range inputShape.MemberNames() {
 		if override {
@@ -787,24 +783,15 @@ func setSDKReadMany(
 		// Field renames are handled in GetSanitizedMemberPath
 		resVarPath, err = r.GetSanitizedMemberPath(memberName, op, sourceVarName)
 		if err != nil {
-			// if it's an identifier field check for singular/plural
-			if util.InStrings(memberName, shapeIdentifiers) {
-				var flipped string
-				if pluralize.IsPlural(memberName) {
-					flipped = pluralize.Singular(memberName)
-				} else {
-					flipped = pluralize.Plural(memberName)
-				}
-				// If there are multiple identifiers, then prioritize the
-				// 'Id' identifier.
-				if resVarPath == "" || (!strings.HasSuffix(resVarPath, "Id") ||
-					!strings.HasSuffix(resVarPath, "Ids")) {
-					resVarPath, err = r.GetSanitizedMemberPath(flipped, op, sourceVarName)
-					if err != nil {
-						panic(fmt.Sprintf(
-							"Unable to locate identifier field %s in "+
-								"%s Spec/Status in generate.code.setSDKReadMany", flipped, r.Kind))
-					}
+			// if memberName is an identifier field, then check for
+			// corresponding model identifier
+			crIdentifier, shapeIdentifier := FindPluralizedIdentifiersInShape(r, inputShape)
+			if strings.EqualFold(memberName, shapeIdentifier) {
+				resVarPath, err = r.GetSanitizedMemberPath(crIdentifier, op, sourceVarName)
+				if err != nil {
+					panic(fmt.Sprintf(
+						"Unable to locate identifier field %s in "+
+							"%s Spec/Status in generate.code.setSDKReadMany", crIdentifier, r.Kind))
 				}
 			} else {
 				// TODO(jaypipes): check generator config for exceptions?
