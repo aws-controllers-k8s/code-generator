@@ -134,6 +134,13 @@ func TestGetOutputShapeRef(t *testing.T) {
 			true,
 		},
 		{
+			// list type nested path search
+			"ListAliases",
+			"Aliases..RevisionId",
+			&stringshape,
+			true,
+		},
+		{
 			// no such op
 			"GetNonexisting",
 			"Foo",

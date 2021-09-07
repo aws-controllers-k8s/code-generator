@@ -246,7 +246,9 @@ func (a *SDKAPI) GetOutputShapeRef(
 }
 
 // getMemberByPath returns a ShapeRef given a root Shape and a dot-notation
-// object search path
+// object search path. Given the explicit type check for list type members 
+// both ".." and "." notations work currently. 
+// TODO: Add support for other types such as map.
 func getMemberByPath(
 	shape *awssdkmodel.Shape,
 	path string,
@@ -254,6 +256,9 @@ func getMemberByPath(
 	elements := strings.Split(path, ".")
 	last := len(elements) - 1
 	for x, elem := range elements {
+		if elem == "" {
+			continue
+		}
 		if shape == nil {
 			return nil, false
 		}
@@ -264,7 +269,13 @@ func getMemberByPath(
 		if x == last {
 			return shapeRef, true
 		}
-		shape = shapeRef.Shape
+		elemType := shapeRef.Shape.Type
+		switch elemType {
+		case "list":
+			shape = shapeRef.Shape.MemberRef.Shape
+		default:
+			shape = shapeRef.Shape
+		}
 	}
 	return nil, false
 }
