@@ -157,7 +157,7 @@ func (rm *resourceManager) Delete(
 	if observed != nil {
 		return rm.onSuccess(observed)
 	}
-	return rm.onSuccess(r)
+	return nil, nil
 }
 
 // ARNFromName returns an AWS Resource Name from a given string name. This
