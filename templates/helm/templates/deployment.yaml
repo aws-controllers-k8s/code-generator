@@ -77,3 +77,4 @@ spec:
         - name: ACK_RESOURCE_TAGS
           value: {{ join "," .Values.resourceTags | quote }}
       terminationGracePeriodSeconds: 10
+      nodeSelector: {{ toYaml .Values.deployment.nodeSelector | nindent 8 }}
