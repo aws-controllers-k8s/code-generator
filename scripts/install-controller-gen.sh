@@ -26,6 +26,8 @@ if ! is_installed controller-gen || ! k8s_controller_gen_version_equals "$CONTRO
     # GOBIN and GOPATH are not always set, so default to GOPATH from `go env`
     __GOPATH=$(go env GOPATH)
     __install_dir=${GOBIN:-$__GOPATH/bin}
+    # If __install_dir does not exist, create it
+    [[ -d $__install_dir ]] || mkdir -p "$__install_dir"
     __install_path="$__install_dir/controller-gen"
     __work_dir=$(mktemp -d /tmp/controller-gen-XXX)
 
