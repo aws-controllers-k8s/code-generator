@@ -109,3 +109,18 @@ k8s_controller_gen_version_equals() {
         return 1
     fi;
 }
+
+# is_public_ecr_logged_in returns 0 if the Docker client is authenticated
+# with ECR public and therefore can pull and push to ECR public, otherwise
+# returns 1
+#
+# Usage:
+#
+# if ! is_public_ecr_logged_in; then
+#   aws ecr-public get-login-password --region us-east-1 \
+#   | docker login --username AWS --password-stdin public.ecr.aws
+# fi
+is_public_ecr_logged_in() {
+    local public_ecr_url="public.ecr.aws"
+    jq -e --arg url $public_ecr_url '.auths | has($url)' ~/.docker/config.json > /dev/null;
+}
