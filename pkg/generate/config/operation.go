@@ -18,7 +18,7 @@ import (
 
 	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
 
-	"github.com/aws-controllers-k8s/code-generator/pkg/util"	
+	"github.com/aws-controllers-k8s/code-generator/pkg/util"
 )
 
 // StringArray is a type that can be represented in JSON as *either* a string
@@ -45,10 +45,6 @@ type OperationConfig struct {
 	// An example of this is `Put...` or `Register...` API operations not being correctly classified as `Create` op type
 	// OperationType []string `json:"operation_type"`
 	OperationType StringArray `json:"operation_type"`
-	// PrimaryIdentifierFieldName provides the name of the field that should be
-	// interpreted as the "primary" identifier field. This field will be used as
-	// the primary field for resource adoption.
-	PrimaryIdentifierFieldName string `json:"primary_identifier_field_name,omitempty"`
 }
 
 // IsIgnoredOperation returns true if Operation Name is configured to be ignored
