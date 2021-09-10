@@ -896,7 +896,8 @@ func SetResourceIdentifiers(
 	}
 
 	var primaryCRField, primaryShapeField string
-	if primaryField != nil {
+	isPrimarySet := primaryField != nil
+	if isPrimarySet {
 		memberPath, _ := findFieldInCR(cfg, r, primaryField.Names.Camel)
 		targetVarPath := fmt.Sprintf("%s%s", targetVarName, memberPath)
 		primaryKeyOut += setResourceIdentifierPrimaryIdentifier(cfg, r,
@@ -904,8 +905,6 @@ func SetResourceIdentifiers(
 			targetVarPath,
 			sourceVarName,
 			indentLevel)
-
-		primaryCRField = primaryField.Names.Camel
 	} else {
 		primaryCRField, primaryShapeField = FindPrimaryIdentifierFieldNames(cfg, r, op)
 		if primaryShapeField == PrimaryIdentifierARNOverride {
@@ -948,6 +947,11 @@ func SetResourceIdentifiers(
 			op.Name, memberName,
 		)
 
+		// Check to see if we've already set the field as the primary identifier
+		if isPrimarySet && renamedName == primaryField.Names.Camel {
+			continue
+		}
+
 		isPrimaryIdentifier := memberName == primaryShapeField
 
 		searchField := ""
@@ -970,10 +974,8 @@ func SetResourceIdentifiers(
 		}
 
 		targetVarPath := fmt.Sprintf("%s%s", targetVarName, memberPath)
-		// TODO(RedbackThomson): Clean up logic for `is_primary_key` already
-		// settings `primaryKeyOut`.
 		if isPrimaryIdentifier {
-			if primaryKeyOut == "" {
+			if !isPrimarySet {
 				primaryKeyOut += setResourceIdentifierPrimaryIdentifier(cfg, r,
 					targetField,
 					targetVarPath,

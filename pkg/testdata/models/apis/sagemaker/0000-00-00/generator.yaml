@@ -22,9 +22,8 @@ resources:
   Endpoint:
     reconcile: 
       requeue_on_success_seconds: 10
-operations:
-  DescribeModelPackage:
-    primary_identifier_field_name: ARN
+  ModelPackage:
+    is_arn_primary_key: true
 ignore:
     resource_names:
       - Algorithm
