@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
+	ackcondition "github.com/aws-controllers-k8s/runtime/pkg/condition"
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
@@ -27,6 +28,7 @@ var (
 	_ = &svcapitypes.{{ .CRD.Names.Camel }}{}
 	_ = ackv1alpha1.AWSAccountID("")
 	_ = &ackerr.NotFound
+	_ = &ackcondition.NotManagedMessage
 )
 
 // sdkFind returns SDK-specific information about a supplied resource
