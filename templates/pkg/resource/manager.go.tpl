@@ -263,7 +263,7 @@ func (rm *resourceManager) onError(
 	r *resource,
 	err error,
 ) (acktypes.AWSResource, error) {
-	if ackcompare.IsNil(r) {
+	if r == nil {
 		return nil, err
 	}
 	r1, updated := rm.updateConditions(r, false, err)
@@ -286,7 +286,7 @@ func (rm *resourceManager) onError(
 func (rm *resourceManager) onSuccess(
 	r *resource,
 ) (acktypes.AWSResource, error) {
-	if ackcompare.IsNil(r) {
+	if r == nil  {
 		return nil, nil
 	}
 	r1, updated := rm.updateConditions(r, true, nil)
