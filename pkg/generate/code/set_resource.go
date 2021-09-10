@@ -898,7 +898,7 @@ func SetResourceIdentifiers(
 	var primaryCRField, primaryShapeField string
 	isPrimarySet := primaryField != nil
 	if isPrimarySet {
-		memberPath, _ := findFieldInCR(cfg, r, primaryField.Names.Camel)
+		memberPath, _ := findFieldInCR(cfg, r, primaryField.Names.Original)
 		targetVarPath := fmt.Sprintf("%s%s", targetVarName, memberPath)
 		primaryKeyOut += setResourceIdentifierPrimaryIdentifier(cfg, r,
 			primaryField,
@@ -962,7 +962,7 @@ func SetResourceIdentifiers(
 		}
 
 		memberPath, targetField := findFieldInCR(cfg, r, searchField)
-		if targetField == nil {
+		if targetField == nil || (isPrimarySet && targetField == primaryField) {
 			continue
 		}
 
@@ -975,13 +975,11 @@ func SetResourceIdentifiers(
 
 		targetVarPath := fmt.Sprintf("%s%s", targetVarName, memberPath)
 		if isPrimaryIdentifier {
-			if !isPrimarySet {
-				primaryKeyOut += setResourceIdentifierPrimaryIdentifier(cfg, r,
-					targetField,
-					targetVarPath,
-					sourceVarName,
-					indentLevel)
-			}
+			primaryKeyOut += setResourceIdentifierPrimaryIdentifier(cfg, r,
+				targetField,
+				targetVarPath,
+				sourceVarName,
+				indentLevel)
 		} else {
 			additionalKeyOut += setResourceIdentifierAdditionalKey(
 				cfg, r,
