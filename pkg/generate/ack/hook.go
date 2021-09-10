@@ -61,6 +61,7 @@ code paths:
 * delta_post_compare
 * late_initialize_pre_read_one
 * late_initialize_post_read_one
+* set_identifiers_pre_read_one
 
 The "pre_build_request" hooks are called BEFORE the call to construct
 the Input shape that is used in the API operation and therefore BEFORE

@@ -80,6 +80,9 @@ func (r *resource) SetStatus(desired acktypes.AWSResource) {
 // resource identifier
 func (r *resource) SetIdentifiers(identifier *ackv1alpha1.AWSIdentifiers) error {
 {{- GoCodeSetResourceIdentifiers .CRD "identifier" "r.ko" 1}}
+{{- if $hookCode := Hook .CRD "set_identifiers_pre_read_one" }}
+{{ $hookCode }}
+{{- end }}
 	return nil
 }
 
