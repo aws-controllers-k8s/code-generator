@@ -2,7 +2,7 @@ resources:
   Repository:
     fields:
       Name:
-        is_name: true
+        is_primary_key: true
     exceptions:
       errors:
         404:

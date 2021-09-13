@@ -82,6 +82,9 @@ type ResourceConfig struct {
 	// Print contains instructions for the code generator to generate kubebuilder printcolumns
 	// marker comments.
 	Print *PrintConfig `json:"print,omitempty"`
+	// IsARNPrimaryKey determines whether the CRD uses the ARN as the primary
+	// identifier in the ReadOne operations.
+	IsARNPrimaryKey bool `json:"is_arn_primary_key"`
 }
 
 // HooksConfig instructs the code generator how to inject custom callback hooks

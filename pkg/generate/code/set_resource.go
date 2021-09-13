@@ -788,12 +788,14 @@ func SetResourceGetAttributes(
 // that an ARN, ID or Name) and any other "additional keys" required for the AWS
 // service to uniquely identify the object.
 //
-// The method will attempt to use the `ReadOne` operation, if present, otherwise
-// will fall back to using `ReadMany`. If it detects the operation uses an ARN
-// to identify the resource it will read it from the metadata status field.
-// Otherwise it will use any fields with a matching name in the operation,
-// pulling from spec or status - requiring that exactly one of those fields is
-// marked as the "primary" identifier.
+// The method will attempt to look for the field denoted with a value of true
+// for `is_primary_key`, or will use the ARN if the resource has a value of true
+// for `is_arn_primary_key`. Otherwise, the method will attempt to use the
+// `ReadOne` operation, if present, falling back to using `ReadMany`.
+// If it detects the operation uses an ARN to identify the resource it will read
+// it from the metadata status field. Otherwise it will use any field with a
+// name that matches the primary identifier from the operation, pulling from
+// top-level spec or status fields.
 //
 // An example of code with no additional keys:
 //
@@ -873,20 +875,41 @@ func SetResourceIdentifiers(
 	primaryKeyConditionalOut := "\n"
 	primaryKeyConditionalOut += identifierNameOrIDGuardConstructor(sourceVarName, indentLevel)
 
-	primaryCRField, primaryShapeField := FindPrimaryIdentifierFieldNames(cfg, r, op)
-	if primaryShapeField == PrimaryIdentifierARNOverride {
-		// if r.ko.Status.ACKResourceMetadata == nil {
-		//  r.ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
-		// }
-		// r.ko.Status.ACKResourceMetadata.ARN = identifier.ARN
-		arnOut := "\n"
-		arnOut += ackResourceMetadataGuardConstructor(fmt.Sprintf("%s.Status", targetVarName), indentLevel)
-		arnOut += fmt.Sprintf(
-			"%s%s.Status.ACKResourceMetadata.ARN = %s.ARN\n",
-			indent, targetVarName, sourceVarName,
-		)
+	// if r.ko.Status.ACKResourceMetadata == nil {
+	//  r.ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
+	// }
+	// r.ko.Status.ACKResourceMetadata.ARN = identifier.ARN
+	arnOut := "\n"
+	arnOut += ackResourceMetadataGuardConstructor(fmt.Sprintf("%s.Status", targetVarName), indentLevel)
+	arnOut += fmt.Sprintf(
+		"%s%s.Status.ACKResourceMetadata.ARN = %s.ARN\n",
+		indent, targetVarName, sourceVarName,
+	)
 
+	// Check if the CRD defines the primary keys
+	if r.IsARNPrimaryKey() {
 		return arnOut
+	}
+	primaryField, err := r.GetPrimaryKeyField()
+	if err != nil {
+		panic(err)
+	}
+
+	var primaryCRField, primaryShapeField string
+	isPrimarySet := primaryField != nil
+	if isPrimarySet {
+		memberPath, _ := findFieldInCR(cfg, r, primaryField.Names.Original)
+		targetVarPath := fmt.Sprintf("%s%s", targetVarName, memberPath)
+		primaryKeyOut += setResourceIdentifierPrimaryIdentifier(cfg, r,
+			primaryField,
+			targetVarPath,
+			sourceVarName,
+			indentLevel)
+	} else {
+		primaryCRField, primaryShapeField = FindPrimaryIdentifierFieldNames(cfg, r, op)
+		if primaryShapeField == PrimaryIdentifierARNOverride {
+			return arnOut
+		}
 	}
 
 	paginatorFieldLookup := []string{
@@ -924,6 +947,11 @@ func SetResourceIdentifiers(
 			op.Name, memberName,
 		)
 
+		// Check to see if we've already set the field as the primary identifier
+		if isPrimarySet && renamedName == primaryField.Names.Camel {
+			continue
+		}
+
 		isPrimaryIdentifier := memberName == primaryShapeField
 
 		searchField := ""
@@ -934,7 +962,7 @@ func SetResourceIdentifiers(
 		}
 
 		memberPath, targetField := findFieldInCR(cfg, r, searchField)
-		if targetField == nil {
+		if targetField == nil || (isPrimarySet && targetField == primaryField) {
 			continue
 		}
 

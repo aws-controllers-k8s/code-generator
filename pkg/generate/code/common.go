@@ -131,12 +131,6 @@ func FindPrimaryIdentifierFieldNames(
 ) (crField string, shapeField string) {
 	shape := op.InputRef.Shape
 
-	// Attempt to fetch the primary identifier override from the configuration
-	opConfig, ok := cfg.Operations[op.Name]
-	if ok {
-		shapeField = opConfig.PrimaryIdentifierFieldName
-	}
-
 	if shapeField == "" {
 		// For ReadOne, search for a direct identifier
 		if op == r.Ops.ReadOne {
@@ -151,8 +145,8 @@ func FindPrimaryIdentifierFieldNames(
 			default:
 				panic("Found multiple possible primary identifiers for " +
 					r.Names.Original + ". Set " +
-					"`primary_identifier_field_name` for the " + op.Name +
-					" operation in the generator config.")
+					"`is_primary_key` for the primary field in the " +
+					r.Names.Camel + " resource.")
 			}
 		} else {
 			// For ReadMany, search for pluralized identifiers
@@ -162,12 +156,12 @@ func FindPrimaryIdentifierFieldNames(
 		// Require override if still can't find any identifiers
 		if shapeField == "" {
 			panic("Could not find primary identifier for " + r.Names.Original +
-				". Set `primary_identifier_field_name` for the " + op.Name +
-				" operation in the generator config.")
+				". Set `is_primary_key` for the primary field in the " +
+				r.Names.Camel + " resource.")
 		}
 	}
 
-	if r.IsPrimaryARNField(shapeField) || shapeField == PrimaryIdentifierARNOverride {
+	if r.IsPrimaryARNField(shapeField) {
 		return "", PrimaryIdentifierARNOverride
 	}
 

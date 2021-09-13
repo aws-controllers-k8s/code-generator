@@ -1,13 +1,15 @@
 ignore:
   shape_names:
     - DBSecurityGroupMembershipList
-operations:
-  DescribeDBInstances:
-    primary_identifier_field_name: DBInstanceIdentifier
-  DescribeDBSubnetGroups:
-    primary_identifier_field_name: DBSubnetGroupName
 resources:
+  DBInstance:
+    fields:
+      DBInstanceIdentifier:
+        is_primary_key: true
   DBSubnetGroup:
+    fields:
+      Name:
+        is_primary_key: true
     renames:
       operations:
         DescribeDBSubnetGroups:

@@ -353,6 +353,46 @@ func (r *CRD) HasImmutableFieldChanges() bool {
 	return false
 }
 
+// IsARNPrimaryKey returns true if the CRD uses its ARN as its primary key in
+// ReadOne calls.
+func (r *CRD) IsARNPrimaryKey() bool {
+	if r.cfg == nil {
+		return false
+	}
+	resGenConfig, found := r.cfg.Resources[r.Names.Original]
+	if !found {
+		return false
+	}
+	return resGenConfig.IsARNPrimaryKey
+}
+
+// GetPrimaryKeyField returns the field designated as the primary key, nil if
+// none are specified or an error if multiple are designated.
+func (r *CRD) GetPrimaryKeyField() (*Field, error) {
+	fConfigs := r.cfg.ResourceFields(r.Names.Original)
+
+	var primaryField *Field
+	for fieldName, fieldConfig := range fConfigs {
+		if !fieldConfig.IsPrimaryKey {
+			continue
+		}
+
+		// Multiple primary fields
+		if primaryField != nil {
+			return nil, fmt.Errorf("multiple fields are marked with is_primary_key")
+		}
+
+		fieldNames := names.New(fieldName)
+		fPath := fieldNames.Camel
+		var notFound bool
+		primaryField, notFound = r.Fields[fPath]
+		if !notFound {
+			return nil, fmt.Errorf("what the frick")
+		}
+	}
+	return primaryField, nil
+}
+
 // SetOutputCustomMethodName returns custom set output operation as *string for
 // given operation on custom resource, if specified in generator config
 func (r *CRD) SetOutputCustomMethodName(
@@ -536,14 +576,12 @@ func (r *CRD) GetCustomCheckRequiredFieldsMissingMethod(
 
 // SpecIdentifierField returns the name of the "Name" or string identifier field
 // in the Spec.
-// This method does not guarantee that the identifier field returned is the
-// primary identifier used in any of the `Read*` operations.
 func (r *CRD) SpecIdentifierField() *string {
 	if r.cfg != nil {
 		rConfig, found := r.cfg.Resources[r.Names.Original]
 		if found {
 			for fName, fConfig := range rConfig.Fields {
-				if fConfig.IsName {
+				if fConfig.IsPrimaryKey {
 					return &fName
 				}
 			}
