@@ -6,7 +6,7 @@ GO111MODULE=on
 AWS_SERVICE=$(shell echo $(SERVICE) | tr '[:upper:]' '[:lower:]')
 
 # Build ldflags
-VERSION ?= "v0.13.2"
+VERSION ?= "v0.14.0"
 GITCOMMIT=$(shell git rev-parse HEAD)
 BUILDDATE=$(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
 IMPORT_PATH=github.com/aws-controllers-k8s/code-generator
