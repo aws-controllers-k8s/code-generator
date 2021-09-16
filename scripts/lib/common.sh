@@ -122,5 +122,21 @@ k8s_controller_gen_version_equals() {
 # fi
 is_public_ecr_logged_in() {
     local public_ecr_url="public.ecr.aws"
-    jq -e --arg url $public_ecr_url '.auths | has($url)' ~/.docker/config.json > /dev/null;
+
+    # Load the auth string
+    # Base64 decode it
+    # Parse it as <Username>:<B64 Payload>, and take only the payload
+    # Base64 decode it
+    # Read the "expiration" value
+    local expiration_time=$(jq -r --arg url $public_ecr_url '.auths[$url].auth' ~/.docker/config.json | base64 -d | cut -d":" -f2 | base64 -d | jq -r ".expiration")
+
+    # If any part of this doesn't exist, the user isn't logged in
+    [ -z "$expiration_time" ] && exit 1
+
+    local current_time=$(date +%s)
+
+    # If the credentials have expired, the user isn't logged in
+    [ "$expiration_time" -lt "$current_time" ] && exit 1
+
+    exit 0
 }
