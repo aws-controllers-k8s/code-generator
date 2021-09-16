@@ -131,12 +131,12 @@ is_public_ecr_logged_in() {
     local expiration_time=$(jq -r --arg url $public_ecr_url '.auths[$url].auth' ~/.docker/config.json | base64 -d | cut -d":" -f2 | base64 -d | jq -r ".expiration")
 
     # If any part of this doesn't exist, the user isn't logged in
-    [ -z "$expiration_time" ] && exit 1
+    [ -z "$expiration_time" ] && return 1
 
     local current_time=$(date +%s)
 
     # If the credentials have expired, the user isn't logged in
-    [ "$expiration_time" -lt "$current_time" ] && exit 1
+    [ "$expiration_time" -lt "$current_time" ] && return 1
 
-    exit 0
+    return 0
 }
