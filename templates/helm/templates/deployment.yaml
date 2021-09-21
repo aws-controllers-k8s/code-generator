@@ -54,7 +54,8 @@ spec:
         image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
         name: controller
         ports:
-          - containerPort: {{ .Values.deployment.containerPort }}
+          - name: http
+            containerPort: {{ .Values.deployment.containerPort }}
         resources:
           {{- toYaml .Values.resources | nindent 10 }}
         env:
