@@ -45,6 +45,8 @@ type OperationConfig struct {
 	// An example of this is `Put...` or `Register...` API operations not being correctly classified as `Create` op type
 	// OperationType []string `json:"operation_type"`
 	OperationType StringArray `json:"operation_type"`
+	// Fields for which to skip generation of code for merging in API response
+	SetOutputSkipFields StringArray `json:"set_output_skip_fields"`
 }
 
 // IsIgnoredOperation returns true if Operation Name is configured to be ignored

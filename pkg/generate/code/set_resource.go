@@ -144,10 +144,32 @@ func SetResource(
 	out := "\n"
 	indent := strings.Repeat("\t", indentLevel)
 
+	// retrieve the operation config for the given operation
+	var operationConfig *ackgenconfig.OperationConfig
+	if val, ok := cfg.Operations[op.Name]; ok {
+		operationConfig = &val
+	}
+	var skipFields ackgenconfig.StringArray
+	if operationConfig != nil {
+		skipFields = operationConfig.SetOutputSkipFields
+	}
+
 	// Recursively descend down through the set of fields on the Output shape,
 	// creating temporary variables, populating those temporary variables'
 	// fields with further-nested fields as needed
 	for memberIndex, memberName := range outputShape.MemberNames() {
+		// skip the output field if specified in the operation config
+		skipField := false
+		for _, field := range skipFields {
+			if memberName == field {
+				skipField = true
+				break
+			}
+		}
+		if skipField {
+			continue
+		}
+
 		//TODO: (vijat@) should these field be renamed before looking them up in spec?
 		sourceAdaptedVarName := sourceVarName + "." + memberName
 
