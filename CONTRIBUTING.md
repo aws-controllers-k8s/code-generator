@@ -64,7 +64,7 @@ any 'help wanted' issues is a great place to start.
 
 [See the documentation][dev-docs] for detailed development information.
 
-[dev-docs]: https://aws.github.io/aws-controllers-k8s/dev-docs/overview/
+[dev-docs]: https://aws-controllers-k8s.github.io/community/docs/contributor-docs/overview/
 
 ## Code of Conduct
 
