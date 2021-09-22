@@ -106,7 +106,7 @@ func DefaultServiceConfig() ServiceConfig {
 			SuggestedNamespace: "ack-system",
 			ShortDescription:   "This is the placeholder short description for the default configuration",
 			IsCertified:        false,
-			ContainerImage:     "public.ecr.aws/aws-controllers-k8s/controller",
+			ContainerImage:     "public.ecr.aws/aws-controllers-k8s/",
 			Support:            "Community",
 		},
 		[]Sample{},
