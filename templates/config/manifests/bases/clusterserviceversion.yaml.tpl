@@ -7,7 +7,7 @@ metadata:
     capabilities: {{.Annotations.CapabilityLevel}}
     operatorframework.io/suggested-namespace: "ack-system"
     repository: {{.Annotations.Repository}}
-    containerImage: {{.Annotations.ContainerImage}}:{{.ServiceIDClean}}-v{{.Version}}
+    containerImage: {{.Annotations.ContainerImage}}{{.ServiceIDClean}}-controller:v{{.Version}}
     description: {{.Annotations.ShortDescription}}
     createdAt: {{.CreatedAt}}
     support: {{.Annotations.Support}}
