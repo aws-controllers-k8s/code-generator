@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-CONTROLLER_TOOLS_VERSION="v0.6.1"
+CONTROLLER_TOOLS_VERSION="v0.7.0"
 
 # setting the -x option if debugging is true
 if [[ "${DEBUG:-"false"}" = "true" ]]; then
