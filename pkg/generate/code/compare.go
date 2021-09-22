@@ -403,7 +403,7 @@ func compareMap(
 			"%sif !ackcompare.MapStringStringPEqual(%s, %s) {\n",
 			indent, firstResVarName, secondResVarName,
 		)
-	case "structure":
+	default:
 		// NOTE(jaypipes): Using reflect here is really punting. We should
 		// implement this in a cleaner, more efficient fashion by walking the
 		// keys and struct values and comparing each struct individually,
@@ -413,8 +413,6 @@ func compareMap(
 			"%sif !reflect.DeepEqual(%s, %s) {\n",
 			indent, firstResVarName, secondResVarName,
 		)
-	default:
-		panic("Unsupported shape type in generate.code.compareMap: " + shape.Type)
 	}
 	//   delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
 	out += fmt.Sprintf(

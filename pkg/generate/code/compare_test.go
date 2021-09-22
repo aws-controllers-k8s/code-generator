@@ -376,3 +376,102 @@ func TestCompareResource_Lambda_Function(t *testing.T) {
 		),
 	)
 }
+
+func TestCompareResource_APIGatewayv2_Route(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "apigatewayv2")
+
+	crd := testutil.GetCRDByName(t, g, "Route")
+	require.NotNil(crd)
+
+	expected := `
+	if ackcompare.HasNilDifference(a.ko.Spec.APIID, b.ko.Spec.APIID) {
+		delta.Add("Spec.APIID", a.ko.Spec.APIID, b.ko.Spec.APIID)
+	} else if a.ko.Spec.APIID != nil && b.ko.Spec.APIID != nil {
+		if *a.ko.Spec.APIID != *b.ko.Spec.APIID {
+			delta.Add("Spec.APIID", a.ko.Spec.APIID, b.ko.Spec.APIID)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.APIKeyRequired, b.ko.Spec.APIKeyRequired) {
+		delta.Add("Spec.APIKeyRequired", a.ko.Spec.APIKeyRequired, b.ko.Spec.APIKeyRequired)
+	} else if a.ko.Spec.APIKeyRequired != nil && b.ko.Spec.APIKeyRequired != nil {
+		if *a.ko.Spec.APIKeyRequired != *b.ko.Spec.APIKeyRequired {
+			delta.Add("Spec.APIKeyRequired", a.ko.Spec.APIKeyRequired, b.ko.Spec.APIKeyRequired)
+		}
+	}
+	if !ackcompare.SliceStringPEqual(a.ko.Spec.AuthorizationScopes, b.ko.Spec.AuthorizationScopes) {
+		delta.Add("Spec.AuthorizationScopes", a.ko.Spec.AuthorizationScopes, b.ko.Spec.AuthorizationScopes)
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.AuthorizationType, b.ko.Spec.AuthorizationType) {
+		delta.Add("Spec.AuthorizationType", a.ko.Spec.AuthorizationType, b.ko.Spec.AuthorizationType)
+	} else if a.ko.Spec.AuthorizationType != nil && b.ko.Spec.AuthorizationType != nil {
+		if *a.ko.Spec.AuthorizationType != *b.ko.Spec.AuthorizationType {
+			delta.Add("Spec.AuthorizationType", a.ko.Spec.AuthorizationType, b.ko.Spec.AuthorizationType)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.AuthorizerID, b.ko.Spec.AuthorizerID) {
+		delta.Add("Spec.AuthorizerID", a.ko.Spec.AuthorizerID, b.ko.Spec.AuthorizerID)
+	} else if a.ko.Spec.AuthorizerID != nil && b.ko.Spec.AuthorizerID != nil {
+		if *a.ko.Spec.AuthorizerID != *b.ko.Spec.AuthorizerID {
+			delta.Add("Spec.AuthorizerID", a.ko.Spec.AuthorizerID, b.ko.Spec.AuthorizerID)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.ModelSelectionExpression, b.ko.Spec.ModelSelectionExpression) {
+		delta.Add("Spec.ModelSelectionExpression", a.ko.Spec.ModelSelectionExpression, b.ko.Spec.ModelSelectionExpression)
+	} else if a.ko.Spec.ModelSelectionExpression != nil && b.ko.Spec.ModelSelectionExpression != nil {
+		if *a.ko.Spec.ModelSelectionExpression != *b.ko.Spec.ModelSelectionExpression {
+			delta.Add("Spec.ModelSelectionExpression", a.ko.Spec.ModelSelectionExpression, b.ko.Spec.ModelSelectionExpression)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.OperationName, b.ko.Spec.OperationName) {
+		delta.Add("Spec.OperationName", a.ko.Spec.OperationName, b.ko.Spec.OperationName)
+	} else if a.ko.Spec.OperationName != nil && b.ko.Spec.OperationName != nil {
+		if *a.ko.Spec.OperationName != *b.ko.Spec.OperationName {
+			delta.Add("Spec.OperationName", a.ko.Spec.OperationName, b.ko.Spec.OperationName)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.RequestModels, b.ko.Spec.RequestModels) {
+		delta.Add("Spec.RequestModels", a.ko.Spec.RequestModels, b.ko.Spec.RequestModels)
+	} else if a.ko.Spec.RequestModels != nil && b.ko.Spec.RequestModels != nil {
+		if !ackcompare.MapStringStringPEqual(a.ko.Spec.RequestModels, b.ko.Spec.RequestModels) {
+			delta.Add("Spec.RequestModels", a.ko.Spec.RequestModels, b.ko.Spec.RequestModels)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.RequestParameters, b.ko.Spec.RequestParameters) {
+		delta.Add("Spec.RequestParameters", a.ko.Spec.RequestParameters, b.ko.Spec.RequestParameters)
+	} else if a.ko.Spec.RequestParameters != nil && b.ko.Spec.RequestParameters != nil {
+		if !reflect.DeepEqual(a.ko.Spec.RequestParameters, b.ko.Spec.RequestParameters) {
+			delta.Add("Spec.RequestParameters", a.ko.Spec.RequestParameters, b.ko.Spec.RequestParameters)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.RouteKey, b.ko.Spec.RouteKey) {
+		delta.Add("Spec.RouteKey", a.ko.Spec.RouteKey, b.ko.Spec.RouteKey)
+	} else if a.ko.Spec.RouteKey != nil && b.ko.Spec.RouteKey != nil {
+		if *a.ko.Spec.RouteKey != *b.ko.Spec.RouteKey {
+			delta.Add("Spec.RouteKey", a.ko.Spec.RouteKey, b.ko.Spec.RouteKey)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.RouteResponseSelectionExpression, b.ko.Spec.RouteResponseSelectionExpression) {
+		delta.Add("Spec.RouteResponseSelectionExpression", a.ko.Spec.RouteResponseSelectionExpression, b.ko.Spec.RouteResponseSelectionExpression)
+	} else if a.ko.Spec.RouteResponseSelectionExpression != nil && b.ko.Spec.RouteResponseSelectionExpression != nil {
+		if *a.ko.Spec.RouteResponseSelectionExpression != *b.ko.Spec.RouteResponseSelectionExpression {
+			delta.Add("Spec.RouteResponseSelectionExpression", a.ko.Spec.RouteResponseSelectionExpression, b.ko.Spec.RouteResponseSelectionExpression)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.Target, b.ko.Spec.Target) {
+		delta.Add("Spec.Target", a.ko.Spec.Target, b.ko.Spec.Target)
+	} else if a.ko.Spec.Target != nil && b.ko.Spec.Target != nil {
+		if *a.ko.Spec.Target != *b.ko.Spec.Target {
+			delta.Add("Spec.Target", a.ko.Spec.Target, b.ko.Spec.Target)
+		}
+	}
+`
+	assert.Equal(
+		expected,
+		code.CompareResource(
+			crd.Config(), crd, "delta", "a.ko", "b.ko", 1,
+		),
+	)
+}
