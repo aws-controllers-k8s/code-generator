@@ -252,4 +252,6 @@ if [[ $ACK_GENERATE_OLM == "true" ]]; then
     fi
 
     $ACK_GENERATE_BIN_PATH olm $ag_olm_args
+    $SCRIPTS_DIR/olm-create-bundle.sh "$SERVICE" "$olm_version"
+
 fi
