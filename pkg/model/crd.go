@@ -384,10 +384,11 @@ func (r *CRD) GetPrimaryKeyField() (*Field, error) {
 
 		fieldNames := names.New(fieldName)
 		fPath := fieldNames.Camel
-		var notFound bool
-		primaryField, notFound = r.Fields[fPath]
-		if !notFound {
-			return nil, fmt.Errorf("what the frick")
+		var found bool
+		primaryField, found = r.Fields[fPath]
+		if !found {
+			return nil, fmt.Errorf("could not find field with path " + fPath +
+				" for primary key " + fieldName)
 		}
 	}
 	return primaryField, nil
