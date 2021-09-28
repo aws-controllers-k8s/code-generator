@@ -44,6 +44,11 @@ func main() {
 	ackCfg.BindFlags()
 	flag.Parse()
 	ackCfg.SetupLogger()
+	if err := ackCfg.PopulateAccountIdIfMissing(); err != nil {
+		setupLog.Error(
+			err, "Error while finding AWS AccountId using sts GetCallerIdentity",
+		)
+	}
 
 	if err := ackCfg.Validate(); err != nil {
 		setupLog.Error(
