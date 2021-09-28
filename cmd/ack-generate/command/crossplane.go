@@ -54,9 +54,9 @@ func generateCrossplane(_ *cobra.Command, args []string) error {
 	if err := ensureSDKRepo(ctx, optCacheDir, optRefreshCache); err != nil {
 		return err
 	}
-	svcPackage := strings.ToLower(args[0])
+	svcAlias := strings.ToLower(args[0])
 	if optModelName == "" {
-		optModelName = svcPackage
+		optModelName = svcAlias
 	}
 	sdkHelper := ackmodel.NewSDKHelper(sdkDir)
 	sdkHelper.APIGroupSuffix = "aws.crossplane.io"
@@ -68,10 +68,10 @@ func generateCrossplane(_ *cobra.Command, args []string) error {
 		}
 		sdkAPI, err = sdkHelper.API(newSvcAlias) // retry with serviceID
 		if err != nil {
-			return fmt.Errorf("service %s not found", svcPackage)
+			return fmt.Errorf("service %s not found", svcAlias)
 		}
 	}
-	cfgPath := filepath.Join(providerDir, "apis", svcPackage, optGenVersion, "generator-config.yaml")
+	cfgPath := filepath.Join(providerDir, "apis", svcAlias, optGenVersion, "generator-config.yaml")
 	_, err = os.Stat(cfgPath)
 	if err != nil && !os.IsNotExist(err) {
 		return err
@@ -80,7 +80,7 @@ func generateCrossplane(_ *cobra.Command, args []string) error {
 		cfgPath = ""
 	}
 	m, err := ackmodel.New(
-		sdkAPI, svcPackage, optGenVersion, cfgPath, cpgenerate.DefaultConfig,
+		sdkAPI, svcAlias, optGenVersion, cfgPath, cpgenerate.DefaultConfig,
 	)
 	if err != nil {
 		return err
@@ -110,8 +110,8 @@ func generateCrossplane(_ *cobra.Command, args []string) error {
 			return err
 		}
 	}
-	apiPath := filepath.Join(providerDir, "apis", svcPackage, optGenVersion)
-	controllerPath := filepath.Join(providerDir, "pkg", "controller", svcPackage)
+	apiPath := filepath.Join(providerDir, "apis", svcAlias, optGenVersion)
+	controllerPath := filepath.Join(providerDir, "pkg", "controller", svcAlias)
 	// TODO(muvaf): goimports don't allow to be included as a library. Make sure
 	// goimports binary exists.
 	if err := exec.Command("goimports", "-w", apiPath, controllerPath).Run(); err != nil {

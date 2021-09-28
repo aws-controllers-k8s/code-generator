@@ -87,9 +87,9 @@ func generateAPIs(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
 		return fmt.Errorf("please specify the service alias for the AWS service API to generate")
 	}
-	svcPackage := strings.ToLower(args[0])
+	svcAlias := strings.ToLower(args[0])
 	if optOutputPath == "" {
-		optOutputPath = filepath.Join(optServicesDir, svcPackage)
+		optOutputPath = filepath.Join(optServicesDir, svcAlias)
 	}
 	ctx, cancel := contextWithSigterm(context.Background())
 	defer cancel()
@@ -97,7 +97,7 @@ func generateAPIs(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	if optModelName == "" {
-		optModelName = svcPackage
+		optModelName = svcAlias
 	}
 	sdkHelper := ackmodel.NewSDKHelper(sdkDir)
 	sdkAPI, err := sdkHelper.API(optModelName)
@@ -108,11 +108,11 @@ func generateAPIs(cmd *cobra.Command, args []string) error {
 		}
 		sdkAPI, err = sdkHelper.API(newSvcAlias) // retry with serviceID
 		if err != nil {
-			return fmt.Errorf("service %s not found", svcPackage)
+			return fmt.Errorf("service %s not found", svcAlias)
 		}
 	}
 	model, err := ackmodel.New(
-		sdkAPI, svcPackage, optGenVersion, optGeneratorConfigPath, ackgenerate.DefaultConfig,
+		sdkAPI, svcAlias, optGenVersion, optGeneratorConfigPath, ackgenerate.DefaultConfig,
 	)
 	if err != nil {
 		return err

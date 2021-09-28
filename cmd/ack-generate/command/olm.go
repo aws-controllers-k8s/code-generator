@@ -73,9 +73,9 @@ func generateOLMAssets(cmd *cobra.Command, args []string) error {
 				"for the AWS service API to generate",
 		)
 	}
-	svcPackage := strings.ToLower(args[0])
+	svcAlias := strings.ToLower(args[0])
 	if optOutputPath == "" {
-		optOutputPath = filepath.Join(optServicesDir, svcPackage)
+		optOutputPath = filepath.Join(optServicesDir, svcAlias)
 	}
 
 	version := args[1]
@@ -87,7 +87,7 @@ func generateOLMAssets(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	if optModelName == "" {
-		optModelName = svcPackage
+		optModelName = svcAlias
 	}
 	sdkHelper := ackmodel.NewSDKHelper(sdkDir)
 	sdkAPI, err := sdkHelper.API(optModelName)
@@ -98,7 +98,7 @@ func generateOLMAssets(cmd *cobra.Command, args []string) error {
 		}
 		sdkAPI, err = sdkHelper.API(newSvcAlias) // retry with serviceID
 		if err != nil {
-			return fmt.Errorf("service %s not found", svcPackage)
+			return fmt.Errorf("service %s not found", svcAlias)
 		}
 	}
 
@@ -107,14 +107,14 @@ func generateOLMAssets(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	m, err := ackmodel.New(
-		sdkAPI, svcPackage, latestAPIVersion, optGeneratorConfigPath, ackgenerate.DefaultConfig,
+		sdkAPI, svcAlias, latestAPIVersion, optGeneratorConfigPath, ackgenerate.DefaultConfig,
 	)
 	if err != nil {
 		return err
 	}
 
 	if optOLMConfigPath == "" {
-		optOLMConfigPath = strings.Join([]string{svcPackage, olmConfigFileSuffix}, "-")
+		optOLMConfigPath = strings.Join([]string{svcAlias, olmConfigFileSuffix}, "-")
 	}
 
 	// read the configuration from file
