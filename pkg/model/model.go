@@ -161,7 +161,10 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 		// Now process the fields that will go into the Status struct. We want
 		// fields that are in the Create operation's Output Shape but that are
 		// not in the Input Shape.
-		outputShape := createOp.OutputRef.Shape
+		outputShape, err := crd.GetOutputShape(createOp)
+		if err != nil {
+			return nil, err
+		}
 		if outputShape.UsedAsOutput && len(outputShape.MemberRefs) == 1 {
 			// We might be in a "wrapper" shape. Unwrap it to find the real object
 			// representation for the CRD's createOp. If there is a single member
