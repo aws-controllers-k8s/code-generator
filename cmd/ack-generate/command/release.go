@@ -58,12 +58,12 @@ func generateRelease(cmd *cobra.Command, args []string) error {
 	if len(args) != 2 {
 		return fmt.Errorf("please specify the service alias and the release version to generate release artifacts for")
 	}
-	svcAlias := strings.ToLower(args[0])
+	svcPackage := strings.ToLower(args[0])
 	if optReleaseOutputPath == "" {
-		optReleaseOutputPath = filepath.Join(optServicesDir, svcAlias)
+		optReleaseOutputPath = filepath.Join(optServicesDir, svcPackage)
 	}
 	if optImageRepository == "" {
-		optImageRepository = fmt.Sprintf("public.ecr.aws/aws-controllers-k8s/%s-controller", svcAlias)
+		optImageRepository = fmt.Sprintf("public.ecr.aws/aws-controllers-k8s/%s-controller", svcPackage)
 	}
 	// TODO(jaypipes): We could do some git-fu here to verify that the release
 	// version supplied hasn't been used (as a Git tag) before...
@@ -74,20 +74,23 @@ func generateRelease(cmd *cobra.Command, args []string) error {
 	if err := ensureSDKRepo(ctx, optCacheDir, optRefreshCache); err != nil {
 		return err
 	}
+	if optModelName == "" {
+		optModelName = svcPackage
+	}
 	sdkHelper := ackmodel.NewSDKHelper(sdkDir)
-	sdkAPI, err := sdkHelper.API(svcAlias)
+	sdkAPI, err := sdkHelper.API(optModelName)
 	if err != nil {
-		newSvcAlias, err := FallBackFindServiceID(sdkDir, svcAlias)
+		newSvcAlias, err := FallBackFindServiceID(sdkDir, optModelName)
 		if err != nil {
 			return err
 		}
 		sdkAPI, err = sdkHelper.API(newSvcAlias) // retry with serviceID
 		if err != nil {
-			return fmt.Errorf("service %s not found", svcAlias)
+			return fmt.Errorf("service %s not found", svcPackage)
 		}
 	}
 	m, err := ackmodel.New(
-		sdkAPI, "", optGeneratorConfigPath, ackgenerate.DefaultConfig,
+		sdkAPI, svcPackage, "", optGeneratorConfigPath, ackgenerate.DefaultConfig,
 	)
 	if err != nil {
 		return err

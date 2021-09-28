@@ -21,9 +21,6 @@ type MetaVars struct {
 	// alias does not match the ServiceID. e.g. The AWS Step Functions API has
 	// a ServiceID of "SFN" and a service alias of "states"...
 	ServiceAlias string
-	// ServiceID is the exact string that appears in the AWS service API's
-	// api-2.json descriptor file under `metadata.serviceId`
-	ServiceID string
 	// ServiceIDClean is the ServiceID lowercased and stripped of any
 	// non-alphanumeric characters
 	ServiceIDClean string
@@ -34,6 +31,9 @@ type MetaVars struct {
 	// for custom resources, e.g. "sns.services.k8s.aws" or
 	// "sfn.services.k8s.aws"
 	APIGroup string
+	// AWSSDKModelServiceID is the exact string that appears in the AWS service API's
+	// api-2.json descriptor file under `metadata.serviceId`
+	AWSSDKModelServiceID string
 	// SDKAPIInterfaceTypeName is the name of the interface type used by the
 	// aws-sdk-go services/$SERVICE/api.go file
 	SDKAPIInterfaceTypeName string

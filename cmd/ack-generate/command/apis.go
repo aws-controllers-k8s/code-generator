@@ -37,9 +37,8 @@ const (
 )
 
 var (
-	optGenVersion    string
-	optAPIsInputPath string
-	apisVersionPath  string
+	optGenVersion   string
+	apisVersionPath string
 )
 
 // apiCmd is the command that generates service API types
@@ -88,29 +87,32 @@ func generateAPIs(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
 		return fmt.Errorf("please specify the service alias for the AWS service API to generate")
 	}
-	svcAlias := strings.ToLower(args[0])
+	svcPackage := strings.ToLower(args[0])
 	if optOutputPath == "" {
-		optOutputPath = filepath.Join(optServicesDir, svcAlias)
+		optOutputPath = filepath.Join(optServicesDir, svcPackage)
 	}
 	ctx, cancel := contextWithSigterm(context.Background())
 	defer cancel()
 	if err := ensureSDKRepo(ctx, optCacheDir, optRefreshCache); err != nil {
 		return err
 	}
+	if optModelName == "" {
+		optModelName = svcPackage
+	}
 	sdkHelper := ackmodel.NewSDKHelper(sdkDir)
-	sdkAPI, err := sdkHelper.API(svcAlias)
+	sdkAPI, err := sdkHelper.API(optModelName)
 	if err != nil {
-		newSvcAlias, err := FallBackFindServiceID(sdkDir, svcAlias)
+		newSvcAlias, err := FallBackFindServiceID(sdkDir, optModelName)
 		if err != nil {
 			return err
 		}
 		sdkAPI, err = sdkHelper.API(newSvcAlias) // retry with serviceID
 		if err != nil {
-			return fmt.Errorf("service %s not found", svcAlias)
+			return fmt.Errorf("service %s not found", svcPackage)
 		}
 	}
 	model, err := ackmodel.New(
-		sdkAPI, optGenVersion, optGeneratorConfigPath, ackgenerate.DefaultConfig,
+		sdkAPI, svcPackage, optGenVersion, optGeneratorConfigPath, ackgenerate.DefaultConfig,
 	)
 	if err != nil {
 		return err

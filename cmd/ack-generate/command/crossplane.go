@@ -26,7 +26,6 @@ import (
 	"github.com/spf13/cobra"
 
 	cpgenerate "github.com/aws-controllers-k8s/code-generator/pkg/generate/crossplane"
-	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
 )
 
@@ -55,21 +54,24 @@ func generateCrossplane(_ *cobra.Command, args []string) error {
 	if err := ensureSDKRepo(ctx, optCacheDir, optRefreshCache); err != nil {
 		return err
 	}
-	svcAlias := strings.ToLower(args[0])
-	sdkHelper := model.NewSDKHelper(sdkDir)
+	svcPackage := strings.ToLower(args[0])
+	if optModelName == "" {
+		optModelName = svcPackage
+	}
+	sdkHelper := ackmodel.NewSDKHelper(sdkDir)
 	sdkHelper.APIGroupSuffix = "aws.crossplane.io"
-	sdkAPI, err := sdkHelper.API(svcAlias)
+	sdkAPI, err := sdkHelper.API(optModelName)
 	if err != nil {
-		newSvcAlias, err := FallBackFindServiceID(sdkDir, svcAlias)
+		newSvcAlias, err := FallBackFindServiceID(sdkDir, optModelName)
 		if err != nil {
 			return err
 		}
 		sdkAPI, err = sdkHelper.API(newSvcAlias) // retry with serviceID
 		if err != nil {
-			return fmt.Errorf("cannot get the API model for service %s", svcAlias)
+			return fmt.Errorf("service %s not found", svcPackage)
 		}
 	}
-	cfgPath := filepath.Join(providerDir, "apis", svcAlias, optGenVersion, "generator-config.yaml")
+	cfgPath := filepath.Join(providerDir, "apis", svcPackage, optGenVersion, "generator-config.yaml")
 	_, err = os.Stat(cfgPath)
 	if err != nil && !os.IsNotExist(err) {
 		return err
@@ -78,7 +80,7 @@ func generateCrossplane(_ *cobra.Command, args []string) error {
 		cfgPath = ""
 	}
 	m, err := ackmodel.New(
-		sdkAPI, optGenVersion, cfgPath, cpgenerate.DefaultConfig,
+		sdkAPI, svcPackage, optGenVersion, cfgPath, cpgenerate.DefaultConfig,
 	)
 	if err != nil {
 		return err
@@ -108,8 +110,8 @@ func generateCrossplane(_ *cobra.Command, args []string) error {
 			return err
 		}
 	}
-	apiPath := filepath.Join(providerDir, "apis", svcAlias, optGenVersion)
-	controllerPath := filepath.Join(providerDir, "pkg", "controller", svcAlias)
+	apiPath := filepath.Join(providerDir, "apis", svcPackage, optGenVersion)
+	controllerPath := filepath.Join(providerDir, "pkg", "controller", svcPackage)
 	// TODO(muvaf): goimports don't allow to be included as a library. Make sure
 	// goimports binary exists.
 	if err := exec.Command("goimports", "-w", apiPath, controllerPath).Run(); err != nil {
