@@ -110,23 +110,14 @@ func SetResource(
 	if op == nil {
 		return ""
 	}
-	outputShape := op.OutputRef.Shape
+	outputShape, _ := r.GetOutputShape(op)
 	if outputShape == nil {
 		return ""
 	}
 
-	var err error
-	// We might be in a "wrapper" shape. Unwrap it to find the real object
-	// representation for the CRD's createOp/DescribeOP.
-
 	// Use the wrapper field path if it's given in the ack-generate config file.
 	wrapperFieldPath := r.GetOutputWrapperFieldPath(op)
 	if wrapperFieldPath != nil {
-		outputShape, err = r.GetWrapperOutputShape(outputShape, *wrapperFieldPath)
-		if err != nil {
-			msg := fmt.Sprintf("Unable to unwrap the output shape: %v", err)
-			panic(msg)
-		}
 		sourceVarName += "." + *wrapperFieldPath
 	} else {
 		// If the wrapper field path is not specified in the config file and if

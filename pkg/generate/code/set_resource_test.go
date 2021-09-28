@@ -14,7 +14,6 @@
 package code_test
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -23,7 +22,6 @@ import (
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate/code"
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 	"github.com/aws-controllers-k8s/code-generator/pkg/testutil"
-	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
 )
 
 func TestSetResource_APIGWv2_Route_Create(t *testing.T) {
@@ -2940,7 +2938,23 @@ func TestSetResource_RDS_DBSubnetGroup_ReadMany(t *testing.T) {
 	)
 }
 
-func TestGetWrapperOutputShape(t *testing.T) {
+func TestGetOutputShape_VPC_No_Override(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "ec2")
+
+	crd := testutil.GetCRDByName(t, g, "Vpc")
+	require.NotNil(crd)
+
+	expectedShape := crd.Ops.ReadMany.OutputRef.Shape
+	outputShape, _ := crd.GetOutputShape(crd.Ops.ReadMany)
+	assert.Equal(
+		expectedShape,
+		outputShape)
+}
+
+func TestGetOutputShape_DynamoDB_Override(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
@@ -2949,54 +2963,10 @@ func TestGetWrapperOutputShape(t *testing.T) {
 	crd := testutil.GetCRDByName(t, g, "Backup")
 	require.NotNil(crd)
 
-	op := crd.Ops.ReadOne.OutputRef.Shape
-
-	type args struct {
-		outputShape *awssdkmodel.Shape
-		fieldPath   string
-	}
-	tests := []struct {
-		name          string
-		args          args
-		wantErr       bool
-		wantShapeName string
-	}{
-		{
-			name: "incorrect field path: element not found",
-			args: args{
-				outputShape: op,
-				fieldPath:   "BackupDescription.Something",
-			},
-			wantErr: true,
-		},
-		{
-			name: "incorrect field path: element not of type structure",
-			args: args{
-				outputShape: op,
-				fieldPath:   "BackupDescription.BackupArn",
-			},
-			wantErr: true,
-		},
-		{
-			name: "correct field path",
-			args: args{
-				outputShape: op,
-				fieldPath:   "BackupDescription.BackupDetails",
-			},
-			wantErr:       false,
-			wantShapeName: "BackupDetails",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			outputShape, err := crd.GetWrapperOutputShape(tt.args.outputShape, tt.args.fieldPath)
-			if (err != nil) != tt.wantErr {
-				assert.Fail(fmt.Sprintf("GetWrapperOutputShape() error = %v, wantErr %v", err, tt.wantErr))
-			} else if !tt.wantErr {
-				assert.Equal(tt.wantShapeName, outputShape.ShapeName)
-			}
-		})
-	}
+	outputShape, _ := crd.GetOutputShape(crd.Ops.ReadOne)
+	assert.Equal(
+		"BackupDetails",
+		outputShape.ShapeName)
 }
 
 func TestSetResource_MQ_Broker_SetResourceIdentifiers(t *testing.T) {
