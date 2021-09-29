@@ -2969,6 +2969,21 @@ func TestGetOutputShape_DynamoDB_Override(t *testing.T) {
 		outputShape.ShapeName)
 }
 
+func TestGetOutputShape_VPCEndpoint_Override(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "ec2")
+
+	crd := testutil.GetCRDByName(t, g, "VpcEndpoint")
+	require.NotNil(crd)
+
+	outputShape, _ := crd.GetOutputShape(crd.Ops.Create)
+	assert.Equal(
+		"VpcEndpoint",
+		outputShape.ShapeName)
+}
+
 func TestSetResource_MQ_Broker_SetResourceIdentifiers(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
