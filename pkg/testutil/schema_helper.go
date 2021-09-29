@@ -29,6 +29,8 @@ import (
 type TestingModelOptions struct {
 	// The CR API Version. Defaults to v1alpha1
 	APIVersion string
+	// Override for the model name for the service
+	ServiceModelName string
 	// The generator config file. Defaults to generator.yaml
 	GeneratorConfigFile string
 	// The AWS Service's API version. Defaults to 00-00-0000
@@ -36,9 +38,12 @@ type TestingModelOptions struct {
 }
 
 // SetDefaults sets the empty fields to a default value.
-func (o *TestingModelOptions) SetDefaults() {
+func (o *TestingModelOptions) SetDefaults(serviceAlias string) {
 	if o.APIVersion == "" {
 		o.APIVersion = "v1alpha1"
+	}
+	if o.ServiceModelName == "" {
+		o.ServiceModelName = serviceAlias
 	}
 	if o.GeneratorConfigFile == "" {
 		o.GeneratorConfigFile = "generator.yaml"
@@ -71,10 +76,10 @@ func NewModelForServiceWithOptions(t *testing.T, serviceAlias string, options *T
 			break
 		}
 	}
-	options.SetDefaults()
+	options.SetDefaults(serviceAlias)
 	sdkHelper := model.NewSDKHelper(path)
 	sdkHelper.WithAPIVersion(options.ServiceAPIVersion)
-	sdkAPI, err := sdkHelper.API(serviceAlias)
+	sdkAPI, err := sdkHelper.API(options.ServiceModelName)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -82,7 +87,7 @@ func NewModelForServiceWithOptions(t *testing.T, serviceAlias string, options *T
 	if _, err := os.Stat(generatorConfigPath); os.IsNotExist(err) {
 		generatorConfigPath = ""
 	}
-	m, err := ackmodel.New(sdkAPI, options.APIVersion, generatorConfigPath, ackgenerate.DefaultConfig)
+	m, err := ackmodel.New(sdkAPI, serviceAlias, options.APIVersion, generatorConfigPath, ackgenerate.DefaultConfig)
 	if err != nil {
 		t.Fatal(err)
 	}
