@@ -452,9 +452,9 @@ func (r *CRD) GetOutputWrapperFieldPath(
 	return &opConfig.OutputWrapperFieldPath
 }
 
-// GetOutputShape returns the Output shape for given operation.
+// GetOutputShape returns the Output shape for a given operation and applies
+// wrapper field path overrides, if specified in generator config.
 func (r *CRD) GetOutputShape(
-	// The operation to look for the Output shape
 	op *awssdkmodel.Operation,
 ) (*awssdkmodel.Shape, error) {
 	if op == nil {
@@ -466,37 +466,27 @@ func (r *CRD) GetOutputShape(
 		return nil, errors.New("output shape not found")
 	}
 
-	// We might be in a "wrapper" shape. Unwrap it to find the real object
-	// representation for the CRD's createOp/DescribeOP.
-
-	// Use the wrapper field path if it's given in the ack-generate config file.
+	// Check for wrapper field path overrides
 	wrapperFieldPath := r.GetOutputWrapperFieldPath(op)
 	if wrapperFieldPath != nil {
-		wrapperOutputShape, err := r.GetWrapperOutputShape(outputShape, *wrapperFieldPath)
+		wrapperOutputShape, err := r.getWrapperOutputShape(outputShape,
+			*wrapperFieldPath)
 		if err != nil {
-			return nil, fmt.Errorf("unable to unwrap the output shape: %v", err)
+			msg := fmt.Sprintf("Unable to unwrap the output shape: %s " +
+				"with field path override: %s. error: %v",
+				outputShape.OrigShapeName, *wrapperFieldPath, err)
+			panic(msg)
 		}
 		outputShape = wrapperOutputShape
-	} else {
-		// If the wrapper field path is not specified in the config file and if
-		// there is a single member shape and that member shape is a structure,
-		// unwrap it.
-		if outputShape.UsedAsOutput && len(outputShape.MemberRefs) == 1 {
-			for _, memberRef := range outputShape.MemberRefs {
-				if memberRef.Shape.Type == "structure" {
-					outputShape = memberRef.Shape
-				}
-			}
-		}
 	}
 	return outputShape, nil
 }
 
-// GetWrapperOutputShape returns the shape of the last element of a given field
-// Path. It carefully unwraps the output shape and verifies that every element
-// of the field path exists in their correspanding parent shape and that they are
+// getWrapperOutputShape returns the shape of the last element of a given field
+// Path. It unwraps the output shape and verifies that every element of the
+// field path exists in their corresponding parent shape and that they are
 // structures.
-func (r *CRD) GetWrapperOutputShape(
+func (r *CRD) getWrapperOutputShape(
 	shape *awssdkmodel.Shape,
 	fieldPath string,
 ) (*awssdkmodel.Shape, error) {
@@ -509,21 +499,19 @@ func (r *CRD) GetWrapperOutputShape(
 	memberRef, ok := shape.MemberRefs[wrapperField]
 	if !ok {
 		return nil, fmt.Errorf(
-			"Incorrect SetOutput.WrapperFieldPath. Could not find %s in Shape %s",
-			wrapperField, shape.ShapeName,
-		)
+			"could not find wrapper override field %s in Shape %s",
+			wrapperField, shape.ShapeName)
 	}
 
+	// wrapper field must be structure; otherwise cannot unpack
 	if memberRef.Shape.Type != "structure" {
-		// All the mentioned shapes must be structure
 		return nil, fmt.Errorf(
-			"Expected SetOutput.WrapperFieldPath to only contain fields of type 'structure'."+
-				" Found %s of type '%s'",
-			wrapperField, memberRef.Shape.Type,
-		)
+			"output wrapper overrides can only contain fields of type" +
+				" 'structure'. Found wrapper override field %s of type '%s'",
+			wrapperField, memberRef.Shape.Type)
 	}
 	remainPath := strings.Join(fieldPathParts[1:], ".")
-	return r.GetWrapperOutputShape(memberRef.Shape, remainPath)
+	return r.getWrapperOutputShape(memberRef.Shape, remainPath)
 }
 
 // GetCustomImplementation returns custom implementation method name for the

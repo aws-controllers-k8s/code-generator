@@ -19,7 +19,7 @@ ignore:
     - InternetGateway
     - KeyPair
     - LaunchTemplateVersion
-    # - LaunchTemplate
+    #- LaunchTemplate
     - LocalGatewayRouteTableVpcAssociation
     - LocalGatewayRoute
     - ManagedPrefixList
@@ -50,13 +50,17 @@ ignore:
     - TransitGatewayRoute
     - TransitGatewayVpcAttachment
     - TransitGateway
-    # - Volume
+    #- Volume
     - VpcEndpointConnectionNotification
     - VpcEndpointServiceConfiguration
-    - VpcEndpoint
-    # - Vpc
+    #- VpcEndpoint
+    #- Vpc
     - VpcCidrBlock
     - VpcPeeringConnection
     - VpnConnectionRoute
     - VpnConnection
     - VpnGateway
+
+operations:
+  CreateVpcEndpoint:
+    output_wrapper_field_path: VpcEndpoint
