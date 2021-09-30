@@ -18,7 +18,8 @@ const (
 )
 
 var (
-	resourceGK = metav1.GroupKind{
+	GroupVersionResource = svcapitypes.GroupVersion.WithResource("{{ ToLower .CRD.Plural }}")
+	GroupKind = metav1.GroupKind{
 		Group: "{{ .APIGroup }}",
 		Kind:  "{{ .CRD.Kind }}",
 	}
@@ -32,7 +33,7 @@ type resourceDescriptor struct {
 // GroupKind returns a Kubernetes metav1.GroupKind struct that describes the
 // API Group and Kind of CRs described by the descriptor
 func (d *resourceDescriptor) GroupKind() *metav1.GroupKind {
-	return &resourceGK
+	return &GroupKind
 }
 
 // EmptyRuntimeObject returns an empty object prototype that may be used in
