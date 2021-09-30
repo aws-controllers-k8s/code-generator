@@ -23,6 +23,7 @@ ACK_GENERATE_CACHE_DIR=${ACK_GENERATE_CACHE_DIR:-"$HOME/.cache/aws-controllers-k
 # typically at $GOPATH/src/github.com/aws-controllers-k8s/code-generator
 DEFAULT_ACK_GENERATE_BIN_PATH="$ROOT_DIR/bin/ack-generate"
 ACK_GENERATE_BIN_PATH=${ACK_GENERATE_BIN_PATH:-$DEFAULT_ACK_GENERATE_BIN_PATH}
+ACK_GENERATE_MODEL_NAME=${ACK_GENERATE_MODEL_NAME:-""}
 ACK_GENERATE_API_VERSION=${ACK_GENERATE_API_VERSION:-"v1alpha1"}
 ACK_GENERATE_CONFIG_PATH=${ACK_GENERATE_CONFIG_PATH:-""}
 ACK_METADATA_CONFIG_PATH=${ACK_METADATA_CONFIG_PATH:-""}
@@ -49,6 +50,12 @@ Environment variables:
                             previously generated, the latest generated API
                             version is used. If the service controller has yet
                             to be generated, 'v1alpha1' is used.
+  ACK_GENERATE_MODEL_NAME:  Overrides the name of the AWS SDK model for the
+                            current service. If not specified, the name of the
+                            service will be used. Most services do not require
+                            overriding this value, but some services models
+                            do not match the name of the service as defined in
+                            the AWS SDK Go (eg. opensearchservice).
   ACK_GENERATE_CONFIG_PATH: Specify a path to the generator config YAML file to
                             instruct the code generator for the service.
                             Default: generator.yaml
@@ -157,6 +164,11 @@ fi
 apis_args="apis $ag_args"
 if [ -n "$ACK_GENERATE_API_VERSION" ]; then
     apis_args="$apis_args --version $ACK_GENERATE_API_VERSION"
+fi
+
+if [ -n "$ACK_GENERATE_MODEL_NAME" ]; then
+    ag_args="$ag_args --model-name $ACK_GENERATE_MODEL_NAME"
+    apis_args="$apis_args --model-name $ACK_GENERATE_MODEL_NAME"
 fi
 
 if [ -n "$ACK_GENERATE_CONFIG_PATH" ]; then

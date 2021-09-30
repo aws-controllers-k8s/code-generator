@@ -62,10 +62,13 @@ func generateController(cmd *cobra.Command, args []string) error {
 	if err := ensureSDKRepo(ctx, optCacheDir, optRefreshCache); err != nil {
 		return err
 	}
+	if optModelName == "" {
+		optModelName = svcAlias
+	}
 	sdkHelper := ackmodel.NewSDKHelper(sdkDir)
-	sdkAPI, err := sdkHelper.API(svcAlias)
+	sdkAPI, err := sdkHelper.API(optModelName)
 	if err != nil {
-		newSvcAlias, err := FallBackFindServiceID(sdkDir, svcAlias)
+		newSvcAlias, err := FallBackFindServiceID(sdkDir, optModelName)
 		if err != nil {
 			return err
 		}
@@ -79,7 +82,7 @@ func generateController(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	m, err := ackmodel.New(
-		sdkAPI, latestAPIVersion, optGeneratorConfigPath, ackgenerate.DefaultConfig,
+		sdkAPI, svcAlias, latestAPIVersion, optGeneratorConfigPath, ackgenerate.DefaultConfig,
 	)
 	if err != nil {
 		return err

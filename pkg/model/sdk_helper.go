@@ -246,8 +246,8 @@ func (a *SDKAPI) GetOutputShapeRef(
 }
 
 // getMemberByPath returns a ShapeRef given a root Shape and a dot-notation
-// object search path. Given the explicit type check for list type members 
-// both ".." and "." notations work currently. 
+// object search path. Given the explicit type check for list type members
+// both ".." and "." notations work currently.
 // TODO: Add support for other types such as map.
 func getMemberByPath(
 	shape *awssdkmodel.Shape,
@@ -353,19 +353,15 @@ func (a *SDKAPI) HasConflictingTypeName(typeName string, cfg *ackgenconfig.Confi
 		util.InStrings(cleanTypeName, crdListResourceNames)
 }
 
-// ServiceID returns the exact `metadata.serviceId` attribute for the AWS
-// service APi's api-2.json file
-func (a *SDKAPI) ServiceID() string {
+// AWSSDKModelServiceID returns the exact `metadata.serviceId` attribute for the AWS
+// service APi's api-2.json file.
+// This MAY NOT MATCH the AWS SDK Go package used by the service. For example:
+// AWS SDK Go uses `opensearchservice` whereas the service ID is `opensearch`
+func (a *SDKAPI) AWSSDKModelServiceID() string {
 	if a == nil || a.API == nil {
 		return ""
 	}
 	return awssdkmodel.ServiceID(a.API)
-}
-
-// ServiceIDClean returns a lowercased, whitespace-stripped ServiceID
-func (a *SDKAPI) ServiceIDClean() string {
-	serviceID := strings.ToLower(a.ServiceID())
-	return strings.Replace(serviceID, " ", "", -1)
 }
 
 func (a *SDKAPI) GetServiceFullName() string {
@@ -373,17 +369,6 @@ func (a *SDKAPI) GetServiceFullName() string {
 		return ""
 	}
 	return a.API.Metadata.ServiceFullName
-}
-
-// APIGroup returns the normalized Kubernetes APIGroup for the AWS service API,
-// e.g. "sns.services.k8s.aws"
-func (a *SDKAPI) APIGroup() string {
-	serviceID := a.ServiceIDClean()
-	suffix := "services.k8s.aws"
-	if a.apiGroupSuffix != "" {
-		suffix = a.apiGroupSuffix
-	}
-	return fmt.Sprintf("%s.%s", serviceID, suffix)
 }
 
 // SDKAPIInterfaceTypeName returns the name of the aws-sdk-go primary API

@@ -34,13 +34,14 @@ var (
 // Model contains the ACK model for the generator to process and apply
 // templates against.
 type Model struct {
-	SDKAPI       *SDKAPI
-	serviceAlias string
-	apiVersion   string
-	crds         []*CRD
-	typeDefs     []*TypeDef
-	typeImports  map[string]string
-	typeRenames  map[string]string
+	SDKAPI         *SDKAPI
+	servicePackage string
+	serviceAlias   string
+	apiVersion     string
+	crds           []*CRD
+	typeDefs       []*TypeDef
+	typeImports    map[string]string
+	typeRenames    map[string]string
 	// Instructions to the code generator how to handle the API and its
 	// resources
 	cfg *ackgenconfig.Config
@@ -51,10 +52,10 @@ type Model struct {
 func (m *Model) MetaVars() templateset.MetaVars {
 	return templateset.MetaVars{
 		ServiceAlias:            m.serviceAlias,
-		ServiceID:               m.SDKAPI.ServiceID(),
-		ServiceIDClean:          m.SDKAPI.ServiceIDClean(),
-		APIGroup:                m.SDKAPI.APIGroup(),
+		ServiceIDClean:          m.ServiceIDClean(),
+		APIGroup:                m.APIGroup(),
 		APIVersion:              m.apiVersion,
+		AWSSDKModelServiceID:    m.SDKAPI.AWSSDKModelServiceID(),
 		SDKAPIInterfaceTypeName: m.SDKAPI.SDKAPIInterfaceTypeName(),
 		CRDNames:                m.crdNames(),
 	}
@@ -691,11 +692,29 @@ func (m *Model) GetConfig() *ackgenconfig.Config {
 	return m.cfg
 }
 
+// APIGroup returns the normalized Kubernetes APIGroup for the AWS service API,
+// e.g. "sns.services.k8s.aws"
+func (m *Model) APIGroup() string {
+	serviceID := m.servicePackage
+	suffix := "services.k8s.aws"
+	if m.SDKAPI.apiGroupSuffix != "" {
+		suffix = m.SDKAPI.apiGroupSuffix
+	}
+	return fmt.Sprintf("%s.%s", serviceID, suffix)
+}
+
+// ServiceIDClean returns a lowercased, whitespace-stripped ServiceID
+func (m *Model) ServiceIDClean() string {
+	serviceID := strings.ToLower(m.servicePackage)
+	return strings.Replace(serviceID, " ", "", -1)
+}
+
 // New returns a new Model struct for a supplied API model.
 // Optionally, pass a file path to a generator config file that can be used to
 // instruct the code generator how to handle the API properly
 func New(
 	SDKAPI *SDKAPI,
+	servicePackage string,
 	apiVersion string,
 	configPath string,
 	defaultConfig ackgenconfig.Config,
@@ -705,12 +724,11 @@ func New(
 		return nil, err
 	}
 	m := &Model{
-		SDKAPI: SDKAPI,
-		// TODO(jaypipes): Handle cases where service alias and service ID
-		// don't match (Step Functions)
-		serviceAlias: SDKAPI.ServiceID(),
-		apiVersion:   apiVersion,
-		cfg:          &cfg,
+		SDKAPI:         SDKAPI,
+		servicePackage: servicePackage,
+		serviceAlias:   SDKAPI.AWSSDKModelServiceID(),
+		apiVersion:     apiVersion,
+		cfg:            &cfg,
 	}
 	m.ApplyShapeIgnoreRules()
 	return m, nil

@@ -34,6 +34,7 @@ var (
 	optCacheDir            string
 	optRefreshCache        bool
 	optAWSSDKGoVersion     string
+	optModelName           string
 	defaultTemplateDirs    []string
 	optTemplateDirs        []string
 	defaultServicesDir     string
@@ -120,6 +121,9 @@ func init() {
 	)
 	rootCmd.PersistentFlags().StringVar(
 		&optAWSSDKGoVersion, "aws-sdk-go-version", "", "Version of github.com/aws/aws-sdk-go used to generate apis and controllers files",
+	)
+	rootCmd.PersistentFlags().StringVar(
+		&optModelName, "model-name", "", "the name of the service model package",
 	)
 }
 
