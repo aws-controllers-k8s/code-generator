@@ -56,7 +56,6 @@ func (m *Model) MetaVars() templateset.MetaVars {
 		ServiceModelName:        m.cfg.ModelName,
 		APIGroup:                m.APIGroup(),
 		APIVersion:              m.apiVersion,
-		ServiceID:               m.SDKAPI.ServiceID(),
 		SDKAPIInterfaceTypeName: m.SDKAPI.SDKAPIInterfaceTypeName(),
 		CRDNames:                m.crdNames(),
 	}
