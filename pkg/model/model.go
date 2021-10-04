@@ -34,13 +34,14 @@ var (
 // Model contains the ACK model for the generator to process and apply
 // templates against.
 type Model struct {
-	SDKAPI       *SDKAPI
-	serviceAlias string
-	apiVersion   string
-	crds         []*CRD
-	typeDefs     []*TypeDef
-	typeImports  map[string]string
-	typeRenames  map[string]string
+	SDKAPI           *SDKAPI
+	serviceAlias     string
+	serviceModelName string
+	apiVersion       string
+	crds             []*CRD
+	typeDefs         []*TypeDef
+	typeImports      map[string]string
+	typeRenames      map[string]string
 	// Instructions to the code generator how to handle the API and its
 	// resources
 	cfg *ackgenconfig.Config
@@ -50,11 +51,17 @@ type Model struct {
 // service API
 func (m *Model) MetaVars() templateset.MetaVars {
 	return templateset.MetaVars{
+<<<<<<< HEAD
 		ServiceAlias:            m.serviceAlias,
 		ServiceID:               m.SDKAPI.ServiceID(),
 		ServiceModelName:        m.cfg.ModelName,
+=======
+		ServiceAliasClean:       m.ServiceAliasClean(),
+		ServiceModelName:        m.serviceModelName,
+>>>>>>> 116e724 (Refactor service naming variables)
 		APIGroup:                m.APIGroup(),
 		APIVersion:              m.apiVersion,
+		ServiceID:               m.SDKAPI.ServiceID(),
 		SDKAPIInterfaceTypeName: m.SDKAPI.SDKAPIInterfaceTypeName(),
 		CRDNames:                m.crdNames(),
 	}

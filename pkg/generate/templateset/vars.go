@@ -16,6 +16,14 @@ package templateset
 // MetaVars contains template variables that most templates need access to
 // that describe the service alias, its package name, etc
 type MetaVars struct {
+	// ServiceModelName contains the exact string used to identify the AWS
+	// service API in the aws-sdk-go's models/apis/ directory. Note that some
+	// APIs this name does not match the ServiceID. e.g. The AWS Step Functions
+	// API has a ServiceID of "SFN" and a service model name of "states"...
+	ServiceModelName string
+	// ServiceAliasClean is the ServiceAlias lowercased and stripped of any
+	// non-alphanumeric characters
+	ServiceAliasClean string
 	// ServiceAlias contains the exact string used to identify the AWS service
 	// API in the aws-sdk-go `service/` directory. It is also used as the
 	// identifier for the ACK controller's name and packages.
@@ -35,6 +43,9 @@ type MetaVars struct {
 	// for custom resources, e.g. "sns.services.k8s.aws" or
 	// "sfn.services.k8s.aws"
 	APIGroup string
+	// ServiceID is the exact string that appears in the AWS service API's
+	// api-2.json descriptor file under `metadata.serviceId`
+	ServiceID string
 	// SDKAPIInterfaceTypeName is the name of the interface type used by the
 	// aws-sdk-go services/$SERVICE/api.go file
 	SDKAPIInterfaceTypeName string

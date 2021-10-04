@@ -354,7 +354,9 @@ func (a *SDKAPI) HasConflictingTypeName(typeName string, cfg *ackgenconfig.Confi
 }
 
 // ServiceID returns the exact `metadata.serviceId` attribute for the AWS
-// service APi's api-2.json file
+// service APi's api-2.json file.
+// This MAY NOT MATCH the AWS SDK Go package used by the service. For example:
+// AWS SDK Go uses `opensearchservice` whereas the service ID is `opensearch`
 func (a *SDKAPI) ServiceID() string {
 	if a == nil || a.API == nil {
 		return ""
