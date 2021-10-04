@@ -51,14 +51,9 @@ type Model struct {
 // service API
 func (m *Model) MetaVars() templateset.MetaVars {
 	return templateset.MetaVars{
-<<<<<<< HEAD
 		ServiceAlias:            m.serviceAlias,
 		ServiceID:               m.SDKAPI.ServiceID(),
 		ServiceModelName:        m.cfg.ModelName,
-=======
-		ServiceAliasClean:       m.ServiceAliasClean(),
-		ServiceModelName:        m.serviceModelName,
->>>>>>> 116e724 (Refactor service naming variables)
 		APIGroup:                m.APIGroup(),
 		APIVersion:              m.apiVersion,
 		ServiceID:               m.SDKAPI.ServiceID(),

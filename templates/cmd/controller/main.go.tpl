@@ -20,7 +20,7 @@ import (
 	svcresource "github.com/aws-controllers-k8s/{{ .ServiceAlias }}-controller/pkg/resource"
 	svctypes "github.com/aws-controllers-k8s/{{ .ServiceAlias }}-controller/apis/{{ .APIVersion }}"
 	{{/* TODO(a-hilaly): import apis/* packages to register webhooks */}}
-	{{ $serviceIDClean := .ServiceAlias }} {{range $crdName := .SnakeCasedCRDNames }}_ "github.com/aws-controllers-k8s/{{ $serviceIDClean }}-controller/pkg/resource/{{ $crdName }}"
+	{{ $serviceAlias := .ServiceAlias }} {{range $crdName := .SnakeCasedCRDNames }}_ "github.com/aws-controllers-k8s/{{ $serviceAlias }}-controller/pkg/resource/{{ $crdName }}"
 	{{end}}
 )
 
