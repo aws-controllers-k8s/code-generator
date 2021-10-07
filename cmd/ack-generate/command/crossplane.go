@@ -26,6 +26,7 @@ import (
 	"github.com/spf13/cobra"
 
 	cpgenerate "github.com/aws-controllers-k8s/code-generator/pkg/generate/crossplane"
+	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
 )
 
@@ -55,20 +56,17 @@ func generateCrossplane(_ *cobra.Command, args []string) error {
 		return err
 	}
 	svcAlias := strings.ToLower(args[0])
-	if optModelName == "" {
-		optModelName = svcAlias
-	}
-	sdkHelper := ackmodel.NewSDKHelper(sdkDir)
+	sdkHelper := model.NewSDKHelper(sdkDir)
 	sdkHelper.APIGroupSuffix = "aws.crossplane.io"
-	sdkAPI, err := sdkHelper.API(optModelName)
+	sdkAPI, err := sdkHelper.API(svcAlias)
 	if err != nil {
-		newSvcAlias, err := FallBackFindServiceID(sdkDir, optModelName)
+		newSvcAlias, err := FallBackFindServiceID(sdkDir, svcAlias)
 		if err != nil {
 			return err
 		}
 		sdkAPI, err = sdkHelper.API(newSvcAlias) // retry with serviceID
 		if err != nil {
-			return fmt.Errorf("service %s not found", svcAlias)
+			return fmt.Errorf("cannot get the API model for service %s", svcAlias)
 		}
 	}
 	cfgPath := filepath.Join(providerDir, "apis", svcAlias, optGenVersion, "generator-config.yaml")
@@ -80,7 +78,7 @@ func generateCrossplane(_ *cobra.Command, args []string) error {
 		cfgPath = ""
 	}
 	m, err := ackmodel.New(
-		sdkAPI, svcAlias, optGenVersion, cfgPath, cpgenerate.DefaultConfig,
+		sdkAPI, optGenVersion, cfgPath, cpgenerate.DefaultConfig,
 	)
 	if err != nil {
 		return err

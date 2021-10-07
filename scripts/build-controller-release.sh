@@ -30,7 +30,6 @@ ACK_GENERATE_CACHE_DIR=${ACK_GENERATE_CACHE_DIR:-"$HOME/.cache/aws-controllers-k
 # typically at $GOPATH/src/github.com/aws-controllers-k8s/code-generator
 DEFAULT_ACK_GENERATE_BIN_PATH="$ROOT_DIR/../../aws-controllers-k8s/code-generator/bin/ack-generate"
 ACK_GENERATE_BIN_PATH=${ACK_GENERATE_BIN_PATH:-$DEFAULT_ACK_GENERATE_BIN_PATH}
-ACK_GENERATE_MODEL_NAME=${ACK_GENERATE_MODEL_NAME:-""}
 ACK_GENERATE_API_VERSION=${ACK_GENERATE_API_VERSION:-"v1alpha1"}
 ACK_GENERATE_CONFIG_PATH=${ACK_GENERATE_CONFIG_PATH:-""}
 ACK_METADATA_CONFIG_PATH=${ACK_METADATA_CONFIG_PATH:-""}
@@ -185,9 +184,6 @@ helm_output_dir="$SERVICE_CONTROLLER_SOURCE_PATH/helm"
 ag_args="$SERVICE $RELEASE_VERSION -o $SERVICE_CONTROLLER_SOURCE_PATH --template-dirs $TEMPLATES_DIR --aws-sdk-go-version $AWS_SDK_GO_VERSION"
 if [ -n "$ACK_GENERATE_CACHE_DIR" ]; then
     ag_args="$ag_args --cache-dir $ACK_GENERATE_CACHE_DIR"
-fi
-if [ -n "$ACK_GENERATE_MODEL_NAME" ]; then
-    ag_args="$ag_args --model-name $ACK_GENERATE_MODEL_NAME"
 fi
 if [ -n "$ACK_GENERATE_OUTPUT_PATH" ]; then
     ag_args="$ag_args --output $ACK_GENERATE_OUTPUT_PATH"
