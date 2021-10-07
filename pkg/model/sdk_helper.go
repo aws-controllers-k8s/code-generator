@@ -371,9 +371,9 @@ func (a *SDKAPI) GetServiceFullName() string {
 	return a.API.Metadata.ServiceFullName
 }
 
-// SDKAPIInterfaceTypeName returns the name of the aws-sdk-go primary API
+// APIInterfaceTypeName returns the name of the aws-sdk-go primary API
 // interface type name.
-func (a *SDKAPI) SDKAPIInterfaceTypeName() string {
+func (a *SDKAPI) APIInterfaceTypeName() string {
 	if a == nil || a.API == nil {
 		return ""
 	}
