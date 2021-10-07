@@ -1,4 +1,4 @@
-# Default values for ack-{{ .ServiceIDClean }}-controller.
+# Default values for ack-{{ .ServiceAlias }}-controller.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 

@@ -84,7 +84,7 @@ func generateCrossplane(_ *cobra.Command, args []string) error {
 		}
 	}
 	m, err := ackmodel.New(
-		sdkAPI, optGenVersion, cfg,
+		sdkAPI, svcAlias, optGenVersion, cfg,
 	)
 	if err != nil {
 		return err

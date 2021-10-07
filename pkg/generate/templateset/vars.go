@@ -17,16 +17,12 @@ package templateset
 // that describe the service alias, its package name, etc
 type MetaVars struct {
 	// ServiceAlias contains the exact string used to identify the AWS service
-	// API in the aws-sdk-go's models/apis/ directory. Note that some APIs this
-	// alias does not match the ServiceID. e.g. The AWS Step Functions API has
-	// a ServiceID of "SFN" and a service alias of "states"...
+	// API in the aws-sdk-go `service/` directory. It is also used as the
+	// identifier for the ACK controller's name and packages.
 	ServiceAlias string
 	// ServiceID is the exact string that appears in the AWS service API's
 	// api-2.json descriptor file under `metadata.serviceId`
 	ServiceID string
-	// ServiceIDClean is the ServiceID lowercased and stripped of any
-	// non-alphanumeric characters
-	ServiceIDClean string
 	// ServiceModelName contains the exact string used to identify the AWS
 	// service API in the aws-sdk-go's models/apis/ directory. Note that some
 	// APIs this name does not match the ServiceID. e.g. The AWS Step Functions

@@ -87,7 +87,7 @@ func NewModelForServiceWithOptions(t *testing.T, serviceAlias string, options *T
 	if err != nil {
 		t.Fatal(err)
 	}
-	m, err := ackmodel.New(sdkAPI, options.APIVersion, cfg)
+	m, err := ackmodel.New(sdkAPI, serviceAlias, options.APIVersion, cfg)
 	if err != nil {
 		t.Fatal(err)
 	}

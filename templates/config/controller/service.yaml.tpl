@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: ack-{{ .ServiceIDClean }}-metrics-service
+  name: ack-{{ .ServiceAlias }}-metrics-service
   namespace: ack-system
 spec:
   selector:

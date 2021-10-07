@@ -375,17 +375,6 @@ func (a *SDKAPI) GetServiceFullName() string {
 	return a.API.Metadata.ServiceFullName
 }
 
-// APIGroup returns the normalized Kubernetes APIGroup for the AWS service API,
-// e.g. "sns.services.k8s.aws"
-func (a *SDKAPI) APIGroup() string {
-	serviceID := a.ServiceIDClean()
-	suffix := "services.k8s.aws"
-	if a.apiGroupSuffix != "" {
-		suffix = a.apiGroupSuffix
-	}
-	return fmt.Sprintf("%s.%s", serviceID, suffix)
-}
-
 // SDKAPIInterfaceTypeName returns the name of the aws-sdk-go primary API
 // interface type name.
 func (a *SDKAPI) SDKAPIInterfaceTypeName() string {

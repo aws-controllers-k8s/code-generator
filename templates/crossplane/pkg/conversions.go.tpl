@@ -11,9 +11,9 @@ import (
 {{ end }}
 {{- end }}
 	"github.com/aws/aws-sdk-go/aws/awserr"
-	svcsdk "github.com/aws/aws-sdk-go/service/{{ .ServiceIDClean }}"
+	svcsdk "github.com/aws/aws-sdk-go/service/{{ .ServiceAlias }}"
 
-	svcapitypes "github.com/crossplane/provider-aws/apis/{{ .ServiceIDClean }}/{{ .APIVersion}}"
+	svcapitypes "github.com/crossplane/provider-aws/apis/{{ .ServiceAlias }}/{{ .APIVersion}}"
 )
 
 // NOTE(muvaf): We return pointers in case the function needs to start with an

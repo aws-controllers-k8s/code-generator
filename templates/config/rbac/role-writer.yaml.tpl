@@ -3,7 +3,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   creationTimestamp: null
-  name: ack-{{ .ServiceIDClean }}-writer
+  name: ack-{{ .ServiceAlias }}-writer
   namespace: default
 rules:
 - apiGroups:

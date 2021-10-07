@@ -73,7 +73,7 @@ func generateRelease(cmd *cobra.Command, args []string) error {
 	if err := ensureSDKRepo(ctx, optCacheDir, optRefreshCache); err != nil {
 		return err
 	}
-	m, err := loadModel(svcAlias)
+	m, err := loadModel(svcAlias, "")
 	if err != nil {
 		return err
 	}

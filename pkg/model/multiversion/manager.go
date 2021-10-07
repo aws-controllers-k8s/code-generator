@@ -106,6 +106,7 @@ func NewAPIVersionManager(
 
 		i, err := ackmodel.New(
 			SDKAPI,
+			serviceAlias,
 			version.APIVersion,
 			cfg,
 		)

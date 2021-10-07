@@ -10,7 +10,7 @@ import (
 	k8sapirt "k8s.io/apimachinery/pkg/runtime"
 	k8sctrlutil "sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	svcapitypes "github.com/aws-controllers-k8s/{{ .ServiceIDClean }}-controller/apis/{{ .APIVersion }}"
+	svcapitypes "github.com/aws-controllers-k8s/{{ .ServiceAlias }}-controller/apis/{{ .APIVersion }}"
 )
 
 const (
