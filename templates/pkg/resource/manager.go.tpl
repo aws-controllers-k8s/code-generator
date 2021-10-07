@@ -54,7 +54,7 @@ type resourceManager struct {
 	sess *session.Session
 	// sdk is a pointer to the AWS service API interface exposed by the
 	// aws-sdk-go/services/{alias}/{alias}iface package.
-	sdkapi svcsdkapi.{{ .SDKAPIInterfaceTypeName }}API
+	sdkapi svcsdkapi.{{ .APIInterfaceTypeName }}API
 }
 
 // concreteResource returns a pointer to a resource from the supplied

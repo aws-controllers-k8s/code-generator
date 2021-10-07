@@ -173,7 +173,7 @@ func (e *external) Delete(ctx context.Context, mg cpresource.Managed) error {
 
 type option func(*external)
 
-func newExternal(kube client.Client, client svcsdkapi.{{ .SDKAPIInterfaceTypeName }}API, opts []option) *external {
+func newExternal(kube client.Client, client svcsdkapi.{{ .APIInterfaceTypeName }}API, opts []option) *external {
 	e := &external{
 		kube:           kube,
 		client:         client,
@@ -219,7 +219,7 @@ func newExternal(kube client.Client, client svcsdkapi.{{ .SDKAPIInterfaceTypeNam
 
 type external struct {
 	kube        client.Client
-	client      svcsdkapi.{{ .SDKAPIInterfaceTypeName }}API
+	client      svcsdkapi.{{ .APIInterfaceTypeName }}API
 	{{- if .CRD.Ops.ReadOne }}
 	preObserve  func(context.Context, *svcapitypes.{{ .CRD.Names.Camel }}, *svcsdk.{{ .CRD.Ops.ReadOne.InputRef.Shape.ShapeName }}) error
 	postObserve func(context.Context, *svcapitypes.{{ .CRD.Names.Camel }}, *svcsdk.{{ .CRD.Ops.ReadOne.OutputRef.Shape.ShapeName }}, managed.ExternalObservation, error) (managed.ExternalObservation, error)

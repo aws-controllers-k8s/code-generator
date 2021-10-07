@@ -35,9 +35,9 @@ type MetaVars struct {
 	// for custom resources, e.g. "sns.services.k8s.aws" or
 	// "sfn.services.k8s.aws"
 	APIGroup string
-	// SDKAPIInterfaceTypeName is the name of the interface type used by the
+	// APIInterfaceTypeName is the name of the interface type used by the
 	// aws-sdk-go services/$SERVICE/api.go file
-	SDKAPIInterfaceTypeName string
+	APIInterfaceTypeName string
 	//CRDNames contains all crds names lowercased and in plural
 	CRDNames []string
 }
