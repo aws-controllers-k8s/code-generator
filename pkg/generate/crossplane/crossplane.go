@@ -145,7 +145,7 @@ func Crossplane(
 	for _, path := range apisGenericTemplatesPaths {
 		outPath := filepath.Join(
 			"apis",
-			metaVars.ServiceAlias,
+			metaVars.ServicePackageName,
 			metaVars.APIVersion,
 			"zz_"+strings.TrimSuffix(filepath.Base(path), ".tpl"),
 		)
@@ -155,7 +155,7 @@ func Crossplane(
 	}
 	for _, crd := range crds {
 		crdFileName := filepath.Join(
-			"apis", metaVars.ServiceAlias, metaVars.APIVersion,
+			"apis", metaVars.ServicePackageName, metaVars.APIVersion,
 			"zz_"+strcase.ToSnake(crd.Kind)+".go",
 		)
 		crdVars := &templateCRDVars{
@@ -170,7 +170,7 @@ func Crossplane(
 	// Next add the controller package for each CRD
 	for _, crd := range crds {
 		outPath := filepath.Join(
-			"pkg", "controller", metaVars.ServiceAlias, crd.Names.Lower,
+			"pkg", "controller", metaVars.ServicePackageName, crd.Names.Lower,
 			"zz_controller.go",
 		)
 		crdVars := &templateCRDVars{
@@ -181,7 +181,7 @@ func Crossplane(
 			return nil, err
 		}
 		outPath = filepath.Join(
-			"pkg", "controller", metaVars.ServiceAlias, crd.Names.Lower,
+			"pkg", "controller", metaVars.ServicePackageName, crd.Names.Lower,
 			"zz_conversions.go",
 		)
 		crdVars = &templateCRDVars{

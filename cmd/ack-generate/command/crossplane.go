@@ -74,11 +74,12 @@ func generateCrossplane(_ *cobra.Command, args []string) error {
 	sdkHelper.APIGroupSuffix = "aws.crossplane.io"
 	sdkAPI, err := sdkHelper.API(svcAlias)
 	if err != nil {
-		newSvcAlias, err := FallBackFindServiceID(sdkDir, svcAlias)
+		retryModelName, err := FallBackFindServiceID(sdkDir, svcAlias)
 		if err != nil {
 			return err
 		}
-		sdkAPI, err = sdkHelper.API(newSvcAlias) // retry with serviceID
+		// Retry using path found by querying service ID
+		sdkAPI, err = sdkHelper.API(retryModelName)
 		if err != nil {
 			return fmt.Errorf("cannot get the API model for service %s", svcAlias)
 		}

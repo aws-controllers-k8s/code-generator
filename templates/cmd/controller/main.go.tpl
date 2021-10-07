@@ -14,19 +14,19 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrlrt "sigs.k8s.io/controller-runtime"
 	ctrlrtmetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
-	svcsdk "github.com/aws/aws-sdk-go/service/{{ .ServiceAlias }}"
+	svcsdk "github.com/aws/aws-sdk-go/service/{{ .ServicePackageName }}"
 
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
-	svcresource "github.com/aws-controllers-k8s/{{ .ServiceAlias }}-controller/pkg/resource"
-	svctypes "github.com/aws-controllers-k8s/{{ .ServiceAlias }}-controller/apis/{{ .APIVersion }}"
+	svcresource "github.com/aws-controllers-k8s/{{ .ServicePackageName }}-controller/pkg/resource"
+	svctypes "github.com/aws-controllers-k8s/{{ .ServicePackageName }}-controller/apis/{{ .APIVersion }}"
 	{{/* TODO(a-hilaly): import apis/* packages to register webhooks */}}
-	{{ $serviceAlias := .ServiceAlias }} {{range $crdName := .SnakeCasedCRDNames }}_ "github.com/aws-controllers-k8s/{{ $serviceAlias }}-controller/pkg/resource/{{ $crdName }}"
+	{{ $serviceAlias := .ServicePackageName }} {{range $crdName := .SnakeCasedCRDNames }}_ "github.com/aws-controllers-k8s/{{ $serviceAlias }}-controller/pkg/resource/{{ $crdName }}"
 	{{end}}
 )
 
 var (
 	awsServiceAPIGroup = "{{ .APIGroup }}"
-	awsServiceAlias	= "{{ .ServiceAlias }}"
+	awsServiceAlias	= "{{ .ServicePackageName }}"
 	awsServiceEndpointsID = svcsdk.EndpointsID
 	scheme			 = runtime.NewScheme()
 	setupLog		   = ctrlrt.Log.WithName("setup")

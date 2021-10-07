@@ -1,11 +1,11 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: ack-{{ .ServiceAlias }}-controller-rolebinding
+  name: ack-{{ .ServicePackageName }}-controller-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: ack-{{ .ServiceAlias }}-controller
+  name: ack-{{ .ServicePackageName }}-controller
 subjects:
 - kind: ServiceAccount
   name: default

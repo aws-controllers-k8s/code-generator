@@ -42,7 +42,7 @@ var olmCmd = &cobra.Command{
 	Short: `Generate an Operator Lifecycle Manager's ClusterServiceVersion
 resources for AWS service API. Expects a configuration file to be passed in
 via the --olm-config option, or otherwise reads the config at the root of the
-project with the filename <servicealias>-olmconfig.yaml`,
+project with the filename <servicepackage>-olmconfig.yaml`,
 	RunE: generateOLMAssets,
 }
 

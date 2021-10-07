@@ -50,12 +50,12 @@ func (o *TestingModelOptions) SetDefaults() {
 }
 
 // NewModelForService returns a new *ackmodel.Model used for testing purposes.
-func NewModelForService(t *testing.T, serviceAlias string) *ackmodel.Model {
-	return NewModelForServiceWithOptions(t, serviceAlias, &TestingModelOptions{})
+func NewModelForService(t *testing.T, servicePackageName string) *ackmodel.Model {
+	return NewModelForServiceWithOptions(t, servicePackageName, &TestingModelOptions{})
 }
 
 // NewModelForServiceWithOptions returns a new *ackmodel.Model used for testing purposes.
-func NewModelForServiceWithOptions(t *testing.T, serviceAlias string, options *TestingModelOptions) *ackmodel.Model {
+func NewModelForServiceWithOptions(t *testing.T, servicePackageName string, options *TestingModelOptions) *ackmodel.Model {
 	path, err := os.Getwd()
 	if err != nil {
 		t.Fatal(err)
@@ -75,11 +75,11 @@ func NewModelForServiceWithOptions(t *testing.T, serviceAlias string, options *T
 	options.SetDefaults()
 	sdkHelper := model.NewSDKHelper(path)
 	sdkHelper.WithAPIVersion(options.ServiceAPIVersion)
-	sdkAPI, err := sdkHelper.API(serviceAlias)
+	sdkAPI, err := sdkHelper.API(servicePackageName)
 	if err != nil {
 		t.Fatal(err)
 	}
-	generatorConfigPath := filepath.Join(path, "models", "apis", serviceAlias, options.ServiceAPIVersion, options.GeneratorConfigFile)
+	generatorConfigPath := filepath.Join(path, "models", "apis", servicePackageName, options.ServiceAPIVersion, options.GeneratorConfigFile)
 	if _, err := os.Stat(generatorConfigPath); os.IsNotExist(err) {
 		generatorConfigPath = ""
 	}
@@ -87,7 +87,7 @@ func NewModelForServiceWithOptions(t *testing.T, serviceAlias string, options *T
 	if err != nil {
 		t.Fatal(err)
 	}
-	m, err := ackmodel.New(sdkAPI, serviceAlias, options.APIVersion, cfg)
+	m, err := ackmodel.New(sdkAPI, servicePackageName, options.APIVersion, cfg)
 	if err != nil {
 		t.Fatal(err)
 	}

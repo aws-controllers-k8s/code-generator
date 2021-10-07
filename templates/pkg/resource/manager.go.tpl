@@ -20,8 +20,8 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 
-	svcsdk "github.com/aws/aws-sdk-go/service/{{ .ServiceAlias }}"
-	svcsdkapi "github.com/aws/aws-sdk-go/service/{{ .ServiceAlias }}/{{ .ServiceAlias }}iface"
+	svcsdk "github.com/aws/aws-sdk-go/service/{{ .ServicePackageName }}"
+	svcsdkapi "github.com/aws/aws-sdk-go/service/{{ .ServicePackageName }}/{{ .ServicePackageName }}iface"
 )
 
 // +kubebuilder:rbac:groups={{ .APIGroup }},resources={{ ToLower .CRD.Plural }},verbs=get;list;watch;create;update;patch;delete
@@ -163,7 +163,7 @@ func (rm *resourceManager) Delete(
 // name for the resource
 func (rm *resourceManager) ARNFromName(name string) string {
 	return fmt.Sprintf(
-		"arn:aws:{{ .ServiceAlias }}:%s:%s:%s",
+		"arn:aws:{{ .ServicePackageName }}:%s:%s:%s",
 		rm.awsRegion,
 		rm.awsAccountID,
 		name,

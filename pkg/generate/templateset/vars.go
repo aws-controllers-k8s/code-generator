@@ -21,10 +21,10 @@ type MetaVars struct {
 	// APIs this name does not match the ServiceID. e.g. The AWS Step Functions
 	// API has a ServiceID of "SFN" and a service model name of "states"...
 	ServiceModelName string
-	// ServiceAlias contains the exact string used to identify the AWS service
-	// API in the aws-sdk-go `service/` directory. It is also used as the
-	// identifier for the ACK controller's name and packages.
-	ServiceAlias string
+	// ServicePackageName contains the exact string used to identify the AWS
+	// service API in the aws-sdk-go `service/` directory. It is also used as
+	// the identifier for the ACK controller's name and packages.
+	ServicePackageName string
 	// ServiceID is the exact string that appears in the AWS service API's
 	// api-2.json descriptor file under `metadata.serviceId`
 	ServiceID string

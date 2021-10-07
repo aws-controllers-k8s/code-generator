@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ack-{{.ServiceAlias}}-controller
+  name: ack-{{.ServicePackageName}}-controller
   namespace: {{.Annotations.SuggestedNamespace}}
 spec:
   template:
