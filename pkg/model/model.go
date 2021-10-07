@@ -36,7 +36,6 @@ var (
 type Model struct {
 	SDKAPI             *SDKAPI
 	servicePackageName string
-	serviceModelName   string
 	apiVersion         string
 	crds               []*CRD
 	typeDefs           []*TypeDef
@@ -51,13 +50,13 @@ type Model struct {
 // service API
 func (m *Model) MetaVars() templateset.MetaVars {
 	return templateset.MetaVars{
-		ServicePackageName:      m.servicePackageName,
-		ServiceID:               m.SDKAPI.ServiceID(),
-		ServiceModelName:        m.cfg.ModelName,
-		APIGroup:                m.APIGroup(),
-		APIVersion:              m.apiVersion,
-		SDKAPIInterfaceTypeName: m.SDKAPI.SDKAPIInterfaceTypeName(),
-		CRDNames:                m.crdNames(),
+		ServicePackageName:   m.servicePackageName,
+		ServiceID:            m.SDKAPI.ServiceID(),
+		ServiceModelName:     m.cfg.ModelName,
+		APIGroup:             m.APIGroup(),
+		APIVersion:           m.apiVersion,
+		APIInterfaceTypeName: m.SDKAPI.APIInterfaceTypeName(),
+		CRDNames:             m.crdNames(),
 	}
 }
 
