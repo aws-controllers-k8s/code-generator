@@ -23,7 +23,7 @@ spec:
       name: {{ ToLower .Plural }}.{{$.APIGroup}}
       version: {{$.APIVersion}}
       displayName: {{.Kind}}
-      description: {{.Kind}} represents the state of an AWS {{$.ServiceIDClean}} {{.Kind}} resource.
+      description: {{.Kind}} represents the state of an AWS {{$.ServiceID}} {{.Kind}} resource.
     {{- end}}
   description: '{{ .Description }}'
   displayName: {{ .DisplayName}}
