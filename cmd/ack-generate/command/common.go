@@ -239,11 +239,12 @@ func loadModel(svcAlias string, apiVersion string) (*ackmodel.Model, error) {
 	sdkHelper := ackmodel.NewSDKHelper(sdkDir)
 	sdkAPI, err := sdkHelper.API(modelName)
 	if err != nil {
-		newSvcAlias, err := FallBackFindServiceID(sdkDir, svcAlias)
+		retryModelName, err := FallBackFindServiceID(sdkDir, svcAlias)
 		if err != nil {
 			return nil, err
 		}
-		sdkAPI, err = sdkHelper.API(newSvcAlias) // retry with serviceID
+		// Retry using path found by querying service ID
+		sdkAPI, err = sdkHelper.API(retryModelName)
 		if err != nil {
 			return nil, fmt.Errorf("service %s not found", svcAlias)
 		}

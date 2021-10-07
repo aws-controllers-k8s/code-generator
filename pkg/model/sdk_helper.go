@@ -92,7 +92,7 @@ func (h *SDKHelper) WithAPIVersion(apiVersion string) {
 	h.apiVersion = apiVersion
 }
 
-// API returns the aws-sdk-go API model for a supplied service alias
+// API returns the aws-sdk-go API model for a supplied service model name.
 func (h *SDKHelper) API(serviceModelName string) (*SDKAPI, error) {
 	modelPath, _, err := h.ModelAndDocsPath(serviceModelName)
 	if err != nil {
@@ -117,8 +117,8 @@ func (h *SDKHelper) API(serviceModelName string) (*SDKAPI, error) {
 	return nil, ErrServiceNotFound
 }
 
-// ModelAndDocsPath returns two string paths to the supplied service alias'
-// model and doc JSON files
+// ModelAndDocsPath returns two string paths to the supplied service's API and
+// doc JSON files
 func (h *SDKHelper) ModelAndDocsPath(
 	serviceModelName string,
 ) (string, string, error) {
