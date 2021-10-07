@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ack-{{.ServiceIDClean}}-controller
+  name: ack-{{.ServiceAlias}}-controller
   namespace: {{.Annotations.SuggestedNamespace}}
 spec:
   template:

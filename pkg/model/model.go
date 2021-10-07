@@ -52,8 +52,8 @@ func (m *Model) MetaVars() templateset.MetaVars {
 	return templateset.MetaVars{
 		ServiceAlias:            m.serviceAlias,
 		ServiceID:               m.SDKAPI.ServiceID(),
-		ServiceIDClean:          m.SDKAPI.ServiceIDClean(),
-		APIGroup:                m.SDKAPI.APIGroup(),
+		ServiceModelName:        m.cfg.ModelName,
+		APIGroup:                m.APIGroup(),
 		APIVersion:              m.apiVersion,
 		SDKAPIInterfaceTypeName: m.SDKAPI.SDKAPIInterfaceTypeName(),
 		CRDNames:                m.crdNames(),
@@ -691,24 +691,29 @@ func (m *Model) GetConfig() *ackgenconfig.Config {
 	return m.cfg
 }
 
+// APIGroup returns the normalized Kubernetes APIGroup for the AWS service API,
+// e.g. "sns.services.k8s.aws"
+func (m *Model) APIGroup() string {
+	serviceAlias := m.serviceAlias
+	suffix := "services.k8s.aws"
+	if m.SDKAPI.apiGroupSuffix != "" {
+		suffix = m.SDKAPI.apiGroupSuffix
+	}
+	return fmt.Sprintf("%s.%s", serviceAlias, suffix)
+}
+
 // New returns a new Model struct for a supplied API model.
 // Optionally, pass a file path to a generator config file that can be used to
 // instruct the code generator how to handle the API properly
 func New(
 	SDKAPI *SDKAPI,
+	serviceAlias string,
 	apiVersion string,
-	configPath string,
-	defaultConfig ackgenconfig.Config,
+	cfg ackgenconfig.Config,
 ) (*Model, error) {
-	cfg, err := ackgenconfig.New(configPath, defaultConfig)
-	if err != nil {
-		return nil, err
-	}
 	m := &Model{
-		SDKAPI: SDKAPI,
-		// TODO(jaypipes): Handle cases where service alias and service ID
-		// don't match (Step Functions)
-		serviceAlias: SDKAPI.ServiceID(),
+		SDKAPI:       SDKAPI,
+		serviceAlias: serviceAlias,
 		apiVersion:   apiVersion,
 		cfg:          &cfg,
 	}

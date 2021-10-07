@@ -13,7 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/go-logr/logr"
 
-	svcresource "github.com/aws-controllers-k8s/{{ .ServiceIDClean }}-controller/pkg/resource"
+	svcresource "github.com/aws-controllers-k8s/{{ .ServiceAlias }}-controller/pkg/resource"
 )
 
 // resourceManagerFactory produces resourceManager objects. It implements the

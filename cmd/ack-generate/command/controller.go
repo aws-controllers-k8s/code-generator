@@ -21,14 +21,11 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"sort"
 	"strings"
 
 	"github.com/spf13/cobra"
-	k8sversion "k8s.io/apimachinery/pkg/version"
 
 	ackgenerate "github.com/aws-controllers-k8s/code-generator/pkg/generate/ack"
-	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
 )
 
 var (
@@ -62,25 +59,7 @@ func generateController(cmd *cobra.Command, args []string) error {
 	if err := ensureSDKRepo(ctx, optCacheDir, optRefreshCache); err != nil {
 		return err
 	}
-	sdkHelper := ackmodel.NewSDKHelper(sdkDir)
-	sdkAPI, err := sdkHelper.API(svcAlias)
-	if err != nil {
-		newSvcAlias, err := FallBackFindServiceID(sdkDir, svcAlias)
-		if err != nil {
-			return err
-		}
-		sdkAPI, err = sdkHelper.API(newSvcAlias) // retry with serviceID
-		if err != nil {
-			return fmt.Errorf("service %s not found", svcAlias)
-		}
-	}
-	latestAPIVersion, err = getLatestAPIVersion()
-	if err != nil {
-		return err
-	}
-	m, err := ackmodel.New(
-		sdkAPI, latestAPIVersion, optGeneratorConfigPath, ackgenerate.DefaultConfig,
-	)
+	m, err := loadModelWithLatestAPIVersion(svcAlias)
 	if err != nil {
 		return err
 	}
@@ -109,26 +88,6 @@ func generateController(cmd *cobra.Command, args []string) error {
 		}
 	}
 	return nil
-}
-
-// getLatestAPIVersion looks in a target output directory to determine what the
-// latest Kubernetes API version for CRDs exposed by the generated service
-// controller.
-func getLatestAPIVersion() (string, error) {
-	apisPath := filepath.Join(optOutputPath, "apis")
-	versions := []string{}
-	subdirs, err := ioutil.ReadDir(apisPath)
-	if err != nil {
-		return "", err
-	}
-
-	for _, subdir := range subdirs {
-		versions = append(versions, subdir.Name())
-	}
-	sort.Slice(versions, func(i, j int) bool {
-		return k8sversion.CompareKubeAwareVersionStrings(versions[i], versions[j]) < 0
-	})
-	return versions[len(versions)-1], nil
 }
 
 // FallBackFindServiceID reads through aws-sdk-go/models/apis/*/*/api-2.json

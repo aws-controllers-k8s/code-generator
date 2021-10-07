@@ -8,7 +8,7 @@ metadata:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ack-{{ .ServiceIDClean }}-controller
+  name: ack-{{ .ServiceAlias }}-controller
   namespace: ack-system
   labels:
     control-plane: controller

@@ -39,6 +39,12 @@ type Config struct {
 	// SetManyOutput function fails with NotFound error.
 	// Default is "return nil, ackerr.NotFound"
 	SetManyOutputNotFoundErrReturn string `json:"set_many_output_notfound_err_return,omitempty"`
+	// ModelName lets you specify the path used to identify the AWS service API
+	// in the aws-sdk-go's models/apis/ directory. This field is optional and
+	// only needed for services such as the opensearchservice service where the
+	// model name is `opensearch` and the service package is called
+	// `opensearchservice`.
+	ModelName string `json:"model_name,omitempty"`
 }
 
 // IgnoreSpec represents instructions to the ACK code generator to

@@ -92,9 +92,9 @@ func (h *SDKHelper) WithAPIVersion(apiVersion string) {
 	h.apiVersion = apiVersion
 }
 
-// API returns the aws-sdk-go API model for a supplied service alias
-func (h *SDKHelper) API(serviceAlias string) (*SDKAPI, error) {
-	modelPath, _, err := h.ModelAndDocsPath(serviceAlias)
+// API returns the aws-sdk-go API model for a supplied service model name.
+func (h *SDKHelper) API(serviceModelName string) (*SDKAPI, error) {
+	modelPath, _, err := h.ModelAndDocsPath(serviceModelName)
 	if err != nil {
 		return nil, err
 	}
@@ -117,20 +117,20 @@ func (h *SDKHelper) API(serviceAlias string) (*SDKAPI, error) {
 	return nil, ErrServiceNotFound
 }
 
-// ModelAndDocsPath returns two string paths to the supplied service alias'
-// model and doc JSON files
+// ModelAndDocsPath returns two string paths to the supplied service's API and
+// doc JSON files
 func (h *SDKHelper) ModelAndDocsPath(
-	serviceAlias string,
+	serviceModelName string,
 ) (string, string, error) {
 	if h.apiVersion == "" {
-		apiVersion, err := h.FirstAPIVersion(serviceAlias)
+		apiVersion, err := h.FirstAPIVersion(serviceModelName)
 		if err != nil {
 			return "", "", err
 		}
 		h.apiVersion = apiVersion
 	}
 	versionPath := filepath.Join(
-		h.basePath, "models", "apis", serviceAlias, h.apiVersion,
+		h.basePath, "models", "apis", serviceModelName, h.apiVersion,
 	)
 	modelPath := filepath.Join(versionPath, "api-2.json")
 	docsPath := filepath.Join(versionPath, "docs-2.json")
@@ -246,8 +246,8 @@ func (a *SDKAPI) GetOutputShapeRef(
 }
 
 // getMemberByPath returns a ShapeRef given a root Shape and a dot-notation
-// object search path. Given the explicit type check for list type members 
-// both ".." and "." notations work currently. 
+// object search path. Given the explicit type check for list type members
+// both ".." and "." notations work currently.
 // TODO: Add support for other types such as map.
 func getMemberByPath(
 	shape *awssdkmodel.Shape,
@@ -373,17 +373,6 @@ func (a *SDKAPI) GetServiceFullName() string {
 		return ""
 	}
 	return a.API.Metadata.ServiceFullName
-}
-
-// APIGroup returns the normalized Kubernetes APIGroup for the AWS service API,
-// e.g. "sns.services.k8s.aws"
-func (a *SDKAPI) APIGroup() string {
-	serviceID := a.ServiceIDClean()
-	suffix := "services.k8s.aws"
-	if a.apiGroupSuffix != "" {
-		suffix = a.apiGroupSuffix
-	}
-	return fmt.Sprintf("%s.%s", serviceID, suffix)
 }
 
 // SDKAPIInterfaceTypeName returns the name of the aws-sdk-go primary API

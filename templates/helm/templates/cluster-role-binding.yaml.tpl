@@ -14,7 +14,7 @@ roleRef:
   kind: Role
 {{ "{{ end }}" }}
   apiGroup: rbac.authorization.k8s.io
-  name: ack-{{ .ServiceIDClean }}-controller
+  name: ack-{{ .ServiceAlias }}-controller
 subjects:
 - kind: ServiceAccount
   name: {{ "{{ include \"service-account.name\" . }}" }}

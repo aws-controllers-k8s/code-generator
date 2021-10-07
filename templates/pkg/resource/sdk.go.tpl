@@ -12,11 +12,11 @@ import (
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	"github.com/aws/aws-sdk-go/aws"
-	svcsdk "github.com/aws/aws-sdk-go/service/{{ .ServiceIDClean }}"
+	svcsdk "github.com/aws/aws-sdk-go/service/{{ .ServiceAlias }}"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	svcapitypes "github.com/aws-controllers-k8s/{{.ServiceIDClean }}-controller/apis/{{ .APIVersion }}"
+	svcapitypes "github.com/aws-controllers-k8s/{{.ServiceAlias }}-controller/apis/{{ .APIVersion }}"
 )
 
 // Hack to avoid import errors during build...
