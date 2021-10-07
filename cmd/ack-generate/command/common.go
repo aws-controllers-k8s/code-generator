@@ -26,6 +26,9 @@ import (
 
 	"golang.org/x/mod/modfile"
 
+	ackgenerate "github.com/aws-controllers-k8s/code-generator/pkg/generate/ack"
+	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
+	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
 )
 
@@ -206,4 +209,42 @@ func getSDKVersionFromGoMod(goModPath string) (string, error) {
 		}
 	}
 	return "", fmt.Errorf("couldn't find %s in the go.mod require block", sdkModule)
+}
+
+// loadModel finds the AWS SDK for a given service alias and creates a new model
+// with the latest API version.
+func loadModel(svcAlias string) (*ackmodel.Model, error) {
+	cfg, err := ackgenconfig.New(optGeneratorConfigPath, ackgenerate.DefaultConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	modelName := strings.ToLower(cfg.ModelName)
+	if modelName == "" {
+		modelName = svcAlias
+	}
+
+	sdkHelper := ackmodel.NewSDKHelper(sdkDir)
+	sdkAPI, err := sdkHelper.API(modelName)
+	if err != nil {
+		newSvcAlias, err := FallBackFindServiceID(sdkDir, svcAlias)
+		if err != nil {
+			return nil, err
+		}
+		sdkAPI, err = sdkHelper.API(newSvcAlias) // retry with serviceID
+		if err != nil {
+			return nil, fmt.Errorf("service %s not found", svcAlias)
+		}
+	}
+	latestAPIVersion, err = getLatestAPIVersion()
+	if err != nil {
+		return nil, err
+	}
+	m, err := ackmodel.New(
+		sdkAPI, latestAPIVersion, cfg,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
 }

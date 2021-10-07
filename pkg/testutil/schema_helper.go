@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	ackgenerate "github.com/aws-controllers-k8s/code-generator/pkg/generate/ack"
+	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
 )
@@ -82,7 +83,11 @@ func NewModelForServiceWithOptions(t *testing.T, serviceAlias string, options *T
 	if _, err := os.Stat(generatorConfigPath); os.IsNotExist(err) {
 		generatorConfigPath = ""
 	}
-	m, err := ackmodel.New(sdkAPI, options.APIVersion, generatorConfigPath, ackgenerate.DefaultConfig)
+	cfg, err := ackgenconfig.New(generatorConfigPath, ackgenerate.DefaultConfig)
+	if err != nil {
+		t.Fatal(err)
+	}
+	m, err := ackmodel.New(sdkAPI, options.APIVersion, cfg)
 	if err != nil {
 		t.Fatal(err)
 	}

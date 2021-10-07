@@ -94,6 +94,11 @@ func NewAPIVersionManager(
 			return nil, err
 		}
 
+		cfg, err := ackgenconfig.New(apiInfo.GeneratorConfigPath, defaultConfig)
+		if err != nil {
+			return nil, err
+		}
+
 		SDKAPI, err := SDKAPIHelper.API(serviceAlias)
 		if err != nil {
 			return nil, err
@@ -102,8 +107,7 @@ func NewAPIVersionManager(
 		i, err := ackmodel.New(
 			SDKAPI,
 			version.APIVersion,
-			apiInfo.GeneratorConfigPath,
-			defaultConfig,
+			cfg,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("cannot create model for API version %s: %v", version.APIVersion, err)

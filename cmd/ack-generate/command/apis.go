@@ -24,7 +24,6 @@ import (
 
 	ackgenerate "github.com/aws-controllers-k8s/code-generator/pkg/generate/ack"
 	ackmetadata "github.com/aws-controllers-k8s/code-generator/pkg/metadata"
-	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
 )
 
@@ -97,25 +96,11 @@ func generateAPIs(cmd *cobra.Command, args []string) error {
 	if err := ensureSDKRepo(ctx, optCacheDir, optRefreshCache); err != nil {
 		return err
 	}
-	sdkHelper := ackmodel.NewSDKHelper(sdkDir)
-	sdkAPI, err := sdkHelper.API(svcAlias)
-	if err != nil {
-		newSvcAlias, err := FallBackFindServiceID(sdkDir, svcAlias)
-		if err != nil {
-			return err
-		}
-		sdkAPI, err = sdkHelper.API(newSvcAlias) // retry with serviceID
-		if err != nil {
-			return fmt.Errorf("service %s not found", svcAlias)
-		}
-	}
-	model, err := ackmodel.New(
-		sdkAPI, optGenVersion, optGeneratorConfigPath, ackgenerate.DefaultConfig,
-	)
+	m, err := loadModel(svcAlias)
 	if err != nil {
 		return err
 	}
-	ts, err := ackgenerate.APIs(model, optTemplateDirs)
+	ts, err := ackgenerate.APIs(m, optTemplateDirs)
 	if err != nil {
 		return err
 	}

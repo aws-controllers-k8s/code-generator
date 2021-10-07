@@ -93,8 +93,8 @@ func (h *SDKHelper) WithAPIVersion(apiVersion string) {
 }
 
 // API returns the aws-sdk-go API model for a supplied service alias
-func (h *SDKHelper) API(serviceAlias string) (*SDKAPI, error) {
-	modelPath, _, err := h.ModelAndDocsPath(serviceAlias)
+func (h *SDKHelper) API(serviceModelName string) (*SDKAPI, error) {
+	modelPath, _, err := h.ModelAndDocsPath(serviceModelName)
 	if err != nil {
 		return nil, err
 	}
@@ -120,17 +120,17 @@ func (h *SDKHelper) API(serviceAlias string) (*SDKAPI, error) {
 // ModelAndDocsPath returns two string paths to the supplied service alias'
 // model and doc JSON files
 func (h *SDKHelper) ModelAndDocsPath(
-	serviceAlias string,
+	serviceModelName string,
 ) (string, string, error) {
 	if h.apiVersion == "" {
-		apiVersion, err := h.FirstAPIVersion(serviceAlias)
+		apiVersion, err := h.FirstAPIVersion(serviceModelName)
 		if err != nil {
 			return "", "", err
 		}
 		h.apiVersion = apiVersion
 	}
 	versionPath := filepath.Join(
-		h.basePath, "models", "apis", serviceAlias, h.apiVersion,
+		h.basePath, "models", "apis", serviceModelName, h.apiVersion,
 	)
 	modelPath := filepath.Join(versionPath, "api-2.json")
 	docsPath := filepath.Join(versionPath, "docs-2.json")
@@ -246,8 +246,8 @@ func (a *SDKAPI) GetOutputShapeRef(
 }
 
 // getMemberByPath returns a ShapeRef given a root Shape and a dot-notation
-// object search path. Given the explicit type check for list type members 
-// both ".." and "." notations work currently. 
+// object search path. Given the explicit type check for list type members
+// both ".." and "." notations work currently.
 // TODO: Add support for other types such as map.
 func getMemberByPath(
 	shape *awssdkmodel.Shape,

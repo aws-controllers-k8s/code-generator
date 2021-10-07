@@ -28,7 +28,6 @@ import (
 	k8sversion "k8s.io/apimachinery/pkg/version"
 
 	ackgenerate "github.com/aws-controllers-k8s/code-generator/pkg/generate/ack"
-	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
 )
 
 var (
@@ -62,25 +61,7 @@ func generateController(cmd *cobra.Command, args []string) error {
 	if err := ensureSDKRepo(ctx, optCacheDir, optRefreshCache); err != nil {
 		return err
 	}
-	sdkHelper := ackmodel.NewSDKHelper(sdkDir)
-	sdkAPI, err := sdkHelper.API(svcAlias)
-	if err != nil {
-		newSvcAlias, err := FallBackFindServiceID(sdkDir, svcAlias)
-		if err != nil {
-			return err
-		}
-		sdkAPI, err = sdkHelper.API(newSvcAlias) // retry with serviceID
-		if err != nil {
-			return fmt.Errorf("service %s not found", svcAlias)
-		}
-	}
-	latestAPIVersion, err = getLatestAPIVersion()
-	if err != nil {
-		return err
-	}
-	m, err := ackmodel.New(
-		sdkAPI, latestAPIVersion, optGeneratorConfigPath, ackgenerate.DefaultConfig,
-	)
+	m, err := loadModel(svcAlias)
 	if err != nil {
 		return err
 	}

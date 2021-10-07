@@ -53,6 +53,7 @@ func (m *Model) MetaVars() templateset.MetaVars {
 		ServiceAlias:            m.serviceAlias,
 		ServiceID:               m.SDKAPI.ServiceID(),
 		ServiceIDClean:          m.SDKAPI.ServiceIDClean(),
+		ServiceModelName:        m.cfg.ModelName,
 		APIGroup:                m.SDKAPI.APIGroup(),
 		APIVersion:              m.apiVersion,
 		SDKAPIInterfaceTypeName: m.SDKAPI.SDKAPIInterfaceTypeName(),
@@ -697,13 +698,8 @@ func (m *Model) GetConfig() *ackgenconfig.Config {
 func New(
 	SDKAPI *SDKAPI,
 	apiVersion string,
-	configPath string,
-	defaultConfig ackgenconfig.Config,
+	cfg ackgenconfig.Config,
 ) (*Model, error) {
-	cfg, err := ackgenconfig.New(configPath, defaultConfig)
-	if err != nil {
-		return nil, err
-	}
 	m := &Model{
 		SDKAPI: SDKAPI,
 		// TODO(jaypipes): Handle cases where service alias and service ID

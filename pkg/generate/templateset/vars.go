@@ -27,6 +27,11 @@ type MetaVars struct {
 	// ServiceIDClean is the ServiceID lowercased and stripped of any
 	// non-alphanumeric characters
 	ServiceIDClean string
+	// ServiceModelName contains the exact string used to identify the AWS
+	// service API in the aws-sdk-go's models/apis/ directory. Note that some
+	// APIs this name does not match the ServiceID. e.g. The AWS Step Functions
+	// API has a ServiceID of "SFN" and a service model name of "states"...
+	ServiceModelName string
 	// APIVersion contains the version of the Kubernetes API resources, e.g.
 	// "v1alpha1"
 	APIVersion string
