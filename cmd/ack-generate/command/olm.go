@@ -86,13 +86,10 @@ func generateOLMAssets(cmd *cobra.Command, args []string) error {
 	if err := ensureSDKRepo(ctx, optCacheDir, optRefreshCache); err != nil {
 		return err
 	}
-	if optModelName == "" {
-		optModelName = svcAlias
-	}
 	sdkHelper := ackmodel.NewSDKHelper(sdkDir)
-	sdkAPI, err := sdkHelper.API(optModelName)
+	sdkAPI, err := sdkHelper.API(svcAlias)
 	if err != nil {
-		newSvcAlias, err := FallBackFindServiceID(sdkDir, optModelName)
+		newSvcAlias, err := FallBackFindServiceID(sdkDir, svcAlias)
 		if err != nil {
 			return err
 		}
@@ -107,7 +104,7 @@ func generateOLMAssets(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	m, err := ackmodel.New(
-		sdkAPI, svcAlias, latestAPIVersion, optGeneratorConfigPath, ackgenerate.DefaultConfig,
+		sdkAPI, latestAPIVersion, optGeneratorConfigPath, ackgenerate.DefaultConfig,
 	)
 	if err != nil {
 		return err
