@@ -46,6 +46,13 @@ var (
 	)
 )
 
+const (
+	// ConflictingNameSuffix is appended to type names when they overlap with
+	// well-known common struct names for things like a CRD itself, or its
+	// Spec/Status subfield struct type name.
+	ConflictingNameSuffix = "_SDK"
+)
+
 // SDKHelper is a helper struct that helps work with the aws-sdk-go models and
 // API model loader
 type SDKHelper struct {

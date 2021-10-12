@@ -11,7 +11,7 @@
 // express or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
-package sdk
+package model
 
 import (
 	"strings"
@@ -20,20 +20,14 @@ import (
 
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/names"
-)
-
-const (
-	// ConflictingNameSuffix is appended to type names when they overlap with
-	// well-known common struct names for things like a CRD itself, or its
-	// Spec/Status subfield struct type name.
-	ConflictingNameSuffix = "_SDK"
+	"github.com/aws-controllers-k8s/code-generator/pkg/sdk"
 )
 
 // CleanGoType returns a tuple of three strings representing the normalized Go
 // types in "element", "normal" and "with package name" format for a particular
 // Shape.
 func CleanGoType(
-	api *SDKAPI,
+	api *sdk.SDKAPI,
 	cfg *ackgenconfig.Config,
 	shape *awssdkmodel.Shape,
 	fieldCfg *ackgenconfig.FieldConfig,

@@ -1,9 +1,9 @@
-package sdk_test
+package model_test
 
 import (
 	"testing"
 
-	"github.com/aws-controllers-k8s/code-generator/pkg/sdk"
+	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -68,7 +68,7 @@ func TestReplacePkgName(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		result := sdk.ReplacePkgName(
+		result := model.ReplacePkgName(
 			tc.subject,
 			tc.pkgName,
 			tc.replacePkgAlias,

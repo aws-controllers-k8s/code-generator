@@ -18,7 +18,6 @@ import (
 
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/names"
-	acksdk "github.com/aws-controllers-k8s/code-generator/pkg/sdk"
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
 	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
 )
@@ -97,7 +96,7 @@ func NewField(
 	}
 
 	if shape != nil {
-		gte, gt, gtwp = acksdk.CleanGoType(crd.sdkAPI, crd.cfg, shape, cfg)
+		gte, gt, gtwp = CleanGoType(crd.sdkAPI, crd.cfg, shape, cfg)
 	} else {
 		gte = "string"
 		gt = "*string"
