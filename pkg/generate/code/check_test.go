@@ -21,7 +21,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate/code"
-	"github.com/aws-controllers-k8s/code-generator/pkg/model"
+	"github.com/aws-controllers-k8s/code-generator/pkg/sdk"
 	"github.com/aws-controllers-k8s/code-generator/pkg/testutil"
 )
 
@@ -47,7 +47,7 @@ func TestCheckRequiredFields_Attributes_ARNField(t *testing.T) {
 		strings.TrimSpace(expReqFieldsInShape),
 		strings.TrimSpace(
 			code.CheckRequiredFieldsMissingFromShape(
-				crd, model.OpTypeGetAttributes, "ko", 1,
+				crd, sdk.OpTypeGetAttributes, "ko", 1,
 			),
 		),
 	)
@@ -66,7 +66,7 @@ func TestCheckRequiredFields_Attributes_StatusField(t *testing.T) {
 	return r.ko.Status.QueueURL == nil
 `
 	gotCode := code.CheckRequiredFieldsMissingFromShape(
-		crd, model.OpTypeGetAttributes, "r.ko", 1,
+		crd, sdk.OpTypeGetAttributes, "r.ko", 1,
 	)
 	assert.Equal(
 		strings.TrimSpace(expRequiredFieldsCode),
@@ -87,7 +87,7 @@ func TestCheckRequiredFields_Attributes_StatusAndSpecField(t *testing.T) {
 	return r.ko.Spec.APIID == nil || r.ko.Status.RouteID == nil
 `
 	gotCode := code.CheckRequiredFieldsMissingFromShape(
-		crd, model.OpTypeGet, "r.ko", 1,
+		crd, sdk.OpTypeGet, "r.ko", 1,
 	)
 	assert.Equal(
 		strings.TrimSpace(expRequiredFieldsCode),
@@ -108,7 +108,7 @@ func TestCheckRequiredFields_RenamedSpecField(t *testing.T) {
 	return r.ko.Spec.ClusterName == nil || r.ko.Spec.Name == nil
 `
 	gotCode := code.CheckRequiredFieldsMissingFromShape(
-		crd, model.OpTypeGet, "r.ko", 1,
+		crd, sdk.OpTypeGet, "r.ko", 1,
 	)
 	assert.Equal(
 		strings.TrimSpace(expRequiredFieldsCode),
@@ -129,7 +129,7 @@ func TestCheckRequiredFields_StatusField_ReadMany(t *testing.T) {
 	return r.ko.Status.VPCID == nil
 `
 	gotCode := code.CheckRequiredFieldsMissingFromShape(
-		crd, model.OpTypeList, "r.ko", 1,
+		crd, sdk.OpTypeList, "r.ko", 1,
 	)
 	assert.Equal(
 		strings.TrimSpace(expRequiredFieldsCode),

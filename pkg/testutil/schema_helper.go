@@ -21,8 +21,8 @@ import (
 
 	ackgenerate "github.com/aws-controllers-k8s/code-generator/pkg/generate/ack"
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
-	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
+	acksdk "github.com/aws-controllers-k8s/code-generator/pkg/sdk"
 )
 
 // TestingModelOptions contains optional variables that are passed to
@@ -73,7 +73,7 @@ func NewModelForServiceWithOptions(t *testing.T, servicePackageName string, opti
 		}
 	}
 	options.SetDefaults()
-	sdkHelper := model.NewSDKHelper(path)
+	sdkHelper := acksdk.NewSDKHelper(path)
 	sdkHelper.WithAPIVersion(options.ServiceAPIVersion)
 	sdkAPI, err := sdkHelper.API(servicePackageName)
 	if err != nil {

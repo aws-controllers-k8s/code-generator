@@ -23,6 +23,7 @@ import (
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 	"github.com/aws-controllers-k8s/code-generator/pkg/names"
+	"github.com/aws-controllers-k8s/code-generator/pkg/sdk"
 )
 
 // SetSDK returns the Go code that sets an SDK input shape's member fields from
@@ -76,7 +77,7 @@ func SetSDK(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,
 	// The type of operation to look for the Input shape
-	opType model.OpType,
+	opType sdk.OpType,
 	// String representing the name of the variable that we will grab the Input
 	// shape from. This will likely be "r.ko" since in the templates that call
 	// this method, the "source variable" is the CRD struct which is used to
@@ -92,17 +93,17 @@ func SetSDK(
 ) string {
 	var op *awssdkmodel.Operation
 	switch opType {
-	case model.OpTypeCreate:
+	case sdk.OpTypeCreate:
 		op = r.Ops.Create
-	case model.OpTypeGet:
+	case sdk.OpTypeGet:
 		op = r.Ops.ReadOne
-	case model.OpTypeList:
+	case sdk.OpTypeList:
 		op = r.Ops.ReadMany
 		return setSDKReadMany(cfg, r, op,
 			sourceVarName, targetVarName, indentLevel)
-	case model.OpTypeUpdate:
+	case sdk.OpTypeUpdate:
 		op = r.Ops.Update
-	case model.OpTypeDelete:
+	case sdk.OpTypeDelete:
 		op = r.Ops.Delete
 	default:
 		return ""
@@ -1246,7 +1247,7 @@ func varEmptyConstructorSDKType(
 	indent := strings.Repeat("\t", indentLevel)
 	goType := shape.GoTypeWithPkgName()
 	keepPointer := (shape.Type == "list" || shape.Type == "map")
-	goType = model.ReplacePkgName(goType, r.SDKAPIPackageName(), "svcsdk", keepPointer)
+	goType = sdk.ReplacePkgName(goType, r.SDKAPIPackageName(), "svcsdk", keepPointer)
 	switch shape.Type {
 	case "structure":
 		// f0 := &svcsdk.BookData{}
@@ -1274,7 +1275,7 @@ func varEmptyConstructorK8sType(
 	indent := strings.Repeat("\t", indentLevel)
 	goType := shape.GoTypeWithPkgName()
 	keepPointer := (shape.Type == "list" || shape.Type == "map")
-	goType = model.ReplacePkgName(goType, r.SDKAPIPackageName(), "svcapitypes", keepPointer)
+	goType = sdk.ReplacePkgName(goType, r.SDKAPIPackageName(), "svcapitypes", keepPointer)
 	goTypeNoPkg := goType
 	goPkg := ""
 	hadPkg := false

@@ -20,7 +20,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate/code"
-	"github.com/aws-controllers-k8s/code-generator/pkg/model"
+	"github.com/aws-controllers-k8s/code-generator/pkg/sdk"
 	"github.com/aws-controllers-k8s/code-generator/pkg/testutil"
 )
 
@@ -122,7 +122,7 @@ func TestSetResource_APIGWv2_Route_Create(t *testing.T) {
 `
 	assert.Equal(
 		expected,
-		code.SetResource(crd.Config(), crd, model.OpTypeCreate, "resp", "ko", 1),
+		code.SetResource(crd.Config(), crd, sdk.OpTypeCreate, "resp", "ko", 1),
 	)
 }
 
@@ -224,7 +224,7 @@ func TestSetResource_APIGWv2_Route_ReadOne(t *testing.T) {
 `
 	assert.Equal(
 		expected,
-		code.SetResource(crd.Config(), crd, model.OpTypeGet, "resp", "ko", 1),
+		code.SetResource(crd.Config(), crd, sdk.OpTypeGet, "resp", "ko", 1),
 	)
 }
 
@@ -278,7 +278,7 @@ func TestSetResource_DynamoDB_Backup_ReadOne(t *testing.T) {
 `
 	assert.Equal(
 		expected,
-		code.SetResource(crd.Config(), crd, model.OpTypeGet, "resp", "ko", 1),
+		code.SetResource(crd.Config(), crd, sdk.OpTypeGet, "resp", "ko", 1),
 	)
 }
 
@@ -304,7 +304,7 @@ func TestSetResource_CodeDeploy_Deployment_Create(t *testing.T) {
 `
 	assert.Equal(
 		expected,
-		code.SetResource(crd.Config(), crd, model.OpTypeCreate, "resp", "ko", 1),
+		code.SetResource(crd.Config(), crd, sdk.OpTypeCreate, "resp", "ko", 1),
 	)
 }
 
@@ -652,7 +652,7 @@ func TestSetResource_DynamoDB_Table_ReadOne(t *testing.T) {
 `
 	assert.Equal(
 		expected,
-		code.SetResource(crd.Config(), crd, model.OpTypeGet, "resp", "ko", 1),
+		code.SetResource(crd.Config(), crd, sdk.OpTypeGet, "resp", "ko", 1),
 	)
 }
 
@@ -718,7 +718,7 @@ func TestSetResource_EC2_LaunchTemplate_Create(t *testing.T) {
 `
 	assert.Equal(
 		expected,
-		code.SetResource(crd.Config(), crd, model.OpTypeCreate, "resp", "ko", 1),
+		code.SetResource(crd.Config(), crd, sdk.OpTypeCreate, "resp", "ko", 1),
 	)
 }
 
@@ -779,7 +779,7 @@ func TestSetResource_ECR_Repository_Create(t *testing.T) {
 `
 	assert.Equal(
 		expected,
-		code.SetResource(crd.Config(), crd, model.OpTypeCreate, "resp", "ko", 1),
+		code.SetResource(crd.Config(), crd, sdk.OpTypeCreate, "resp", "ko", 1),
 	)
 }
 
@@ -855,7 +855,7 @@ func TestSetResource_ECR_Repository_ReadMany(t *testing.T) {
 `
 	assert.Equal(
 		expected,
-		code.SetResource(crd.Config(), crd, model.OpTypeList, "resp", "ko", 1),
+		code.SetResource(crd.Config(), crd, sdk.OpTypeList, "resp", "ko", 1),
 	)
 }
 
@@ -1203,7 +1203,7 @@ func TestSetResource_Elasticache_ReplicationGroup_Create(t *testing.T) {
 `
 	assert.Equal(
 		expected,
-		code.SetResource(crd.Config(), crd, model.OpTypeCreate, "resp", "ko", 1),
+		code.SetResource(crd.Config(), crd, sdk.OpTypeCreate, "resp", "ko", 1),
 	)
 }
 
@@ -1559,7 +1559,7 @@ func TestSetResource_Elasticache_ReplicationGroup_ReadMany(t *testing.T) {
 `
 	assert.Equal(
 		expected,
-		code.SetResource(crd.Config(), crd, model.OpTypeList, "resp", "ko", 1),
+		code.SetResource(crd.Config(), crd, sdk.OpTypeList, "resp", "ko", 1),
 	)
 }
 
@@ -2113,7 +2113,7 @@ func TestSetResource_RDS_DBInstance_Create(t *testing.T) {
 `
 	assert.Equal(
 		expected,
-		code.SetResource(crd.Config(), crd, model.OpTypeCreate, "resp", "ko", 1),
+		code.SetResource(crd.Config(), crd, sdk.OpTypeCreate, "resp", "ko", 1),
 	)
 }
 
@@ -2678,7 +2678,7 @@ func TestSetResource_RDS_DBInstance_ReadMany(t *testing.T) {
 `
 	assert.Equal(
 		expected,
-		code.SetResource(crd.Config(), crd, model.OpTypeList, "resp", "ko", 1),
+		code.SetResource(crd.Config(), crd, sdk.OpTypeList, "resp", "ko", 1),
 	)
 }
 
@@ -2700,7 +2700,7 @@ func TestSetResource_S3_Bucket_Create(t *testing.T) {
 `
 	assert.Equal(
 		expected,
-		code.SetResource(crd.Config(), crd, model.OpTypeCreate, "resp", "ko", 1),
+		code.SetResource(crd.Config(), crd, sdk.OpTypeCreate, "resp", "ko", 1),
 	)
 }
 
@@ -2735,7 +2735,7 @@ func TestSetResource_S3_Bucket_ReadMany(t *testing.T) {
 `
 	assert.Equal(
 		expected,
-		code.SetResource(crd.Config(), crd, model.OpTypeList, "resp", "ko", 1),
+		code.SetResource(crd.Config(), crd, sdk.OpTypeList, "resp", "ko", 1),
 	)
 }
 
@@ -2765,7 +2765,7 @@ func TestSetResource_SNS_Topic_Create(t *testing.T) {
 `
 	assert.Equal(
 		expected,
-		code.SetResource(crd.Config(), crd, model.OpTypeCreate, "resp", "ko", 1),
+		code.SetResource(crd.Config(), crd, sdk.OpTypeCreate, "resp", "ko", 1),
 	)
 }
 
@@ -2819,7 +2819,7 @@ func TestSetResource_SQS_Queue_Create(t *testing.T) {
 `
 	assert.Equal(
 		expected,
-		code.SetResource(crd.Config(), crd, model.OpTypeCreate, "resp", "ko", 1),
+		code.SetResource(crd.Config(), crd, sdk.OpTypeCreate, "resp", "ko", 1),
 	)
 }
 
@@ -2934,7 +2934,7 @@ func TestSetResource_RDS_DBSubnetGroup_ReadMany(t *testing.T) {
 `
 	assert.Equal(
 		expected,
-		code.SetResource(crd.Config(), crd, model.OpTypeList, "resp", "ko", 1),
+		code.SetResource(crd.Config(), crd, sdk.OpTypeList, "resp", "ko", 1),
 	)
 }
 

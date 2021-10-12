@@ -11,7 +11,7 @@
 // express or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
-package model
+package sdk
 
 import (
 	"errors"
@@ -112,7 +112,7 @@ func (h *SDKHelper) API(serviceModelName string) (*SDKAPI, error) {
 		// Calling API.ServicePackageDoc() ends up resetting the API.imports
 		// unexported map variable...
 		_ = api.ServicePackageDoc()
-		return &SDKAPI{api, nil, nil, h.APIGroupSuffix}, nil
+		return &SDKAPI{api, h.APIGroupSuffix, nil, nil}, nil
 	}
 	return nil, ErrServiceNotFound
 }
@@ -176,7 +176,8 @@ func (h *SDKHelper) GetAPIVersions(serviceModelName string) ([]string, error) {
 
 // SDKAPI contains an API model for a single AWS service API
 type SDKAPI struct {
-	API *awssdkmodel.API
+	API            *awssdkmodel.API
+	APIGroupSuffix string
 	// A map of operation type and resource name to
 	// aws-sdk-go/private/model/api.Operation structs
 	opMap *OperationMap
@@ -184,7 +185,6 @@ type SDKAPI struct {
 	// renamed type name (due to conflicting names)
 	typeRenames map[string]string
 	// Default is "services.k8s.aws"
-	apiGroupSuffix string
 }
 
 // GetPayloads returns a slice of strings of Shape names representing input and

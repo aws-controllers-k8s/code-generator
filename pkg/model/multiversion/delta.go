@@ -20,6 +20,7 @@ import (
 	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
 
 	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
+	acksdk "github.com/aws-controllers-k8s/code-generator/pkg/sdk"
 )
 
 // FieldChangeType represents the type of field modification.
@@ -69,12 +70,12 @@ type CRDDelta struct {
 // spec and status fields deltas. src is the CRD of the spoke (source) version
 // and dst is the CRD of the hub (destination) version.
 func ComputeCRDFieldDeltas(src, dst *ackmodel.CRD) (*CRDDelta, error) {
-	dstRenames, err := dst.GetAllRenames(ackmodel.OpTypeCreate)
+	dstRenames, err := dst.GetAllRenames(acksdk.OpTypeCreate)
 	if err != nil {
 		return nil, fmt.Errorf("cannot get resource field renames: %s", err)
 	}
 
-	srcRenames, err := src.GetAllRenames(ackmodel.OpTypeCreate)
+	srcRenames, err := src.GetAllRenames(acksdk.OpTypeCreate)
 	if err != nil {
 		return nil, fmt.Errorf("cannot get resource field renames: %s", err)
 	}

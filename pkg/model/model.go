@@ -22,6 +22,7 @@ import (
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate/templateset"
 	"github.com/aws-controllers-k8s/code-generator/pkg/names"
+	"github.com/aws-controllers-k8s/code-generator/pkg/sdk"
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
 	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
 )
@@ -34,7 +35,7 @@ var (
 // Model contains the ACK model for the generator to process and apply
 // templates against.
 type Model struct {
-	SDKAPI             *SDKAPI
+	SDKAPI             *sdk.SDKAPI
 	servicePackageName string
 	apiVersion         string
 	crds               []*CRD
@@ -82,13 +83,13 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 
 	opMap := m.SDKAPI.GetOperationMap(m.cfg)
 
-	createOps := (*opMap)[OpTypeCreate]
-	readOneOps := (*opMap)[OpTypeGet]
-	readManyOps := (*opMap)[OpTypeList]
-	updateOps := (*opMap)[OpTypeUpdate]
-	deleteOps := (*opMap)[OpTypeDelete]
-	getAttributesOps := (*opMap)[OpTypeGetAttributes]
-	setAttributesOps := (*opMap)[OpTypeSetAttributes]
+	createOps := (*opMap)[sdk.OpTypeCreate]
+	readOneOps := (*opMap)[sdk.OpTypeGet]
+	readManyOps := (*opMap)[sdk.OpTypeList]
+	updateOps := (*opMap)[sdk.OpTypeUpdate]
+	deleteOps := (*opMap)[sdk.OpTypeDelete]
+	getAttributesOps := (*opMap)[sdk.OpTypeGetAttributes]
+	setAttributesOps := (*opMap)[sdk.OpTypeSetAttributes]
 
 	for crdName, createOp := range createOps {
 		if m.cfg.IsIgnoredResource(crdName) {
@@ -309,7 +310,7 @@ func (m *Model) GetTypeDefs() ([]*TypeDef, error) {
 		}
 		tdefNames := names.New(shapeName)
 		if m.SDKAPI.HasConflictingTypeName(shapeName, m.cfg) {
-			tdefNames.Camel += ConflictingNameSuffix
+			tdefNames.Camel += sdk.ConflictingNameSuffix
 			trenames[shapeName] = tdefNames.Camel
 		}
 
@@ -365,7 +366,7 @@ func (m *Model) getShapeCleanGoType(shape *awssdkmodel.Shape) string {
 		goType := shape.GoType()
 		typeNames := names.New(goType)
 		if m.SDKAPI.HasConflictingTypeName(goType, m.cfg) {
-			typeNames.Camel += ConflictingNameSuffix
+			typeNames.Camel += sdk.ConflictingNameSuffix
 		}
 		return "*" + typeNames.Camel
 	default:
@@ -641,7 +642,7 @@ func (m *Model) GetEnumDefs() ([]*EnumDef, error) {
 		// Handle name conflicts with top-level CRD.Spec or CRD.Status
 		// types
 		if m.SDKAPI.HasConflictingTypeName(shapeName, m.cfg) {
-			enumNames.Camel += ConflictingNameSuffix
+			enumNames.Camel += sdk.ConflictingNameSuffix
 		}
 		edef, err := NewEnumDef(enumNames, shape.Enum)
 		if err != nil {
@@ -695,8 +696,8 @@ func (m *Model) GetConfig() *ackgenconfig.Config {
 // e.g. "sns.services.k8s.aws"
 func (m *Model) APIGroup() string {
 	suffix := "services.k8s.aws"
-	if m.SDKAPI.apiGroupSuffix != "" {
-		suffix = m.SDKAPI.apiGroupSuffix
+	if m.SDKAPI.APIGroupSuffix != "" {
+		suffix = m.SDKAPI.APIGroupSuffix
 	}
 	return fmt.Sprintf("%s.%s", m.servicePackageName, suffix)
 }
@@ -705,7 +706,7 @@ func (m *Model) APIGroup() string {
 // Optionally, pass a file path to a generator config file that can be used to
 // instruct the code generator how to handle the API properly
 func New(
-	SDKAPI *SDKAPI,
+	SDKAPI *sdk.SDKAPI,
 	servicePackageName string,
 	apiVersion string,
 	cfg ackgenconfig.Config,

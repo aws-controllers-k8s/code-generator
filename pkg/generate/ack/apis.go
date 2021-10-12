@@ -20,6 +20,7 @@ import (
 
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate/templateset"
 	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
+	acksdk "github.com/aws-controllers-k8s/code-generator/pkg/sdk"
 	"github.com/iancoleman/strcase"
 )
 
@@ -106,6 +107,6 @@ type templateAPIVars struct {
 // code for a single top-level resource's API definition
 type templateCRDVars struct {
 	templateset.MetaVars
-	SDKAPI *ackmodel.SDKAPI
+	SDKAPI *acksdk.SDKAPI
 	CRD    *ackmodel.CRD
 }

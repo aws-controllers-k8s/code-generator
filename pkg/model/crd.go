@@ -24,6 +24,7 @@ import (
 
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/names"
+	"github.com/aws-controllers-k8s/code-generator/pkg/sdk"
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
 )
 
@@ -61,7 +62,7 @@ func (ops Ops) IterOps() []*awssdkmodel.Operation {
 
 // CRD describes a single top-level resource in an AWS service API
 type CRD struct {
-	sdkAPI *SDKAPI
+	sdkAPI *sdk.SDKAPI
 	cfg    *ackgenconfig.Config
 	Names  names.Names
 	Kind   string
@@ -472,7 +473,7 @@ func (r *CRD) GetOutputShape(
 		wrapperOutputShape, err := r.getWrapperOutputShape(outputShape,
 			*wrapperFieldPath)
 		if err != nil {
-			msg := fmt.Sprintf("Unable to unwrap the output shape: %s " +
+			msg := fmt.Sprintf("Unable to unwrap the output shape: %s "+
 				"with field path override: %s. error: %v",
 				outputShape.OrigShapeName, *wrapperFieldPath, err)
 			panic(msg)
@@ -506,7 +507,7 @@ func (r *CRD) getWrapperOutputShape(
 	// wrapper field must be structure; otherwise cannot unpack
 	if memberRef.Shape.Type != "structure" {
 		return nil, fmt.Errorf(
-			"output wrapper overrides can only contain fields of type" +
+			"output wrapper overrides can only contain fields of type"+
 				" 'structure'. Found wrapper override field %s of type '%s'",
 			wrapperField, memberRef.Shape.Type)
 	}
@@ -656,7 +657,7 @@ func (r *CRD) ListOpMatchFieldNames() []string {
 
 // GetAllRenames returns all the field renames observed in the generator config
 // for a given OpType.
-func (r *CRD) GetAllRenames(op OpType) (map[string]string, error) {
+func (r *CRD) GetAllRenames(op sdk.OpType) (map[string]string, error) {
 	renames := make(map[string]string)
 	resourceConfig, ok := r.cfg.Resources[r.Names.Original]
 	if !ok {
@@ -749,7 +750,7 @@ func (r *CRD) GetSanitizedMemberPath(
 // NewCRD returns a pointer to a new `ackmodel.CRD` struct that describes a
 // single top-level resource in an AWS service API
 func NewCRD(
-	sdkAPI *SDKAPI,
+	sdkAPI *sdk.SDKAPI,
 	cfg *ackgenconfig.Config,
 	crdNames names.Names,
 	ops Ops,

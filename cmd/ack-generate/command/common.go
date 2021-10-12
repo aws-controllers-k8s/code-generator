@@ -30,6 +30,7 @@ import (
 	ackgenerate "github.com/aws-controllers-k8s/code-generator/pkg/generate/ack"
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
 	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
+	acksdk "github.com/aws-controllers-k8s/code-generator/pkg/sdk"
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
 	k8sversion "k8s.io/apimachinery/pkg/version"
 )
@@ -236,7 +237,7 @@ func loadModel(svcAlias string, apiVersion string) (*ackmodel.Model, error) {
 		modelName = svcAlias
 	}
 
-	sdkHelper := ackmodel.NewSDKHelper(sdkDir)
+	sdkHelper := acksdk.NewSDKHelper(sdkDir)
 	sdkAPI, err := sdkHelper.API(modelName)
 	if err != nil {
 		retryModelName, err := FallBackFindServiceID(sdkDir, svcAlias)

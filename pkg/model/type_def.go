@@ -19,13 +19,6 @@ import (
 	"github.com/aws-controllers-k8s/code-generator/pkg/names"
 )
 
-const (
-	// ConflictingNameSuffix is appended to type names when they overlap with
-	// well-known common struct names for things like a CRD itself, or its
-	// Spec/Status subfield struct type name.
-	ConflictingNameSuffix = "_SDK"
-)
-
 // TypeDef is a Go type definition for structs that are member fields of the
 // Spec or Status structs in Custom Resource Definitions (CRDs).
 type TypeDef struct {
