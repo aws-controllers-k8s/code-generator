@@ -23,6 +23,7 @@ import (
 
 	"gopkg.in/src-d/go-git.v4"
 
+	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
 
@@ -47,18 +48,20 @@ var (
 // Helper is a helper struct that helps work with the aws-sdk-go models and
 // API model loader
 type Helper struct {
-	gitRepository *git.Repository
-	basePath      string
-	loader        *awssdkmodel.Loader
-	// Default is set by `FirstAPIVersion`
-	apiVersion string
 	// Default is "services.k8s.aws"
 	APIGroupSuffix string
+	cfg            ackgenconfig.Config
+	gitRepository  *git.Repository
+	basePath       string
+	loader         *awssdkmodel.Loader
+	// Default is set by `FirstAPIVersion`
+	apiVersion string
 }
 
 // NewHelper returns a new SDKHelper object
-func NewHelper(basePath string) *Helper {
+func NewHelper(basePath string, cfg ackgenconfig.Config) *Helper {
 	return &Helper{
+		cfg:      cfg,
 		basePath: basePath,
 		loader: &awssdkmodel.Loader{
 			BaseImport:            basePath,
@@ -110,7 +113,11 @@ func (h *Helper) API(serviceModelName string) (*model.SDKAPI, error) {
 		// Calling API.ServicePackageDoc() ends up resetting the API.imports
 		// unexported map variable...
 		_ = api.ServicePackageDoc()
-		return model.NewSDKAPI(api, h.APIGroupSuffix), nil
+		sdkapi := model.NewSDKAPI(api, h.APIGroupSuffix)
+
+		h.InjectCustomShapes(sdkapi)
+
+		return sdkapi, nil
 	}
 	return nil, ErrServiceNotFound
 }

@@ -136,6 +136,18 @@ type PrintFieldConfig struct {
 	Index int `json:"index"`
 }
 
+// CustomField instructs the code generator to create a new field that does
+// not exist in the SDK.
+type CustomFieldConfig struct {
+	// ListOf provides the name of the SDK shape which will become the
+	// member of a custom slice field.
+	ListOf string `json:"list_of,omitempty"`
+	// MapOf provides the name of the SDK shape which will become the value
+	// shape for a custom map field. All maps will have `string` as their key
+	// type.
+	MapOf string `json:"map_of,omitempty"`
+}
+
 // LateInitializeConfig contains instructions for how to handle the
 // retrieval and setting of server-side defaulted fields.
 // NOTE: Currently the members of this have no effect on late initialization of fields.
@@ -193,6 +205,9 @@ type FieldConfig struct {
 	// From instructs the code generator that the value of the field should
 	// be retrieved from the specified operation and member path
 	From *SourceFieldConfig `json:"from,omitempty"`
+	// CustomField instructs the code generator to create a new field that does
+	// not exist in the SDK.
+	CustomField *CustomFieldConfig `json:"custom_field,omitempty"`
 	// Compare instructs the code generator how to produce code that compares
 	// the value of the field in two resources
 	Compare *CompareFieldConfig `json:"compare,omitempty"`

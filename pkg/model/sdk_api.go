@@ -34,6 +34,7 @@ const (
 type SDKAPI struct {
 	API            *awssdkmodel.API
 	APIGroupSuffix string
+	CustomShapes   []*CustomShape
 	// A map of operation type and resource name to
 	// aws-sdk-go/private/model/api.Operation structs
 	opMap *OperationMap
@@ -73,6 +74,26 @@ func (a *SDKAPI) GetOperationMap(cfg *ackgenconfig.Config) *OperationMap {
 	}
 	a.opMap = &opMap
 	return &opMap
+}
+
+// GetCustomListRef finds a ShapeRef for a supplied custom list field
+func (a *SDKAPI) GetCustomListRef(memberShapeName string) (*awssdkmodel.ShapeRef, bool) {
+	for _, shape := range a.CustomShapes {
+		if shape.MemberShapeName != nil && *shape.MemberShapeName == memberShapeName {
+			return shape.ShapeRef, true
+		}
+	}
+	return nil, false
+}
+
+// GetCustomMapRef finds a ShapeRef for a supplied custom map field
+func (a *SDKAPI) GetCustomMapRef(valueShapeName string) (*awssdkmodel.ShapeRef, bool) {
+	for _, shape := range a.CustomShapes {
+		if shape.ValueShapeName != nil && *shape.ValueShapeName == valueShapeName {
+			return shape.ShapeRef, true
+		}
+	}
+	return nil, false
 }
 
 // GetInputShapeRef finds a ShapeRef for a supplied member path (dot-notation)
@@ -266,4 +287,33 @@ func getMemberByPath(
 		}
 	}
 	return nil, false
+}
+
+// CustomShape represents a shape created by the generator that does not exist
+// in the standard AWS SDK models.
+type CustomShape struct {
+	Shape           *awssdkmodel.Shape
+	ShapeRef        *awssdkmodel.ShapeRef
+	MemberShapeName *string
+	ValueShapeName  *string
+}
+
+// NewCustomListShape creates a custom shape object for a new list.
+func NewCustomListShape(shape *awssdkmodel.Shape, ref *awssdkmodel.ShapeRef, memberShapeName string) *CustomShape {
+	return &CustomShape{
+		Shape:           shape,
+		ShapeRef:        ref,
+		MemberShapeName: &memberShapeName,
+		ValueShapeName:  nil,
+	}
+}
+
+// NewCustomMapShape creates a custom shape object for a new map.
+func NewCustomMapShape(shape *awssdkmodel.Shape, ref *awssdkmodel.ShapeRef, valueShapeName string) *CustomShape {
+	return &CustomShape{
+		Shape:           shape,
+		ShapeRef:        ref,
+		MemberShapeName: nil,
+		ValueShapeName:  &valueShapeName,
+	}
 }

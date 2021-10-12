@@ -72,8 +72,6 @@ func NewAPIVersionManager(
 		return nil, fmt.Errorf("cannot read sdk git repository: %v", err)
 	}
 
-	SDKAPIHelper := acksdk.NewHelper(sdkCacheDir)
-
 	// create model for each non-deprecated api version
 	models := map[string]*ackmodel.Model{}
 	for _, version := range metadata.APIVersions {
@@ -90,23 +88,24 @@ func NewAPIVersionManager(
 			return nil, fmt.Errorf("could not find API info for API version %s", version.APIVersion)
 		}
 
-		err = SDKAPIHelper.WithSDKVersion(apiInfo.AWSSDKVersion)
-		if err != nil {
-			return nil, err
-		}
-
 		cfg, err := ackgenconfig.New(apiInfo.GeneratorConfigPath, defaultConfig)
 		if err != nil {
 			return nil, err
 		}
 
-		SDKAPI, err := SDKAPIHelper.API(servicePackageName)
+		sdkAPIHelper := acksdk.NewHelper(sdkCacheDir, cfg)
+		err = sdkAPIHelper.WithSDKVersion(apiInfo.AWSSDKVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		sdkAPI, err := sdkAPIHelper.API(servicePackageName)
 		if err != nil {
 			return nil, err
 		}
 
 		i, err := ackmodel.New(
-			SDKAPI,
+			sdkAPI,
 			servicePackageName,
 			version.APIVersion,
 			cfg,
