@@ -3,11 +3,11 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   creationTimestamp: null
-  name: ack-{{ .ServiceAlias }}-controller
+  name: ack-{{ .ServicePackageName }}-controller
 {{ "{{ else }}" }}
 kind: Role
 metadata:
   creationTimestamp: null
-  name: ack-{{ .ServiceAlias }}-controller
+  name: ack-{{ .ServicePackageName }}-controller
   namespace: {{ "{{ .Release.Namespace }}" }}
 {{ "{{ end }}" }}

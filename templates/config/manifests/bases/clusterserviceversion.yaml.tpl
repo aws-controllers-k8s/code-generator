@@ -7,12 +7,12 @@ metadata:
     capabilities: {{.Annotations.CapabilityLevel}}
     operatorframework.io/suggested-namespace: "ack-system"
     repository: {{.Annotations.Repository}}
-    containerImage: {{.Annotations.ContainerImage}}/{{.ServiceAlias}}-controller:v{{.Version}}
+    containerImage: {{.Annotations.ContainerImage}}/{{.ServicePackageName}}-controller:v{{.Version}}
     description: {{.Annotations.ShortDescription}}
     createdAt: {{.CreatedAt}}
     support: {{.Annotations.Support}}
     certified: {{.Annotations.IsCertified}}
-  name: ack-{{.ServiceAlias }}-controller.v0.0.0
+  name: ack-{{.ServicePackageName }}-controller.v0.0.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -23,7 +23,7 @@ spec:
       name: {{ ToLower .Plural }}.{{$.APIGroup}}
       version: {{$.APIVersion}}
       displayName: {{.Kind}}
-      description: {{.Kind}} represents the state of an AWS {{$.ServiceAlias}} {{.Kind}} resource.
+      description: {{.Kind}} represents the state of an AWS {{$.ServicePackageName}} {{.Kind}} resource.
     {{- end}}
   description: '{{ .Description }}'
   displayName: {{ .DisplayName}}
@@ -42,7 +42,7 @@ spec:
     type: {{ .Type }}
   {{- end}}
   keywords:
-  - {{.ServiceAlias}}
+  - {{.ServicePackageName}}
   {{- range .Common.Keywords}}
   - {{ . }}
   {{- end}}

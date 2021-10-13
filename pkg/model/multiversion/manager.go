@@ -50,7 +50,7 @@ type APIVersionManager struct {
 func NewAPIVersionManager(
 	sdkCacheDir string,
 	metadataPath string,
-	serviceAlias string,
+	servicePackageName string,
 	hubVersion string,
 	apisInfo map[string]ackmetadata.APIInfo,
 	defaultConfig ackgenconfig.Config,
@@ -99,14 +99,14 @@ func NewAPIVersionManager(
 			return nil, err
 		}
 
-		SDKAPI, err := SDKAPIHelper.API(serviceAlias)
+		SDKAPI, err := SDKAPIHelper.API(servicePackageName)
 		if err != nil {
 			return nil, err
 		}
 
 		i, err := ackmodel.New(
 			SDKAPI,
-			serviceAlias,
+			servicePackageName,
 			version.APIVersion,
 			cfg,
 		)

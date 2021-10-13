@@ -3,7 +3,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   creationTimestamp: null
-  name: ack-{{ .ServiceAlias }}-reader
+  name: ack-{{ .ServicePackageName }}-reader
   namespace: {{ "{{ .Release.Namespace }}" }}
 rules:
 - apiGroups:

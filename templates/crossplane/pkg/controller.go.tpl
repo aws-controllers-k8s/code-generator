@@ -11,16 +11,16 @@ import (
 	"github.com/google/go-cmp/cmp"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	svcsdkapi "github.com/aws/aws-sdk-go/service/{{ .ServiceAlias }}/{{ .ServiceAlias }}iface"
-	svcapi "github.com/aws/aws-sdk-go/service/{{ .ServiceAlias }}"
-	svcsdk "github.com/aws/aws-sdk-go/service/{{ .ServiceAlias }}"
+	svcsdkapi "github.com/aws/aws-sdk-go/service/{{ .ServicePackageName }}/{{ .ServicePackageName }}iface"
+	svcapi "github.com/aws/aws-sdk-go/service/{{ .ServicePackageName }}"
+	svcsdk "github.com/aws/aws-sdk-go/service/{{ .ServicePackageName }}"
 
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	cpresource "github.com/crossplane/crossplane-runtime/pkg/resource"
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 
-	svcapitypes "github.com/crossplane/provider-aws/apis/{{ .ServiceAlias }}/{{ .APIVersion}}"
+	svcapitypes "github.com/crossplane/provider-aws/apis/{{ .ServicePackageName }}/{{ .APIVersion}}"
 	awsclient "github.com/crossplane/provider-aws/pkg/clients"
 )
 
@@ -173,7 +173,7 @@ func (e *external) Delete(ctx context.Context, mg cpresource.Managed) error {
 
 type option func(*external)
 
-func newExternal(kube client.Client, client svcsdkapi.{{ .SDKAPIInterfaceTypeName }}API, opts []option) *external {
+func newExternal(kube client.Client, client svcsdkapi.{{ .APIInterfaceTypeName }}API, opts []option) *external {
 	e := &external{
 		kube:           kube,
 		client:         client,
@@ -219,7 +219,7 @@ func newExternal(kube client.Client, client svcsdkapi.{{ .SDKAPIInterfaceTypeNam
 
 type external struct {
 	kube        client.Client
-	client      svcsdkapi.{{ .SDKAPIInterfaceTypeName }}API
+	client      svcsdkapi.{{ .APIInterfaceTypeName }}API
 	{{- if .CRD.Ops.ReadOne }}
 	preObserve  func(context.Context, *svcapitypes.{{ .CRD.Names.Camel }}, *svcsdk.{{ .CRD.Ops.ReadOne.InputRef.Shape.ShapeName }}) error
 	postObserve func(context.Context, *svcapitypes.{{ .CRD.Names.Camel }}, *svcsdk.{{ .CRD.Ops.ReadOne.OutputRef.Shape.ShapeName }}, managed.ExternalObservation, error) (managed.ExternalObservation, error)

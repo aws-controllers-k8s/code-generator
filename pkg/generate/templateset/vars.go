@@ -16,18 +16,18 @@ package templateset
 // MetaVars contains template variables that most templates need access to
 // that describe the service alias, its package name, etc
 type MetaVars struct {
-	// ServiceAlias contains the exact string used to identify the AWS service
-	// API in the aws-sdk-go `service/` directory. It is also used as the
-	// identifier for the ACK controller's name and packages.
-	ServiceAlias string
-	// ServiceID is the exact string that appears in the AWS service API's
-	// api-2.json descriptor file under `metadata.serviceId`
-	ServiceID string
 	// ServiceModelName contains the exact string used to identify the AWS
 	// service API in the aws-sdk-go's models/apis/ directory. Note that some
 	// APIs this name does not match the ServiceID. e.g. The AWS Step Functions
 	// API has a ServiceID of "SFN" and a service model name of "states"...
 	ServiceModelName string
+	// ServicePackageName contains the exact string used to identify the AWS
+	// service API in the aws-sdk-go `service/` directory. It is also used as
+	// the identifier for the ACK controller's name and packages.
+	ServicePackageName string
+	// ServiceID is the exact string that appears in the AWS service API's
+	// api-2.json descriptor file under `metadata.serviceId`
+	ServiceID string
 	// APIVersion contains the version of the Kubernetes API resources, e.g.
 	// "v1alpha1"
 	APIVersion string
@@ -35,9 +35,9 @@ type MetaVars struct {
 	// for custom resources, e.g. "sns.services.k8s.aws" or
 	// "sfn.services.k8s.aws"
 	APIGroup string
-	// SDKAPIInterfaceTypeName is the name of the interface type used by the
+	// APIInterfaceTypeName is the name of the interface type used by the
 	// aws-sdk-go services/$SERVICE/api.go file
-	SDKAPIInterfaceTypeName string
+	APIInterfaceTypeName string
 	//CRDNames contains all crds names lowercased and in plural
 	CRDNames []string
 }

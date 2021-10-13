@@ -9,7 +9,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8srt "k8s.io/apimachinery/pkg/runtime"
 
-	svcapitypes "github.com/aws-controllers-k8s/{{ .ServiceAlias }}-controller/apis/{{ .APIVersion}}"
+	svcapitypes "github.com/aws-controllers-k8s/{{ .ServicePackageName }}-controller/apis/{{ .APIVersion}}"
 )
 
 // Hack to avoid import errors during build...

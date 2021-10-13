@@ -12,11 +12,11 @@ import (
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	"github.com/aws/aws-sdk-go/aws"
-	svcsdk "github.com/aws/aws-sdk-go/service/{{ .ServiceAlias }}"
+	svcsdk "github.com/aws/aws-sdk-go/service/{{ .ServicePackageName }}"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	svcapitypes "github.com/aws-controllers-k8s/{{.ServiceAlias }}-controller/apis/{{ .APIVersion }}"
+	svcapitypes "github.com/aws-controllers-k8s/{{.ServicePackageName }}-controller/apis/{{ .APIVersion }}"
 )
 
 // Hack to avoid import errors during build...
@@ -24,7 +24,7 @@ var (
 	_ = &metav1.Time{}
 	_ = strings.ToLower("")
 	_ = &aws.JSONValue{}
-	_ = &svcsdk.{{ .SDKAPIInterfaceTypeName}}{}
+	_ = &svcsdk.{{ .APIInterfaceTypeName}}{}
 	_ = &svcapitypes.{{ .CRD.Names.Camel }}{}
 	_ = ackv1alpha1.AWSAccountID("")
 	_ = &ackerr.NotFound

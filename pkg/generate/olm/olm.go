@@ -79,7 +79,7 @@ func BundleAssets(
 
 	csvBaseOutPath := fmt.Sprintf(
 		"config/manifests/bases/ack-%s-controller.clusterserviceversion.yaml",
-		m.MetaVars().ServiceAlias)
+		m.MetaVars().ServicePackageName)
 	if err := ts.Add(csvBaseOutPath, "config/manifests/bases/clusterserviceversion.yaml.tpl", olmVars); err != nil {
 		return nil, err
 	}

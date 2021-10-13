@@ -139,8 +139,8 @@ func (h *SDKHelper) ModelAndDocsPath(
 
 // FirstAPIVersion returns the first found API version for a service API.
 // (e.h. "2012-10-03")
-func (h *SDKHelper) FirstAPIVersion(serviceAlias string) (string, error) {
-	versions, err := h.GetAPIVersions(serviceAlias)
+func (h *SDKHelper) FirstAPIVersion(serviceModelName string) (string, error) {
+	versions, err := h.GetAPIVersions(serviceModelName)
 	if err != nil {
 		return "", err
 	}
@@ -149,8 +149,8 @@ func (h *SDKHelper) FirstAPIVersion(serviceAlias string) (string, error) {
 }
 
 // GetAPIVersions returns the list of API Versions found in a service directory.
-func (h *SDKHelper) GetAPIVersions(serviceAlias string) ([]string, error) {
-	apiPath := filepath.Join(h.basePath, "models", "apis", serviceAlias)
+func (h *SDKHelper) GetAPIVersions(serviceModelName string) ([]string, error) {
+	apiPath := filepath.Join(h.basePath, "models", "apis", serviceModelName)
 	versionDirs, err := ioutil.ReadDir(apiPath)
 	if err != nil {
 		return nil, err
@@ -354,18 +354,14 @@ func (a *SDKAPI) HasConflictingTypeName(typeName string, cfg *ackgenconfig.Confi
 }
 
 // ServiceID returns the exact `metadata.serviceId` attribute for the AWS
-// service APi's api-2.json file
+// service APi's api-2.json file.
+// This MAY NOT MATCH the AWS SDK Go package used by the service. For example:
+// AWS SDK Go uses `opensearchservice` whereas the service ID is `opensearch`
 func (a *SDKAPI) ServiceID() string {
 	if a == nil || a.API == nil {
 		return ""
 	}
 	return awssdkmodel.ServiceID(a.API)
-}
-
-// ServiceIDClean returns a lowercased, whitespace-stripped ServiceID
-func (a *SDKAPI) ServiceIDClean() string {
-	serviceID := strings.ToLower(a.ServiceID())
-	return strings.Replace(serviceID, " ", "", -1)
 }
 
 func (a *SDKAPI) GetServiceFullName() string {
@@ -375,9 +371,9 @@ func (a *SDKAPI) GetServiceFullName() string {
 	return a.API.Metadata.ServiceFullName
 }
 
-// SDKAPIInterfaceTypeName returns the name of the aws-sdk-go primary API
+// APIInterfaceTypeName returns the name of the aws-sdk-go primary API
 // interface type name.
-func (a *SDKAPI) SDKAPIInterfaceTypeName() string {
+func (a *SDKAPI) APIInterfaceTypeName() string {
 	if a == nil || a.API == nil {
 		return ""
 	}
