@@ -26,6 +26,7 @@ import (
 
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/names"
+	"github.com/aws-controllers-k8s/code-generator/pkg/operations"
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
 
 	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
@@ -187,7 +188,7 @@ type SDKAPI struct {
 	APIGroupSuffix string
 	// A map of operation type and resource name to
 	// aws-sdk-go/private/model/api.Operation structs
-	opMap *OperationMap
+	opMap *operations.OperationMap
 	// Map, keyed by original Shape GoTypeElem(), with the values being a
 	// renamed type name (due to conflicting names)
 	typeRenames map[string]string
@@ -207,12 +208,12 @@ func (a *SDKAPI) GetPayloads() []string {
 
 // GetOperationMap returns a map, keyed by the operation type and operation
 // ID/name, of aws-sdk-go private/model/api.Operation struct pointers
-func (a *SDKAPI) GetOperationMap(cfg *ackgenconfig.Config) *OperationMap {
+func (a *SDKAPI) GetOperationMap(cfg *ackgenconfig.Config) *operations.OperationMap {
 	if a.opMap != nil {
 		return a.opMap
 	}
 	// create an index of Operations by operation types and resource name
-	opMap := OperationMap{}
+	opMap := operations.OperationMap{}
 	for opID, op := range a.API.Operations {
 		opTypeArray, resName := getOpTypeAndResourceName(opID, cfg)
 		for _, opType := range opTypeArray {
@@ -291,7 +292,7 @@ func getMemberByPath(
 // API
 func (a *SDKAPI) CRDNames(cfg *ackgenconfig.Config) []names.Names {
 	opMap := a.GetOperationMap(cfg)
-	createOps := (*opMap)[OpTypeCreate]
+	createOps := (*opMap)[operations.OpTypeCreate]
 	crdNames := []names.Names{}
 	for crdName := range createOps {
 		if cfg.IsIgnoredResource(crdName) {
@@ -401,7 +402,7 @@ func getOpTypeAndResourceName(opID string, cfg *ackgenconfig.Config) ([]OpType, 
 		}
 
 		for _, operationType := range operationConfig.OperationType {
-			opType = OpTypeFromString(operationType)
+			opType = operations.OpTypeFromString(operationType)
 			opTypes = append(opTypes, opType)
 		}
 	}

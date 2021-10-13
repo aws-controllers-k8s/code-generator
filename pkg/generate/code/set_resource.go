@@ -23,7 +23,7 @@ import (
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 	"github.com/aws-controllers-k8s/code-generator/pkg/names"
-	"github.com/aws-controllers-k8s/code-generator/pkg/sdk"
+	"github.com/aws-controllers-k8s/code-generator/pkg/operations"
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
 )
 
@@ -76,7 +76,7 @@ func SetResource(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,
 	// The type of operation to look for the Output shape
-	opType sdk.OpType,
+	opType operations.OpType,
 	// String representing the name of the variable that we will grab the
 	// Output shape from. This will likely be "resp" since in the templates
 	// that call this method, the "source variable" is the response struct
@@ -92,18 +92,18 @@ func SetResource(
 ) string {
 	var op *awssdkmodel.Operation
 	switch opType {
-	case sdk.OpTypeCreate:
+	case operations.OpTypeCreate:
 		op = r.Ops.Create
-	case sdk.OpTypeGet:
+	case operations.OpTypeGet:
 		op = r.Ops.ReadOne
-	case sdk.OpTypeList:
+	case operations.OpTypeList:
 		return setResourceReadMany(
 			cfg, r,
 			r.Ops.ReadMany, sourceVarName, targetVarName, indentLevel,
 		)
-	case sdk.OpTypeUpdate:
+	case operations.OpTypeUpdate:
 		op = r.Ops.Update
-	case sdk.OpTypeDelete:
+	case operations.OpTypeDelete:
 		op = r.Ops.Delete
 	default:
 		return ""

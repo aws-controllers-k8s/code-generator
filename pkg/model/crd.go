@@ -24,6 +24,7 @@ import (
 
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/names"
+	"github.com/aws-controllers-k8s/code-generator/pkg/operations"
 	"github.com/aws-controllers-k8s/code-generator/pkg/sdk"
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
 )
@@ -657,7 +658,7 @@ func (r *CRD) ListOpMatchFieldNames() []string {
 
 // GetAllRenames returns all the field renames observed in the generator config
 // for a given OpType.
-func (r *CRD) GetAllRenames(op sdk.OpType) (map[string]string, error) {
+func (r *CRD) GetAllRenames(op operations.OpType) (map[string]string, error) {
 	renames := make(map[string]string)
 	resourceConfig, ok := r.cfg.Resources[r.Names.Original]
 	if !ok {

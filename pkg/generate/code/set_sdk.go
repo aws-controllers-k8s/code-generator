@@ -23,7 +23,7 @@ import (
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 	"github.com/aws-controllers-k8s/code-generator/pkg/names"
-	"github.com/aws-controllers-k8s/code-generator/pkg/sdk"
+	"github.com/aws-controllers-k8s/code-generator/pkg/operations"
 )
 
 // SetSDK returns the Go code that sets an SDK input shape's member fields from
@@ -77,7 +77,7 @@ func SetSDK(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,
 	// The type of operation to look for the Input shape
-	opType sdk.OpType,
+	opType operations.OpType,
 	// String representing the name of the variable that we will grab the Input
 	// shape from. This will likely be "r.ko" since in the templates that call
 	// this method, the "source variable" is the CRD struct which is used to
@@ -93,17 +93,17 @@ func SetSDK(
 ) string {
 	var op *awssdkmodel.Operation
 	switch opType {
-	case sdk.OpTypeCreate:
+	case operations.OpTypeCreate:
 		op = r.Ops.Create
-	case sdk.OpTypeGet:
+	case operations.OpTypeGet:
 		op = r.Ops.ReadOne
-	case sdk.OpTypeList:
+	case operations.OpTypeList:
 		op = r.Ops.ReadMany
 		return setSDKReadMany(cfg, r, op,
 			sourceVarName, targetVarName, indentLevel)
-	case sdk.OpTypeUpdate:
+	case operations.OpTypeUpdate:
 		op = r.Ops.Update
-	case sdk.OpTypeDelete:
+	case operations.OpTypeDelete:
 		op = r.Ops.Delete
 	default:
 		return ""

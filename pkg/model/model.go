@@ -22,6 +22,7 @@ import (
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate/templateset"
 	"github.com/aws-controllers-k8s/code-generator/pkg/names"
+	"github.com/aws-controllers-k8s/code-generator/pkg/operations"
 	"github.com/aws-controllers-k8s/code-generator/pkg/sdk"
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
 	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
@@ -83,13 +84,13 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 
 	opMap := m.SDKAPI.GetOperationMap(m.cfg)
 
-	createOps := (*opMap)[sdk.OpTypeCreate]
-	readOneOps := (*opMap)[sdk.OpTypeGet]
-	readManyOps := (*opMap)[sdk.OpTypeList]
-	updateOps := (*opMap)[sdk.OpTypeUpdate]
-	deleteOps := (*opMap)[sdk.OpTypeDelete]
-	getAttributesOps := (*opMap)[sdk.OpTypeGetAttributes]
-	setAttributesOps := (*opMap)[sdk.OpTypeSetAttributes]
+	createOps := (*opMap)[operations.OpTypeCreate]
+	readOneOps := (*opMap)[operations.OpTypeGet]
+	readManyOps := (*opMap)[operations.OpTypeList]
+	updateOps := (*opMap)[operations.OpTypeUpdate]
+	deleteOps := (*opMap)[operations.OpTypeDelete]
+	getAttributesOps := (*opMap)[operations.OpTypeGetAttributes]
+	setAttributesOps := (*opMap)[operations.OpTypeSetAttributes]
 
 	for crdName, createOp := range createOps {
 		if m.cfg.IsIgnoredResource(crdName) {

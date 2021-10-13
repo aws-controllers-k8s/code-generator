@@ -11,7 +11,7 @@
 // express or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
-package sdk_test
+package operations_test
 
 import (
 	"testing"
@@ -29,82 +29,82 @@ func TestGetOpTypeAndResourceNameFromOpID(t *testing.T) {
 
 	tests := []struct {
 		opID       string
-		expOpType  sdk.OpType
+		expOpType  operations.OpType
 		expResName string
 	}{
 		{
 			"CreateTopic",
-			sdk.OpTypeCreate,
+			operations.OpTypeCreate,
 			"Topic",
 		},
 		{
 			"CreateOrUpdateTopic",
-			sdk.OpTypeReplace,
+			operations.OpTypeReplace,
 			"Topic",
 		},
 		{
 			"CreateBatchTopics",
-			sdk.OpTypeCreateBatch,
+			operations.OpTypeCreateBatch,
 			"Topic",
 		},
 		{
 			"CreateBatchTopic",
-			sdk.OpTypeCreateBatch,
+			operations.OpTypeCreateBatch,
 			"Topic",
 		},
 		{
 			"BatchCreateTopics",
-			sdk.OpTypeCreateBatch,
+			operations.OpTypeCreateBatch,
 			"Topic",
 		},
 		{
 			"BatchCreateTopic",
-			sdk.OpTypeCreateBatch,
+			operations.OpTypeCreateBatch,
 			"Topic",
 		},
 		{
 			"CreateTopics",
-			sdk.OpTypeCreateBatch,
+			operations.OpTypeCreateBatch,
 			"Topic",
 		},
 		{
 			"DescribeEC2Instances",
-			sdk.OpTypeList,
+			operations.OpTypeList,
 			"EC2Instance",
 		},
 		{
 			"DescribeEC2Instance",
-			sdk.OpTypeGet,
+			operations.OpTypeGet,
 			"EC2Instance",
 		},
 		{
 			"UpdateTopic",
-			sdk.OpTypeUpdate,
+			operations.OpTypeUpdate,
 			"Topic",
 		},
 		{
 			"DeleteTopic",
-			sdk.OpTypeDelete,
+			operations.OpTypeDelete,
 			"Topic",
 		},
 		{
 			"DescribeInstances",
-			sdk.OpTypeList,
+			operations.OpTypeList,
 			"Instance",
 		},
 		{
 			"ListDeploymentGroups",
-			sdk.OpTypeList,
+			operations.OpTypeList,
 			"DeploymentGroup",
 		},
 		{
 			"GetDeployment",
-			sdk.OpTypeGet,
+			operations.OpTypeGet,
 			"Deployment",
 		},
 		{
 			"PauseEC2Instance",
-			sdk.OpTypeUnknown,
+			operations.OpTypeUnknown,
 			"PauseEC2Instance",
 		},
 		// Heuristic should incorrectly parse DhcpOptions ops
