@@ -70,7 +70,7 @@ func generateCrossplane(_ *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	sdkHelper := acksdk.NewSDKHelper(sdkDir)
+	sdkHelper := acksdk.NewHelper(sdkDir)
 	sdkHelper.APIGroupSuffix = "aws.crossplane.io"
 	sdkAPI, err := sdkHelper.API(svcAlias)
 	if err != nil {

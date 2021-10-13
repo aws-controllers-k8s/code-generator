@@ -72,7 +72,7 @@ func NewAPIVersionManager(
 		return nil, fmt.Errorf("cannot read sdk git repository: %v", err)
 	}
 
-	SDKAPIHelper := acksdk.NewSDKHelper(sdkCacheDir)
+	SDKAPIHelper := acksdk.NewHelper(sdkCacheDir)
 
 	// create model for each non-deprecated api version
 	models := map[string]*ackmodel.Model{}

@@ -32,7 +32,7 @@ func lambdaSDKAPI(t *testing.T) *sdk.SDKAPI {
 		return lambda
 	}
 	path := filepath.Clean("../testdata")
-	sdkHelper := sdk.NewSDKHelper(path)
+	sdkHelper := sdk.NewHelper(path)
 	lambda, err := sdkHelper.API("lambda")
 	if err != nil {
 		t.Fatal(err)

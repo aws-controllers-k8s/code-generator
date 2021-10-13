@@ -54,9 +54,9 @@ const (
 	ConflictingNameSuffix = "_SDK"
 )
 
-// SDKHelper is a helper struct that helps work with the aws-sdk-go models and
+// Helper is a helper struct that helps work with the aws-sdk-go models and
 // API model loader
-type SDKHelper struct {
+type Helper struct {
 	gitRepository *git.Repository
 	basePath      string
 	loader        *awssdkmodel.Loader
@@ -66,9 +66,9 @@ type SDKHelper struct {
 	APIGroupSuffix string
 }
 
-// NewSDKHelper returns a new SDKHelper object
-func NewSDKHelper(basePath string) *SDKHelper {
-	return &SDKHelper{
+// NewHelper returns a new SDKHelper object
+func NewHelper(basePath string) *Helper {
+	return &Helper{
 		basePath: basePath,
 		loader: &awssdkmodel.Loader{
 			BaseImport:            basePath,
@@ -79,7 +79,7 @@ func NewSDKHelper(basePath string) *SDKHelper {
 
 // WithSDKVersion checks out the sdk git repository to the provided version. To use
 // this function h.basePath should point to a git repository.
-func (h *SDKHelper) WithSDKVersion(version string) error {
+func (h *Helper) WithSDKVersion(version string) error {
 	if h.gitRepository == nil {
 		gitRepository, err := util.LoadRepository(h.basePath)
 		if err != nil {
@@ -96,12 +96,12 @@ func (h *SDKHelper) WithSDKVersion(version string) error {
 }
 
 // WithAPIVersion sets the `apiVersion` field.
-func (h *SDKHelper) WithAPIVersion(apiVersion string) {
+func (h *Helper) WithAPIVersion(apiVersion string) {
 	h.apiVersion = apiVersion
 }
 
 // API returns the aws-sdk-go API model for a supplied service model name.
-func (h *SDKHelper) API(serviceModelName string) (*SDKAPI, error) {
+func (h *Helper) API(serviceModelName string) (*SDKAPI, error) {
 	modelPath, _, err := h.ModelAndDocsPath(serviceModelName)
 	if err != nil {
 		return nil, err
@@ -127,7 +127,7 @@ func (h *SDKHelper) API(serviceModelName string) (*SDKAPI, error) {
 
 // ModelAndDocsPath returns two string paths to the supplied service's API and
 // doc JSON files
-func (h *SDKHelper) ModelAndDocsPath(
+func (h *Helper) ModelAndDocsPath(
 	serviceModelName string,
 ) (string, string, error) {
 	if h.apiVersion == "" {
@@ -147,7 +147,7 @@ func (h *SDKHelper) ModelAndDocsPath(
 
 // FirstAPIVersion returns the first found API version for a service API.
 // (e.h. "2012-10-03")
-func (h *SDKHelper) FirstAPIVersion(serviceModelName string) (string, error) {
+func (h *Helper) FirstAPIVersion(serviceModelName string) (string, error) {
 	versions, err := h.GetAPIVersions(serviceModelName)
 	if err != nil {
 		return "", err
@@ -157,7 +157,7 @@ func (h *SDKHelper) FirstAPIVersion(serviceModelName string) (string, error) {
 }
 
 // GetAPIVersions returns the list of API Versions found in a service directory.
-func (h *SDKHelper) GetAPIVersions(serviceModelName string) ([]string, error) {
+func (h *Helper) GetAPIVersions(serviceModelName string) ([]string, error) {
 	apiPath := filepath.Join(h.basePath, "models", "apis", serviceModelName)
 	versionDirs, err := ioutil.ReadDir(apiPath)
 	if err != nil {

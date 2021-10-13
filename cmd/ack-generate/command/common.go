@@ -237,7 +237,7 @@ func loadModel(svcAlias string, apiVersion string) (*ackmodel.Model, error) {
 		modelName = svcAlias
 	}
 
-	sdkHelper := acksdk.NewSDKHelper(sdkDir)
+	sdkHelper := acksdk.NewHelper(sdkDir)
 	sdkAPI, err := sdkHelper.API(modelName)
 	if err != nil {
 		retryModelName, err := FallBackFindServiceID(sdkDir, svcAlias)
