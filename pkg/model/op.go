@@ -18,6 +18,8 @@ import (
 
 	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
 	"github.com/gertd/go-pluralize"
+
+	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
 )
 
 type OpType int
@@ -43,26 +45,42 @@ type OperationMap map[OpType]map[string]*awssdkmodel.Operation
 
 // GetOpTypeAndResourceNameFromOpID guesses the resource name and type of
 // operation from the OperationID
-func GetOpTypeAndResourceNameFromOpID(opID string) (OpType, string) {
+func GetOpTypeAndResourceNameFromOpID(
+	opID string,
+	cfg *ackgenconfig.Config,
+) (OpType, string) {
 	pluralize := pluralize.NewClient()
 	if strings.HasPrefix(opID, "CreateOrUpdate") {
 		return OpTypeReplace, strings.TrimPrefix(opID, "CreateOrUpdate")
 	} else if strings.HasPrefix(opID, "BatchCreate") {
 		resName := strings.TrimPrefix(opID, "BatchCreate")
 		if pluralize.IsPlural(resName) {
-			return OpTypeCreateBatch, pluralize.Singular(resName)
+			// Do not singularize "pluralized singular" resources
+			// like EC2's DhcpOptions, if defined in generator config's list of
+			// resources.
+			if _, exists := cfg.Resources[resName]; !exists {
+				return OpTypeCreateBatch, pluralize.Singular(resName)
+			}
 		}
 		return OpTypeCreateBatch, resName
 	} else if strings.HasPrefix(opID, "CreateBatch") {
 		resName := strings.TrimPrefix(opID, "CreateBatch")
 		if pluralize.IsPlural(resName) {
-			return OpTypeCreateBatch, pluralize.Singular(resName)
+			if _, exists := cfg.Resources[resName]; !exists {
+				return OpTypeCreateBatch, pluralize.Singular(resName)
+			}
 		}
 		return OpTypeCreateBatch, resName
 	} else if strings.HasPrefix(opID, "Create") {
 		resName := strings.TrimPrefix(opID, "Create")
 		if pluralize.IsPlural(resName) {
-			return OpTypeCreateBatch, pluralize.Singular(resName)
+			// If resName exists in the generator configuration's list of
+			// resources, then just return OpTypeCreate and the resource name.
+			// This handles "pluralized singular" resource names like EC2's
+			// DhcpOptions.
+			if _, exists := cfg.Resources[resName]; !exists {
+				return OpTypeCreateBatch, pluralize.Singular(resName)
+			}
 		}
 		return OpTypeCreate, resName
 	} else if strings.HasPrefix(opID, "Modify") {
@@ -74,7 +92,10 @@ func GetOpTypeAndResourceNameFromOpID(opID string) (OpType, string) {
 	} else if strings.HasPrefix(opID, "Describe") {
 		resName := strings.TrimPrefix(opID, "Describe")
 		if pluralize.IsPlural(resName) {
-			return OpTypeList, pluralize.Singular(resName)
+			if _, exists := cfg.Resources[resName]; !exists {
+				return OpTypeList, pluralize.Singular(resName)
+			}
+			return OpTypeList, resName
 		}
 		return OpTypeGet, resName
 	} else if strings.HasPrefix(opID, "Get") {
@@ -85,12 +106,20 @@ func GetOpTypeAndResourceNameFromOpID(opID string) (OpType, string) {
 		}
 		resName := strings.TrimPrefix(opID, "Get")
 		if pluralize.IsPlural(resName) {
-			return OpTypeList, pluralize.Singular(resName)
+			if _, exists := cfg.Resources[resName]; !exists {
+				return OpTypeList, pluralize.Singular(resName)
+			}
+			return OpTypeList, resName
 		}
 		return OpTypeGet, resName
 	} else if strings.HasPrefix(opID, "List") {
 		resName := strings.TrimPrefix(opID, "List")
-		return OpTypeList, pluralize.Singular(resName)
+		if pluralize.IsPlural(resName) {
+			if _, exists := cfg.Resources[resName]; !exists {
+				return OpTypeList, pluralize.Singular(resName)
+			}
+		}
+		return OpTypeList, resName
 	} else if strings.HasPrefix(opID, "Set") {
 		if strings.HasSuffix(opID, "Attributes") {
 			resName := strings.TrimPrefix(opID, "Set")
