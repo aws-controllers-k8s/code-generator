@@ -1,6 +1,7 @@
 ignore:
   field_paths:
     - CreateVpcInput.DryRun
+    - CreateDhcpOptionsInput.DryRun
   resource_names:
     - AccountAttribute
     - CapacityReservation
@@ -10,6 +11,7 @@ ignore:
     - CustomerGateway
     - DefaultSubnet
     - DefaultVpc
+    #- DhcpOptions
     - EgressOnlyInternetGateway
     - Fleet
     - FpgaImage
@@ -64,3 +66,6 @@ ignore:
 operations:
   CreateVpcEndpoint:
     output_wrapper_field_path: VpcEndpoint
+
+resources:
+  DhcpOptions:

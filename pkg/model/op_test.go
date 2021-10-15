@@ -16,12 +16,16 @@ package model_test
 import (
 	"testing"
 
-	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/aws-controllers-k8s/code-generator/pkg/model"
+	"github.com/aws-controllers-k8s/code-generator/pkg/testutil"
 )
 
 func TestGetOpTypeAndResourceNameFromOpID(t *testing.T) {
 	assert := assert.New(t)
+
+	g := testutil.NewModelForService(t, "s3")
 
 	tests := []struct {
 		opID       string
@@ -103,9 +107,54 @@ func TestGetOpTypeAndResourceNameFromOpID(t *testing.T) {
 			model.OpTypeUnknown,
 			"PauseEC2Instance",
 		},
+		// Heuristic should incorrectly parse DhcpOptions ops
+		// due to resource not being in s3's generator config
+		{
+			"CreateDhcpOptions",
+			model.OpTypeCreateBatch,
+			"DhcpOption",
+		},
+		{
+			"DescribeDhcpOptions",
+			model.OpTypeList,
+			"DhcpOption",
+		},
 	}
 	for _, test := range tests {
-		ot, resName := model.GetOpTypeAndResourceNameFromOpID(test.opID)
+		ot, resName := model.GetOpTypeAndResourceNameFromOpID(test.opID, g.GetConfig())
+		assert.Equal(test.expOpType, ot, test.opID)
+		assert.Equal(test.expResName, resName, test.opID)
+	}
+}
+
+func TestGetOpTypeAndResourceNameFromOpID_PluralSingular(t *testing.T) {
+	assert := assert.New(t)
+
+	g := testutil.NewModelForService(t, "ec2")
+
+	tests := []struct {
+		opID       string
+		expOpType  model.OpType
+		expResName string
+	}{
+		{
+			"CreateDhcpOptions",
+			model.OpTypeCreate,
+			"DhcpOptions",
+		},
+		{
+			"DescribeDhcpOptions",
+			model.OpTypeList,
+			"DhcpOptions",
+		},
+		{
+			"DeleteDhcpOptions",
+			model.OpTypeDelete,
+			"DhcpOptions",
+		},
+	}
+	for _, test := range tests {
+		ot, resName := model.GetOpTypeAndResourceNameFromOpID(test.opID, g.GetConfig())
 		assert.Equal(test.expOpType, ot, test.opID)
 		assert.Equal(test.expResName, resName, test.opID)
 	}

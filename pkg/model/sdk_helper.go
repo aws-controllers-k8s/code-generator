@@ -382,7 +382,7 @@ func (a *SDKAPI) APIInterfaceTypeName() string {
 
 // Override the operation type and/or resource name if specified in config
 func getOpTypeAndResourceName(opID string, cfg *ackgenconfig.Config) ([]OpType, string) {
-	opType, resName := GetOpTypeAndResourceNameFromOpID(opID)
+	opType, resName := GetOpTypeAndResourceNameFromOpID(opID, cfg)
 	opTypes := []OpType{opType}
 
 	if cfg == nil {
