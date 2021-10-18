@@ -127,6 +127,10 @@ pushd $tmp_kustomize_config_dir/controller 1>/dev/null
 kustomize edit set image controller="$AWS_SERVICE_DOCKER_IMG"
 popd 1>/dev/null
 
+# remove crd/common from bases to prevent inclusion of AdoptedResource CRD from being generated in the bundle directory
+sed -i.orig '/^bases:$/d' $tmp_kustomize_config_dir/crd/kustomization.yaml
+sed -i.orig '/- common$/d' $tmp_kustomize_config_dir/crd/kustomization.yaml
+
 # prepare bundle generate arguments
 opsdk_gen_bundle_args="--version $BUNDLE_VERSION --package ack-$SERVICE-controller --kustomize-dir $SERVICE_CONTROLLER_SOURCE_PATH/config/manifests --overwrite "
 
