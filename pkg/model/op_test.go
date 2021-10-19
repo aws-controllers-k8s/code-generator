@@ -11,7 +11,7 @@
 // express or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
-package operations_test
+package model_test
 
 import (
 	"testing"
@@ -29,82 +29,82 @@ func TestGetOpTypeAndResourceNameFromOpID(t *testing.T) {
 
 	tests := []struct {
 		opID       string
-		expOpType  operations.OpType
+		expOpType  model.OpType
 		expResName string
 	}{
 		{
 			"CreateTopic",
-			operations.OpTypeCreate,
+			model.OpTypeCreate,
 			"Topic",
 		},
 		{
 			"CreateOrUpdateTopic",
-			operations.OpTypeReplace,
+			model.OpTypeReplace,
 			"Topic",
 		},
 		{
 			"CreateBatchTopics",
-			operations.OpTypeCreateBatch,
+			model.OpTypeCreateBatch,
 			"Topic",
 		},
 		{
 			"CreateBatchTopic",
-			operations.OpTypeCreateBatch,
+			model.OpTypeCreateBatch,
 			"Topic",
 		},
 		{
 			"BatchCreateTopics",
-			operations.OpTypeCreateBatch,
+			model.OpTypeCreateBatch,
 			"Topic",
 		},
 		{
 			"BatchCreateTopic",
-			operations.OpTypeCreateBatch,
+			model.OpTypeCreateBatch,
 			"Topic",
 		},
 		{
 			"CreateTopics",
-			operations.OpTypeCreateBatch,
+			model.OpTypeCreateBatch,
 			"Topic",
 		},
 		{
 			"DescribeEC2Instances",
-			operations.OpTypeList,
+			model.OpTypeList,
 			"EC2Instance",
 		},
 		{
 			"DescribeEC2Instance",
-			operations.OpTypeGet,
+			model.OpTypeGet,
 			"EC2Instance",
 		},
 		{
 			"UpdateTopic",
-			operations.OpTypeUpdate,
+			model.OpTypeUpdate,
 			"Topic",
 		},
 		{
 			"DeleteTopic",
-			operations.OpTypeDelete,
+			model.OpTypeDelete,
 			"Topic",
 		},
 		{
 			"DescribeInstances",
-			operations.OpTypeList,
+			model.OpTypeList,
 			"Instance",
 		},
 		{
 			"ListDeploymentGroups",
-			operations.OpTypeList,
+			model.OpTypeList,
 			"DeploymentGroup",
 		},
 		{
 			"GetDeployment",
-			operations.OpTypeGet,
+			model.OpTypeGet,
 			"Deployment",
 		},
 		{
 			"PauseEC2Instance",
-			operations.OpTypeUnknown,
+			model.OpTypeUnknown,
 			"PauseEC2Instance",
 		},
 		// Heuristic should incorrectly parse DhcpOptions ops

@@ -22,7 +22,6 @@ import (
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate/templateset"
 	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
-	ackoperations "github.com/aws-controllers-k8s/code-generator/pkg/operations"
 	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
 )
 
@@ -61,16 +60,16 @@ var (
 			return code.CheckExceptionMessage(r.Config(), r, httpStatusCode)
 		},
 		"GoCodeSetReadOneOutput": func(r *ackmodel.CRD, sourceVarName string, targetVarName string, indentLevel int) string {
-			return code.SetResource(r.Config(), r, ackoperations.OpTypeGet, sourceVarName, targetVarName, indentLevel)
+			return code.SetResource(r.Config(), r, ackmodel.OpTypeGet, sourceVarName, targetVarName, indentLevel)
 		},
 		"GoCodeSetReadOneInput": func(r *ackmodel.CRD, sourceVarName string, targetVarName string, indentLevel int) string {
-			return code.SetSDK(r.Config(), r, ackoperations.OpTypeGet, sourceVarName, targetVarName, indentLevel)
+			return code.SetSDK(r.Config(), r, ackmodel.OpTypeGet, sourceVarName, targetVarName, indentLevel)
 		},
 		"GoCodeSetReadManyOutput": func(r *ackmodel.CRD, sourceVarName string, targetVarName string, indentLevel int) string {
-			return code.SetResource(r.Config(), r, ackoperations.OpTypeList, sourceVarName, targetVarName, indentLevel)
+			return code.SetResource(r.Config(), r, ackmodel.OpTypeList, sourceVarName, targetVarName, indentLevel)
 		},
 		"GoCodeSetReadManyInput": func(r *ackmodel.CRD, sourceVarName string, targetVarName string, indentLevel int) string {
-			return code.SetSDK(r.Config(), r, ackoperations.OpTypeList, sourceVarName, targetVarName, indentLevel)
+			return code.SetSDK(r.Config(), r, ackmodel.OpTypeList, sourceVarName, targetVarName, indentLevel)
 		},
 		"GoCodeGetAttributesSetInput": func(r *ackmodel.CRD, sourceVarName string, targetVarName string, indentLevel int) string {
 			return code.SetSDKGetAttributes(r.Config(), r, sourceVarName, targetVarName, indentLevel)
@@ -82,19 +81,19 @@ var (
 			return code.SetResourceGetAttributes(r.Config(), r, sourceVarName, targetVarName, indentLevel)
 		},
 		"GoCodeSetCreateOutput": func(r *ackmodel.CRD, sourceVarName string, targetVarName string, indentLevel int) string {
-			return code.SetResource(r.Config(), r, ackoperations.OpTypeCreate, sourceVarName, targetVarName, indentLevel)
+			return code.SetResource(r.Config(), r, ackmodel.OpTypeCreate, sourceVarName, targetVarName, indentLevel)
 		},
 		"GoCodeSetCreateInput": func(r *ackmodel.CRD, sourceVarName string, targetVarName string, indentLevel int) string {
-			return code.SetSDK(r.Config(), r, ackoperations.OpTypeCreate, sourceVarName, targetVarName, indentLevel)
+			return code.SetSDK(r.Config(), r, ackmodel.OpTypeCreate, sourceVarName, targetVarName, indentLevel)
 		},
 		"GoCodeSetUpdateOutput": func(r *ackmodel.CRD, sourceVarName string, targetVarName string, indentLevel int) string {
-			return code.SetResource(r.Config(), r, ackoperations.OpTypeUpdate, sourceVarName, targetVarName, indentLevel)
+			return code.SetResource(r.Config(), r, ackmodel.OpTypeUpdate, sourceVarName, targetVarName, indentLevel)
 		},
 		"GoCodeSetUpdateInput": func(r *ackmodel.CRD, sourceVarName string, targetVarName string, indentLevel int) string {
-			return code.SetSDK(r.Config(), r, ackoperations.OpTypeUpdate, sourceVarName, targetVarName, indentLevel)
+			return code.SetSDK(r.Config(), r, ackmodel.OpTypeUpdate, sourceVarName, targetVarName, indentLevel)
 		},
 		"GoCodeSetDeleteInput": func(r *ackmodel.CRD, sourceVarName string, targetVarName string, indentLevel int) string {
-			return code.SetSDK(r.Config(), r, ackoperations.OpTypeDelete, sourceVarName, targetVarName, indentLevel)
+			return code.SetSDK(r.Config(), r, ackmodel.OpTypeDelete, sourceVarName, targetVarName, indentLevel)
 		},
 		"GoCodeSetSDKForStruct": func(r *ackmodel.CRD, targetFieldName string, targetVarName string, targetShapeRef *awssdkmodel.ShapeRef, sourceFieldPath string, sourceVarName string, indentLevel int) string {
 			return code.SetSDKForStruct(r.Config(), r, targetFieldName, targetVarName, targetShapeRef, sourceFieldPath, sourceVarName, indentLevel)
@@ -109,16 +108,16 @@ var (
 			return strings.TrimSpace(subject) == ""
 		},
 		"GoCodeRequiredFieldsMissingFromReadOneInput": func(r *ackmodel.CRD, koVarName string, indentLevel int) string {
-			return code.CheckRequiredFieldsMissingFromShape(r, ackoperations.OpTypeGet, koVarName, indentLevel)
+			return code.CheckRequiredFieldsMissingFromShape(r, ackmodel.OpTypeGet, koVarName, indentLevel)
 		},
 		"GoCodeRequiredFieldsMissingFromReadManyInput": func(r *ackmodel.CRD, koVarName string, indentLevel int) string {
-			return code.CheckRequiredFieldsMissingFromShape(r, ackoperations.OpTypeList, koVarName, indentLevel)
+			return code.CheckRequiredFieldsMissingFromShape(r, ackmodel.OpTypeList, koVarName, indentLevel)
 		},
 		"GoCodeRequiredFieldsMissingFromGetAttributesInput": func(r *ackmodel.CRD, koVarName string, indentLevel int) string {
-			return code.CheckRequiredFieldsMissingFromShape(r, ackoperations.OpTypeGetAttributes, koVarName, indentLevel)
+			return code.CheckRequiredFieldsMissingFromShape(r, ackmodel.OpTypeGetAttributes, koVarName, indentLevel)
 		},
 		"GoCodeRequiredFieldsMissingFromSetAttributesInput": func(r *ackmodel.CRD, koVarName string, indentLevel int) string {
-			return code.CheckRequiredFieldsMissingFromShape(r, ackoperations.OpTypeSetAttributes, koVarName, indentLevel)
+			return code.CheckRequiredFieldsMissingFromShape(r, ackmodel.OpTypeSetAttributes, koVarName, indentLevel)
 		},
 		"GoCodeSetResourceIdentifiers": func(r *ackmodel.CRD, sourceVarName string, targetVarName string, indentLevel int) string {
 			return code.SetResourceIdentifiers(r.Config(), r, sourceVarName, targetVarName, indentLevel)

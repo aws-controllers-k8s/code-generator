@@ -20,7 +20,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate/code"
-	"github.com/aws-controllers-k8s/code-generator/pkg/operations"
+	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 	"github.com/aws-controllers-k8s/code-generator/pkg/testutil"
 )
 
@@ -93,7 +93,7 @@ func TestSetSDK_APIGWv2_Route_Create(t *testing.T) {
 `
 	assert.Equal(
 		expected,
-		code.SetSDK(crd.Config(), crd, operations.OpTypeCreate, "r.ko", "res", 1),
+		code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1),
 	)
 }
 
@@ -283,7 +283,7 @@ func TestSetSDK_DynamoDB_Table_Create(t *testing.T) {
 `
 	assert.Equal(
 		expected,
-		code.SetSDK(crd.Config(), crd, operations.OpTypeCreate, "r.ko", "res", 1),
+		code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1),
 	)
 }
 
@@ -687,7 +687,7 @@ func TestSetSDK_EC2_LaunchTemplate_Create(t *testing.T) {
 `
 	assert.Equal(
 		expected,
-		code.SetSDK(crd.Config(), crd, operations.OpTypeCreate, "r.ko", "res", 1),
+		code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1),
 	)
 }
 
@@ -735,7 +735,7 @@ func TestSetSDK_ECR_Repository_Create(t *testing.T) {
 `
 	assert.Equal(
 		expected,
-		code.SetSDK(crd.Config(), crd, operations.OpTypeCreate, "r.ko", "res", 1),
+		code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1),
 	)
 }
 
@@ -968,7 +968,7 @@ func TestSetSDK_Elasticache_ReplicationGroup_Create(t *testing.T) {
 `
 	assert.Equal(
 		expected,
-		code.SetSDK(crd.Config(), crd, operations.OpTypeCreate, "r.ko", "res", 1),
+		code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1),
 	)
 }
 
@@ -992,7 +992,7 @@ func TestSetSDK_Elasticache_ReplicationGroup_ReadMany(t *testing.T) {
 `
 	assert.Equal(
 		expected,
-		code.SetSDK(crd.Config(), crd, operations.OpTypeList, "r.ko", "res", 1),
+		code.SetSDK(crd.Config(), crd, model.OpTypeList, "r.ko", "res", 1),
 	)
 }
 
@@ -1105,7 +1105,7 @@ func TestSetSDK_Elasticache_ReplicationGroup_Update_Override_Values(t *testing.T
 `
 	assert.Equal(
 		expected,
-		code.SetSDK(crd.Config(), crd, operations.OpTypeUpdate, "r.ko", "res", 1),
+		code.SetSDK(crd.Config(), crd, model.OpTypeUpdate, "r.ko", "res", 1),
 	)
 }
 
@@ -1148,7 +1148,7 @@ func TestSetSDK_Elasticache_User_Create_Override_Values(t *testing.T) {
 `
 	assert.Equal(
 		expected,
-		code.SetSDK(crd.Config(), crd, operations.OpTypeUpdate, "r.ko", "res", 1),
+		code.SetSDK(crd.Config(), crd, model.OpTypeUpdate, "r.ko", "res", 1),
 	)
 }
 
@@ -1343,7 +1343,7 @@ func TestSetSDK_RDS_DBInstance_Create(t *testing.T) {
 `
 	assert.Equal(
 		expected,
-		code.SetSDK(crd.Config(), crd, operations.OpTypeCreate, "r.ko", "res", 1),
+		code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1),
 	)
 }
 
@@ -1391,7 +1391,7 @@ func TestSetSDK_S3_Bucket_Create(t *testing.T) {
 `
 	assert.Equal(
 		expected,
-		code.SetSDK(crd.Config(), crd, operations.OpTypeCreate, "r.ko", "res", 1),
+		code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1),
 	)
 }
 
@@ -1411,7 +1411,7 @@ func TestSetSDK_S3_Bucket_Delete(t *testing.T) {
 `
 	assert.Equal(
 		expected,
-		code.SetSDK(crd.Config(), crd, operations.OpTypeDelete, "r.ko", "res", 1),
+		code.SetSDK(crd.Config(), crd, model.OpTypeDelete, "r.ko", "res", 1),
 	)
 }
 
@@ -1463,7 +1463,7 @@ func TestSetSDK_SNS_Topic_Create(t *testing.T) {
 `
 	assert.Equal(
 		expected,
-		code.SetSDK(crd.Config(), crd, operations.OpTypeCreate, "r.ko", "res", 1),
+		code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1),
 	)
 }
 
@@ -1553,7 +1553,7 @@ func TestSetSDK_SQS_Queue_Create(t *testing.T) {
 `
 	assert.Equal(
 		expected,
-		code.SetSDK(crd.Config(), crd, operations.OpTypeCreate, "r.ko", "res", 1),
+		code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1),
 	)
 }
 
@@ -1775,7 +1775,7 @@ func TestSetSDK_MQ_Broker_Create(t *testing.T) {
 `
 	assert.Equal(
 		expected,
-		code.SetSDK(crd.Config(), crd, operations.OpTypeCreate, "r.ko", "res", 1),
+		code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1),
 	)
 }
 
@@ -1797,6 +1797,6 @@ func TestSetSDK_EC2_VPC_ReadMany(t *testing.T) {
 `
 	assert.Equal(
 		expected,
-		code.SetSDK(crd.Config(), crd, operations.OpTypeList, "r.ko", "res", 1),
+		code.SetSDK(crd.Config(), crd, model.OpTypeList, "r.ko", "res", 1),
 	)
 }

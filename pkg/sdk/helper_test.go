@@ -20,14 +20,15 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 	"github.com/aws-controllers-k8s/code-generator/pkg/sdk"
 )
 
 var (
-	lambda *sdk.SDKAPI
+	lambda *model.SDKAPI
 )
 
-func lambdaSDKAPI(t *testing.T) *sdk.SDKAPI {
+func lambdaSDKAPI(t *testing.T) *model.SDKAPI {
 	if lambda != nil {
 		return lambda
 	}

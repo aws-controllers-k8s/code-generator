@@ -21,7 +21,6 @@ import (
 
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
-	"github.com/aws-controllers-k8s/code-generator/pkg/operations"
 )
 
 // CheckExceptionMessage returns Go code that contains a condition to
@@ -66,21 +65,21 @@ func CheckExceptionMessage(
 // return r.ko.Spec.APIID == nil || r.ko.Status.RouteID == nil
 func CheckRequiredFieldsMissingFromShape(
 	r *model.CRD,
-	opType operations.OpType,
+	opType model.OpType,
 	koVarName string,
 	indentLevel int,
 ) string {
 	var op *awssdkmodel.Operation
 	switch opType {
-	case operations.OpTypeGet:
+	case model.OpTypeGet:
 		op = r.Ops.ReadOne
-	case operations.OpTypeList:
+	case model.OpTypeList:
 		op = r.Ops.ReadMany
 		return checkRequiredFieldsMissingFromShapeReadMany(
 			r, koVarName, indentLevel, op, op.InputRef.Shape)
-	case operations.OpTypeGetAttributes:
+	case model.OpTypeGetAttributes:
 		op = r.Ops.GetAttributes
-	case operations.OpTypeSetAttributes:
+	case model.OpTypeSetAttributes:
 		op = r.Ops.SetAttributes
 	default:
 		return ""

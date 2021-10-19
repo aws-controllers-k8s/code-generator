@@ -21,8 +21,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
 	"github.com/aws-controllers-k8s/code-generator/pkg/model/multiversion"
-	ackoperations "github.com/aws-controllers-k8s/code-generator/pkg/operations"
 	"github.com/aws-controllers-k8s/code-generator/pkg/testutil"
 )
 
@@ -385,9 +385,9 @@ func TestComputeFieldsDiff_ECR(t *testing.T) {
 				field.ShapeRef.Shape = newEmptyStructShape(tt.args.src.mutateShape)
 			}
 
-			srcRenames, err := srcCRD.GetAllRenames(ackoperations.OpTypeCreate)
+			srcRenames, err := srcCRD.GetAllRenames(ackmodel.OpTypeCreate)
 			require.Nil(err)
-			dstRenames, err := dstCRD.GetAllRenames(ackoperations.OpTypeCreate)
+			dstRenames, err := dstCRD.GetAllRenames(ackmodel.OpTypeCreate)
 			require.Nil(err)
 			renames, err := multiversion.ComputeRenamesDelta(srcRenames, dstRenames)
 			require.Nil(err)

@@ -20,14 +20,13 @@ import (
 
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/names"
-	"github.com/aws-controllers-k8s/code-generator/pkg/sdk"
 )
 
 // CleanGoType returns a tuple of three strings representing the normalized Go
 // types in "element", "normal" and "with package name" format for a particular
 // Shape.
 func CleanGoType(
-	api *sdk.SDKAPI,
+	api *SDKAPI,
 	cfg *ackgenconfig.Config,
 	shape *awssdkmodel.Shape,
 	fieldCfg *ackgenconfig.FieldConfig,

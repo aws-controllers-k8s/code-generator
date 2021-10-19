@@ -23,7 +23,6 @@ import (
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 	"github.com/aws-controllers-k8s/code-generator/pkg/names"
-	"github.com/aws-controllers-k8s/code-generator/pkg/operations"
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
 )
 
@@ -76,7 +75,7 @@ func SetResource(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,
 	// The type of operation to look for the Output shape
-	opType operations.OpType,
+	opType model.OpType,
 	// String representing the name of the variable that we will grab the
 	// Output shape from. This will likely be "resp" since in the templates
 	// that call this method, the "source variable" is the response struct
@@ -92,18 +91,18 @@ func SetResource(
 ) string {
 	var op *awssdkmodel.Operation
 	switch opType {
-	case operations.OpTypeCreate:
+	case model.OpTypeCreate:
 		op = r.Ops.Create
-	case operations.OpTypeGet:
+	case model.OpTypeGet:
 		op = r.Ops.ReadOne
-	case operations.OpTypeList:
+	case model.OpTypeList:
 		return setResourceReadMany(
 			cfg, r,
 			r.Ops.ReadMany, sourceVarName, targetVarName, indentLevel,
 		)
-	case operations.OpTypeUpdate:
+	case model.OpTypeUpdate:
 		op = r.Ops.Update
-	case operations.OpTypeDelete:
+	case model.OpTypeDelete:
 		op = r.Ops.Delete
 	default:
 		return ""
@@ -308,7 +307,7 @@ func ListMemberNameInReadManyOutput(
 	// Find the element in the output shape that contains the list of
 	// resources. This heuristic is simplistic (just look for the field with a
 	// list type) but seems to be followed consistently by the aws-sdk-go for
-	// List operations.
+	// List model.
 	for memberName, memberShapeRef := range r.Ops.ReadMany.OutputRef.Shape.MemberRefs {
 		if memberShapeRef.Shape.Type == "list" {
 			return memberName
@@ -398,7 +397,7 @@ func setResourceReadMany(
 	// Find the element in the output shape that contains the list of
 	// resources. This heuristic is simplistic (just look for the field with a
 	// list type) but seems to be followed consistently by the aws-sdk-go for
-	// List operations.
+	// List model.
 	for memberName, memberShapeRef := range outputShape.MemberRefs {
 		if memberShapeRef.Shape.Type == "list" {
 			listShapeName = memberName
