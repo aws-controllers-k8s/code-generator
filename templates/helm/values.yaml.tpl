@@ -38,7 +38,12 @@ resources:
 aws:
   # If specified, use the AWS region for AWS API calls
   region: ""
-  endpoint_url: ""
+
+  # The following endpoint_url is for the AWS services such as s3, dynamodb, vpc, etc. 
+  # It can be easily confused with the EKS endpoint. Adding EKS endpoint url here results in issue 1015. 
+  # It has been intentionally commented out. 
+
+#  endpoint_url: ""
 
 # log level for the controller
 log:
