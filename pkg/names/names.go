@@ -91,6 +91,8 @@ var (
 		{"Ecr", "ECR", "ecr", nil},
 		{"Efs", "EFS", "efs", nil},
 		{"Eks", "EKS", "eks", nil},
+		// Prevent "Enable" and "Enabling" from becoming "ENAble"
+		{"Ena", "ENA", "ena", regexp.MustCompile("Ena(?!bl)", regexp.None)},
 		{"Ecmp", "ECMP", "ecmp", nil},
 		{"Fpga", "FPGA", "fpga", nil},
 		{"Gpu", "GPU", "gpu", nil},
