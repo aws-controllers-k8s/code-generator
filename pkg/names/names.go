@@ -91,6 +91,7 @@ var (
 		{"Ecr", "ECR", "ecr", nil},
 		{"Efs", "EFS", "efs", nil},
 		{"Eks", "EKS", "eks", nil},
+		{"Ecmp", "ECMP", "ecmp", nil},
 		{"Fpga", "FPGA", "fpga", nil},
 		{"Gpu", "GPU", "gpu", nil},
 		{"Html", "HTML", "html", nil},

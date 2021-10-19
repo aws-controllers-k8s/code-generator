@@ -64,6 +64,7 @@ func TestNames(t *testing.T) {
 		{"Iops", "IOPS", "iops", "iops"},
 		{"IoPerformance", "IOPerformance", "ioPerformance", "io_performance"},
 		{"Vlan", "VLAN", "vlan", "vlan"},
+		{"Ecmp", "ECMP", "ecmp", "ecmp"},
 	}
 	for _, tc := range testCases {
 		n := names.New(tc.original)
