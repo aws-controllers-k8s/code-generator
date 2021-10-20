@@ -3,8 +3,9 @@ package model_test
 import (
 	"testing"
 
-	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 )
 
 func TestReplacePkgName(t *testing.T) {
