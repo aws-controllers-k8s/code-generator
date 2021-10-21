@@ -74,6 +74,38 @@ type PrefixConfig struct {
 	StatusField string `json:"status_field,omitempty"`
 }
 
+// GetCustomListFieldMembers finds all of the custom list fields that need to
+// be generated as defined in the generator config.
+func (c *Config) GetCustomListFieldMembers() []string {
+	members := []string{}
+
+	for _, resource := range c.Resources {
+		for _, field := range resource.Fields {
+			if field.CustomField != nil && field.CustomField.ListOf != "" {
+				members = append(members, field.CustomField.ListOf)
+			}
+		}
+	}
+
+	return members
+}
+
+// GetCustomMapFieldMembers finds all of the custom map fields that need to be
+// generated as defined in the generator config.
+func (c *Config) GetCustomMapFieldMembers() []string {
+	members := []string{}
+
+	for _, resource := range c.Resources {
+		for _, field := range resource.Fields {
+			if field.CustomField != nil && field.CustomField.MapOf != "" {
+				members = append(members, field.CustomField.MapOf)
+			}
+		}
+	}
+
+	return members
+}
+
 // ResourceContainsSecret returns true if any of the fields in any resource are
 // defined as secrets.
 func (c *Config) ResourceContainsSecret() bool {

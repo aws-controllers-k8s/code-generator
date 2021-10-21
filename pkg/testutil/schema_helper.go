@@ -73,17 +73,18 @@ func NewModelForServiceWithOptions(t *testing.T, servicePackageName string, opti
 		}
 	}
 	options.SetDefaults()
-	sdkHelper := acksdk.NewHelper(path)
-	sdkHelper.WithAPIVersion(options.ServiceAPIVersion)
-	sdkAPI, err := sdkHelper.API(servicePackageName)
-	if err != nil {
-		t.Fatal(err)
-	}
+
 	generatorConfigPath := filepath.Join(path, "models", "apis", servicePackageName, options.ServiceAPIVersion, options.GeneratorConfigFile)
 	if _, err := os.Stat(generatorConfigPath); os.IsNotExist(err) {
 		generatorConfigPath = ""
 	}
 	cfg, err := ackgenconfig.New(generatorConfigPath, ackgenerate.DefaultConfig)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sdkHelper := acksdk.NewHelper(path, cfg)
+	sdkHelper.WithAPIVersion(options.ServiceAPIVersion)
+	sdkAPI, err := sdkHelper.API(servicePackageName)
 	if err != nil {
 		t.Fatal(err)
 	}

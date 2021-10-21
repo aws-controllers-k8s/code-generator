@@ -20,6 +20,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	config "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 	"github.com/aws-controllers-k8s/code-generator/pkg/sdk"
 )
@@ -28,12 +29,16 @@ var (
 	lambda *model.SDKAPI
 )
 
-func lambdaSDKAPI(t *testing.T) *model.SDKAPI {
+func emptyConfig() config.Config {
+	return config.Config{}
+}
+
+func lambdaSDKAPI(t *testing.T, cfg config.Config) *model.SDKAPI {
 	if lambda != nil {
 		return lambda
 	}
 	path := filepath.Clean("../testdata")
-	sdkHelper := sdk.NewHelper(path)
+	sdkHelper := sdk.NewHelper(path, cfg)
 	lambda, err := sdkHelper.API("lambda")
 	if err != nil {
 		t.Fatal(err)
@@ -90,7 +95,7 @@ func TestGetInputShapeRef(t *testing.T) {
 			false,
 		},
 	}
-	api := lambdaSDKAPI(t)
+	api := lambdaSDKAPI(t, emptyConfig())
 	for _, test := range tests {
 		got, found := api.GetInputShapeRef(test.opID, test.path)
 		require.Equal(test.expFound, found, test.path)
@@ -163,7 +168,7 @@ func TestGetOutputShapeRef(t *testing.T) {
 			false,
 		},
 	}
-	api := lambdaSDKAPI(t)
+	api := lambdaSDKAPI(t, emptyConfig())
 	for _, test := range tests {
 		got, found := api.GetOutputShapeRef(test.opID, test.path)
 		require.Equal(test.expFound, found, test.path)

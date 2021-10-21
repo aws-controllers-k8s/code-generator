@@ -137,25 +137,45 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 				// It's a Status field...
 				continue
 			}
-			if fieldConfig.From == nil {
-				// Isn't an additional Spec field...
-				continue
-			}
-			from := fieldConfig.From
-			memberShapeRef, found := m.SDKAPI.GetInputShapeRef(
-				from.Operation, from.Path,
-			)
-			if found {
-				memberNames := names.New(targetFieldName)
-				crd.AddSpecField(memberNames, memberShapeRef)
-			} else {
-				// This is a compile-time failure, just bomb out...
-				msg := fmt.Sprintf(
-					"unknown additional Spec field with Op: %s and Path: %s",
+
+			var found bool
+			var memberShapeRef *awssdkmodel.ShapeRef
+
+			if fieldConfig.From != nil {
+				from := fieldConfig.From
+				memberShapeRef, found = m.SDKAPI.GetInputShapeRef(
 					from.Operation, from.Path,
 				)
-				panic(msg)
+				if !found {
+					// This is a compile-time failure, just bomb out...
+					msg := fmt.Sprintf(
+						"unknown additional Spec field with Op: %s and Path: %s",
+						from.Operation, from.Path,
+					)
+					panic(msg)
+				}
+			} else if fieldConfig.CustomField != nil {
+				customField := fieldConfig.CustomField
+				if customField.ListOf != "" {
+					memberShapeRef = m.SDKAPI.GetCustomShapeRef(customField.ListOf)
+				} else {
+					memberShapeRef = m.SDKAPI.GetCustomShapeRef(customField.MapOf)
+				}
+				if memberShapeRef == nil {
+					// This is a compile-time failure, just bomb out...
+					msg := fmt.Sprintf(
+						"unknown additional Spec field with custom field %+v",
+						customField,
+					)
+					panic(msg)
+				}
+			} else {
+				// Spec field is not well defined
+				continue
 			}
+
+			memberNames := names.New(targetFieldName)
+			crd.AddSpecField(memberNames, memberShapeRef)
 		}
 
 		// Now process the fields that will go into the Status struct. We want
@@ -209,25 +229,45 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 				// It's a Spec field...
 				continue
 			}
-			if fieldConfig.From == nil {
-				// Isn't an additional Status field...
-				continue
-			}
-			from := fieldConfig.From
-			memberShapeRef, found := m.SDKAPI.GetOutputShapeRef(
-				from.Operation, from.Path,
-			)
-			if found {
-				memberNames := names.New(targetFieldName)
-				crd.AddStatusField(memberNames, memberShapeRef)
-			} else {
-				// This is a compile-time failure, just bomb out...
-				msg := fmt.Sprintf(
-					"unknown additional Status field with Op: %s and Path: %s",
+
+			var found bool
+			var memberShapeRef *awssdkmodel.ShapeRef
+
+			if fieldConfig.From != nil {
+				from := fieldConfig.From
+				memberShapeRef, found = m.SDKAPI.GetOutputShapeRef(
 					from.Operation, from.Path,
 				)
-				panic(msg)
+				if !found {
+					// This is a compile-time failure, just bomb out...
+					msg := fmt.Sprintf(
+						"unknown additional Status field with Op: %s and Path: %s",
+						from.Operation, from.Path,
+					)
+					panic(msg)
+				}
+			} else if fieldConfig.CustomField != nil {
+				customField := fieldConfig.CustomField
+				if customField.ListOf != "" {
+					memberShapeRef = m.SDKAPI.GetCustomShapeRef(customField.ListOf)
+				} else {
+					memberShapeRef = m.SDKAPI.GetCustomShapeRef(customField.MapOf)
+				}
+				if memberShapeRef == nil {
+					// This is a compile-time failure, just bomb out...
+					msg := fmt.Sprintf(
+						"unknown additional Status field with custom field %+v",
+						customField,
+					)
+					panic(msg)
+				}
+			} else {
+				// Status field is not well defined
+				continue
 			}
+
+			memberNames := names.New(targetFieldName)
+			crd.AddStatusField(memberNames, memberShapeRef)
 		}
 
 		crds = append(crds, crd)
