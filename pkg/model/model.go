@@ -695,8 +695,8 @@ func (m *Model) GetConfig() *ackgenconfig.Config {
 // e.g. "sns.services.k8s.aws"
 func (m *Model) APIGroup() string {
 	suffix := "services.k8s.aws"
-	if m.SDKAPI.apiGroupSuffix != "" {
-		suffix = m.SDKAPI.apiGroupSuffix
+	if m.SDKAPI.APIGroupSuffix != "" {
+		suffix = m.SDKAPI.APIGroupSuffix
 	}
 	return fmt.Sprintf("%s.%s", m.servicePackageName, suffix)
 }

@@ -14,169 +14,26 @@
 package model
 
 import (
-	"errors"
-	"fmt"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"sort"
 	"strings"
 
-	"gopkg.in/src-d/go-git.v4"
+	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
 
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/names"
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
-
-	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
 )
 
-var (
-	ErrInvalidVersionDirectory = errors.New(
-		"expected to find only directories in api model directory but found non-directory",
-	)
-	ErrNoValidVersionDirectory = errors.New(
-		"no valid version directories found",
-	)
-	ErrServiceNotFound = errors.New(
-		"no such service",
-	)
-	ErrAPIVersionNotFound = errors.New(
-		"no such api version",
-	)
+const (
+	// ConflictingNameSuffix is appended to type names when they overlap with
+	// well-known common struct names for things like a CRD itself, or its
+	// Spec/Status subfield struct type name.
+	ConflictingNameSuffix = "_SDK"
 )
-
-// SDKHelper is a helper struct that helps work with the aws-sdk-go models and
-// API model loader
-type SDKHelper struct {
-	gitRepository *git.Repository
-	basePath      string
-	loader        *awssdkmodel.Loader
-	// Default is set by `FirstAPIVersion`
-	apiVersion string
-	// Default is "services.k8s.aws"
-	APIGroupSuffix string
-}
-
-// NewSDKHelper returns a new SDKHelper object
-func NewSDKHelper(basePath string) *SDKHelper {
-	return &SDKHelper{
-		basePath: basePath,
-		loader: &awssdkmodel.Loader{
-			BaseImport:            basePath,
-			IgnoreUnsupportedAPIs: true,
-		},
-	}
-}
-
-// WithSDKVersion checks out the sdk git repository to the provided version. To use
-// this function h.basePath should point to a git repository.
-func (h *SDKHelper) WithSDKVersion(version string) error {
-	if h.gitRepository == nil {
-		gitRepository, err := util.LoadRepository(h.basePath)
-		if err != nil {
-			return fmt.Errorf("error loading repository from %s: %v", h.basePath, err)
-		}
-		h.gitRepository = gitRepository
-	}
-
-	err := util.CheckoutRepositoryTag(h.gitRepository, version)
-	if err != nil {
-		return fmt.Errorf("cannot checkout tag %s: %v", version, err)
-	}
-	return nil
-}
-
-// WithAPIVersion sets the `apiVersion` field.
-func (h *SDKHelper) WithAPIVersion(apiVersion string) {
-	h.apiVersion = apiVersion
-}
-
-// API returns the aws-sdk-go API model for a supplied service model name.
-func (h *SDKHelper) API(serviceModelName string) (*SDKAPI, error) {
-	modelPath, _, err := h.ModelAndDocsPath(serviceModelName)
-	if err != nil {
-		return nil, err
-	}
-	apis, err := h.loader.Load([]string{modelPath})
-	if err != nil {
-		return nil, err
-	}
-	// apis is a map, keyed by the service alias, of pointers to aws-sdk-go
-	// model API objects
-	for _, api := range apis {
-		// If we don't do this, we can end up with panic()'s like this:
-		// panic: assignment to entry in nil map
-		// when trying to execute Shape.GoType().
-		//
-		// Calling API.ServicePackageDoc() ends up resetting the API.imports
-		// unexported map variable...
-		_ = api.ServicePackageDoc()
-		return &SDKAPI{api, nil, nil, h.APIGroupSuffix}, nil
-	}
-	return nil, ErrServiceNotFound
-}
-
-// ModelAndDocsPath returns two string paths to the supplied service's API and
-// doc JSON files
-func (h *SDKHelper) ModelAndDocsPath(
-	serviceModelName string,
-) (string, string, error) {
-	if h.apiVersion == "" {
-		apiVersion, err := h.FirstAPIVersion(serviceModelName)
-		if err != nil {
-			return "", "", err
-		}
-		h.apiVersion = apiVersion
-	}
-	versionPath := filepath.Join(
-		h.basePath, "models", "apis", serviceModelName, h.apiVersion,
-	)
-	modelPath := filepath.Join(versionPath, "api-2.json")
-	docsPath := filepath.Join(versionPath, "docs-2.json")
-	return modelPath, docsPath, nil
-}
-
-// FirstAPIVersion returns the first found API version for a service API.
-// (e.h. "2012-10-03")
-func (h *SDKHelper) FirstAPIVersion(serviceModelName string) (string, error) {
-	versions, err := h.GetAPIVersions(serviceModelName)
-	if err != nil {
-		return "", err
-	}
-	sort.Strings(versions)
-	return versions[0], nil
-}
-
-// GetAPIVersions returns the list of API Versions found in a service directory.
-func (h *SDKHelper) GetAPIVersions(serviceModelName string) ([]string, error) {
-	apiPath := filepath.Join(h.basePath, "models", "apis", serviceModelName)
-	versionDirs, err := ioutil.ReadDir(apiPath)
-	if err != nil {
-		return nil, err
-	}
-	versions := []string{}
-	for _, f := range versionDirs {
-		version := f.Name()
-		fp := filepath.Join(apiPath, version)
-		fi, err := os.Lstat(fp)
-		if err != nil {
-			return nil, err
-		}
-		if !fi.IsDir() {
-			return nil, fmt.Errorf("found %s: %v", version, ErrInvalidVersionDirectory)
-		}
-		versions = append(versions, version)
-	}
-	if len(versions) == 0 {
-		return nil, ErrNoValidVersionDirectory
-	}
-	return versions, nil
-}
 
 // SDKAPI contains an API model for a single AWS service API
 type SDKAPI struct {
-	API *awssdkmodel.API
+	API            *awssdkmodel.API
+	APIGroupSuffix string
 	// A map of operation type and resource name to
 	// aws-sdk-go/private/model/api.Operation structs
 	opMap *OperationMap
@@ -184,7 +41,6 @@ type SDKAPI struct {
 	// renamed type name (due to conflicting names)
 	typeRenames map[string]string
 	// Default is "services.k8s.aws"
-	apiGroupSuffix string
 }
 
 // GetPayloads returns a slice of strings of Shape names representing input and
@@ -243,41 +99,6 @@ func (a *SDKAPI) GetOutputShapeRef(
 		return nil, false
 	}
 	return getMemberByPath(op.OutputRef.Shape, path)
-}
-
-// getMemberByPath returns a ShapeRef given a root Shape and a dot-notation
-// object search path. Given the explicit type check for list type members
-// both ".." and "." notations work currently.
-// TODO: Add support for other types such as map.
-func getMemberByPath(
-	shape *awssdkmodel.Shape,
-	path string,
-) (*awssdkmodel.ShapeRef, bool) {
-	elements := strings.Split(path, ".")
-	last := len(elements) - 1
-	for x, elem := range elements {
-		if elem == "" {
-			continue
-		}
-		if shape == nil {
-			return nil, false
-		}
-		shapeRef, ok := shape.MemberRefs[elem]
-		if !ok {
-			return nil, false
-		}
-		if x == last {
-			return shapeRef, true
-		}
-		elemType := shapeRef.Shape.Type
-		switch elemType {
-		case "list":
-			shape = shapeRef.Shape.MemberRef.Shape
-		default:
-			shape = shapeRef.Shape
-		}
-	}
-	return nil, false
 }
 
 // CRDNames returns a slice of names structs for all top-level resources in the
@@ -380,6 +201,17 @@ func (a *SDKAPI) APIInterfaceTypeName() string {
 	return a.API.StructName()
 }
 
+// NewSDKAPI returns a pointer to a new `ackmodel.SDKAPI` struct that describes
+// the AWS SDK API and its respective groupings, mappings and renamings.
+func NewSDKAPI(api *awssdkmodel.API, apiGroupSuffix string) *SDKAPI {
+	return &SDKAPI{
+		API:            api,
+		APIGroupSuffix: apiGroupSuffix,
+		opMap:          nil,
+		typeRenames:    nil,
+	}
+}
+
 // Override the operation type and/or resource name if specified in config
 func getOpTypeAndResourceName(opID string, cfg *ackgenconfig.Config) ([]OpType, string) {
 	opType, resName := GetOpTypeAndResourceNameFromOpID(opID, cfg)
@@ -399,4 +231,39 @@ func getOpTypeAndResourceName(opID string, cfg *ackgenconfig.Config) ([]OpType, 
 		}
 	}
 	return opTypes, resName
+}
+
+// getMemberByPath returns a ShapeRef given a root Shape and a dot-notation
+// object search path. Given the explicit type check for list type members
+// both ".." and "." notations work currently.
+// TODO: Add support for other types such as map.
+func getMemberByPath(
+	shape *awssdkmodel.Shape,
+	path string,
+) (*awssdkmodel.ShapeRef, bool) {
+	elements := strings.Split(path, ".")
+	last := len(elements) - 1
+	for x, elem := range elements {
+		if elem == "" {
+			continue
+		}
+		if shape == nil {
+			return nil, false
+		}
+		shapeRef, ok := shape.MemberRefs[elem]
+		if !ok {
+			return nil, false
+		}
+		if x == last {
+			return shapeRef, true
+		}
+		elemType := shapeRef.Shape.Type
+		switch elemType {
+		case "list":
+			shape = shapeRef.Shape.MemberRef.Shape
+		default:
+			shape = shapeRef.Shape
+		}
+	}
+	return nil, false
 }

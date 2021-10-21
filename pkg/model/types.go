@@ -22,10 +22,10 @@ import (
 	"github.com/aws-controllers-k8s/code-generator/pkg/names"
 )
 
-// cleanGoType returns a tuple of three strings representing the normalized Go
+// CleanGoType returns a tuple of three strings representing the normalized Go
 // types in "element", "normal" and "with package name" format for a particular
 // Shape.
-func cleanGoType(
+func CleanGoType(
 	api *SDKAPI,
 	cfg *ackgenconfig.Config,
 	shape *awssdkmodel.Shape,
@@ -49,7 +49,7 @@ func cleanGoType(
 	} else if shape.Type == "list" {
 		// If it's a list type, where the element is a structure, we need to
 		// set the GoType to the cleaned-up Camel-cased name
-		mgte, mgt, mgtwp := cleanGoType(api, cfg, shape.MemberRef.Shape, fieldCfg)
+		mgte, mgt, mgtwp := CleanGoType(api, cfg, shape.MemberRef.Shape, fieldCfg)
 		cleanNames := names.New(mgte)
 		gte = cleanNames.Camel
 		if api.HasConflictingTypeName(mgte, cfg) {

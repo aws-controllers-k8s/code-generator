@@ -28,8 +28,8 @@ import (
 	ackgenerate "github.com/aws-controllers-k8s/code-generator/pkg/generate/ack"
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
 	cpgenerate "github.com/aws-controllers-k8s/code-generator/pkg/generate/crossplane"
-	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
+	acksdk "github.com/aws-controllers-k8s/code-generator/pkg/sdk"
 )
 
 // crossplaneCmd is the command that generates Crossplane API types
@@ -70,7 +70,7 @@ func generateCrossplane(_ *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	sdkHelper := model.NewSDKHelper(sdkDir)
+	sdkHelper := acksdk.NewHelper(sdkDir)
 	sdkHelper.APIGroupSuffix = "aws.crossplane.io"
 	sdkAPI, err := sdkHelper.API(svcAlias)
 	if err != nil {

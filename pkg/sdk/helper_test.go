@@ -11,7 +11,7 @@
 // express or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
-package model_test
+package sdk_test
 
 import (
 	"path/filepath"
@@ -21,6 +21,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
+	"github.com/aws-controllers-k8s/code-generator/pkg/sdk"
 )
 
 var (
@@ -32,7 +33,7 @@ func lambdaSDKAPI(t *testing.T) *model.SDKAPI {
 		return lambda
 	}
 	path := filepath.Clean("../testdata")
-	sdkHelper := model.NewSDKHelper(path)
+	sdkHelper := sdk.NewHelper(path)
 	lambda, err := sdkHelper.API("lambda")
 	if err != nil {
 		t.Fatal(err)

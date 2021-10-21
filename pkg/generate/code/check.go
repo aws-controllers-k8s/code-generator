@@ -192,5 +192,3 @@ func checkRequiredFieldsMissingFromShapeReadMany(
 	result = fmt.Sprintf("%s == nil", resVarPath)
 	return fmt.Sprintf("%sreturn %s\n", indent, result)
 }
-
-

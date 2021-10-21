@@ -472,7 +472,7 @@ func (r *CRD) GetOutputShape(
 		wrapperOutputShape, err := r.getWrapperOutputShape(outputShape,
 			*wrapperFieldPath)
 		if err != nil {
-			msg := fmt.Sprintf("Unable to unwrap the output shape: %s " +
+			msg := fmt.Sprintf("Unable to unwrap the output shape: %s "+
 				"with field path override: %s. error: %v",
 				outputShape.OrigShapeName, *wrapperFieldPath, err)
 			panic(msg)
@@ -506,7 +506,7 @@ func (r *CRD) getWrapperOutputShape(
 	// wrapper field must be structure; otherwise cannot unpack
 	if memberRef.Shape.Type != "structure" {
 		return nil, fmt.Errorf(
-			"output wrapper overrides can only contain fields of type" +
+			"output wrapper overrides can only contain fields of type"+
 				" 'structure'. Found wrapper override field %s of type '%s'",
 			wrapperField, memberRef.Shape.Type)
 	}

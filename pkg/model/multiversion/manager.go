@@ -23,6 +23,7 @@ import (
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
 	ackmetadata "github.com/aws-controllers-k8s/code-generator/pkg/metadata"
 	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
+	acksdk "github.com/aws-controllers-k8s/code-generator/pkg/sdk"
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
 )
 
@@ -71,7 +72,7 @@ func NewAPIVersionManager(
 		return nil, fmt.Errorf("cannot read sdk git repository: %v", err)
 	}
 
-	SDKAPIHelper := ackmodel.NewSDKHelper(sdkCacheDir)
+	SDKAPIHelper := acksdk.NewHelper(sdkCacheDir)
 
 	// create model for each non-deprecated api version
 	models := map[string]*ackmodel.Model{}
