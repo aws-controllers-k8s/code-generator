@@ -1314,7 +1314,7 @@ func varEmptyConstructorK8sType(
 // setSDKForScalar returns the Go code that sets the value of a target variable
 // or field to a scalar value. For target variables that are structs, we output
 // the aws-sdk-go's common SetXXX() method. For everything else, we output
-// normal assignment model.
+// normal assignment operations.
 func setSDKForScalar(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,

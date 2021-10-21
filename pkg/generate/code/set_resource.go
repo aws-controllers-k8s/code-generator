@@ -307,7 +307,7 @@ func ListMemberNameInReadManyOutput(
 	// Find the element in the output shape that contains the list of
 	// resources. This heuristic is simplistic (just look for the field with a
 	// list type) but seems to be followed consistently by the aws-sdk-go for
-	// List model.
+	// List operations.
 	for memberName, memberShapeRef := range r.Ops.ReadMany.OutputRef.Shape.MemberRefs {
 		if memberShapeRef.Shape.Type == "list" {
 			return memberName
@@ -397,7 +397,7 @@ func setResourceReadMany(
 	// Find the element in the output shape that contains the list of
 	// resources. This heuristic is simplistic (just look for the field with a
 	// list type) but seems to be followed consistently by the aws-sdk-go for
-	// List model.
+	// List operations.
 	for memberName, memberShapeRef := range outputShape.MemberRefs {
 		if memberShapeRef.Shape.Type == "list" {
 			listShapeName = memberName
