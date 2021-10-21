@@ -43,7 +43,7 @@ type customShapeInjector struct {
 func (h *Helper) InjectCustomShapes(sdkapi *ackmodel.SDKAPI) error {
 	injector := customShapeInjector{sdkapi}
 
-	for _, memberShape := range h.getCustomMapFieldMembers() {
+	for _, memberShape := range h.cfg.GetCustomMapFieldMembers() {
 		customShape, err := injector.newMap(memberShape)
 		if err != nil {
 			return err
@@ -53,7 +53,7 @@ func (h *Helper) InjectCustomShapes(sdkapi *ackmodel.SDKAPI) error {
 		sdkapi.CustomShapes = append(sdkapi.CustomShapes, customShape)
 	}
 
-	for _, memberShape := range h.getCustomListFieldMembers() {
+	for _, memberShape := range h.cfg.GetCustomListFieldMembers() {
 		customShape, err := injector.newList(memberShape)
 		if err != nil {
 			return err
@@ -64,38 +64,6 @@ func (h *Helper) InjectCustomShapes(sdkapi *ackmodel.SDKAPI) error {
 	}
 
 	return nil
-}
-
-// getCustomListFieldMembers finds all of the custom list fields that need to
-// be generated as defined in the generator config.
-func (h *Helper) getCustomListFieldMembers() []string {
-	members := []string{}
-
-	for _, resource := range h.cfg.Resources {
-		for _, field := range resource.Fields {
-			if field.CustomField != nil && field.CustomField.ListOf != "" {
-				members = append(members, field.CustomField.ListOf)
-			}
-		}
-	}
-
-	return members
-}
-
-// getCustomMapFieldMembers finds all of the custom map fields that need to be
-// generated as defined in the generator config.
-func (h *Helper) getCustomMapFieldMembers() []string {
-	members := []string{}
-
-	for _, resource := range h.cfg.Resources {
-		for _, field := range resource.Fields {
-			if field.CustomField != nil && field.CustomField.MapOf != "" {
-				members = append(members, field.CustomField.MapOf)
-			}
-		}
-	}
-
-	return members
 }
 
 // createShapeRefForMember creates a minimal ShapeRef type to encapsulate a
