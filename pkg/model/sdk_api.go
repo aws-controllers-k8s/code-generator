@@ -76,24 +76,34 @@ func (a *SDKAPI) GetOperationMap(cfg *ackgenconfig.Config) *OperationMap {
 	return &opMap
 }
 
-// GetCustomListRef finds a ShapeRef for a supplied custom list field
-func (a *SDKAPI) GetCustomListRef(memberShapeName string) (*awssdkmodel.ShapeRef, bool) {
-	for _, shape := range a.CustomShapes {
-		if shape.MemberShapeName != nil && *shape.MemberShapeName == memberShapeName {
-			return shape.ShapeRef, true
-		}
+// GetCustomShapeRef finds a ShapeRef for a custom shape using either its member
+// or its value shape name.
+func (a *SDKAPI) GetCustomShapeRef(shapeName string) *awssdkmodel.ShapeRef {
+	customList := a.getCustomListRef(shapeName)
+	if customList != nil {
+		return customList
 	}
-	return nil, false
+	return a.getCustomMapRef(shapeName)
 }
 
-// GetCustomMapRef finds a ShapeRef for a supplied custom map field
-func (a *SDKAPI) GetCustomMapRef(valueShapeName string) (*awssdkmodel.ShapeRef, bool) {
+// getCustomListRef finds a ShapeRef for a supplied custom list field
+func (a *SDKAPI) getCustomListRef(memberShapeName string) *awssdkmodel.ShapeRef {
 	for _, shape := range a.CustomShapes {
-		if shape.ValueShapeName != nil && *shape.ValueShapeName == valueShapeName {
-			return shape.ShapeRef, true
+		if shape.MemberShapeName != nil && *shape.MemberShapeName == memberShapeName {
+			return shape.ShapeRef
 		}
 	}
-	return nil, false
+	return nil
+}
+
+// getCustomMapRef finds a ShapeRef for a supplied custom map field
+func (a *SDKAPI) getCustomMapRef(valueShapeName string) *awssdkmodel.ShapeRef {
+	for _, shape := range a.CustomShapes {
+		if shape.ValueShapeName != nil && *shape.ValueShapeName == valueShapeName {
+			return shape.ShapeRef
+		}
+	}
+	return nil
 }
 
 // GetInputShapeRef finds a ShapeRef for a supplied member path (dot-notation)

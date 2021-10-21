@@ -119,7 +119,7 @@ func (i *customShapeInjector) createKeyShape(shapeName string) *awssdkmodel.Shap
 	}
 }
 
-// newList loads a shape given its name and creates a custom shape that is a
+// newMap loads a shape given its name and creates a custom shape that is a
 // map with strings as keys and that shape as the value.
 func (i *customShapeInjector) newMap(valueShapeName string) (*ackmodel.CustomShape, error) {
 	valueShape, exists := i.sdkAPI.API.Shapes[valueShapeName]

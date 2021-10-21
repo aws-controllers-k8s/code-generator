@@ -136,8 +136,8 @@ type PrintFieldConfig struct {
 	Index int `json:"index"`
 }
 
-// CustomField instructs the code generator to create a new field that does
-// not exist in the SDK.
+// CustomField instructs the code generator to create a new list or map field
+// type using a shape that exists in the SDK.
 type CustomFieldConfig struct {
 	// ListOf provides the name of the SDK shape which will become the
 	// member of a custom slice field.

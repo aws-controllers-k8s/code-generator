@@ -157,11 +157,11 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 			} else if fieldConfig.CustomField != nil {
 				customField := fieldConfig.CustomField
 				if customField.ListOf != "" {
-					memberShapeRef, found = m.SDKAPI.GetCustomListRef(customField.ListOf)
+					memberShapeRef = m.SDKAPI.GetCustomShapeRef(customField.ListOf)
 				} else {
-					memberShapeRef, found = m.SDKAPI.GetCustomMapRef(customField.MapOf)
+					memberShapeRef = m.SDKAPI.GetCustomShapeRef(customField.MapOf)
 				}
-				if !found {
+				if memberShapeRef == nil {
 					// This is a compile-time failure, just bomb out...
 					msg := fmt.Sprintf(
 						"unknown additional Spec field with custom field %+v",
@@ -249,11 +249,11 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 			} else if fieldConfig.CustomField != nil {
 				customField := fieldConfig.CustomField
 				if customField.ListOf != "" {
-					memberShapeRef, found = m.SDKAPI.GetCustomListRef(customField.ListOf)
+					memberShapeRef = m.SDKAPI.GetCustomShapeRef(customField.ListOf)
 				} else {
-					memberShapeRef, found = m.SDKAPI.GetCustomMapRef(customField.MapOf)
+					memberShapeRef = m.SDKAPI.GetCustomShapeRef(customField.MapOf)
 				}
-				if !found {
+				if memberShapeRef == nil {
 					// This is a compile-time failure, just bomb out...
 					msg := fmt.Sprintf(
 						"unknown additional Status field with custom field %+v",
