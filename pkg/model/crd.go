@@ -185,7 +185,22 @@ func (r *CRD) InputFieldRename(
 	if r.cfg == nil {
 		return origFieldName, false
 	}
-	return r.cfg.ResourceInputFieldRename(
+	return r.cfg.ResourceFieldRename(
+		r.Names.Original, opID, origFieldName,
+	)
+}
+
+// OutputFieldRename returns the renamed field for a supplied Operation ID and
+// original field name and whether or not a renamed override field name was
+// found
+func (r *CRD) OutputFieldRename(
+	opID string,
+	origFieldName string,
+) (string, bool) {
+	if r.cfg == nil {
+		return origFieldName, false
+	}
+	return r.cfg.ResourceFieldRename(
 		r.Names.Original, opID, origFieldName,
 	)
 }
@@ -726,22 +741,23 @@ func (r *CRD) GetSanitizedMemberPath(
 	resVarPath := koVarName
 	cleanMemberNames := names.New(memberName)
 	cleanMemberName := cleanMemberNames.Camel
-	// Check that the field has potentially been renamed
-	renamedName, wasRenamed := r.InputFieldRename(
-		op.Name, memberName,
-	)
-	_, found := r.SpecFields[renamedName]
-	if found && !wasRenamed {
+
+	if _, inSpec := r.SpecFields[memberName]; inSpec {
 		resVarPath = resVarPath + r.Config().PrefixConfig.SpecField + "." + cleanMemberName
-	} else if found {
-		resVarPath = resVarPath + r.Config().PrefixConfig.SpecField + "." + renamedName
+	} else if _, inStat := r.StatusFields[memberName]; inStat {
+		resVarPath = resVarPath + r.Config().PrefixConfig.StatusField + "." + cleanMemberName
 	} else {
-		_, found = r.StatusFields[memberName]
-		if !found {
+		// Check if field has been renamed
+		inputRename, _ := r.InputFieldRename(op.Name, memberName)
+		outputRename, _ := r.OutputFieldRename(op.Name, memberName)
+		if _, inSpec = r.SpecFields[inputRename]; inSpec {
+			resVarPath = resVarPath + r.Config().PrefixConfig.SpecField + "." + inputRename
+		} else if _, inStat = r.StatusFields[outputRename]; inStat {
+			resVarPath = resVarPath + r.Config().PrefixConfig.StatusField + "." + outputRename
+		} else {
 			return "", fmt.Errorf(
 				"the required field %s is NOT present in CR's Spec or Status", memberName)
 		}
-		resVarPath = resVarPath + r.Config().PrefixConfig.StatusField + "." + cleanMemberName
 	}
 	return resVarPath, nil
 }

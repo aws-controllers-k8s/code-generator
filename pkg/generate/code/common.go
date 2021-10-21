@@ -37,6 +37,7 @@ func FindIdentifiersInShape(
 	if r == nil || shape == nil {
 		return identifiers
 	}
+
 	identifierLookup := []string{
 		"Id",
 		"Ids",
@@ -57,7 +58,7 @@ func FindIdentifiersInShape(
 	return identifiers
 }
 
-// FindIdentifiersInShape returns the identifier fields of a given shape which
+// FindARNIdentifiersInShape returns the identifier fields of a given shape which
 // fit expect an ARN.
 func FindARNIdentifiersInShape(
 	r *model.CRD,
@@ -166,14 +167,13 @@ func FindPrimaryIdentifierFieldNames(
 	}
 
 	if crField == "" {
-		renamedName, _ := r.InputFieldRename(
-			op.Name, shapeField,
-		)
+		inputRename, _ := r.InputFieldRename(op.Name, shapeField)
+		outputRename, _ := r.OutputFieldRename(op.Name, shapeField)
 
-		_, inSpec := r.SpecFields[renamedName]
-		_, inStatus := r.StatusFields[renamedName]
-		if inSpec || inStatus {
-			crField = renamedName
+		if _, inSpec := r.SpecFields[inputRename]; inSpec {
+			crField = inputRename
+		} else if _, inStatus := r.StatusFields[outputRename]; inStatus {
+			crField = outputRename
 		} else {
 			panic("Could not find corresponding spec or status field for primary identifier " + shapeField)
 		}

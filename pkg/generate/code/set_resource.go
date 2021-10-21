@@ -135,7 +135,7 @@ func SetResource(
 	out := "\n"
 	indent := strings.Repeat("\t", indentLevel)
 
-	// Recursively descend down through the set of fields on the Output shape,
+	// Recursively descend through the set of fields on the Output shape,
 	// creating temporary variables, populating those temporary variables'
 	// fields with further-nested fields as needed
 	for memberIndex, memberName := range outputShape.MemberNames() {
@@ -202,19 +202,19 @@ func SetResource(
 		targetAdaptedVarName := targetVarName
 
 		// Check that the field has potentially been renamed
-		renamedName, _ := r.InputFieldRename(
-			op.Name, memberName,
-		)
-		f, found = r.SpecFields[renamedName]
+		inputRename, _ := r.InputFieldRename(op.Name, memberName)
+		outputRename, _ := r.OutputFieldRename(op.Name, memberName)
+		f, found = r.SpecFields[inputRename]
 		if found {
 			targetAdaptedVarName += cfg.PrefixConfig.SpecField
 		} else {
-			f, found = r.StatusFields[memberName]
-			if !found {
+			f, found = r.StatusFields[outputRename]
+			if found {
+				targetAdaptedVarName += cfg.PrefixConfig.StatusField
+			} else {
 				// TODO(jaypipes): check generator config for exceptions?
 				continue
 			}
-			targetAdaptedVarName += cfg.PrefixConfig.StatusField
 		}
 		targetMemberShapeRef = f.ShapeRef
 		// fieldVarName is the name of the variable that is used for temporary
@@ -476,30 +476,35 @@ func setResourceReadMany(
 		// Determine whether the input shape's field is in the Spec or the
 		// Status struct and set the source variable appropriately.
 		var f *model.Field
-		var found bool
 		var targetMemberShapeRef *awssdkmodel.ShapeRef
 		targetAdaptedVarName := targetVarName
+
 		// Check that the field has potentially been renamed
-		renamedName, foundInputFieldRename := r.InputFieldRename(
+		renamedName := memberName
+		inputRename, foundInputFieldRename := r.InputFieldRename(
 			op.Name, memberName,
 		)
-		f, found = r.SpecFields[renamedName]
-		if found {
+		outputRename, foundOutputFieldRename := r.OutputFieldRename(
+			op.Name, memberName,
+		)
+		if specField, inSpec := r.SpecFields[inputRename]; inSpec {
 			targetAdaptedVarName += cfg.PrefixConfig.SpecField
-		} else {
-			f, found = r.StatusFields[renamedName]
-			if !found {
-				if foundInputFieldRename {
-					msg := fmt.Sprintf(
-						"Input field rename %s for operation %s is not part of %s Spec or Status fields",
-						memberName, op.Name, r.Names.Camel,
-					)
-					panic(msg)
-				}
-				continue
-			}
+			renamedName = inputRename
+			f = specField
+		} else if statField, inStat := r.StatusFields[outputRename]; inStat {
 			targetAdaptedVarName += cfg.PrefixConfig.StatusField
+			renamedName = outputRename
+			f = statField
+		} else if foundInputFieldRename || foundOutputFieldRename {
+			msg := fmt.Sprintf(
+				"Field rename %s for operation %s is not part of %s Spec or" +
+					" Status fields", memberName, op.Name, r.Names.Camel)
+			panic(msg)
+		} else {
+			// Field not detected in Spec or Status
+			continue
 		}
+
 		targetMemberShapeRef = f.ShapeRef
 		out += fmt.Sprintf(
 			"%s\tif %s != nil {\n", indent, sourceAdaptedVarName,
@@ -933,10 +938,20 @@ func SetResourceIdentifiers(
 			continue
 		}
 
-		// Check that the field has potentially been renamed
-		renamedName, _ := r.InputFieldRename(
+		// Check if the field has been renamed
+		renamedName := memberName
+		inputRename, foundInputFieldRename := r.InputFieldRename(
 			op.Name, memberName,
 		)
+		outputRename, foundOutputFieldRename := r.OutputFieldRename(
+			op.Name, memberName,
+		)
+
+		if foundInputFieldRename {
+			renamedName = inputRename
+		} else if foundOutputFieldRename {
+			renamedName = outputRename
+		}
 
 		// Check to see if we've already set the field as the primary identifier
 		if isPrimarySet && renamedName == primaryField.Names.Camel {

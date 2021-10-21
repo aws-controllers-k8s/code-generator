@@ -218,23 +218,24 @@ func SetSDK(
 			)
 			continue
 		}
-		renamedName, _ := r.InputFieldRename(op.Name, memberName)
+
 		// Determine whether the input shape's field is in the Spec or the
 		// Status struct and set the source variable appropriately.
 		var f *model.Field
-		var found bool
 		sourceAdaptedVarName := sourceVarName
-		f, found = r.SpecFields[renamedName]
-		if found {
+		inputRename, _ := r.InputFieldRename(op.Name, memberName)
+		outputRename, _ := r.OutputFieldRename(op.Name, memberName)
+		if specField, inSpec := r.SpecFields[inputRename]; inSpec {
 			sourceAdaptedVarName += cfg.PrefixConfig.SpecField
-		} else {
-			f, found = r.StatusFields[renamedName]
-			if !found {
-				// TODO(jaypipes): check generator config for exceptions?
-				continue
-			}
+			f = specField
+		} else if statField, inStat := r.StatusFields[outputRename]; inStat {
 			sourceAdaptedVarName += cfg.PrefixConfig.StatusField
+			f = statField
+		} else {
+			// TODO(jaypipes): check generator config for exceptions?
+			continue
 		}
+
 		sourceAdaptedVarName += "." + f.Names.Camel
 		sourceFieldPath := f.Names.Camel
 
