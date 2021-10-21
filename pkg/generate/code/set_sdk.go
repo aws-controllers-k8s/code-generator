@@ -786,7 +786,8 @@ func setSDKReadMany(
 		if err != nil {
 			// if memberName is an identifier field, then check for
 			// corresponding model identifier
-			crIdentifier, shapeIdentifier := FindPluralizedIdentifiersInShape(r, inputShape)
+			crIdentifier,
+			shapeIdentifier := FindPluralizedIdentifiersInShape(r, inputShape, op)
 			if strings.EqualFold(memberName, shapeIdentifier) {
 				resVarPath, err = r.GetSanitizedMemberPath(crIdentifier, op, sourceVarName)
 				if err != nil {
