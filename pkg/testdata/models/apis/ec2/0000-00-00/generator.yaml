@@ -78,3 +78,11 @@ resources:
             GroupName: Name
           output_fields:
             GroupId: Id
+        DeleteSecurityGroup:
+          input_fields:
+            GroupId: Id
+            GroupName: Name
+        DescribeSecurityGroups:
+          input_fields:
+            GroupIds: Ids
+            GroupNames: Names

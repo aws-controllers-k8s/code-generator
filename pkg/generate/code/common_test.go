@@ -35,8 +35,8 @@ func TestFindIdentifiersInShape_EC2_VPC_ReadMany(t *testing.T) {
 	require.NotNil(crd)
 
 	expIdentifier := "VpcIds"
-	actualIdentifiers := code.FindIdentifiersInShape(crd,
-		crd.Ops.ReadMany.InputRef.Shape)
+	op := crd.Ops.ReadMany
+	actualIdentifiers := code.FindIdentifiersInShape(crd, op.InputRef.Shape, op)
 	assert.Len(actualIdentifiers, 1)
 	assert.Equal(
 		strings.TrimSpace(expIdentifier),
@@ -52,9 +52,8 @@ func TestFindIdentifiersInCRD_S3_Bucket_ReadMany_Empty(t *testing.T) {
 
 	crd := testutil.GetCRDByName(t, g, "Bucket")
 	require.NotNil(crd)
-
-	actualIdentifiers := code.FindIdentifiersInShape(crd,
-		crd.Ops.ReadMany.InputRef.Shape)
+	op := crd.Ops.ReadMany
+	actualIdentifiers := code.FindIdentifiersInShape(crd, op.InputRef.Shape, op)
 	assert.Len(actualIdentifiers, 0)
 }
 
@@ -133,8 +132,9 @@ func TestFindPluralizedIdentifiersInShape_EC2_VPC_ReadMany(t *testing.T) {
 
 	expModelIdentifier := "VpcId"
 	expShapeIdentifier := "VpcIds"
+	op := crd.Ops.ReadMany
 	crIdentifier, shapeIdentifier := code.FindPluralizedIdentifiersInShape(crd,
-		crd.Ops.ReadMany.InputRef.Shape)
+		op.InputRef.Shape, op)
 
 	assert.Equal(expModelIdentifier, crIdentifier)
 	assert.Equal(expShapeIdentifier, shapeIdentifier)
@@ -152,6 +152,27 @@ func TestFindPrimaryIdentifierFieldNames_APIGatewayV2_API_ReadOne(t *testing.T) 
 	expShapeIdentifier := "ApiId"
 	crIdentifier, shapeIdentifier := code.FindPrimaryIdentifierFieldNames(
 		crd.Config(), crd, crd.Ops.ReadOne)
+
+	assert.Equal(expModelIdentifier, crIdentifier)
+	assert.Equal(expShapeIdentifier, shapeIdentifier)
+}
+
+func TestFindPluralizedIdentifiersInShape_EC2_SG_ReadMany_Rename(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "ec2")
+	crd := testutil.GetCRDByName(t, g, "SecurityGroup")
+	require.NotNil(crd)
+
+	// generator.yaml should override GroupId to Id
+	// SecurityGroup also has 2 potential identifiers: Id and Name (post-rename)
+	// Id should take priority
+	expModelIdentifier := "Id"
+	expShapeIdentifier := "Ids"
+	op := crd.Ops.ReadMany
+	crIdentifier, shapeIdentifier := code.FindPluralizedIdentifiersInShape(crd,
+		op.InputRef.Shape, op)
 
 	assert.Equal(expModelIdentifier, crIdentifier)
 	assert.Equal(expShapeIdentifier, shapeIdentifier)
