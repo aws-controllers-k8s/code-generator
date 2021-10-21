@@ -501,7 +501,7 @@ func setResourceReadMany(
 					" Status fields", memberName, op.Name, r.Names.Camel)
 			panic(msg)
 		} else {
-			// Field not detected in Spec or Status
+			// field not found in Spec or Status
 			continue
 		}
 
