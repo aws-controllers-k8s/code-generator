@@ -694,6 +694,9 @@ func (r *CRD) GetAllRenames(op OpType) (map[string]string, error) {
 			for old, new := range opRenameConfigs.InputFields {
 				renames[old] = new
 			}
+			for old, new := range opRenameConfigs.OutputFields {
+				renames[old] = new
+			}
 		}
 	}
 	return renames, nil
