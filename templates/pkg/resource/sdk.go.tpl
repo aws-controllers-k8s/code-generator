@@ -6,6 +6,9 @@ import (
 	"context"
 	"strings"
 
+	{{- if $hookCode := Hook .CRD "sdk_file_import" }}
+	{{ $hookCode }}
+	{{- end }}
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
 	ackcondition "github.com/aws-controllers-k8s/runtime/pkg/condition"
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"

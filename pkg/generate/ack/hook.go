@@ -56,6 +56,7 @@ code paths:
 * sdk_get_attributes_post_set_output
 * sdk_create_post_set_output
 * sdk_update_post_set_output
+* sdk_file_import
 * sdk_file_end
 * delta_pre_compare
 * delta_post_compare
@@ -93,6 +94,10 @@ The "post_set_output" hooks are called AFTER the the information from the API ca
 is merged with the copy of the original Kubernetes object. These hooks will
 have access to the updated Kubernetes object `ko`, the response of the API call
 (and the original Kubernetes CR object if its sdkUpdate)
+
+The "sdk_file_import" is a generic hook point that occurs outside the scope of
+any specific AWSResourceManager method and can be used to place packages into
+the import block of the sdk.go file
 
 The "sdk_file_end" is a generic hook point that occurs outside the scope of any
 specific AWSResourceManager method and can be used to place commonly-generated
