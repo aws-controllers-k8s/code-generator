@@ -53,6 +53,9 @@ var (
 	controllerCopyPaths = []string{}
 	controllerFuncMap   = ttpl.FuncMap{
 		"ToLower": strings.ToLower,
+		"Dereference": func(s *string) string {
+			return *s
+		},
 		"ResourceExceptionCode": func(r *ackmodel.CRD, httpStatusCode int) string {
 			return r.ExceptionCode(httpStatusCode)
 		},
