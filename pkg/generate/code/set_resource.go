@@ -197,25 +197,24 @@ func SetResource(
 		// Determine whether the input shape's field is in the Spec or the
 		// Status struct and set the source variable appropriately.
 		var f *model.Field
-		var found bool
 		var targetMemberShapeRef *awssdkmodel.ShapeRef
 		targetAdaptedVarName := targetVarName
 
 		// Handles field renames, if applicable
+		inSpec, inStatus := r.HasMember(memberName, op.Name)
 		fieldName, _ := cfg.ResourceFieldRename(r.Names.Original, op.Name,
 			memberName)
-		f, found = r.SpecFields[fieldName]
-		if found {
+		if inSpec {
 			targetAdaptedVarName += cfg.PrefixConfig.SpecField
+			f = r.SpecFields[fieldName]
+		} else if inStatus {
+			targetAdaptedVarName += cfg.PrefixConfig.StatusField
+			f = r.StatusFields[fieldName]
 		} else {
-			f, found = r.StatusFields[fieldName]
-			if found {
-				targetAdaptedVarName += cfg.PrefixConfig.StatusField
-			} else {
-				// TODO(jaypipes): check generator config for exceptions?
-				continue
-			}
+			// TODO(jaypipes): check generator config for exceptions?
+			continue
 		}
+
 		targetMemberShapeRef = f.ShapeRef
 		// fieldVarName is the name of the variable that is used for temporary
 		// storage of complex member field values
@@ -416,9 +415,8 @@ func setResourceReadMany(
 	matchFieldNames := r.ListOpMatchFieldNames()
 
 	for _, matchFieldName := range matchFieldNames {
-		_, foundSpec := r.SpecFields[matchFieldName]
-		_, foundStatus := r.StatusFields[matchFieldName]
-		if !foundSpec && !foundStatus {
+		inSpec, inStatus := r.HasMember(matchFieldName, op.Name)
+		if !inSpec && !inStatus {
 			msg := fmt.Sprintf(
 				"Match field name %s is not in %s Spec or Status fields",
 				matchFieldName, r.Names.Camel,
@@ -480,17 +478,18 @@ func setResourceReadMany(
 		targetAdaptedVarName := targetVarName
 
 		// Handles field renames, if applicable
+		inSpec, inStatus := r.HasMember(memberName, op.Name)
 		fieldName, foundFieldRename := cfg.ResourceFieldRename(r.Names.
 			Original,
 			op.Name,
 			memberName)
 
-		if specField, inSpec := r.SpecFields[fieldName]; inSpec {
+		if inSpec {
 			targetAdaptedVarName += cfg.PrefixConfig.SpecField
-			f = specField
-		} else if statField, inStat := r.StatusFields[fieldName]; inStat {
+			f = r.SpecFields[fieldName]
+		} else if inStatus {
 			targetAdaptedVarName += cfg.PrefixConfig.StatusField
-			f = statField
+			f = r.StatusFields[fieldName]
 		} else if foundFieldRename {
 			msg := fmt.Sprintf(
 				"Field rename %s for operation %s is not part of %s Spec or"+

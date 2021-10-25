@@ -713,27 +713,43 @@ func (r *CRD) GetSanitizedMemberPath(
 	koVarName string) (string, error) {
 	resVarPath := koVarName
 	cleanMemberNames := names.New(memberName)
-	cleanMemberName := cleanMemberNames.Camel
+	pathFieldName := cleanMemberNames.Camel
 	cfg := r.Config()
 
-	if _, inSpec := r.SpecFields[memberName]; inSpec {
-		resVarPath = resVarPath + cfg.PrefixConfig.SpecField + "." + cleanMemberName
-	} else if _, inStat := r.StatusFields[memberName]; inStat {
-		resVarPath = resVarPath + cfg.PrefixConfig.StatusField + "." + cleanMemberName
+	// Handles field renames, if applicable
+	inSpec, inStatus := r.HasMember(memberName, op.Name)
+	fieldName, fieldRenamed := cfg.ResourceFieldRename(r.Names.Original,
+		op.Name,
+		memberName)
+	if fieldRenamed {
+		pathFieldName = fieldName
+	}
+
+	if inSpec {
+		resVarPath = resVarPath + cfg.PrefixConfig.SpecField + "." + pathFieldName
+	} else if inStatus {
+		resVarPath = resVarPath + cfg.PrefixConfig.StatusField + "." + pathFieldName
 	} else {
-		// Handles field renames, if applicable
-		fieldName, _ := cfg.ResourceFieldRename(r.Names.Original, op.Name,
-			memberName)
-		if _, inSpec = r.SpecFields[fieldName]; inSpec {
-			resVarPath = resVarPath + cfg.PrefixConfig.SpecField + "." + fieldName
-		} else if _, inStat = r.StatusFields[fieldName]; inStat {
-			resVarPath = resVarPath + cfg.PrefixConfig.StatusField + "." + fieldName
-		} else {
-			return "", fmt.Errorf(
-				"the required field %s is NOT present in CR's Spec or Status", memberName)
-		}
+		return "", fmt.Errorf(
+			"the required field %s is NOT present in CR's Spec or Status", memberName)
 	}
 	return resVarPath, nil
+}
+
+// HasMember returns true in the respective field if Spec xor Status field
+// contains memberName or rename
+func (r *CRD) HasMember(
+	memberName string,
+	operationName string,
+) (inSpec bool, inStatus bool) {
+	fieldName, _ := r.Config().ResourceFieldRename(r.Names.Original, operationName,
+		memberName)
+	if _, found := r.SpecFields[fieldName]; found {
+		inSpec = true
+	} else if _, found := r.StatusFields[fieldName]; found {
+		inStatus = true
+	}
+	return inSpec, inStatus
 }
 
 // NewCRD returns a pointer to a new `ackmodel.CRD` struct that describes a

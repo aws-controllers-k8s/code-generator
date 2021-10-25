@@ -180,12 +180,11 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 				return nil, ErrNilShapePointer
 			}
 			// Check that the field in the output shape isn't the same as
-			// fields in the input shape (where the input shape has potentially
-			// been renamed)
+			// fields in the input shape (handles field renames, if applicable)
+			inSpec, _ := crd.HasMember(memberName, createOp.Name)
 			fieldName, _ := m.cfg.ResourceFieldRename(crd.Names.Original,
-				createOp.Name,
-				memberName)
-			if _, found := crd.SpecFields[fieldName]; found {
+				createOp.Name, memberName)
+			if inSpec {
 				// We don't put fields that are already in the Spec struct into
 				// the Status struct
 				continue

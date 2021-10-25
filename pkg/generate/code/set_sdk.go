@@ -223,15 +223,17 @@ func SetSDK(
 		// Status struct and set the source variable appropriately.
 		var f *model.Field
 		sourceAdaptedVarName := sourceVarName
+
 		// Handles field renames, if applicable
+		inSpec, inStatus := r.HasMember(memberName, op.Name)
 		fieldName, _ := cfg.ResourceFieldRename(r.Names.Original, op.Name,
 			memberName)
-		if specField, inSpec := r.SpecFields[fieldName]; inSpec {
+		if inSpec {
 			sourceAdaptedVarName += cfg.PrefixConfig.SpecField
-			f = specField
-		} else if statField, inStat := r.StatusFields[fieldName]; inStat {
+			f = r.SpecFields[fieldName]
+		} else if inStatus {
 			sourceAdaptedVarName += cfg.PrefixConfig.StatusField
-			f = statField
+			f = r.StatusFields[fieldName]
 		} else {
 			// TODO(jaypipes): check generator config for exceptions?
 			continue
