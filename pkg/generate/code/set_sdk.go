@@ -784,14 +784,16 @@ func setSDKReadMany(
 			}
 		}
 
-		// Field renames are handled in GetSanitizedMemberPath
+		// Handles field renames, if applicable
+		fieldName, _ := cfg.ResourceFieldRename(r.Names.Original, op.Name,
+			memberName)
 		resVarPath, err = r.GetSanitizedMemberPath(memberName, op, sourceVarName)
 		if err != nil {
-			// if memberName is an identifier field, then check for
-			// corresponding model identifier
+			// memberName could be a plural identifier field, so check for
+			// corresponding singular model identifier
 			crIdentifier, shapeIdentifier := FindPluralizedIdentifiersInShape(r,
 				inputShape, op)
-			if strings.EqualFold(memberName, shapeIdentifier) {
+			if strings.EqualFold(fieldName, shapeIdentifier) {
 				resVarPath, err = r.GetSanitizedMemberPath(crIdentifier, op, sourceVarName)
 				if err != nil {
 					panic(fmt.Sprintf(
