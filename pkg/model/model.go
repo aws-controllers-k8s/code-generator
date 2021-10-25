@@ -118,10 +118,10 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 			if memberShapeRef.Shape == nil {
 				return nil, ErrNilShapePointer
 			}
-			renamedName, _ := crd.InputFieldRename(
-				createOp.Name, memberName,
-			)
-			memberNames := names.New(renamedName)
+			// Handles field renames, if applicable
+			fieldName, _ := m.cfg.ResourceFieldRename(crd.Names.Original,
+				createOp.Name, memberName)
+			memberNames := names.New(fieldName)
 			memberNames.ModelOriginal = memberName
 			if memberName == "Attributes" && m.cfg.UnpacksAttributesMap(crdName) {
 				crd.UnpackAttributes()
@@ -180,18 +180,17 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 				return nil, ErrNilShapePointer
 			}
 			// Check that the field in the output shape isn't the same as
-			// fields in the input shape (where either has potentially
+			// fields in the input shape (where the input shape has potentially
 			// been renamed)
-			inputRename, _ := crd.InputFieldRename(createOp.Name, memberName)
-			outputRename, _ := crd.OutputFieldRename(createOp.Name, memberName)
-			_, inputRenameInSpec := crd.SpecFields[inputRename]
-			_, outputRenameInSpec := crd.SpecFields[outputRename]
-			if inputRenameInSpec || outputRenameInSpec {
+			fieldName, _ := m.cfg.ResourceFieldRename(crd.Names.Original,
+				createOp.Name,
+				memberName)
+			if _, found := crd.SpecFields[fieldName]; found {
 				// We don't put fields that are already in the Spec struct into
 				// the Status struct
 				continue
 			}
-			memberNames := names.New(outputRename)
+			memberNames := names.New(fieldName)
 
 			if memberName == "Attributes" && m.cfg.UnpacksAttributesMap(crdName) {
 				continue

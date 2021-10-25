@@ -175,36 +175,6 @@ func shapeHasMember(shape *awssdkmodel.Shape, toFind string) bool {
 	return false
 }
 
-// InputFieldRename returns the renamed field for a supplied Operation ID and
-// original field name and whether or not a renamed override field name was
-// found
-func (r *CRD) InputFieldRename(
-	opID string,
-	origFieldName string,
-) (string, bool) {
-	if r.cfg == nil {
-		return origFieldName, false
-	}
-	return r.cfg.ResourceFieldRename(
-		r.Names.Original, opID, origFieldName,
-	)
-}
-
-// OutputFieldRename returns the renamed field for a supplied Operation ID and
-// original field name and whether or not a renamed override field name was
-// found
-func (r *CRD) OutputFieldRename(
-	opID string,
-	origFieldName string,
-) (string, bool) {
-	if r.cfg == nil {
-		return origFieldName, false
-	}
-	return r.cfg.ResourceFieldRename(
-		r.Names.Original, opID, origFieldName,
-	)
-}
-
 // AddSpecField adds a new Field of a given name and shape into the Spec
 // field of a CRD
 func (r *CRD) AddSpecField(
@@ -487,7 +457,7 @@ func (r *CRD) GetOutputShape(
 		wrapperOutputShape, err := r.getWrapperOutputShape(outputShape,
 			*wrapperFieldPath)
 		if err != nil {
-			msg := fmt.Sprintf("Unable to unwrap the output shape: %s " +
+			msg := fmt.Sprintf("Unable to unwrap the output shape: %s "+
 				"with field path override: %s. error: %v",
 				outputShape.OrigShapeName, *wrapperFieldPath, err)
 			panic(msg)
@@ -521,7 +491,7 @@ func (r *CRD) getWrapperOutputShape(
 	// wrapper field must be structure; otherwise cannot unpack
 	if memberRef.Shape.Type != "structure" {
 		return nil, fmt.Errorf(
-			"output wrapper overrides can only contain fields of type" +
+			"output wrapper overrides can only contain fields of type"+
 				" 'structure'. Found wrapper override field %s of type '%s'",
 			wrapperField, memberRef.Shape.Type)
 	}
@@ -744,19 +714,20 @@ func (r *CRD) GetSanitizedMemberPath(
 	resVarPath := koVarName
 	cleanMemberNames := names.New(memberName)
 	cleanMemberName := cleanMemberNames.Camel
+	cfg := r.Config()
 
 	if _, inSpec := r.SpecFields[memberName]; inSpec {
-		resVarPath = resVarPath + r.Config().PrefixConfig.SpecField + "." + cleanMemberName
+		resVarPath = resVarPath + cfg.PrefixConfig.SpecField + "." + cleanMemberName
 	} else if _, inStat := r.StatusFields[memberName]; inStat {
-		resVarPath = resVarPath + r.Config().PrefixConfig.StatusField + "." + cleanMemberName
+		resVarPath = resVarPath + cfg.PrefixConfig.StatusField + "." + cleanMemberName
 	} else {
-		// Check if field has been renamed
-		inputRename, _ := r.InputFieldRename(op.Name, memberName)
-		outputRename, _ := r.OutputFieldRename(op.Name, memberName)
-		if _, inSpec = r.SpecFields[inputRename]; inSpec {
-			resVarPath = resVarPath + r.Config().PrefixConfig.SpecField + "." + inputRename
-		} else if _, inStat = r.StatusFields[outputRename]; inStat {
-			resVarPath = resVarPath + r.Config().PrefixConfig.StatusField + "." + outputRename
+		// Handles field renames, if applicable
+		fieldName, _ := cfg.ResourceFieldRename(r.Names.Original, op.Name,
+			memberName)
+		if _, inSpec = r.SpecFields[fieldName]; inSpec {
+			resVarPath = resVarPath + cfg.PrefixConfig.SpecField + "." + fieldName
+		} else if _, inStat = r.StatusFields[fieldName]; inStat {
+			resVarPath = resVarPath + cfg.PrefixConfig.StatusField + "." + fieldName
 		} else {
 			return "", fmt.Errorf(
 				"the required field %s is NOT present in CR's Spec or Status", memberName)

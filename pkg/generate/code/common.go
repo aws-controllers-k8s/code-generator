@@ -176,13 +176,14 @@ func FindPrimaryIdentifierFieldNames(
 	}
 
 	if crField == "" {
-		inputRename, _ := r.InputFieldRename(op.Name, shapeField)
-		outputRename, _ := r.OutputFieldRename(op.Name, shapeField)
+		// Handles field renames, if applicable
+		fieldName, _ := cfg.ResourceFieldRename(r.Names.Original, op.Name,
+			shapeField)
 
-		if _, inSpec := r.SpecFields[inputRename]; inSpec {
-			crField = inputRename
-		} else if _, inStatus := r.StatusFields[outputRename]; inStatus {
-			crField = outputRename
+		if _, inSpec := r.SpecFields[fieldName]; inSpec {
+			crField = fieldName
+		} else if _, inStatus := r.StatusFields[fieldName]; inStatus {
+			crField = fieldName
 		} else {
 			panic("Could not find corresponding spec or status field for primary identifier " + shapeField)
 		}

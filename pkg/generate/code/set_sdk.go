@@ -223,12 +223,13 @@ func SetSDK(
 		// Status struct and set the source variable appropriately.
 		var f *model.Field
 		sourceAdaptedVarName := sourceVarName
-		inputRename, _ := r.InputFieldRename(op.Name, memberName)
-		outputRename, _ := r.OutputFieldRename(op.Name, memberName)
-		if specField, inSpec := r.SpecFields[inputRename]; inSpec {
+		// Handles field renames, if applicable
+		fieldName, _ := cfg.ResourceFieldRename(r.Names.Original, op.Name,
+			memberName)
+		if specField, inSpec := r.SpecFields[fieldName]; inSpec {
 			sourceAdaptedVarName += cfg.PrefixConfig.SpecField
 			f = specField
-		} else if statField, inStat := r.StatusFields[outputRename]; inStat {
+		} else if statField, inStat := r.StatusFields[fieldName]; inStat {
 			sourceAdaptedVarName += cfg.PrefixConfig.StatusField
 			f = statField
 		} else {
@@ -786,8 +787,8 @@ func setSDKReadMany(
 		if err != nil {
 			// if memberName is an identifier field, then check for
 			// corresponding model identifier
-			crIdentifier,
-			shapeIdentifier := FindPluralizedIdentifiersInShape(r, inputShape, op)
+			crIdentifier, shapeIdentifier := FindPluralizedIdentifiersInShape(r,
+				inputShape, op)
 			if strings.EqualFold(memberName, shapeIdentifier) {
 				resVarPath, err = r.GetSanitizedMemberPath(crIdentifier, op, sourceVarName)
 				if err != nil {

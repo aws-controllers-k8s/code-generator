@@ -201,14 +201,14 @@ func SetResource(
 		var targetMemberShapeRef *awssdkmodel.ShapeRef
 		targetAdaptedVarName := targetVarName
 
-		// Check that the field has potentially been renamed
-		inputRename, _ := r.InputFieldRename(op.Name, memberName)
-		outputRename, _ := r.OutputFieldRename(op.Name, memberName)
-		f, found = r.SpecFields[inputRename]
+		// Handles field renames, if applicable
+		fieldName, _ := cfg.ResourceFieldRename(r.Names.Original, op.Name,
+			memberName)
+		f, found = r.SpecFields[fieldName]
 		if found {
 			targetAdaptedVarName += cfg.PrefixConfig.SpecField
 		} else {
-			f, found = r.StatusFields[outputRename]
+			f, found = r.StatusFields[fieldName]
 			if found {
 				targetAdaptedVarName += cfg.PrefixConfig.StatusField
 			} else {
@@ -479,25 +479,21 @@ func setResourceReadMany(
 		var targetMemberShapeRef *awssdkmodel.ShapeRef
 		targetAdaptedVarName := targetVarName
 
-		// Check that the field has potentially been renamed
-		renamedName := memberName
-		inputRename, foundInputFieldRename := r.InputFieldRename(
-			op.Name, memberName,
-		)
-		outputRename, foundOutputFieldRename := r.OutputFieldRename(
-			op.Name, memberName,
-		)
-		if specField, inSpec := r.SpecFields[inputRename]; inSpec {
+		// Handles field renames, if applicable
+		fieldName, foundFieldRename := cfg.ResourceFieldRename(r.Names.
+			Original,
+			op.Name,
+			memberName)
+
+		if specField, inSpec := r.SpecFields[fieldName]; inSpec {
 			targetAdaptedVarName += cfg.PrefixConfig.SpecField
-			renamedName = inputRename
 			f = specField
-		} else if statField, inStat := r.StatusFields[outputRename]; inStat {
+		} else if statField, inStat := r.StatusFields[fieldName]; inStat {
 			targetAdaptedVarName += cfg.PrefixConfig.StatusField
-			renamedName = outputRename
 			f = statField
-		} else if foundInputFieldRename || foundOutputFieldRename {
+		} else if foundFieldRename {
 			msg := fmt.Sprintf(
-				"Field rename %s for operation %s is not part of %s Spec or" +
+				"Field rename %s for operation %s is not part of %s Spec or"+
 					" Status fields", memberName, op.Name, r.Names.Camel)
 			panic(msg)
 		} else {
@@ -546,7 +542,7 @@ func setResourceReadMany(
 			//                  continue
 			//              }
 			//          }
-			if util.InStrings(renamedName, matchFieldNames) {
+			if util.InStrings(fieldName, matchFieldNames) {
 				out += fmt.Sprintf(
 					"%s\t\tif %s.%s != nil {\n",
 					indent,
@@ -938,23 +934,12 @@ func SetResourceIdentifiers(
 			continue
 		}
 
-		// Check if the field has been renamed
-		renamedName := memberName
-		inputRename, foundInputFieldRename := r.InputFieldRename(
-			op.Name, memberName,
-		)
-		outputRename, foundOutputFieldRename := r.OutputFieldRename(
-			op.Name, memberName,
-		)
-
-		if foundInputFieldRename {
-			renamedName = inputRename
-		} else if foundOutputFieldRename {
-			renamedName = outputRename
-		}
+		// Handles field renames, if applicable
+		fieldName, _ := cfg.ResourceFieldRename(r.Names.Original, op.Name,
+			memberName)
 
 		// Check to see if we've already set the field as the primary identifier
-		if isPrimarySet && renamedName == primaryField.Names.Camel {
+		if isPrimarySet && fieldName == primaryField.Names.Camel {
 			continue
 		}
 
@@ -964,7 +949,7 @@ func SetResourceIdentifiers(
 		if isPrimaryIdentifier {
 			searchField = primaryCRField
 		} else {
-			searchField = renamedName
+			searchField = fieldName
 		}
 
 		memberPath, targetField := findFieldInCR(cfg, r, searchField)
@@ -993,7 +978,7 @@ func SetResourceIdentifiers(
 				targetField,
 				targetVarPath,
 				sourceVarName,
-				names.New(renamedName).CamelLower,
+				names.New(fieldName).CamelLower,
 				indentLevel)
 		}
 	}
