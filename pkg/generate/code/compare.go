@@ -157,7 +157,7 @@ func CompareResource(
 		case "structure":
 			// Recurse through all the struct's fields and subfields, building
 			// nested conditionals and calls to `delta.Add()`...
-			out += compareStruct(
+			out += CompareStruct(
 				cfg, r,
 				compareConfig,
 				memberShape,
@@ -501,10 +501,10 @@ func compareSlice(
 	return out
 }
 
-// compareStruct outputs Go code that compares two struct values from two
+// CompareStruct outputs Go code that compares two struct values from two
 // resource fields and, if there is a difference, adds the difference to a
 // variable representing an `ackcompare.Delta`.
-func compareStruct(
+func CompareStruct(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,
 	// struct informing code generator how to compare the field values
@@ -586,7 +586,7 @@ func compareStruct(
 		case "structure":
 			// Recurse through all the struct's fields and subfields, building
 			// nested conditionals and calls to `delta.Add()`...
-			out += compareStruct(
+			out += CompareStruct(
 				cfg, r,
 				compareConfig,
 				memberShape,
