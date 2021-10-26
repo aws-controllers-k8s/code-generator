@@ -1,11 +1,23 @@
-ignore:
-  shape_names:
-    - DBSecurityGroupMembershipList
 resources:
   DBInstance:
     fields:
       DBInstanceIdentifier:
         is_primary_key: true
+      # NOTE(jaypipes): This is testing the SetFieldConfig.From functionality
+      # to instruct the code generator to use a different source field in the
+      # Output shape when setting the value of this field, but only for the
+      # Create and ReadOne resource manager methods.
+      #
+      # In this case, we are instructing the code generator to set the
+      # Spec.DBSecurityGroups field (which is a []string field) to the set of
+      # DBSecurityGroups..DBSecurityGroupName values in the ReadOne method's
+      # Output shape.
+      DBSecurityGroups:
+        set:
+          - method: Create
+            from: DBSecurityGroupName
+          - method: ReadOne
+            from: DBSecurityGroupName
   DBSubnetGroup:
     fields:
       Name:

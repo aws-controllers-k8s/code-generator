@@ -181,19 +181,6 @@ func SetResource(
 			continue
 		}
 
-		sourceMemberShapeRef := outputShape.MemberRefs[memberName]
-		if sourceMemberShapeRef.Shape == nil {
-			// Technically this should not happen, so let's bail here if it
-			// does...
-			msg := fmt.Sprintf(
-				"expected .Shape to not be nil for ShapeRef of memberName %s",
-				memberName,
-			)
-			panic(msg)
-		}
-
-		sourceMemberShape := sourceMemberShapeRef.Shape
-
 		// Determine whether the input shape's field is in the Spec or the
 		// Status struct and set the source variable appropriately.
 		var f *model.Field
@@ -219,6 +206,53 @@ func SetResource(
 		}
 
 		targetMemberShapeRef = f.ShapeRef
+
+		// We may have some special instructions for how to handle setting the
+		// field value...
+		setCfg := f.GetSetterConfig(opType)
+
+		if setCfg != nil && setCfg.Ignore {
+			continue
+		}
+
+		sourceMemberShapeRef := outputShape.MemberRefs[memberName]
+		if sourceMemberShapeRef.Shape == nil {
+			// We may have some instructions to specially handle this field by
+			// accessing a different Output shape member.
+			//
+			// As an example, let's say we're dealing with a resource called
+			// Bucket that has a "Name" field. In the Output shape of the
+			// ReadOne resource manager method, the field name is "Bucket",
+			// though. There may be a generator.yaml file that looks like this:
+			//
+			// resources:
+			//   Bucket:
+			//     fields:
+			//       Name:
+			//         set:
+			//          - method: ReadOne
+			//            from: Bucket
+			//
+			// And this would indicate to the code generator that the Spec.Name
+			// field should be set from the value of the Output shape's Bucket
+			// field.
+			var found bool
+			if setCfg != nil && setCfg.From != nil {
+				sourceMemberShapeRef, found = outputShape.MemberRefs[*setCfg.From]
+			}
+			if !found || sourceMemberShapeRef.Shape == nil {
+				// Technically this should not happen, so let's bail here if it
+				// does...
+				msg := fmt.Sprintf(
+					"expected .Shape to not be nil for ShapeRef of memberName %s",
+					memberName,
+				)
+				panic(msg)
+			}
+		}
+
+		sourceMemberShape := sourceMemberShapeRef.Shape
+
 		// fieldVarName is the name of the variable that is used for temporary
 		// storage of complex member field values
 		//
@@ -270,6 +304,7 @@ func SetResource(
 					f.Names.Camel,
 					memberVarName,
 					targetMemberShapeRef,
+					setCfg,
 					sourceAdaptedVarName,
 					sourceMemberShapeRef,
 					indentLevel+1,
@@ -282,6 +317,22 @@ func SetResource(
 				)
 			}
 		default:
+			if setCfg != nil && setCfg.From != nil {
+				// We have some special instructions to pull the value from a
+				// different field or member...
+				sourceAdaptedVarName = sourceVarName + "." + *setCfg.From
+				var found bool
+				sourceMemberShapeRef, found = outputShape.MemberRefs[*setCfg.From]
+				if !found {
+					// This is likely a typo in the generator.yaml file...
+					msg := fmt.Sprintf(
+						"expected to find a member shape of %s called %s",
+						outputShape.ShapeName,
+						*setCfg.From,
+					)
+					panic(msg)
+				}
+			}
 			out += setResourceForScalar(
 				qualifiedTargetVar,
 				sourceAdaptedVarName,
@@ -502,6 +553,14 @@ func setResourceReadMany(
 			continue
 		}
 
+		// We may have some special instructions for how to handle setting the
+		// field value...
+		setCfg := f.GetSetterConfig(model.OpTypeList)
+
+		if setCfg != nil && setCfg.Ignore {
+			continue
+		}
+
 		targetMemberShapeRef = f.ShapeRef
 		out += fmt.Sprintf(
 			"%s\tif %s != nil {\n", indent, sourceAdaptedVarName,
@@ -526,6 +585,7 @@ func setResourceReadMany(
 					f.Names.Camel,
 					memberVarName,
 					targetMemberShapeRef,
+					setCfg,
 					sourceAdaptedVarName,
 					sourceMemberShapeRef,
 					indentLevel+2,
@@ -1100,6 +1160,8 @@ func setResourceForContainer(
 	targetVarName string,
 	// Shape Ref of the target struct field
 	targetShapeRef *awssdkmodel.ShapeRef,
+	// SetFieldConfig of the *target* field
+	targetSetCfg *ackgenconfig.SetFieldConfig,
 	// The struct or struct field that we access our source value from
 	sourceVarName string,
 	// ShapeRef of the source struct field
@@ -1113,6 +1175,7 @@ func setResourceForContainer(
 			targetFieldName,
 			targetVarName,
 			targetShapeRef,
+			targetSetCfg,
 			sourceVarName,
 			sourceShapeRef,
 			indentLevel,
@@ -1123,6 +1186,7 @@ func setResourceForContainer(
 			targetFieldName,
 			targetVarName,
 			targetShapeRef,
+			targetSetCfg,
 			sourceVarName,
 			sourceShapeRef,
 			indentLevel,
@@ -1133,6 +1197,7 @@ func setResourceForContainer(
 			targetFieldName,
 			targetVarName,
 			targetShapeRef,
+			targetSetCfg,
 			sourceVarName,
 			sourceShapeRef,
 			indentLevel,
@@ -1158,6 +1223,8 @@ func SetResourceForStruct(
 	targetVarName string,
 	// Shape Ref of the target struct field
 	targetShapeRef *awssdkmodel.ShapeRef,
+	// SetFieldConfig of the *target* field
+	targetSetCfg *ackgenconfig.SetFieldConfig,
 	// The struct or struct field that we access our source value from
 	sourceVarName string,
 	// ShapeRef of the source struct field
@@ -1199,6 +1266,7 @@ func SetResourceForStruct(
 					cleanNames.Camel,
 					memberVarName,
 					targetMemberShapeRef,
+					nil,
 					sourceAdaptedVarName,
 					memberShapeRef,
 					indentLevel+1,
@@ -1236,6 +1304,8 @@ func setResourceForSlice(
 	targetVarName string,
 	// Shape Ref of the target slice field
 	targetShapeRef *awssdkmodel.ShapeRef,
+	// SetFieldConfig of the *target* field
+	targetSetCfg *ackgenconfig.SetFieldConfig,
 	// The struct or struct field that we access our source value from
 	sourceVarName string,
 	// ShapeRef of the source slice field
@@ -1244,6 +1314,7 @@ func setResourceForSlice(
 ) string {
 	out := ""
 	indent := strings.Repeat("\t", indentLevel)
+
 	sourceShape := sourceShapeRef.Shape
 	targetShape := targetShapeRef.Shape
 	iterVarName := fmt.Sprintf("%siter", targetVarName)
@@ -1257,26 +1328,71 @@ func setResourceForSlice(
 		targetShape.MemberRef.Shape,
 		indentLevel+1,
 	)
-	//  f0elem0 = *f0iter0
+	// We may have some instructions to specially handle this field by
+	// accessing a different Output shape member.
 	//
-	// or
+	// As an example, let's say we're dealing with a resource called
+	// DBInstance that has a "DBSecurityGroups" field of type `[]*string`.
+	// In the Output shape of the ReadOne resource manager method, the
+	// field name is "DBSecurityGroups" of type
+	// `[]*DBSecurityGroupMembership`, though.  This
+	// `DBSecurityGroupMembership` struct contains two fields,
+	// `DBSecurityGroupName` and `DBSecurityGroupStatus` and we wish to
+	// grab only the value of the `DBSecurityGroupName` fields and set the
+	// `Spec.DBSecurityGroups` field to the set of those field values.
 	//
-	//  f0elem0.SetMyField(*f0iter0)
-	containerFieldName := ""
-	if sourceShape.MemberRef.Shape.Type == "structure" {
-		containerFieldName = targetFieldName
+	// There may be a generator.yaml file that looks like this:
+	//
+	// resources:
+	//   DBInstance:
+	//     fields:
+	//       DBSecurityGroups:
+	//         set:
+	//          - method: ReadOne
+	//            from: DBSecurityGroupName
+	//
+	// And this would indicate to the code generator that the
+	// Spec.DBSecurityGroups field should be set from the value of the
+	// Output shape's DBSecurityGroups..DBSecurityGroupName fields.
+	if targetSetCfg != nil && targetSetCfg.From != nil {
+		if sourceMemberShapeRef, found := sourceShape.MemberRef.Shape.MemberRefs[*targetSetCfg.From]; found {
+			out += setResourceForScalar(
+				elemVarName,
+				fmt.Sprintf("*%s.%s", iterVarName, *targetSetCfg.From),
+				sourceMemberShapeRef,
+				indentLevel+1,
+			)
+		} else {
+			// This is a bug in the code generation if this occurs...
+			msg := fmt.Sprintf(
+				"could not find targetSetCfg.From %s in struct member type.",
+				*targetSetCfg.From,
+			)
+			panic(msg)
+		}
+	} else {
+		//  f0elem0 = *f0iter0
+		//
+		// or
+		//
+		//  f0elem0.SetMyField(*f0iter0)
+		containerFieldName := ""
+		if sourceShape.MemberRef.Shape.Type == "structure" {
+			containerFieldName = targetFieldName
+		}
+		out += setResourceForContainer(
+			cfg, r,
+			containerFieldName,
+			elemVarName,
+			&targetShape.MemberRef,
+			targetSetCfg,
+			iterVarName,
+			&sourceShape.MemberRef,
+			indentLevel+1,
+		)
 	}
-	out += setResourceForContainer(
-		cfg, r,
-		containerFieldName,
-		elemVarName,
-		&targetShape.MemberRef,
-		iterVarName,
-		&sourceShape.MemberRef,
-		indentLevel+1,
-	)
 	addressOfVar := ""
-	switch sourceShape.MemberRef.Shape.Type {
+	switch targetShape.MemberRef.Shape.Type {
 	case "structure", "list", "map":
 		break
 	default:
@@ -1299,6 +1415,8 @@ func setResourceForMap(
 	targetVarName string,
 	// Shape Ref of the target map field
 	targetShapeRef *awssdkmodel.ShapeRef,
+	// SetFieldConfig of the *target* field
+	targetSetCfg *ackgenconfig.SetFieldConfig,
 	// The struct or struct field that we access our source value from
 	sourceVarName string,
 	// ShapeRef of the source map field
@@ -1332,6 +1450,7 @@ func setResourceForMap(
 		containerFieldName,
 		valVarName,
 		&targetShape.ValueRef,
+		nil,
 		valIterVarName,
 		&sourceShape.ValueRef,
 		indentLevel+1,

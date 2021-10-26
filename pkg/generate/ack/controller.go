@@ -21,6 +21,7 @@ import (
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate/code"
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate/templateset"
+	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
 	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
 )
@@ -102,7 +103,18 @@ var (
 			return code.SetSDKForStruct(r.Config(), r, targetFieldName, targetVarName, targetShapeRef, sourceFieldPath, sourceVarName, indentLevel)
 		},
 		"GoCodeSetResourceForStruct": func(r *ackmodel.CRD, targetFieldName string, targetVarName string, targetShapeRef *awssdkmodel.ShapeRef, sourceVarName string, sourceShapeRef *awssdkmodel.ShapeRef, indentLevel int) string {
-			return code.SetResourceForStruct(r.Config(), r, targetFieldName, targetVarName, targetShapeRef, sourceVarName, sourceShapeRef, indentLevel)
+			f, ok := r.Fields[targetFieldName]
+			if !ok {
+				return ""
+			}
+			// We may have some special instructions for how to handle setting the
+			// field value...
+			setCfg := f.GetSetterConfig(model.OpTypeList)
+
+			if setCfg != nil && setCfg.Ignore {
+				return ""
+			}
+			return code.SetResourceForStruct(r.Config(), r, targetFieldName, targetVarName, targetShapeRef, setCfg, sourceVarName, sourceShapeRef, indentLevel)
 		},
 		"GoCodeCompare": func(r *ackmodel.CRD, deltaVarName string, sourceVarName string, targetVarName string, indentLevel int) string {
 			return code.CompareResource(r.Config(), r, deltaVarName, sourceVarName, targetVarName, indentLevel)
