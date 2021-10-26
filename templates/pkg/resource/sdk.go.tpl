@@ -4,8 +4,8 @@ package {{ .CRD.Names.Snake }}
 
 import (
 	"context"
-	"strings"
 	"reflect"
+	"strings"
 
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
 	ackcondition "github.com/aws-controllers-k8s/runtime/pkg/condition"
