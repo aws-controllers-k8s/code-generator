@@ -119,8 +119,11 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 				return nil, ErrNilShapePointer
 			}
 			// Handles field renames, if applicable
-			fieldName, _ := m.cfg.ResourceFieldRename(crd.Names.Original,
-				createOp.Name, memberName)
+			fieldName, _ := m.cfg.ResourceFieldRename(
+				crd.Names.Original,
+				createOp.Name,
+				memberName,
+			)
 			memberNames := names.New(fieldName)
 			memberNames.ModelOriginal = memberName
 			if memberName == "Attributes" && m.cfg.UnpacksAttributesMap(crdName) {
@@ -181,16 +184,19 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 			}
 			// Check that the field in the output shape isn't the same as
 			// fields in the input shape (handles field renames, if applicable)
-			inSpec, _ := crd.HasMember(memberName, createOp.Name)
-			fieldName, _ := m.cfg.ResourceFieldRename(crd.Names.Original,
-				createOp.Name, memberName)
-			if inSpec {
+			fieldName, _ := m.cfg.ResourceFieldRename(
+				crd.Names.Original,
+				createOp.Name,
+				memberName,
+			)
+			if inSpec, _ := crd.HasMember(fieldName, createOp.Name); inSpec {
 				// We don't put fields that are already in the Spec struct into
 				// the Status struct
 				continue
 			}
 			memberNames := names.New(fieldName)
 
+			//TODO:(brycahta) should we support overriding these fields?
 			if memberName == "Attributes" && m.cfg.UnpacksAttributesMap(crdName) {
 				continue
 			}

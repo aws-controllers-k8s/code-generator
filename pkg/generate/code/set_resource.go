@@ -201,9 +201,12 @@ func SetResource(
 		targetAdaptedVarName := targetVarName
 
 		// Handles field renames, if applicable
-		inSpec, inStatus := r.HasMember(memberName, op.Name)
-		fieldName, _ := cfg.ResourceFieldRename(r.Names.Original, op.Name,
-			memberName)
+		fieldName, _ := cfg.ResourceFieldRename(
+			r.Names.Original,
+			op.Name,
+			memberName,
+		)
+		inSpec, inStatus := r.HasMember(fieldName, op.Name)
 		if inSpec {
 			targetAdaptedVarName += cfg.PrefixConfig.SpecField
 			f = r.SpecFields[fieldName]
@@ -414,12 +417,11 @@ func setResourceReadMany(
 	// operation by checking for matching values in these fields.
 	matchFieldNames := r.ListOpMatchFieldNames()
 
-	for _, matchFieldName := range matchFieldNames {
-		inSpec, inStatus := r.HasMember(matchFieldName, op.Name)
-		if !inSpec && !inStatus {
+	for _, mfName := range matchFieldNames {
+		if inSpec, inStat := r.HasMember(mfName, op.Name); !inSpec && !inStat {
 			msg := fmt.Sprintf(
 				"Match field name %s is not in %s Spec or Status fields",
-				matchFieldName, r.Names.Camel,
+				mfName, r.Names.Camel,
 			)
 			panic(msg)
 		}
@@ -478,12 +480,12 @@ func setResourceReadMany(
 		targetAdaptedVarName := targetVarName
 
 		// Handles field renames, if applicable
-		inSpec, inStatus := r.HasMember(memberName, op.Name)
-		fieldName, foundFieldRename := cfg.ResourceFieldRename(r.Names.
-			Original,
+		fieldName, foundFieldRename := cfg.ResourceFieldRename(
+			r.Names.Original,
 			op.Name,
-			memberName)
-
+			memberName,
+		)
+		inSpec, inStatus := r.HasMember(fieldName, op.Name)
 		if inSpec {
 			targetAdaptedVarName += cfg.PrefixConfig.SpecField
 			f = r.SpecFields[fieldName]
@@ -934,15 +936,18 @@ func SetResourceIdentifiers(
 		}
 
 		// Handles field renames, if applicable
-		fieldName, _ := cfg.ResourceFieldRename(r.Names.Original, op.Name,
-			memberName)
+		fieldName, _ := cfg.ResourceFieldRename(
+			r.Names.Original,
+			op.Name,
+			memberName,
+		)
 
 		// Check to see if we've already set the field as the primary identifier
 		if isPrimarySet && fieldName == primaryField.Names.Camel {
 			continue
 		}
 
-		isPrimaryIdentifier := memberName == primaryShapeField
+		isPrimaryIdentifier := fieldName == primaryShapeField
 
 		searchField := ""
 		if isPrimaryIdentifier {

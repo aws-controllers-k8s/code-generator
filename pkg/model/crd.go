@@ -717,14 +717,16 @@ func (r *CRD) GetSanitizedMemberPath(
 	cfg := r.Config()
 
 	// Handles field renames, if applicable
-	inSpec, inStatus := r.HasMember(memberName, op.Name)
-	fieldName, fieldRenamed := cfg.ResourceFieldRename(r.Names.Original,
+	fieldName, fieldRenamed := cfg.ResourceFieldRename(
+		r.Names.Original,
 		op.Name,
-		memberName)
+		memberName,
+	)
 	if fieldRenamed {
 		pathFieldName = fieldName
 	}
 
+	inSpec, inStatus := r.HasMember(fieldName, op.Name)
 	if inSpec {
 		resVarPath = resVarPath + cfg.PrefixConfig.SpecField + "." + pathFieldName
 	} else if inStatus {
@@ -742,8 +744,11 @@ func (r *CRD) HasMember(
 	memberName string,
 	operationName string,
 ) (inSpec bool, inStatus bool) {
-	fieldName, _ := r.Config().ResourceFieldRename(r.Names.Original, operationName,
-		memberName)
+	fieldName, _ := r.Config().ResourceFieldRename(
+		r.Names.Original,
+		operationName,
+		memberName,
+	)
 	if _, found := r.SpecFields[fieldName]; found {
 		inSpec = true
 	} else if _, found := r.StatusFields[fieldName]; found {

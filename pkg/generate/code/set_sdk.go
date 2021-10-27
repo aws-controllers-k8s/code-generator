@@ -225,9 +225,12 @@ func SetSDK(
 		sourceAdaptedVarName := sourceVarName
 
 		// Handles field renames, if applicable
-		inSpec, inStatus := r.HasMember(memberName, op.Name)
-		fieldName, _ := cfg.ResourceFieldRename(r.Names.Original, op.Name,
-			memberName)
+		fieldName, _ := cfg.ResourceFieldRename(
+			r.Names.Original,
+			op.Name,
+			memberName,
+		)
+		inSpec, inStatus := r.HasMember(fieldName, op.Name)
 		if inSpec {
 			sourceAdaptedVarName += cfg.PrefixConfig.SpecField
 			f = r.SpecFields[fieldName]
@@ -785,8 +788,11 @@ func setSDKReadMany(
 		}
 
 		// Handles field renames, if applicable
-		fieldName, _ := cfg.ResourceFieldRename(r.Names.Original, op.Name,
-			memberName)
+		fieldName, _ := cfg.ResourceFieldRename(
+			r.Names.Original,
+			op.Name,
+			memberName,
+		)
 		resVarPath, err = r.GetSanitizedMemberPath(memberName, op, sourceVarName)
 		if err != nil {
 			// memberName could be a plural identifier field, so check for

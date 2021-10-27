@@ -176,15 +176,15 @@ func FindPrimaryIdentifierFieldNames(
 	}
 
 	if crField == "" {
-		// Handles field renames, if applicable
-		inSpec, inStatus := r.HasMember(shapeField, op.Name)
-		if inSpec || inStatus {
-			crField, _ = cfg.ResourceFieldRename(r.Names.Original, op.Name,
-				shapeField)
-		} else {
-			panic("Could not find corresponding spec or status field for primary identifier " + shapeField)
+		if inSpec, inStat := r.HasMember(shapeField, op.Name); !inSpec && !inStat {
+			panic("Could not find corresponding spec or status field " +
+				"for primary identifier " + shapeField)
 		}
+		crField, _ = cfg.ResourceFieldRename(
+			r.Names.Original,
+			op.Name,
+			shapeField,
+		)
 	}
-
 	return crField, shapeField
 }
