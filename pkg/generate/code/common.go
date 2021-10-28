@@ -32,11 +32,14 @@ var (
 // can be singular or plural.
 func FindIdentifiersInShape(
 	r *model.CRD,
-	shape *awssdkmodel.Shape) []string {
+	shape *awssdkmodel.Shape,
+	op *awssdkmodel.Operation,
+) []string {
 	var identifiers []string
 	if r == nil || shape == nil {
 		return identifiers
 	}
+
 	identifierLookup := []string{
 		"Id",
 		"Ids",
@@ -48,16 +51,23 @@ func FindIdentifiersInShape(
 		r.Names.Original + "Names",
 	}
 
+	// Handles field renames
+	opType, _ := model.GetOpTypeAndResourceNameFromOpID(op.Name, r.Config())
+	renames, _ := r.GetAllRenames(opType)
 	for _, memberName := range shape.MemberNames() {
-		if util.InStrings(memberName, identifierLookup) {
-			identifiers = append(identifiers, memberName)
+		lookupName := memberName
+		if renamedName, found := renames[memberName]; found {
+			lookupName = renamedName
+		}
+		if util.InStrings(lookupName, identifierLookup) {
+			identifiers = append(identifiers, lookupName)
 		}
 	}
 
 	return identifiers
 }
 
-// FindIdentifiersInShape returns the identifier fields of a given shape which
+// FindARNIdentifiersInShape returns the identifier fields of a given shape which
 // fit expect an ARN.
 func FindARNIdentifiersInShape(
 	r *model.CRD,
@@ -79,16 +89,17 @@ func FindARNIdentifiersInShape(
 
 // FindPluralizedIdentifiersInShape returns the name of a Spec OR Status field
 // that has a matching pluralized field in the given shape and the name of
-// the corresponding shape field name. This method will returns the original
-// field name - renames will need to be handled separately.
+// the corresponding shape field name. This method handles identifier field
+// renames and will return the same, when applicable.
 // For example, DescribeVpcsInput has a `VpcIds` field which would be matched
 // to the `Status.VPCID` CRD field - the return value would be
 // "VPCID", "VpcIds".
 func FindPluralizedIdentifiersInShape(
 	r *model.CRD,
 	shape *awssdkmodel.Shape,
+	op *awssdkmodel.Operation,
 ) (crField string, shapeField string) {
-	shapeIdentifiers := FindIdentifiersInShape(r, shape)
+	shapeIdentifiers := FindIdentifiersInShape(r, shape, op)
 	crIdentifiers := r.GetIdentifiers()
 	if len(shapeIdentifiers) == 0 || len(crIdentifiers) == 0 {
 		return "", ""
@@ -99,8 +110,8 @@ func FindPluralizedIdentifiersInShape(
 		for _, ci := range crIdentifiers {
 			if strings.EqualFold(pluralize.Singular(si),
 				pluralize.Singular(ci)) {
-				// The CRD identifiers being used for comparison reflect the
-				// *original* field names in the API model shape.
+				// The CRD identifiers being used for comparison reflect any
+				// renamed field names in the API model shape.
 				if crField == "" {
 					crField = ci
 					shapeField = si
@@ -109,8 +120,7 @@ func FindPluralizedIdentifiersInShape(
 					// 'Id' identifier. Checking 'Id' to determine resource
 					// creation should be safe as the field is usually
 					// present in CR.Status.
-					if !strings.HasSuffix(crField, "Id") ||
-						!strings.HasSuffix(crField, "Ids") {
+					if !strings.Contains(crField, "Id") {
 						crField = ci
 						shapeField = si
 					}
@@ -134,7 +144,7 @@ func FindPrimaryIdentifierFieldNames(
 	if shapeField == "" {
 		// For ReadOne, search for a direct identifier
 		if op == r.Ops.ReadOne {
-			identifiers := FindIdentifiersInShape(r, shape)
+			identifiers := FindIdentifiersInShape(r, shape, op)
 			identifiers = append(identifiers, FindARNIdentifiersInShape(r, shape)...)
 
 			switch len(identifiers) {
@@ -150,7 +160,7 @@ func FindPrimaryIdentifierFieldNames(
 			}
 		} else {
 			// For ReadMany, search for pluralized identifiers
-			crField, shapeField = FindPluralizedIdentifiersInShape(r, shape)
+			crField, shapeField = FindPluralizedIdentifiersInShape(r, shape, op)
 		}
 
 		// Require override if still can't find any identifiers
@@ -166,18 +176,15 @@ func FindPrimaryIdentifierFieldNames(
 	}
 
 	if crField == "" {
-		renamedName, _ := r.InputFieldRename(
-			op.Name, shapeField,
-		)
-
-		_, inSpec := r.SpecFields[renamedName]
-		_, inStatus := r.StatusFields[renamedName]
-		if inSpec || inStatus {
-			crField = renamedName
-		} else {
-			panic("Could not find corresponding spec or status field for primary identifier " + shapeField)
+		if inSpec, inStat := r.HasMember(shapeField, op.Name); !inSpec && !inStat {
+			panic("Could not find corresponding spec or status field " +
+				"for primary identifier " + shapeField)
 		}
+		crField, _ = cfg.ResourceFieldRename(
+			r.Names.Original,
+			op.Name,
+			shapeField,
+		)
 	}
-
 	return crField, shapeField
 }

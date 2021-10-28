@@ -3120,3 +3120,27 @@ func TestSetResource_EC2_VPC_SetResourceIdentifiers(t *testing.T) {
 		code.SetResourceIdentifiers(crd.Config(), crd, "identifier", "r.ko", 1),
 	)
 }
+
+func TestSetResource_EC2_SecurityGroups_SetResourceIdentifiers(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "ec2")
+
+	crd := testutil.GetCRDByName(t, g, "SecurityGroup")
+	require.NotNil(crd)
+
+	// CreateSecurityGroup Output returns a GroupId,
+	// which has been renamed to ID in the CRD
+	expected := `
+	if resp.GroupId != nil {
+		ko.Status.ID = resp.GroupId
+	} else {
+		ko.Status.ID = nil
+	}
+`
+	assert.Equal(
+		expected,
+		code.SetResource(crd.Config(), crd, model.OpTypeCreate, "resp", "ko", 1),
+	)
+}

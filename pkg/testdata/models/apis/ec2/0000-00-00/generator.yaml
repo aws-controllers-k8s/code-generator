@@ -35,7 +35,7 @@ ignore:
     - ReservedInstancesListing
     - RouteTable
     - Route
-    - SecurityGroup
+    #- SecurityGroup
     - Snapshot
     - SpotDatafeedSubscription
     - Subnet 
@@ -69,3 +69,20 @@ operations:
 
 resources:
   DhcpOptions:
+
+  SecurityGroup:
+    renames:
+      operations:
+        CreateSecurityGroup:
+          input_fields:
+            GroupName: Name
+          output_fields:
+            GroupId: Id
+        DeleteSecurityGroup:
+          input_fields:
+            GroupId: Id
+            GroupName: Name
+        DescribeSecurityGroups:
+          input_fields:
+            GroupIds: Ids
+            GroupNames: Names

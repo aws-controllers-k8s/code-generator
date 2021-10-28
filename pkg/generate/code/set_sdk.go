@@ -218,23 +218,30 @@ func SetSDK(
 			)
 			continue
 		}
-		renamedName, _ := r.InputFieldRename(op.Name, memberName)
+
 		// Determine whether the input shape's field is in the Spec or the
 		// Status struct and set the source variable appropriately.
 		var f *model.Field
-		var found bool
 		sourceAdaptedVarName := sourceVarName
-		f, found = r.SpecFields[renamedName]
-		if found {
+
+		// Handles field renames, if applicable
+		fieldName, _ := cfg.ResourceFieldRename(
+			r.Names.Original,
+			op.Name,
+			memberName,
+		)
+		inSpec, inStatus := r.HasMember(fieldName, op.Name)
+		if inSpec {
 			sourceAdaptedVarName += cfg.PrefixConfig.SpecField
-		} else {
-			f, found = r.StatusFields[renamedName]
-			if !found {
-				// TODO(jaypipes): check generator config for exceptions?
-				continue
-			}
+			f = r.SpecFields[fieldName]
+		} else if inStatus {
 			sourceAdaptedVarName += cfg.PrefixConfig.StatusField
+			f = r.StatusFields[fieldName]
+		} else {
+			// TODO(jaypipes): check generator config for exceptions?
+			continue
 		}
+
 		sourceAdaptedVarName += "." + f.Names.Camel
 		sourceFieldPath := f.Names.Camel
 
@@ -780,13 +787,19 @@ func setSDKReadMany(
 			}
 		}
 
-		// Field renames are handled in GetSanitizedMemberPath
+		// Handles field renames, if applicable
+		fieldName, _ := cfg.ResourceFieldRename(
+			r.Names.Original,
+			op.Name,
+			memberName,
+		)
 		resVarPath, err = r.GetSanitizedMemberPath(memberName, op, sourceVarName)
 		if err != nil {
-			// if memberName is an identifier field, then check for
-			// corresponding model identifier
-			crIdentifier, shapeIdentifier := FindPluralizedIdentifiersInShape(r, inputShape)
-			if strings.EqualFold(memberName, shapeIdentifier) {
+			// memberName could be a plural identifier field, so check for
+			// corresponding singular model identifier
+			crIdentifier, shapeIdentifier := FindPluralizedIdentifiersInShape(r,
+				inputShape, op)
+			if strings.EqualFold(fieldName, shapeIdentifier) {
 				resVarPath, err = r.GetSanitizedMemberPath(crIdentifier, op, sourceVarName)
 				if err != nil {
 					panic(fmt.Sprintf(

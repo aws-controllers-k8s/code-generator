@@ -394,10 +394,10 @@ func (c *Config) IsIgnoredResource(resourceName string) bool {
 	return util.InStrings(resourceName, c.Ignore.ResourceNames)
 }
 
-// ResourceInputFieldRename returns the renamed field for a Resource, a
+// ResourceFieldRename returns the renamed field for a Resource, a
 // supplied Operation ID and original field name and whether or not a renamed
 // override field name was found
-func (c *Config) ResourceInputFieldRename(
+func (c *Config) ResourceFieldRename(
 	resName string,
 	opID string,
 	origFieldName string,
@@ -418,7 +418,10 @@ func (c *Config) ResourceInputFieldRename(
 	}
 	renamed, ok := oRenames.InputFields[origFieldName]
 	if !ok {
-		return origFieldName, false
+		renamed, ok = oRenames.OutputFields[origFieldName]
+		if !ok {
+			return origFieldName, false
+		}
 	}
 	return renamed, true
 }

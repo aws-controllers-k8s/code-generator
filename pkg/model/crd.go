@@ -175,21 +175,6 @@ func shapeHasMember(shape *awssdkmodel.Shape, toFind string) bool {
 	return false
 }
 
-// InputFieldRename returns the renamed field for a supplied Operation ID and
-// original field name and whether or not a renamed override field name was
-// found
-func (r *CRD) InputFieldRename(
-	opID string,
-	origFieldName string,
-) (string, bool) {
-	if r.cfg == nil {
-		return origFieldName, false
-	}
-	return r.cfg.ResourceInputFieldRename(
-		r.Names.Original, opID, origFieldName,
-	)
-}
-
 // AddSpecField adds a new Field of a given name and shape into the Spec
 // field of a CRD
 func (r *CRD) AddSpecField(
@@ -679,6 +664,9 @@ func (r *CRD) GetAllRenames(op OpType) (map[string]string, error) {
 			for old, new := range opRenameConfigs.InputFields {
 				renames[old] = new
 			}
+			for old, new := range opRenameConfigs.OutputFields {
+				renames[old] = new
+			}
 		}
 	}
 	return renames, nil
@@ -725,25 +713,48 @@ func (r *CRD) GetSanitizedMemberPath(
 	koVarName string) (string, error) {
 	resVarPath := koVarName
 	cleanMemberNames := names.New(memberName)
-	cleanMemberName := cleanMemberNames.Camel
-	// Check that the field has potentially been renamed
-	renamedName, wasRenamed := r.InputFieldRename(
-		op.Name, memberName,
+	pathFieldName := cleanMemberNames.Camel
+	cfg := r.Config()
+
+	// Handles field renames, if applicable
+	fieldName, fieldRenamed := cfg.ResourceFieldRename(
+		r.Names.Original,
+		op.Name,
+		memberName,
 	)
-	_, found := r.SpecFields[renamedName]
-	if found && !wasRenamed {
-		resVarPath = resVarPath + r.Config().PrefixConfig.SpecField + "." + cleanMemberName
-	} else if found {
-		resVarPath = resVarPath + r.Config().PrefixConfig.SpecField + "." + renamedName
+	if fieldRenamed {
+		pathFieldName = fieldName
+	}
+
+	inSpec, inStatus := r.HasMember(fieldName, op.Name)
+	if inSpec {
+		resVarPath = resVarPath + cfg.PrefixConfig.SpecField + "." + pathFieldName
+	} else if inStatus {
+		resVarPath = resVarPath + cfg.PrefixConfig.StatusField + "." + pathFieldName
 	} else {
-		_, found = r.StatusFields[memberName]
-		if !found {
-			return "", fmt.Errorf(
-				"the required field %s is NOT present in CR's Spec or Status", memberName)
-		}
-		resVarPath = resVarPath + r.Config().PrefixConfig.StatusField + "." + cleanMemberName
+		return "", fmt.Errorf(
+			"the required field %s is NOT present in CR's Spec or Status", memberName)
 	}
 	return resVarPath, nil
+}
+
+// HasMember returns true in the respective field if Spec xor Status field
+// contains memberName or rename
+func (r *CRD) HasMember(
+	memberName string,
+	operationName string,
+) (inSpec bool, inStatus bool) {
+	fieldName, _ := r.Config().ResourceFieldRename(
+		r.Names.Original,
+		operationName,
+		memberName,
+	)
+	if _, found := r.SpecFields[fieldName]; found {
+		inSpec = true
+	} else if _, found := r.StatusFields[fieldName]; found {
+		inStatus = true
+	}
+	return inSpec, inStatus
 }
 
 // NewCRD returns a pointer to a new `ackmodel.CRD` struct that describes a
