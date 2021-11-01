@@ -11,7 +11,7 @@ spec:
         envFrom:
           - configMapRef:
               name: ack-user-config
-              optional: true
+              optional: false
           - secretRef:
               name: ack-user-secrets
-              optional: true
+              optional: false
