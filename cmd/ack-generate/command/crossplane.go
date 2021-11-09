@@ -35,9 +35,6 @@ var crossplaneCmd = &cobra.Command{
 }
 
 func init() {
-	crossplaneCmd.PersistentFlags().StringVar(
-		&optOutputPath, "provider-dir", ".", "the directory of the Crossplane provider",
-	)
 	rootCmd.AddCommand(crossplaneCmd)
 }
 

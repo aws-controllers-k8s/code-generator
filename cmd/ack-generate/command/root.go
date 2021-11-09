@@ -116,7 +116,7 @@ func init() {
 		&optMetadataConfigPath, "metadata-config-path", "", "Path to file containing service metadata to use",
 	)
 	rootCmd.PersistentFlags().StringVarP(
-		&optOutputPath, "output", "o", "", "Path to directory to output generated files.",
+		&optOutputPath, "output", "o", "", "Path to directory to output generated files (if generating crossplane providers, this should be the root of the aws-crossplane directory)",
 	)
 	rootCmd.PersistentFlags().StringVar(
 		&optAWSSDKGoVersion, "aws-sdk-go-version", "", "Version of github.com/aws/aws-sdk-go used to generate apis and controllers files",
