@@ -260,18 +260,28 @@ func (rm *resourceManager) updateConditions (
 		}
 	}
 
-{{- if $reconcileRequeuOnSuccessSeconds := .CRD.ReconcileRequeuOnSuccessSeconds }}
-	if syncCondition == nil && onSuccess {
+	if syncCondition == nil {
 		syncCondition = &ackv1alpha1.Condition{
 			Type:   ackv1alpha1.ConditionTypeResourceSynced,
 			Status: corev1.ConditionTrue,
 		}
 		ko.Status.Conditions = append(ko.Status.Conditions, syncCondition)
 	}
-{{- else }}
-	// Required to avoid the "declared but not used" error in the default case
-	_ = syncCondition
-{{- end }}
+
+	var syncMessage, syncReason string
+	if onSuccess {
+		syncCondition.Status = corev1.ConditionTrue
+		syncReason = "resource synced successfully"
+		syncMessage = "resource synced successfully"
+	} else {
+		syncCondition.Status = corev1.ConditionFalse
+		syncReason = "resource failed to sync"
+		if err != nil {
+			syncMessage = err.Error()
+		}
+	}
+	syncCondition.Reason = &syncReason
+	syncCondition.Message = &syncMessage
 
 {{- if $updateConditionsCustomMethodName := .CRD.UpdateConditionsCustomMethodName }}
 	// custom update conditions
