@@ -1,4 +1,5 @@
 {{- define "type_def" -}}
+// +kubebuilder:skipversion
 type {{ .Names.Camel }} struct {
 {{- range $attrName, $attr := .Attrs }}
 	{{- if $attr.Shape }}
