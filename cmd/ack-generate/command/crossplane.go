@@ -17,7 +17,6 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -25,11 +24,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
-	ackgenerate "github.com/aws-controllers-k8s/code-generator/pkg/generate/ack"
-	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
 	cpgenerate "github.com/aws-controllers-k8s/code-generator/pkg/generate/crossplane"
-	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
-	acksdk "github.com/aws-controllers-k8s/code-generator/pkg/sdk"
 )
 
 // crossplaneCmd is the command that generates Crossplane API types
@@ -39,12 +34,7 @@ var crossplaneCmd = &cobra.Command{
 	RunE:  generateCrossplane,
 }
 
-var providerDir string
-
 func init() {
-	crossplaneCmd.PersistentFlags().StringVar(
-		&providerDir, "provider-dir", ".", "the directory of the Crossplane provider",
-	)
 	rootCmd.AddCommand(crossplaneCmd)
 }
 
@@ -58,34 +48,9 @@ func generateCrossplane(_ *cobra.Command, args []string) error {
 		return err
 	}
 	svcAlias := strings.ToLower(args[0])
-	cfgPath := filepath.Join(providerDir, "apis", svcAlias, optGenVersion, "generator-config.yaml")
-	_, err := os.Stat(cfgPath)
-	if err != nil && !os.IsNotExist(err) {
-		return err
-	}
-	if os.IsNotExist(err) {
-		cfgPath = ""
-	}
-	cfg, err := ackgenconfig.New(cfgPath, ackgenerate.DefaultConfig)
-	if err != nil {
-		return err
-	}
-	sdkHelper := acksdk.NewHelper(sdkDir, cfg)
-	sdkHelper.APIGroupSuffix = "aws.crossplane.io"
-	sdkAPI, err := sdkHelper.API(svcAlias)
-	if err != nil {
-		retryModelName, err := FallBackFindServiceID(sdkDir, svcAlias)
-		if err != nil {
-			return err
-		}
-		// Retry using path found by querying service ID
-		sdkAPI, err = sdkHelper.API(retryModelName)
-		if err != nil {
-			return fmt.Errorf("cannot get the API model for service %s", svcAlias)
-		}
-	}
-	m, err := ackmodel.New(
-		sdkAPI, svcAlias, optGenVersion, cfg,
+	optGeneratorConfigPath = filepath.Join(optOutputPath, "apis", svcAlias, optGenVersion, "generator-config.yaml")
+	m, err := loadModelWithLatestAPIVersion(
+		svcAlias,
 	)
 	if err != nil {
 		return err
@@ -106,7 +71,7 @@ func generateCrossplane(_ *cobra.Command, args []string) error {
 			fmt.Println(strings.TrimSpace(contents.String()))
 			continue
 		}
-		outPath := filepath.Join(providerDir, path)
+		outPath := filepath.Join(optOutputPath, path)
 		outDir := filepath.Dir(outPath)
 		if _, err := ensureDir(outDir); err != nil {
 			return err
@@ -115,8 +80,8 @@ func generateCrossplane(_ *cobra.Command, args []string) error {
 			return err
 		}
 	}
-	apiPath := filepath.Join(providerDir, "apis", svcAlias, optGenVersion)
-	controllerPath := filepath.Join(providerDir, "pkg", "controller", svcAlias)
+	apiPath := filepath.Join(optOutputPath, "apis", svcAlias, optGenVersion)
+	controllerPath := filepath.Join(optOutputPath, "pkg", "controller", svcAlias)
 	// TODO(muvaf): goimports don't allow to be included as a library. Make sure
 	// goimports binary exists.
 	if err := exec.Command("goimports", "-w", apiPath, controllerPath).Run(); err != nil {
