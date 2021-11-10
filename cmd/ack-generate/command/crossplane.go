@@ -35,6 +35,13 @@ var crossplaneCmd = &cobra.Command{
 }
 
 func init() {
+	// override crossplane specific flag defaults
+	crossplaneCmd.InheritedFlags().StringVar(
+		&optAPIGroupSuffix, "api-group-suffix", "aws.crossplane.io", "API Group suffix to add to generated resources",
+	)
+	crossplaneCmd.InheritedFlags().StringVar(
+		&optDefaultCfg, "default-cfg-name", "crossplane", "Specify an alternate default configuration",
+	)
 	rootCmd.AddCommand(crossplaneCmd)
 }
 
@@ -42,6 +49,13 @@ func generateCrossplane(_ *cobra.Command, args []string) error {
 	if len(args) != 1 {
 		return fmt.Errorf("please specify the service alias for the AWS service API to generate")
 	}
+	if optAPIGroupSuffix == "" {
+		optAPIGroupSuffix = "aws.crossplane.io"
+	}
+	if optDefaultCfg == "" {
+		optDefaultCfg = "crossplane"
+	}
+
 	ctx, cancel := contextWithSigterm(context.Background())
 	defer cancel()
 	if err := ensureSDKRepo(ctx, optCacheDir, optRefreshCache); err != nil {
