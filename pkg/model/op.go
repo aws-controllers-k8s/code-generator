@@ -162,3 +162,21 @@ func OpTypeFromString(s string) OpType {
 
 	return OpTypeUnknown
 }
+
+// ResourceManagerMethodFromOpType returns the string representing the
+// AWSResourceManager method ("Create", "Update", "Delete" or "ReadOne")
+// corresponding to the supplied OpType.
+func ResourceManagerMethodFromOpType(opType OpType) string {
+	switch opType {
+	case OpTypeCreate:
+		return "Create"
+	case OpTypeUpdate:
+		return "Update"
+	case OpTypeDelete:
+		return "Delete"
+	case OpTypeGet, OpTypeList:
+		return "ReadOne"
+	default:
+		return ""
+	}
+}

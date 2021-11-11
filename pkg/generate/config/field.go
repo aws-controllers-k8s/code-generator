@@ -105,6 +105,109 @@ type SourceFieldConfig struct {
 	Path string `json:"path"`
 }
 
+// SetFieldConfig instructs the code generator how to handle setting the value
+// of the field from an Output shape in the API response.
+//
+// These instructions are necessary when the Go type for Input and Output
+// fields is different.
+//
+// For example, consider the `DBSecurityGroups` field for an RDS `DBInstance`
+// resource.
+//
+// The Create operation's Input shape's `DBSecurityGroups` field has a Go type
+// of `[]*string` [0] because the user is expected to provide a list of
+// DBSecurityGroup identifiers when creating the DBInstance.
+//
+// However, the Output shape for both the Create and ReadOne operation uses a
+// different Go type for the `DBSecurityGroups` field. For these Output shapes,
+// the Go type is `[]*DBSecurityGroupMembership` [1]. The
+// `DBSecurityGroupMembership` struct contains the DBSecurityGroup's name and
+// "status".
+//
+// The challenge that the ACK code generator has is to figure out how to take
+// the Go type of the Output shape and process it into the Go type of the Input
+// shape.
+//
+// In other words, for the `DBInstance.Spec.DBSecurityGroups` field discussed
+// above, we need to have the code generator produce the following Go code in
+// the SetResource generator:
+//
+// ```go
+// if resp.DBInstance.DBSecurityGroups != nil {
+//     f17 := []*string{}
+//     for _, f17iter := range resp.DBInstance.DBSecurityGroups {
+//         var f17elem string
+//         f17elem = *f17iter.DBSecurityGroupName
+//         f17 = append(f17, &f17elem)
+//     }
+//     ko.Spec.DBSecurityGroupNames = f17
+// } else {
+//     ko.Spec.DBSecurityGroupNames = nil
+// }
+// ```
+//
+// [0] https://github.com/aws/aws-sdk-go/blob/0a01aef9caf16d869c7340e729080205760dc2a2/models/apis/rds/2014-10-31/api-2.json#L2985
+// [1] https://github.com/aws/aws-sdk-go/blob/0a01aef9caf16d869c7340e729080205760dc2a2/models/apis/rds/2014-10-31/api-2.json#L3815
+type SetFieldConfig struct {
+	// Method is the resource manager method name whose Output shape will be
+	// transformed by this config. If empty, this set field config applies to
+	// all resource manager methods.
+	//
+	// Options: Create, Update, Delete or ReadOne
+	Method *string `json:"method,omitempty"`
+	// From tells the code generator to output Go code that sets the value of a
+	// variable containing the target resource field with the contents of a
+	// member field in the source struct.
+	//
+	// Consider the `DBInstance.Spec.DBSecurityGroups` field discussed above.
+	//
+	// If we have the following generator.yaml config:
+	//
+	// ```yaml
+	// resources:
+	//   DBInstance:
+	//     fields:
+	//       DBSecurityGroups:
+	//         set:
+	//           - method: Create
+	//			   from: DBSecurityGroupName
+	//           - method: ReadOne
+	//			   from: DBSecurityGroupName
+	// ```
+	//
+	// That will instruct the code generator to output this Go code when
+	// processing the `*DBSecurityGroupMembership` struct elements of the
+	// Output shape's DBSecurityGroups field:
+	//
+	// ```go
+	// f17elem = *f17iter.DBSecurityGroupName
+	// ```
+	From *string `json:"from,omitempty"`
+	// Ignore instructs the code generator to ignore this field in the Output
+	// shape when setting the value of the resource's field in the Spec. This
+	// is useful when we know that, for example, the returned value of field in
+	// an Output shape contains stale data, such as when the ElastiCache
+	// ModifyReplicationGroup API's Output response shape contains the
+	// originally-set value for the LogDeliveryConfiguration field that was
+	// updated in the Input shape.
+	//
+	// See: https://github.com/aws-controllers-k8s/elasticache-controller/pull/59/
+	//
+	// In the case of ElastiCache, we might have the following generator.yaml
+	// config:
+	//
+	// ```yaml
+	// resources:
+	//   ReplicationGroup:
+	//     fields:
+	//       LogDeliveryConfiguration:
+	//         set:
+	//           - method: Update
+	//			   ignore: true
+	// ```
+	Ignore bool `json:"ignore,omitempty"`
+}
+
 // CompareFieldConfig informs the code generator how to compare two values of a
 // field
 type CompareFieldConfig struct {
@@ -211,6 +314,10 @@ type FieldConfig struct {
 	// Compare instructs the code generator how to produce code that compares
 	// the value of the field in two resources
 	Compare *CompareFieldConfig `json:"compare,omitempty"`
+	// Set contains instructions for the code generator how to deal with
+	// fields where the Go type of the same-named fields in an Output shape is
+	// different from the Go type of the Input shape.
+	Set []*SetFieldConfig `json:"set"`
 	// Print instructs the code generator how to generate comment markers that
 	// influence hows field are printed in `kubectl get` response. If this field
 	// is not nil, it will be added to the columns of `kubectl get`.

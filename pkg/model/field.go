@@ -63,6 +63,23 @@ func (f *Field) IsRequired() bool {
 	return util.InStrings(f.Names.ModelOriginal, f.CRD.Ops.Create.InputRef.Shape.Required)
 }
 
+// GetSetterConfig returns the SetFieldConfig object associated with this field
+// and a supplied operation type, or nil if none exists.
+func (f *Field) GetSetterConfig(opType OpType) *ackgenconfig.SetFieldConfig {
+	if f.FieldConfig == nil {
+		return nil
+	}
+	rmMethod := ResourceManagerMethodFromOpType(opType)
+	for _, setCfg := range f.FieldConfig.Set {
+		// If the Method attribute is nil, that means the setter config applies to
+		// all resource manager methods for this field.
+		if setCfg.Method == nil || strings.EqualFold(rmMethod, *setCfg.Method) {
+			return setCfg
+		}
+	}
+	return nil
+}
+
 // ParentFieldPath takes a field path and returns the field path of the
 // containing "parent" field. For example, if the field path
 // `Users..Credentials.Login` is passed in, this function returns

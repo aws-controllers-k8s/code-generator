@@ -59,6 +59,13 @@ resources:
           path: Events
       AuthToken:
         is_secret: true
+      # NOTE(jaypipes): This is testing the SetFieldConfig.Ignore functionality
+      # to ignore the field in the output shape SetResource generator for a
+      # single resource manager method (Create)
+      LogDeliveryConfigurations:
+        set:
+          - method: Create
+            ignore: true
   Snapshot:
     update_conditions_custom_method_name: CustomUpdateConditions
     exceptions:
