@@ -43,8 +43,8 @@ var (
 	optGeneratorConfigPath string
 	optMetadataConfigPath  string
 	optOutputPath          string
-	optAPIGroupSuffix      string
-	optDefaultCfg          string
+	cpAPIGroupSuffix       string
+	cpDefaultCfg           bool
 )
 
 var rootCmd = &cobra.Command{
@@ -122,12 +122,6 @@ func init() {
 	)
 	rootCmd.PersistentFlags().StringVar(
 		&optAWSSDKGoVersion, "aws-sdk-go-version", "", "Version of github.com/aws/aws-sdk-go used to generate apis and controllers files",
-	)
-	rootCmd.PersistentFlags().StringVar(
-		&optAPIGroupSuffix, "api-group-suffix", "", "API Group suffix to add to generated resources",
-	)
-	rootCmd.PersistentFlags().StringVar(
-		&optDefaultCfg, "default-cfg-name", "", "Specify an alternate default configuration (e.g. crossplane)",
 	)
 }
 

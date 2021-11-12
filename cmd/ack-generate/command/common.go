@@ -230,7 +230,7 @@ func loadModelWithLatestAPIVersion(svcAlias string) (*ackmodel.Model, error) {
 func loadModel(svcAlias string, apiVersion string) (*ackmodel.Model, error) {
 	var defaultCfg ackgenconfig.Config
 
-	if optDefaultCfg == "crossplane" {
+	if cpDefaultCfg {
 		defaultCfg = cpconfig.DefaultConfig
 	} else {
 		defaultCfg = ackgenerate.DefaultConfig
@@ -260,8 +260,8 @@ func loadModel(svcAlias string, apiVersion string) (*ackmodel.Model, error) {
 		}
 	}
 
-	if optAPIGroupSuffix != "" {
-		sdkAPI.APIGroupSuffix = optAPIGroupSuffix
+	if cpAPIGroupSuffix != "" {
+		sdkAPI.APIGroupSuffix = cpAPIGroupSuffix
 	}
 
 	m, err := ackmodel.New(

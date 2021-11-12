@@ -5,8 +5,6 @@ following to generate:
 
 ```console
 go run -tags codegen cmd/ack-generate/main.go crossplane <resource name> \
-    --api-group-suffix aws.crossplane.io \
-    --default-cfg-name crossplane \
     --output <directory for provider>
 ```
 
