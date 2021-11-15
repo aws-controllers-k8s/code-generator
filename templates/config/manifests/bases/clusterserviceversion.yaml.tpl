@@ -2,7 +2,7 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
   annotations:
-    category: "Cloud Provider"
+    categories: "Cloud Provider"
     alm-examples: '[]'
     capabilities: {{.Annotations.CapabilityLevel}}
     operatorframework.io/suggested-namespace: "ack-system"
