@@ -194,8 +194,6 @@ func SetSDK(
 		if r.IsPrimaryARNField(memberName) {
 			// if ko.Status.ACKResourceMetadata != nil && ko.Status.ACKResourceMetadata.ARN != nil {
 			//     res.SetTopicArn(string(*ko.Status.ACKResourceMetadata.ARN))
-			// } else {
-			//     res.SetTopicArn(rm.ARNFromName(*ko.Spec.Name))
 			// }
 			out += fmt.Sprintf(
 				"%sif %s.Status.ACKResourceMetadata != nil && %s.Status.ACKResourceMetadata.ARN != nil {\n",
@@ -204,14 +202,6 @@ func SetSDK(
 			out += fmt.Sprintf(
 				"%s\t%s.Set%s(string(*%s.Status.ACKResourceMetadata.ARN))\n",
 				indent, targetVarName, memberName, sourceVarName,
-			)
-			out += fmt.Sprintf(
-				"%s} else {\n", indent,
-			)
-			nameField := *r.SpecIdentifierField()
-			out += fmt.Sprintf(
-				"%s\t%s.Set%s(rm.ARNFromName(*%s.Spec.%s))\n",
-				indent, targetVarName, memberName, sourceVarName, nameField,
 			)
 			out += fmt.Sprintf(
 				"%s}\n", indent,
