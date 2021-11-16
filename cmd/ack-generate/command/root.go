@@ -43,8 +43,6 @@ var (
 	optGeneratorConfigPath string
 	optMetadataConfigPath  string
 	optOutputPath          string
-	cpAPIGroupSuffix       string
-	cpDefaultCfg           bool
 )
 
 var rootCmd = &cobra.Command{

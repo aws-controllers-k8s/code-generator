@@ -29,7 +29,6 @@ import (
 
 	ackgenerate "github.com/aws-controllers-k8s/code-generator/pkg/generate/ack"
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
-	cpconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/crossplane"
 	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
 	acksdk "github.com/aws-controllers-k8s/code-generator/pkg/sdk"
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
@@ -222,19 +221,12 @@ func loadModelWithLatestAPIVersion(svcAlias string) (*ackmodel.Model, error) {
 	if err != nil {
 		return nil, err
 	}
-	return loadModel(svcAlias, latestAPIVersion)
+	return loadModel(svcAlias, latestAPIVersion, "", ackgenerate.DefaultConfig)
 }
 
 // loadModel finds the AWS SDK for a given service alias and creates a new model
 // with the given API version.
-func loadModel(svcAlias string, apiVersion string) (*ackmodel.Model, error) {
-	var defaultCfg ackgenconfig.Config
-
-	if cpDefaultCfg {
-		defaultCfg = cpconfig.DefaultConfig
-	} else {
-		defaultCfg = ackgenerate.DefaultConfig
-	}
+func loadModel(svcAlias string, apiVersion string, apiGroup string, defaultCfg ackgenconfig.Config) (*ackmodel.Model, error) {
 
 	cfg, err := ackgenconfig.New(optGeneratorConfigPath, defaultCfg)
 	if err != nil {
@@ -260,8 +252,8 @@ func loadModel(svcAlias string, apiVersion string) (*ackmodel.Model, error) {
 		}
 	}
 
-	if cpAPIGroupSuffix != "" {
-		sdkAPI.APIGroupSuffix = cpAPIGroupSuffix
+	if apiGroup != "" {
+		sdkAPI.APIGroupSuffix = apiGroup
 	}
 
 	m, err := ackmodel.New(
