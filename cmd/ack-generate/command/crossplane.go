@@ -42,6 +42,7 @@ func generateCrossplane(_ *cobra.Command, args []string) error {
 	if len(args) != 1 {
 		return fmt.Errorf("please specify the service alias for the AWS service API to generate")
 	}
+
 	ctx, cancel := contextWithSigterm(context.Background())
 	defer cancel()
 	if err := ensureSDKRepo(ctx, optCacheDir, optRefreshCache); err != nil {
@@ -49,9 +50,7 @@ func generateCrossplane(_ *cobra.Command, args []string) error {
 	}
 	svcAlias := strings.ToLower(args[0])
 	optGeneratorConfigPath = filepath.Join(optOutputPath, "apis", svcAlias, optGenVersion, "generator-config.yaml")
-	m, err := loadModelWithLatestAPIVersion(
-		svcAlias,
-	)
+	m, err := loadModel(svcAlias, optGenVersion, "aws.crossplane.io", cpgenerate.DefaultConfig)
 	if err != nil {
 		return err
 	}

@@ -221,13 +221,14 @@ func loadModelWithLatestAPIVersion(svcAlias string) (*ackmodel.Model, error) {
 	if err != nil {
 		return nil, err
 	}
-	return loadModel(svcAlias, latestAPIVersion)
+	return loadModel(svcAlias, latestAPIVersion, "", ackgenerate.DefaultConfig)
 }
 
 // loadModel finds the AWS SDK for a given service alias and creates a new model
 // with the given API version.
-func loadModel(svcAlias string, apiVersion string) (*ackmodel.Model, error) {
-	cfg, err := ackgenconfig.New(optGeneratorConfigPath, ackgenerate.DefaultConfig)
+func loadModel(svcAlias string, apiVersion string, apiGroup string, defaultCfg ackgenconfig.Config) (*ackmodel.Model, error) {
+
+	cfg, err := ackgenconfig.New(optGeneratorConfigPath, defaultCfg)
 	if err != nil {
 		return nil, err
 	}
@@ -250,6 +251,11 @@ func loadModel(svcAlias string, apiVersion string) (*ackmodel.Model, error) {
 			return nil, fmt.Errorf("service %s not found", svcAlias)
 		}
 	}
+
+	if apiGroup != "" {
+		sdkAPI.APIGroupSuffix = apiGroup
+	}
+
 	m, err := ackmodel.New(
 		sdkAPI, svcAlias, apiVersion, cfg,
 	)
