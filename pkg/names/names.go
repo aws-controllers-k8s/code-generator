@@ -109,6 +109,8 @@ var (
 		{"Kms", "KMS", "kms", nil},
 		{"Ldap", "LDAP", "ldap", nil},
 		{"Mfa", "MFA", "mfa", nil},
+		// Prevent "Native" from becoming "NATive"
+		{"Nat", "NAT", "nat", regexp.MustCompile("Nat(?!i)", regexp.None)},
 		{"Oidc", "OIDC", "oidc", nil},
 		{"Sdk", "SDK", "sdk", nil},
 		{"Sha256", "SHA256", "sha256", nil},

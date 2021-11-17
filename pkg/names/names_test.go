@@ -67,6 +67,9 @@ func TestNames(t *testing.T) {
 		{"Ecmp", "ECMP", "ecmp", "ecmp"},
 		{"Ena", "ENA", "ena", "ena"},
 		{"UUID", "UUID", "uuid", "uuid"},
+		{"Nat", "NAT", "nat", "nat"},
+		{"NatGateway", "NATGateway", "natGateway", "nat_gateway"},
+		{"NativeAuditFieldsIncluded", "NativeAuditFieldsIncluded", "nativeAuditFieldsIncluded", "native_audit_fields_included"},
 	}
 	for _, tc := range testCases {
 		n := names.New(tc.original)
