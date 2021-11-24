@@ -149,6 +149,9 @@ var (
 		"GoCodeIncompleteLateInitialization": func(r *ackmodel.CRD, resVarName string, indentLevel int) string {
 			return code.IncompleteLateInitialization(r.Config(), r, resVarName, indentLevel)
 		},
+		"GoCodeResolveReferences": func(r *ackmodel.CRD, contextVarName string, apiReaderVarName string, resVarName string, indentLevel int) string {
+			return code.ResolveReferences(r, contextVarName, apiReaderVarName, resVarName, indentLevel)
+		},
 	}
 )
 

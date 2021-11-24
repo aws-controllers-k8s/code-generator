@@ -20,6 +20,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8srt "k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/go-logr/logr"
@@ -118,6 +119,10 @@ func (frm *fakeRM) Delete(context.Context, acktypes.AWSResource) (acktypes.AWSRe
 func (frm *fakeRM) ARNFromName(string) string { return "" }
 
 func (frm *fakeRM) LateInitialize(context.Context, acktypes.AWSResource) (acktypes.AWSResource, error) {
+	return nil, nil
+}
+
+func (frm *fakeRM) ResolveReferences(context.Context, client.Reader, acktypes.AWSResource) (acktypes.AWSResource, error) {
 	return nil, nil
 }
 

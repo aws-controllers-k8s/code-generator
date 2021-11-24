@@ -16,18 +16,26 @@ import (
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
+	acksvcv1alpha1 "github.com/aws-controllers-k8s/{{ .ServicePackageName }}-controller/apis/v1alpha1"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 
 	svcsdk "github.com/aws/aws-sdk-go/service/{{ .ServicePackageName }}"
 	svcsdkapi "github.com/aws/aws-sdk-go/service/{{ .ServicePackageName }}/{{ .ServicePackageName }}iface"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // +kubebuilder:rbac:groups={{ .APIGroup }},resources={{ ToLower .CRD.Plural }},verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups={{ .APIGroup }},resources={{ ToLower .CRD.Plural }}/status,verbs=get;update;patch
 
 {{ GoCodeFindLateInitializedFieldNames .CRD "lateInitializeFieldNames" 1 }}
+
+var(
+	_ = types.NamespacedName{}
+	_ = acksvcv1alpha1.{{ .CRD.Kind }}{}
+)
 
 // resourceManager is responsible for providing a consistent way to perform
 // CRUD operations in a backend AWS service API for Book custom resources.
@@ -294,4 +302,19 @@ func (rm *resourceManager) onSuccess(
 		return r, nil
 	}
 	return r1, nil
+}
+
+// ResolveReferences finds if there are any Reference field(s) present
+// inside AWSResource passed in the parameter and attempts to resolve
+// those reference field(s) into target field(s).
+// It returns an AWSResource with resolved reference(s), and an error if the
+// passed AWSResource's reference field(s) cannot be resolved.
+// This method also adds/updates the ConditionTypeReferencesResolved for the
+// AWSResource.
+func (rm *resourceManager) ResolveReferences(
+	ctx context.Context,
+	apiReader client.Reader,
+	res acktypes.AWSResource,
+) (acktypes.AWSResource, error) {
+{{ GoCodeResolveReferences .CRD "ctx" "apiReader" "res" 1 }}
 }
