@@ -19,7 +19,7 @@ type {{ .CRD.Kind }}Spec struct {
 	{{- if $field.ShapeRef }}
 	{{ $field.ShapeRef.Documentation }}
 	{{- end }}
-	{{ if $field.IsRequired }} // +kubebuilder:validation:Required
+	{{ if and ($field.IsRequired) (not $field.HasReference) }} // +kubebuilder:validation:Required
 	{{ $field.Names.Camel }} {{ $field.GoType }} `json:"{{ $field.Names.CamelLower }}"`
 	{{- else }} {{ $field.Names.Camel }} {{ $field.GoType }} `json:"{{ $field.Names.CamelLower }},omitempty"` {{ end }}
 {{- end }}

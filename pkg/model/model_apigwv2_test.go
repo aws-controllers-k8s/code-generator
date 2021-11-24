@@ -175,3 +175,39 @@ func TestAPIGatewayV2_Route(t *testing.T) {
 	}
 	assert.Equal(expStatusFieldCamel, attrCamelNames(statusFields))
 }
+
+func TestAPIGatewayV2_WithReference(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "apigatewayv2", &testutil.TestingModelOptions{
+		GeneratorConfigFile: "generator-with-reference.yaml",
+	})
+
+	crds, err := g.GetCRDs()
+	require.Nil(err)
+
+	// Single reference
+	crd := getCRDByName("Integration", crds)
+	require.NotNil(crd)
+
+	assert.Equal("Integration", crd.Names.Camel)
+	assert.Equal("integration", crd.Names.CamelLower)
+	assert.Equal("integration", crd.Names.Snake)
+
+	assert.NotNil(crd.SpecFields["ApiId"])
+	assert.NotNil(crd.SpecFields["ApiIdRef"])
+	assert.Equal("*ackv1alpha1.AWSResourceReferenceWrapper", crd.SpecFields["ApiIdRef"].GoType)
+
+	// List of References
+	crd = getCRDByName("VpcLink", crds)
+	require.NotNil(crd)
+
+	assert.Equal("VPCLink", crd.Names.Camel)
+	assert.Equal("vpcLink", crd.Names.CamelLower)
+	assert.Equal("vpc_link", crd.Names.Snake)
+
+	assert.NotNil(crd.SpecFields["SecurityGroupIds"])
+	assert.NotNil(crd.SpecFields["SecurityGroupIdsRef"])
+	assert.Equal("[]*ackv1alpha1.AWSResourceReferenceWrapper", crd.SpecFields["SecurityGroupIdsRef"].GoType)
+}

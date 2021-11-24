@@ -1,0 +1,48 @@
+resources:
+  Api:
+    fields:
+      Body:
+        from:
+          operation: ImportApi
+          path: Body
+      Basepath:
+        from:
+          operation: ImportApi
+          path: Basepath
+      FailOnWarnings:
+        from:
+          operation: ImportApi
+          path: FailOnWarnings
+      Name:
+        is_required: false
+      ProtocolType:
+        is_required: false
+    update_operation:
+      custom_method_name: customUpdateApi
+  DomainName:
+    fields:
+      DomainName:
+        is_primary_key: true
+        is_required: true
+        from:
+          operation: CreateDomainName
+          path: DomainName
+  Stage:
+    hooks:
+      sdk_update_post_build_request:
+        template_path: hooks/stage/sdk_update_post_build_request.go.tpl
+  Integration:
+    fields:
+      ApiId:
+        references:
+          resource: API
+          path: Status.APIID
+  VpcLink:
+    fields:
+      SecurityGroupIds:
+        references:
+          resource: API
+          path: Status.APIID
+operations:
+  CreateApi:
+    custom_implementation: customCreateApi
