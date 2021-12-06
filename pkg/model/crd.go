@@ -757,6 +757,17 @@ func (r *CRD) HasMember(
 	return inSpec, inStatus
 }
 
+// HasReferenceFields returns true if any of the fields in CRD is a reference
+// field. Otherwise returns false
+func (r *CRD) HasReferenceFields() bool {
+	for _, fields := range r.Fields {
+		if fields.IsReference() {
+			return true
+		}
+	}
+	return false
+}
+
 // NewCRD returns a pointer to a new `ackmodel.CRD` struct that describes a
 // single top-level resource in an AWS service API
 func NewCRD(

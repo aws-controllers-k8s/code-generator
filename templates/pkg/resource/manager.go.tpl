@@ -316,5 +316,74 @@ func (rm *resourceManager) ResolveReferences(
 	apiReader client.Reader,
 	res acktypes.AWSResource,
 ) (acktypes.AWSResource, error) {
-{{ GoCodeResolveReferences .CRD "ctx" "apiReader" "res" 1 }}
+{{ if not .CRD.HasReferenceFields -}}
+    return res, nil
+{{ else -}}
+    namespace := res.MetaObject().GetNamespace()
+    ko := rm.concreteResource(res).ko.DeepCopy()
+    err := validateReferenceFields(ko)
+    {{ range $fieldName, $field := .CRD.Fields -}}
+    {{ if $field.HasReference -}}
+    if err == nil {
+        err = resolveReferenceFor{{ $field.Names.Camel }}(ctx, apiReader, namespace, ko)
+    }
+    {{ end -}}
+    {{ end -}}
+    if hasNonNilReferences(ko) {
+        return ackcondition.WithReferencesResolvedCondition(&resource{ko}, err)
+    }
+    return &resource{ko}, err
+{{ end -}}
 }
+
+// validateReferenceFields validates the reference field and corresponding
+// identifier field.
+func validateReferenceFields(ko *acksvcv1alpha1.{{ .CRD.Names.Camel }}) error {
+{{ GoCodeReferencesValidation .CRD "ko" "Ref" 1 -}}
+    return nil
+}
+
+// hasNonNilReferences returns true if resource contains a reference to another
+// resource
+func hasNonNilReferences(ko *acksvcv1alpha1.{{ .CRD.Names.Camel }}) bool {
+    return {{ GoCodeContainsReferences .CRD "ko"}}
+}
+
+{{ range $fieldName, $field := .CRD.Fields }}
+{{ if $field.HasReference }}
+{{ $refField := index .CRD.Fields (print $field.Names.Camel "Ref") }}
+// resolveReferenceFor{{ $field.Names.Camel }} reads the resource referenced
+// from {{ $refField.Names.Camel }} field and sets the {{ $field.Names.Camel }}
+// from referenced resource
+func resolveReferenceFor{{ $field.Names.Camel }}(
+    ctx context.Context,
+    apiReader client.Reader,
+    namespace string,
+    ko *acksvcv1alpha1.{{ .CRD.Names.Camel }},
+) error {
+{{ if eq $field.ShapeRef.Shape.Type "list" -}}
+    if ko.Spec.{{ $refField.Names.Camel }} != nil &&
+       len(ko.Spec.{{ $refField.Names.Camel }}) > 0 {
+        resolvedReferences := []*string{}
+        for _, arrw := range ko.Spec.{{ $refField.Names.Camel }} {
+            arr := arrw.From
+{{ template "read_referenced_resource_and_validate" $field }}
+            resolvedReferences = append(resolvedReferences,
+                                   obj.{{ $field.FieldConfig.References.Path }})
+        }
+        ko.Spec.{{ $field.Names.Camel }} = resolvedReferences
+    }
+    return nil
+}
+{{ else -}}
+    if ko.Spec.{{ $refField.Names.Camel }} != nil &&
+        ko.Spec.{{ $refField.Names.Camel}}.From != nil {
+            arr := ko.Spec.{{ $refField.Names.Camel }}.From
+{{ template "read_referenced_resource_and_validate" $field }}
+            ko.Spec.{{ $field.Names.Camel }} = obj.{{ $field.FieldConfig.References.Path }}
+    }
+    return nil
+}
+{{ end -}}
+{{ end -}}
+{{ end -}}

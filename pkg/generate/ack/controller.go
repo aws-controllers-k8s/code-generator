@@ -50,6 +50,7 @@ var (
 		"pkg/resource/sdk_update_custom.go.tpl",
 		"pkg/resource/sdk_update_set_attributes.go.tpl",
 		"pkg/resource/sdk_update_not_implemented.go.tpl",
+		"pkg/resource/manager_read_referenced_resource.go.tpl",
 	}
 	controllerCopyPaths = []string{}
 	controllerFuncMap   = ttpl.FuncMap{
@@ -149,8 +150,11 @@ var (
 		"GoCodeIncompleteLateInitialization": func(r *ackmodel.CRD, resVarName string, indentLevel int) string {
 			return code.IncompleteLateInitialization(r.Config(), r, resVarName, indentLevel)
 		},
-		"GoCodeResolveReferences": func(r *ackmodel.CRD, contextVarName string, apiReaderVarName string, resVarName string, indentLevel int) string {
-			return code.ResolveReferences(r, contextVarName, apiReaderVarName, resVarName, indentLevel)
+		"GoCodeReferencesValidation": func(r *ackmodel.CRD, sourceVarName string, referenceFieldSuffix string, indentLevel int) string {
+			return code.ReferenceFieldsValidation(r, sourceVarName, referenceFieldSuffix, indentLevel)
+		},
+		"GoCodeContainsReferences": func(r *ackmodel.CRD, sourceVarName string) string {
+			return code.ReferenceFieldsPresent(r, sourceVarName)
 		},
 	}
 )
