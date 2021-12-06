@@ -15,9 +15,20 @@ deployment:
   annotations: {}
   labels: {}
   containerPort: 8080
+  # Which nodeSelector to set?
+  # See: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector
   nodeSelector:
     kubernetes.io/os: linux
-
+  # Which tolerations to set?
+  # See: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+  tolerations: {}
+  # What affinity to set?
+  # See: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity
+  affinity: {}
+  # Which priorityClassName to set?
+  # See: https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/#pod-priority
+  priorityClassName:
+  
 metrics:
   service:
     # Set to true to automatically create a Kubernetes Service resource for the
