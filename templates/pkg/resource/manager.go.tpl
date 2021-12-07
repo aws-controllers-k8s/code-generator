@@ -16,26 +16,18 @@ import (
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
-	acksvcv1alpha1 "github.com/aws-controllers-k8s/{{ .ServicePackageName }}-controller/apis/v1alpha1"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 
 	svcsdk "github.com/aws/aws-sdk-go/service/{{ .ServicePackageName }}"
 	svcsdkapi "github.com/aws/aws-sdk-go/service/{{ .ServicePackageName }}/{{ .ServicePackageName }}iface"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"k8s.io/apimachinery/pkg/types"
 )
 
 // +kubebuilder:rbac:groups={{ .APIGroup }},resources={{ ToLower .CRD.Plural }},verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups={{ .APIGroup }},resources={{ ToLower .CRD.Plural }}/status,verbs=get;update;patch
 
 {{ GoCodeFindLateInitializedFieldNames .CRD "lateInitializeFieldNames" 1 }}
-
-var(
-	_ = types.NamespacedName{}
-	_ = acksvcv1alpha1.{{ .CRD.Kind }}{}
-)
 
 // resourceManager is responsible for providing a consistent way to perform
 // CRUD operations in a backend AWS service API for Book custom resources.
@@ -303,87 +295,3 @@ func (rm *resourceManager) onSuccess(
 	}
 	return r1, nil
 }
-
-// ResolveReferences finds if there are any Reference field(s) present
-// inside AWSResource passed in the parameter and attempts to resolve
-// those reference field(s) into target field(s).
-// It returns an AWSResource with resolved reference(s), and an error if the
-// passed AWSResource's reference field(s) cannot be resolved.
-// This method also adds/updates the ConditionTypeReferencesResolved for the
-// AWSResource.
-func (rm *resourceManager) ResolveReferences(
-	ctx context.Context,
-	apiReader client.Reader,
-	res acktypes.AWSResource,
-) (acktypes.AWSResource, error) {
-{{ if not .CRD.HasReferenceFields -}}
-    return res, nil
-{{ else -}}
-    namespace := res.MetaObject().GetNamespace()
-    ko := rm.concreteResource(res).ko.DeepCopy()
-    err := validateReferenceFields(ko)
-    {{ range $fieldName, $field := .CRD.Fields -}}
-    {{ if $field.HasReference -}}
-    if err == nil {
-        err = resolveReferenceFor{{ $field.Names.Camel }}(ctx, apiReader, namespace, ko)
-    }
-    {{ end -}}
-    {{ end -}}
-    if hasNonNilReferences(ko) {
-        return ackcondition.WithReferencesResolvedCondition(&resource{ko}, err)
-    }
-    return &resource{ko}, err
-{{ end -}}
-}
-
-// validateReferenceFields validates the reference field and corresponding
-// identifier field.
-func validateReferenceFields(ko *acksvcv1alpha1.{{ .CRD.Names.Camel }}) error {
-{{ GoCodeReferencesValidation .CRD "ko" "Ref" 1 -}}
-    return nil
-}
-
-// hasNonNilReferences returns true if resource contains a reference to another
-// resource
-func hasNonNilReferences(ko *acksvcv1alpha1.{{ .CRD.Names.Camel }}) bool {
-    return {{ GoCodeContainsReferences .CRD "ko"}}
-}
-
-{{ range $fieldName, $field := .CRD.Fields }}
-{{ if $field.HasReference }}
-{{ $refField := index .CRD.Fields (print $field.Names.Camel "Ref") }}
-// resolveReferenceFor{{ $field.Names.Camel }} reads the resource referenced
-// from {{ $refField.Names.Camel }} field and sets the {{ $field.Names.Camel }}
-// from referenced resource
-func resolveReferenceFor{{ $field.Names.Camel }}(
-    ctx context.Context,
-    apiReader client.Reader,
-    namespace string,
-    ko *acksvcv1alpha1.{{ .CRD.Names.Camel }},
-) error {
-{{ if eq $field.ShapeRef.Shape.Type "list" -}}
-    if ko.Spec.{{ $refField.Names.Camel }} != nil &&
-       len(ko.Spec.{{ $refField.Names.Camel }}) > 0 {
-        resolvedReferences := []*string{}
-        for _, arrw := range ko.Spec.{{ $refField.Names.Camel }} {
-            arr := arrw.From
-{{ template "read_referenced_resource_and_validate" $field }}
-            resolvedReferences = append(resolvedReferences,
-                                   obj.{{ $field.FieldConfig.References.Path }})
-        }
-        ko.Spec.{{ $field.Names.Camel }} = resolvedReferences
-    }
-    return nil
-}
-{{ else -}}
-    if ko.Spec.{{ $refField.Names.Camel }} != nil &&
-        ko.Spec.{{ $refField.Names.Camel}}.From != nil {
-            arr := ko.Spec.{{ $refField.Names.Camel }}.From
-{{ template "read_referenced_resource_and_validate" $field }}
-            ko.Spec.{{ $field.Names.Camel }} = obj.{{ $field.FieldConfig.References.Path }}
-    }
-    return nil
-}
-{{ end -}}
-{{ end -}}
-{{ end -}}

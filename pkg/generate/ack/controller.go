@@ -42,6 +42,7 @@ var (
 	controllerIncludePaths = []string{
 		"config/controller/kustomization_def.yaml.tpl",
 		"boilerplate.go.tpl",
+		"pkg/resource/references_read_referenced_resource.go.tpl",
 		"pkg/resource/sdk_find_read_one.go.tpl",
 		"pkg/resource/sdk_find_get_attributes.go.tpl",
 		"pkg/resource/sdk_find_read_many.go.tpl",
@@ -50,7 +51,6 @@ var (
 		"pkg/resource/sdk_update_custom.go.tpl",
 		"pkg/resource/sdk_update_set_attributes.go.tpl",
 		"pkg/resource/sdk_update_not_implemented.go.tpl",
-		"pkg/resource/manager_read_referenced_resource.go.tpl",
 	}
 	controllerCopyPaths = []string{}
 	controllerFuncMap   = ttpl.FuncMap{
@@ -202,6 +202,7 @@ func Controller(
 		"identifiers.go.tpl",
 		"manager.go.tpl",
 		"manager_factory.go.tpl",
+		"references.go.tpl",
 		"resource.go.tpl",
 		"sdk.go.tpl",
 	}
