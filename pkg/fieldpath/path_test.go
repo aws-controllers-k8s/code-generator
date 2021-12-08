@@ -34,6 +34,14 @@ func TestBasics(t *testing.T) {
 	require.Equal("Author", pstate.Front())
 	require.Equal("State", pstate.Back())
 
+	require.Equal("Author", pstate.At(0))
+	require.Equal("Address", pstate.At(1))
+	require.Equal("State", pstate.At(2))
+	require.Equal("", pstate.At(3))
+
+	pauth := pstate.CopyAt(0)
+	require.Equal("Author", pauth.String())
+
 	last := pstate.Pop()
 	require.Equal("State", last)
 	require.Equal("Address", pstate.Back())
@@ -147,6 +155,30 @@ func TestShapeRef(t *testing.T) {
 	require.NotNil(ref)
 	require.Equal("Name", ref.ShapeName)
 	require.Equal("string", ref.Shape.Type)
+
+	p = fieldpath.FromString("Author")
+	ref = p.ShapeRefAt(authShapeRef, 0)
+	require.NotNil(ref)
+	require.Equal("Author", ref.ShapeName)
+	ref = p.ShapeRefAt(authShapeRef, 1)
+	require.Nil(ref)
+
+	p = fieldpath.FromString("Author.Address")
+	ref = p.ShapeRefAt(authShapeRef, 0)
+	require.NotNil(ref)
+	require.Equal("Author", ref.ShapeName)
+	ref = p.ShapeRefAt(authShapeRef, 1)
+	require.NotNil(ref)
+	require.Equal("Address", ref.ShapeName)
+	ref = p.ShapeRefAt(authShapeRef, 2)
+	require.Nil(ref)
+
+	for idx, shapeRef := range p.IterShapeRefs(authShapeRef) {
+		ref = p.ShapeRefAt(authShapeRef, idx)
+		require.NotNil(shapeRef)
+		require.NotNil(ref)
+		require.Equal(ref.ShapeName, shapeRef.ShapeName)
+	}
 
 	// Path needs to match on outer-most shape first before going into member
 	// refs
