@@ -55,6 +55,15 @@ func (p *Path) Pop() (part string) {
 	return part
 }
 
+// At returns the part of the Path at the supplied index, or empty string if
+// index exceeds boundary.
+func (p *Path) At(index int) string {
+	if index < 0 || len(p.parts) == 0 || index > len(p.parts)-1 {
+		return ""
+	}
+	return p.parts[index]
+}
+
 // Front returns the first part of the Path or empty string if the Path has no
 // parts.
 func (p *Path) Front() string {
@@ -90,6 +99,18 @@ func (p *Path) PushBack(part string) {
 // Copy returns a new Path that is a copy of this Path
 func (p *Path) Copy() *Path {
 	return &Path{p.parts}
+}
+
+// CopyAt returns a new Path that is a copy of this Path up to the supplied
+// index.
+//
+// e.g. given Path $A containing "X.Y", $A.CopyAt(0) would return a new Path
+// containing just "X". $A.CopyAt(1) would return a new Path containing "X.Y".
+func (p *Path) CopyAt(index int) *Path {
+	if index < 0 || len(p.parts) == 0 || index > len(p.parts)-1 {
+		return nil
+	}
+	return &Path{p.parts[0 : index+1]}
 }
 
 // Empty returns true if there are no parts to the Path
@@ -173,6 +194,36 @@ func (p *Path) ShapeRef(
 		}
 	}
 	return compare
+}
+
+// ShapeRefAt returns an aws-sdk-go ShapeRef within the supplied ShapeRef that
+// matches the Path at the supplied index. Returns nil if no matching ShapeRef
+// could be found or index out of bounds.
+func (p *Path) ShapeRefAt(
+	subject *awssdkmodel.ShapeRef,
+	index int,
+) *awssdkmodel.ShapeRef {
+	if subject == nil || p == nil || len(p.parts) == 0 {
+		return nil
+	}
+
+	cp := p.CopyAt(index)
+	if cp == nil {
+		return nil
+	}
+	return cp.ShapeRef(subject)
+}
+
+// IterShapeRefs returns a slice of ShapeRef pointers representing each part of
+// the path
+func (p *Path) IterShapeRefs(
+	subject *awssdkmodel.ShapeRef,
+) []*awssdkmodel.ShapeRef {
+	res := make([]*awssdkmodel.ShapeRef, len(p.parts))
+	for idx, _ := range p.parts {
+		res[idx] = p.ShapeRefAt(subject, idx)
+	}
+	return res
 }
 
 // memberShapeRef returns the named member ShapeRef of the supplied
