@@ -11,13 +11,13 @@ import (
 
 // Package type metadata.
 const (
-	Group   = "{{ .APIGroup }}"
-	Version = "{{ .APIVersion }}"
+	CRDGroup   = "{{ .APIGroup }}"
+	CRDVersion = "{{ .APIVersion }}"
 )
 
 var (
     // GroupVersion is the API Group Version used to register the objects
-    GroupVersion = schema.GroupVersion{Group: Group, Version: Version}
+    GroupVersion = schema.GroupVersion{Group: CRDGroup, Version: CRDVersion}
 
     // SchemeBuilder is used to add go types to the GroupVersionKind scheme
     SchemeBuilder = &scheme.Builder{GroupVersion: GroupVersion}

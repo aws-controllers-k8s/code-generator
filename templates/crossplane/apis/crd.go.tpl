@@ -82,7 +82,7 @@ type {{ .CRD.Kind }}List struct {
 // Repository type metadata.
 var (
 	{{ .CRD.Kind }}Kind             = "{{ .CRD.Kind }}"
-	{{ .CRD.Kind }}GroupKind        = schema.GroupKind{Group: Group, Kind: {{ .CRD.Kind }}Kind}.String()
+	{{ .CRD.Kind }}GroupKind        = schema.GroupKind{Group: CRDGroup, Kind: {{ .CRD.Kind }}Kind}.String()
 	{{ .CRD.Kind }}KindAPIVersion   = {{ .CRD.Kind }}Kind + "." + GroupVersion.String()
 	{{ .CRD.Kind }}GroupVersionKind = GroupVersion.WithKind({{ .CRD.Kind }}Kind)
 )
