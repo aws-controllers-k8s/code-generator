@@ -61,8 +61,7 @@
         }
       },
       "required": [
-          "containerPort",
-          "nodeSelector"
+          "containerPort"
       ],
       "type": "object"
     },
@@ -165,8 +164,7 @@
           "type": "boolean"
         },
         "level": {
-          "type": "string",
-          "enum": ["debug", "info"]
+          "type": "string"
         }
       },
       "type": "object"
