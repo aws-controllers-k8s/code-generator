@@ -27,7 +27,7 @@ deployment:
   affinity: {}
   # Which priorityClassName to set?
   # See: https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/#pod-priority
-  priorityClassName:
+  priorityClassName: ""
   
 metrics:
   service:
