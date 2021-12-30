@@ -1,6 +1,6 @@
 # Base image to use for the final stage
 ARG base_image=public.ecr.aws/amazonlinux/amazonlinux:2
-FROM alpine:3.6 as alpine
+FROM alpine:3.15 as alpine
 
 # these are required for the runtime image to have standard CAs and run as non-root
 RUN apk add -U --no-cache ca-certificates
