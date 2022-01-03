@@ -1,11 +1,5 @@
 # Base image to use for the final stage
 ARG base_image=public.ecr.aws/amazonlinux/amazonlinux:2
-FROM public.ecr.aws/docker/library/alpine:3.15 as alpine
-
-# these are required for the runtime image to have standard CAs and run as non-root
-RUN apk add -U --no-cache ca-certificates
-RUN echo "nobody:x:65534:65534:Nobody:/:" > /etc_passwd
- 
 # Build the manager binary
 FROM public.ecr.aws/bitnami/golang:1.15.15 as builder
 
@@ -47,15 +41,9 @@ RUN GIT_VERSION=$service_controller_git_version && \
     -X ${VERSION_PKG}.BuildDate=${BUILD_DATE}" \
     -a -o $work_dir/bin/controller $work_dir/cmd/controller/main.go
 
-FROM scratch
-
+FROM $base_image
 ARG service_alias
 ARG work_dir=/github.com/aws-controllers-k8s/$service_alias-controller
 WORKDIR /
-
-COPY --from=alpine /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-COPY --from=alpine /etc_passwd /etc/passwd
-
-COPY --chown=nobody --from=builder $work_dir/bin/controller $work_dir/LICENSE $work_dir/ATTRIBUTION.md /bin/
-USER nobody
+COPY --from=builder $work_dir/bin/controller $work_dir/LICENSE $work_dir/ATTRIBUTION.md /bin/
 ENTRYPOINT ["/bin/controller"]
