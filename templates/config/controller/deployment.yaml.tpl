@@ -53,4 +53,13 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
+        securityContext:
+          allowPrivilegeEscalation: false
+          privileged: false
+          capabilities:
+            drop:
+              - ALL
       terminationGracePeriodSeconds: 10
+      hostIPC: false
+      hostNetwork: false
+      hostPID: false
