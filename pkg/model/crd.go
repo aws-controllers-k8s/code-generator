@@ -760,8 +760,8 @@ func (r *CRD) HasMember(
 // HasReferenceFields returns true if any of the fields in CRD is a reference
 // field. Otherwise returns false
 func (r *CRD) HasReferenceFields() bool {
-	for _, fields := range r.Fields {
-		if fields.IsReference() {
+	for _, field := range r.Fields {
+		if field.IsReference() {
 			return true
 		}
 	}

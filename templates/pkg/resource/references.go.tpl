@@ -18,7 +18,8 @@ import (
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 {{ end -}}
 	acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
-	acksvcv1alpha1 "github.com/aws-controllers-k8s/{{ .ServicePackageName }}-controller/apis/v1alpha1"
+
+	svcapitypes "github.com/aws-controllers-k8s/{{ .ServicePackageName }}-controller/apis/{{ .APIVersion }}"
 )
 
 // ResolveReferences finds if there are any Reference field(s) present
@@ -55,14 +56,14 @@ func (rm *resourceManager) ResolveReferences(
 
 // validateReferenceFields validates the reference field and corresponding
 // identifier field.
-func validateReferenceFields(ko *acksvcv1alpha1.{{ .CRD.Names.Camel }}) error {
+func validateReferenceFields(ko *svcapitypes.{{ .CRD.Names.Camel }}) error {
 {{ GoCodeReferencesValidation .CRD "ko" "Ref" 1 -}}
 	return nil
 }
 
 // hasNonNilReferences returns true if resource contains a reference to another
 // resource
-func hasNonNilReferences(ko *acksvcv1alpha1.{{ .CRD.Names.Camel }}) bool {
+func hasNonNilReferences(ko *svcapitypes.{{ .CRD.Names.Camel }}) bool {
 	return {{ GoCodeContainsReferences .CRD "ko"}}
 }
 
@@ -76,7 +77,7 @@ func resolveReferenceFor{{ $field.Names.Camel }}(
 	ctx context.Context,
 	apiReader client.Reader,
 	namespace string,
-	ko *acksvcv1alpha1.{{ .CRD.Names.Camel }},
+	ko *svcapitypes.{{ .CRD.Names.Camel }},
 ) error {
 {{ if eq $field.ShapeRef.Shape.Type "list" -}}
 	if ko.Spec.{{ $refField.Names.Camel }} != nil &&
