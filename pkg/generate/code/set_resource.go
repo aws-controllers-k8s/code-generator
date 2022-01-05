@@ -20,6 +20,7 @@ import (
 
 	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
 
+	"github.com/aws-controllers-k8s/code-generator/pkg/fieldpath"
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 	"github.com/aws-controllers-k8s/code-generator/pkg/names"
@@ -236,11 +237,11 @@ func SetResource(
 			// And this would indicate to the code generator that the Spec.Name
 			// field should be set from the value of the Output shape's Bucket
 			// field.
-			var found bool
 			if setCfg != nil && setCfg.From != nil {
-				sourceMemberShapeRef, found = outputShape.MemberRefs[*setCfg.From]
+				fp := fieldpath.FromString(*setCfg.From)
+				sourceMemberShapeRef = fp.ShapeRef(sourceMemberShapeRef)
 			}
-			if !found || sourceMemberShapeRef.Shape == nil {
+			if sourceMemberShapeRef == nil || sourceMemberShapeRef.Shape == nil {
 				// Technically this should not happen, so let's bail here if it
 				// does...
 				msg := fmt.Sprintf(
@@ -251,7 +252,7 @@ func SetResource(
 			}
 		}
 
-		sourceMemberShape := sourceMemberShapeRef.Shape
+		targetMemberShape := targetMemberShapeRef.Shape
 
 		// fieldVarName is the name of the variable that is used for temporary
 		// storage of complex member field values
@@ -289,7 +290,7 @@ func SetResource(
 			"%s.%s", targetAdaptedVarName, f.Names.Camel,
 		)
 
-		switch sourceMemberShape.Type {
+		switch targetMemberShape.Type {
 		case "list", "structure", "map":
 			{
 				memberVarName := fmt.Sprintf("f%d", memberIndex)
@@ -321,17 +322,6 @@ func SetResource(
 				// We have some special instructions to pull the value from a
 				// different field or member...
 				sourceAdaptedVarName = sourceVarName + "." + *setCfg.From
-				var found bool
-				sourceMemberShapeRef, found = outputShape.MemberRefs[*setCfg.From]
-				if !found {
-					// This is likely a typo in the generator.yaml file...
-					msg := fmt.Sprintf(
-						"expected to find a member shape of %s called %s",
-						outputShape.ShapeName,
-						*setCfg.From,
-					)
-					panic(msg)
-				}
 			}
 			out += setResourceForScalar(
 				qualifiedTargetVar,
