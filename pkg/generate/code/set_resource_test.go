@@ -3072,3 +3072,100 @@ func TestSetResource_EC2_SecurityGroups_SetResourceIdentifiers(t *testing.T) {
 		code.SetResource(crd.Config(), crd, model.OpTypeCreate, "resp", "ko", 1),
 	)
 }
+
+func TestSetResource_IAM_Role_NestedSetConfig(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "iam")
+
+	crd := testutil.GetCRDByName(t, g, "Role")
+	require.NotNil(crd)
+
+	// The input and output shapes for the PermissionsBoundary are different
+	// and we have a custom SetConfig for this field in our generator.yaml file
+	// to configure the SetResource function to set the value of the resource's
+	// Spec.PermissionsBoundary to the value of the (nested)
+	// GetRoleResponse.Role.PermissionsBoundary.PermissionsBoundaryArn field
+	expected := `
+	if ko.Status.ACKResourceMetadata == nil {
+		ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
+	}
+	if resp.Role.Arn != nil {
+		arn := ackv1alpha1.AWSResourceName(*resp.Role.Arn)
+		ko.Status.ACKResourceMetadata.ARN = &arn
+	}
+	if resp.Role.AssumeRolePolicyDocument != nil {
+		ko.Spec.AssumeRolePolicyDocument = resp.Role.AssumeRolePolicyDocument
+	} else {
+		ko.Spec.AssumeRolePolicyDocument = nil
+	}
+	if resp.Role.CreateDate != nil {
+		ko.Status.CreateDate = &metav1.Time{*resp.Role.CreateDate}
+	} else {
+		ko.Status.CreateDate = nil
+	}
+	if resp.Role.Description != nil {
+		ko.Spec.Description = resp.Role.Description
+	} else {
+		ko.Spec.Description = nil
+	}
+	if resp.Role.MaxSessionDuration != nil {
+		ko.Spec.MaxSessionDuration = resp.Role.MaxSessionDuration
+	} else {
+		ko.Spec.MaxSessionDuration = nil
+	}
+	if resp.Role.Path != nil {
+		ko.Spec.Path = resp.Role.Path
+	} else {
+		ko.Spec.Path = nil
+	}
+	if resp.Role.PermissionsBoundary != nil {
+		ko.Spec.PermissionsBoundary = resp.Role.PermissionsBoundary.PermissionsBoundaryArn
+	} else {
+		ko.Spec.PermissionsBoundary = nil
+	}
+	if resp.Role.RoleId != nil {
+		ko.Status.RoleID = resp.Role.RoleId
+	} else {
+		ko.Status.RoleID = nil
+	}
+	if resp.Role.RoleLastUsed != nil {
+		f8 := &svcapitypes.RoleLastUsed{}
+		if resp.Role.RoleLastUsed.LastUsedDate != nil {
+			f8.LastUsedDate = &metav1.Time{*resp.Role.RoleLastUsed.LastUsedDate}
+		}
+		if resp.Role.RoleLastUsed.Region != nil {
+			f8.Region = resp.Role.RoleLastUsed.Region
+		}
+		ko.Status.RoleLastUsed = f8
+	} else {
+		ko.Status.RoleLastUsed = nil
+	}
+	if resp.Role.RoleName != nil {
+		ko.Spec.Name = resp.Role.RoleName
+	} else {
+		ko.Spec.Name = nil
+	}
+	if resp.Role.Tags != nil {
+		f10 := []*svcapitypes.Tag{}
+		for _, f10iter := range resp.Role.Tags {
+			f10elem := &svcapitypes.Tag{}
+			if f10iter.Key != nil {
+				f10elem.Key = f10iter.Key
+			}
+			if f10iter.Value != nil {
+				f10elem.Value = f10iter.Value
+			}
+			f10 = append(f10, f10elem)
+		}
+		ko.Spec.Tags = f10
+	} else {
+		ko.Spec.Tags = nil
+	}
+`
+	assert.Equal(
+		expected,
+		code.SetResource(crd.Config(), crd, model.OpTypeGet, "resp", "ko", 1),
+	)
+}

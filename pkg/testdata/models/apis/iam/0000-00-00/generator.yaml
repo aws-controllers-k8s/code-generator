@@ -1,0 +1,37 @@
+ignore:
+  resource_names:
+   - AccessKey
+   - AccountAlias
+   - Group
+   - InstanceProfile
+   - LoginProfile
+   - OpenIDConnectProvider
+   - Policy
+   - PolicyVersion
+   #- Role
+   - SAMLProvider
+   - ServiceLinkedRole
+   - ServiceSpecificCredential
+   - User
+   - VirtualMFADevice
+resources:
+  Role:
+    renames:
+      operations:
+        CreateRole:
+          input_fields:
+            RoleName: Name
+        GetRole:
+          input_fields:
+            RoleName: Name
+        UpdateRole:
+          input_fields:
+            RoleName: Name
+        DeleteRole:
+          input_fields:
+            RoleName: Name
+    fields:
+      PermissionsBoundary:
+        set:
+          # The input and output shapes are different...
+          - from: PermissionsBoundary.PermissionsBoundaryArn
