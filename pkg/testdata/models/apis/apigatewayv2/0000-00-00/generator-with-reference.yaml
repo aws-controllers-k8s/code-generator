@@ -1,0 +1,25 @@
+resources:
+  Integration:
+    fields:
+      ApiId:
+        references:
+          resource: API
+          path: Status.APIID
+  VpcLink:
+    fields:
+      SecurityGroupIds:
+        references:
+          resource: API
+          path: Status.APIID
+ignore:
+  resource_names:
+    - ApiMapping
+    - Authorizer
+    - Deployment
+    - DomainName
+    - IntegrationResponse
+    - Model
+    - Route
+    - RouteResponse
+    - Stage
+

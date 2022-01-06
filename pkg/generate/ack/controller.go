@@ -42,6 +42,7 @@ var (
 	controllerIncludePaths = []string{
 		"config/controller/kustomization_def.yaml.tpl",
 		"boilerplate.go.tpl",
+		"pkg/resource/references_read_referenced_resource.go.tpl",
 		"pkg/resource/sdk_find_read_one.go.tpl",
 		"pkg/resource/sdk_find_get_attributes.go.tpl",
 		"pkg/resource/sdk_find_read_many.go.tpl",
@@ -149,6 +150,12 @@ var (
 		"GoCodeIncompleteLateInitialization": func(r *ackmodel.CRD, resVarName string, indentLevel int) string {
 			return code.IncompleteLateInitialization(r.Config(), r, resVarName, indentLevel)
 		},
+		"GoCodeReferencesValidation": func(r *ackmodel.CRD, sourceVarName string, referenceFieldSuffix string, indentLevel int) string {
+			return code.ReferenceFieldsValidation(r, sourceVarName, referenceFieldSuffix, indentLevel)
+		},
+		"GoCodeContainsReferences": func(r *ackmodel.CRD, sourceVarName string) string {
+			return code.ReferenceFieldsPresent(r, sourceVarName)
+		},
 	}
 )
 
@@ -195,6 +202,7 @@ func Controller(
 		"identifiers.go.tpl",
 		"manager.go.tpl",
 		"manager_factory.go.tpl",
+		"references.go.tpl",
 		"resource.go.tpl",
 		"sdk.go.tpl",
 	}

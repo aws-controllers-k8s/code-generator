@@ -144,12 +144,12 @@ func (r *CRD) HasShapeAsMember(toFind string) bool {
 		}
 	}
 	for _, field := range r.SpecFields {
-		if shapeHasMember(field.ShapeRef.Shape, toFind) {
+		if field.ShapeRef != nil && shapeHasMember(field.ShapeRef.Shape, toFind) {
 			return true
 		}
 	}
 	for _, field := range r.StatusFields {
-		if shapeHasMember(field.ShapeRef.Shape, toFind) {
+		if field.ShapeRef != nil && shapeHasMember(field.ShapeRef.Shape, toFind) {
 			return true
 		}
 	}
@@ -755,6 +755,17 @@ func (r *CRD) HasMember(
 		inStatus = true
 	}
 	return inSpec, inStatus
+}
+
+// HasReferenceFields returns true if any of the fields in CRD is a reference
+// field. Otherwise returns false
+func (r *CRD) HasReferenceFields() bool {
+	for _, field := range r.Fields {
+		if field.IsReference() {
+			return true
+		}
+	}
+	return false
 }
 
 // NewCRD returns a pointer to a new `ackmodel.CRD` struct that describes a

@@ -128,6 +128,18 @@ func CompareResource(
 			cfg.PrefixConfig.SpecField+"."+specField.Names.Camel, ".",
 		)
 
+		// Use reflect.DeepEqual for comparing Reference fields because
+		// some of reference fields are list of pointer to structs and
+		// DeepEqual is easy way to compare them
+		if specField.IsReference() {
+			out += fmt.Sprintf("%sif !reflect.DeepEqual(%s, %s) {\n",
+				indent, firstResAdaptedVarName, secondResAdaptedVarName)
+			out += fmt.Sprintf("%s\t%s.Add(\"%s\", %s, %s)\n", indent,
+				deltaVarName, fieldPath, firstResAdaptedVarName,
+				secondResAdaptedVarName)
+			out += fmt.Sprintf("%s}\n", indent)
+			continue
+		}
 		memberShapeRef := specField.ShapeRef
 		memberShape := memberShapeRef.Shape
 

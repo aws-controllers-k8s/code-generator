@@ -267,6 +267,31 @@ type LateInitializeConfig struct {
 	MaxBackoffSeconds int `json:"max_backoff_seconds"`
 }
 
+// ReferencesConfig contains the instructions for how to add the referenced resource
+// configuration for a field.
+// Example:
+// ```
+// Integration:
+//    fields:
+//      ApiId:
+//        references:
+//          resource: API
+//          path: Status.APIID
+//```
+// The above configuration will result in generation of a new field 'APIIDRef'
+// of type 'AWSResourceReference' for ApiGatewayv2-Integration crd.
+// When 'APIIDRef' field is present in custom resource manifest, reconciler will
+// read the referred 'API' resource and copy the value from 'Status.APIID' in
+// 'Integration' resource's 'APIID' field
+type ReferencesConfig struct {
+	// Resource mentions the K8s resource which is read to resolve the
+	// reference
+	Resource string `json:"resource"`
+	// Path refers to the the path of field which should be copied
+	// to resolve the reference
+	Path string `json:"path"`
+}
+
 // FieldConfig contains instructions to the code generator about how
 // to interpret the value of an Attribute and how to map it to a CRD's Spec or
 // Status field
@@ -325,4 +350,7 @@ type FieldConfig struct {
 	// Late Initialize instructs the code generator how to handle the late initialization
 	// of the field.
 	LateInitialize *LateInitializeConfig `json:"late_initialize,omitempty"`
+	// References instructs the code generator how to refer this field from
+	// other custom resource
+	References     *ReferencesConfig     `json:"references,omitempty"`
 }

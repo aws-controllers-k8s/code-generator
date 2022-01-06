@@ -131,6 +131,16 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 				continue
 			}
 			crd.AddSpecField(memberNames, memberShapeRef)
+
+			// If this field has ReferencesConfig, add corresponding
+			// resource reference field in spec as well
+			fConfig := m.cfg.ResourceFields(crdName)[fieldName]
+			if fConfig != nil && fConfig.References != nil {
+				referenceFieldNames := names.New(fieldName + "Ref")
+				rf := NewReferenceField(crd, referenceFieldNames, memberShapeRef)
+				crd.SpecFields[referenceFieldNames.Original] = rf
+				crd.Fields[referenceFieldNames.Camel] = rf
+			}
 		}
 
 		// Now any additional Spec fields that are required from other API
@@ -557,7 +567,7 @@ func (m *Model) processNestedField(
 	crd *CRD,
 	field *Field,
 ) {
-	if field.ShapeRef == nil && (field.FieldConfig == nil || !field.FieldConfig.IsAttribute) {
+	if field.ShapeRef == nil && !field.IsReference() && (field.FieldConfig == nil || !field.FieldConfig.IsAttribute) {
 		fmt.Printf(
 			"WARNING: Field %s:%s has nil ShapeRef and is not defined as an Attribute-based Field!\n",
 			crd.Names.Original,
