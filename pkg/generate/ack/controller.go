@@ -23,6 +23,7 @@ import (
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate/templateset"
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
+	names "github.com/aws-controllers-k8s/code-generator/pkg/names"
 	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
 )
 
@@ -56,6 +57,9 @@ var (
 		"ToLower": strings.ToLower,
 		"Dereference": func(s *string) string {
 			return *s
+		},
+		"ToNames": func(s string) names.Names {
+			return names.New(s)
 		},
 		"ResourceExceptionCode": func(r *ackmodel.CRD, httpStatusCode int) string {
 			return r.ExceptionCode(httpStatusCode)
