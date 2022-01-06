@@ -19,8 +19,7 @@ import (
 	"testing"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	k8srt "k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	rtclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/go-logr/logr"
@@ -53,11 +52,11 @@ func (fd *fakeDescriptor) GroupKind() *metav1.GroupKind {
 	return nil
 }
 
-func (fd *fakeDescriptor) EmptyRuntimeObject() k8srt.Object {
+func (fd *fakeDescriptor) EmptyRuntimeObject() rtclient.Object {
 	return nil
 }
 
-func (fd *fakeDescriptor) ResourceFromRuntimeObject(o k8srt.Object) acktypes.AWSResource {
+func (fd *fakeDescriptor) ResourceFromRuntimeObject(o rtclient.Object) acktypes.AWSResource {
 	return nil
 }
 
@@ -122,7 +121,7 @@ func (frm *fakeRM) LateInitialize(context.Context, acktypes.AWSResource) (acktyp
 	return nil, nil
 }
 
-func (frm *fakeRM) ResolveReferences(context.Context, client.Reader, acktypes.AWSResource) (acktypes.AWSResource, error) {
+func (frm *fakeRM) ResolveReferences(context.Context, rtclient.Reader, acktypes.AWSResource) (acktypes.AWSResource, error) {
 	return nil, nil
 }
 
