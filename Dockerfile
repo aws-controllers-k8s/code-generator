@@ -1,7 +1,7 @@
 # Base image to use for the final stage
-ARG base_image=public.ecr.aws/amazonlinux/amazonlinux:2
+ARG base_image=public.ecr.aws/eks-distro-build-tooling/eks-distro-minimal-base-nonroot:2021-12-01-1638322424
 # Build the manager binary
-FROM public.ecr.aws/bitnami/golang:1.15.15 as builder
+FROM public.ecr.aws/bitnami/golang:1.17.5 as builder
 
 ARG service_alias
 # The tuple of controller image version information

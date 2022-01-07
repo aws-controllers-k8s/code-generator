@@ -7,7 +7,7 @@ import (
 	acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
 	ackerrors "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	k8srt "k8s.io/apimachinery/pkg/runtime"
+	rtclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	svcapitypes "github.com/aws-controllers-k8s/{{ .ServicePackageName }}-controller/apis/{{ .APIVersion}}"
 )
@@ -39,7 +39,7 @@ func (r *resource) IsBeingDeleted() bool {
 
 // RuntimeObject returns the Kubernetes apimachinery/runtime representation of
 // the AWSResource
-func (r *resource) RuntimeObject() k8srt.Object {
+func (r *resource) RuntimeObject() rtclient.Object {
 	return r.ko
 }
 
@@ -47,13 +47,6 @@ func (r *resource) RuntimeObject() k8srt.Object {
 // representation of the AWSResource
 func (r *resource) MetaObject() metav1.Object {
 	return r.ko.GetObjectMeta()
-}
-
-// RuntimeMetaObject returns an object that implements both the Kubernetes
-// apimachinery/runtime.Object and the Kubernetes
-// apimachinery/apis/meta/v1.Object interfaces
-func (r *resource) RuntimeMetaObject() acktypes.RuntimeMetaObject {
-	return r.ko
 }
 
 // Conditions returns the ACK Conditions collection for the AWSResource
