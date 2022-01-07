@@ -47,6 +47,10 @@ type Field struct {
 	GoTypeWithPkgName string
 	ShapeRef          *awssdkmodel.ShapeRef
 	FieldConfig       *ackgenconfig.FieldConfig
+
+	// MemberFields is a map, keyed by the *renamed, cleaned, camel-cased name* of
+	// member fields when this Field is a struct type.
+	MemberFields map[string]*Field
 }
 
 // IsRequired checks the FieldConfig for Field and returns if the field is
@@ -162,6 +166,7 @@ func NewField(
 	shapeRef *awssdkmodel.ShapeRef,
 	cfg *ackgenconfig.FieldConfig,
 ) *Field {
+	memberFields := map[string]*Field{}
 	var gte, gt, gtwp string
 	var shape *awssdkmodel.Shape
 	if shapeRef != nil {
@@ -170,6 +175,15 @@ func NewField(
 
 	if shape != nil {
 		gte, gt, gtwp = CleanGoType(crd.sdkAPI, crd.cfg, shape, cfg)
+		if shape.Type == "structure" {
+			// "unpack" the member fields composing this struct field...
+			for _, memberName := range shape.MemberNames() {
+				cleanMemberNames := names.New(memberName)
+				memberPath := path + "." + cleanMemberNames.Camel
+				memberField := NewField(crd, memberPath, cleanMemberNames, shape.MemberRefs[memberName], cfg)
+				memberFields[cleanMemberNames.Camel] = memberField
+			}
+		}
 	} else {
 		gte = "string"
 		gt = "*string"
@@ -184,5 +198,6 @@ func NewField(
 		GoTypeElem:        gte,
 		GoTypeWithPkgName: gtwp,
 		FieldConfig:       cfg,
+		MemberFields:      memberFields,
 	}
 }
