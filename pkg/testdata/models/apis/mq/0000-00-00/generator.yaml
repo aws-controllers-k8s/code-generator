@@ -10,5 +10,5 @@ resources:
       sdk_delete_pre_build_request:
         template_path: sdk_delete_pre_build_request.go.tpl
     fields:
-      Users..Password:
+      Users.Password:
         is_secret: true

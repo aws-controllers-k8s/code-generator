@@ -35,7 +35,7 @@ func TestMQ_Broker(t *testing.T) {
 	// (which is a `[]*User` type) is findable in the CRD's Fields collection
 	// by the path `Spec.Users..Password` and that the FieldConfig associated
 	// with this Field is marked as a SecretKeyReference.
-	passFieldPath := "Users..Password"
+	passFieldPath := "Users.Password"
 	passField, found := crd.Fields[passFieldPath]
 	require.True(found)
 	require.NotNil(passField.FieldConfig)
