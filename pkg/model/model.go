@@ -19,6 +19,7 @@ import (
 	"sort"
 	"strings"
 
+	ackfp "github.com/aws-controllers-k8s/code-generator/pkg/fieldpath"
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate/templateset"
 	"github.com/aws-controllers-k8s/code-generator/pkg/names"
@@ -718,14 +719,6 @@ func (m *Model) ApplyShapeIgnoreRules() {
 		return
 	}
 	for sdkShapeID, shape := range m.SDKAPI.API.Shapes {
-		for _, fieldpath := range m.cfg.Ignore.FieldPaths {
-			sn := strings.Split(fieldpath, ".")[0]
-			fn := strings.Split(fieldpath, ".")[1]
-			if shape.ShapeName != sn {
-				continue
-			}
-			delete(shape.MemberRefs, fn)
-		}
 		for _, sn := range m.cfg.Ignore.ShapeNames {
 			if shape.ShapeName == sn {
 				delete(m.SDKAPI.API.Shapes, sdkShapeID)
@@ -737,6 +730,31 @@ func (m *Model) ApplyShapeIgnoreRules() {
 					delete(shape.MemberRefs, sdkMemberID)
 				}
 			}
+		}
+	}
+	for _, fieldpath := range m.cfg.Ignore.FieldPaths {
+		fp := ackfp.FromString(fieldpath)
+		sn := fp.At(0)
+		if shape, found := m.SDKAPI.API.Shapes[sn]; !found {
+			msg := fmt.Sprintf(
+				"referred to unknown shape %s in config's Ignore.FieldPaths", sn,
+			)
+			panic(msg)
+		} else {
+			// This is just some tomfoolery to make the Input and Output shapes
+			// into ShapeRefs because the SDKAPI.Shapes is a map of Shape
+			// pointers not a map of ShapeRefs...
+			wrapper := &awssdkmodel.ShapeRef{
+				ShapeName: sn,
+				Shape:     shape,
+			}
+			// The last element of the fieldpath is the field/shape we want to
+			// ignore...
+			ignoreShape := fp.Pop()
+			parentShapeRef := fp.ShapeRef(wrapper)
+			// OK, now we delete the ignored shape by removing the shape from
+			// the parent's member references...
+			delete(parentShapeRef.Shape.MemberRefs, ignoreShape)
 		}
 	}
 }
