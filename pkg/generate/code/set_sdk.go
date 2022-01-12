@@ -1145,16 +1145,14 @@ func setSDKForSlice(
 	//
 	//  f0elem.SetMyField(*f0iter)
 	containerFieldName := ""
-	sourceAttributePath := sourceFieldPath
 	if targetShape.MemberRef.Shape.Type == "structure" {
 		containerFieldName = targetFieldName
-		sourceAttributePath = sourceFieldPath + "."
 	}
 	out += setSDKForContainer(
 		cfg, r,
 		containerFieldName,
 		elemVarName,
-		sourceAttributePath,
+		sourceFieldPath,
 		iterVarName,
 		&targetShape.MemberRef,
 		indentLevel+1,
@@ -1218,7 +1216,7 @@ func setSDKForMap(
 		cfg, r,
 		containerFieldName,
 		valVarName,
-		sourceFieldPath+".",
+		sourceFieldPath,
 		valIterVarName,
 		&targetShape.ValueRef,
 		indentLevel+1,

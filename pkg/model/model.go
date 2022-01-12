@@ -295,7 +295,7 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 	// This is the place that we build out the CRD.Fields map with
 	// `pkg/model.Field` objects that represent the non-top-level Spec and
 	// Status fields.
-	m.processNestedFields(crds)
+	m.processFields(crds)
 	m.crds = crds
 	return crds, nil
 }
@@ -472,9 +472,10 @@ func replaceSecretAttrGoType(
 	field *Field,
 	tdefs []*TypeDef,
 ) {
-	fieldPath := field.Path
-	parentFieldPath := ParentFieldPath(field.Path)
-	parentField, ok := crd.Fields[parentFieldPath]
+	fieldPath := ackfp.FromString(field.Path)
+	parentFieldPath := fieldPath.Copy()
+	parentFieldPath.Pop()
+	parentField, ok := crd.Fields[parentFieldPath.String()]
 	if !ok {
 		msg := fmt.Sprintf(
 			"Cannot find parent field at parent path %s for %s",
@@ -546,25 +547,25 @@ func replaceSecretAttrGoType(
 	attr.GoType = "*ackv1alpha1.SecretKeyReference"
 }
 
-// processNestedFields is responsible for walking all of the CRDs' Spec and
+// processFields is responsible for walking all of the CRDs' Spec and
 // Status fields' Shape objects and adding `pkg/model.Field` objects for all
 // nested fields along with that `Field`'s `Config` object that allows us to
 // determine if the TypeDef associated with that nested field should have its
 // data type overridden (e.g. for SecretKeyReferences)
-func (m *Model) processNestedFields(crds []*CRD) {
+func (m *Model) processFields(crds []*CRD) {
 	for _, crd := range crds {
 		for _, field := range crd.SpecFields {
-			m.processNestedField(crd, field)
+			m.processTopLevelField(crd, field)
 		}
 		for _, field := range crd.StatusFields {
-			m.processNestedField(crd, field)
+			m.processTopLevelField(crd, field)
 		}
 	}
 }
 
-// processNestedField processes any nested fields (non-scalar fields associated
+// processTopLevelField processes any nested fields (non-scalar fields associated
 // with the Spec and Status objects)
-func (m *Model) processNestedField(
+func (m *Model) processTopLevelField(
 	crd *CRD,
 	field *Field,
 ) {
@@ -581,106 +582,87 @@ func (m *Model) processNestedField(
 		fieldType := fieldShape.Type
 		switch fieldType {
 		case "structure":
-			m.processNestedStructField(crd, field.Path+".", field)
+			m.processStructField(crd, field.Path+".", field)
 		case "list":
-			m.processNestedListField(crd, field.Path+"..", field)
+			m.processListField(crd, field.Path+".", field)
 		case "map":
-			m.processNestedMapField(crd, field.Path+"..", field)
+			m.processMapField(crd, field.Path+".", field)
 		}
 	}
 }
 
-// processNestedStructField recurses through the members of a nested field that
-// is a struct type and adds any Field objects to the supplied CRD.
-func (m *Model) processNestedStructField(
+// processField adds a new Field definition for a field within the CR
+func (m *Model) processField(
 	crd *CRD,
-	baseFieldPath string,
-	baseField *Field,
+	parentFieldPath string,
+	parentField *Field,
+	fieldName string,
+	fieldShapeRef *awssdkmodel.ShapeRef,
 ) {
 	fieldConfigs := crd.Config().ResourceFields(crd.Names.Original)
-	baseFieldShape := baseField.ShapeRef.Shape
-	for memberName, memberRef := range baseFieldShape.MemberRefs {
-		memberNames := names.New(memberName)
-		memberShape := memberRef.Shape
-		memberShapeType := memberShape.Type
-		fieldPath := baseFieldPath + memberNames.Camel
-		fieldConfig := fieldConfigs[fieldPath]
-		field := NewField(crd, fieldPath, memberNames, memberRef, fieldConfig)
-		switch memberShapeType {
-		case "structure":
-			m.processNestedStructField(crd, fieldPath+".", field)
-		case "list":
-			m.processNestedListField(crd, fieldPath+"..", field)
-		case "map":
-			m.processNestedMapField(crd, fieldPath+"..", field)
-		}
-		crd.Fields[fieldPath] = field
+	fieldNames := names.New(fieldName)
+	fieldShape := fieldShapeRef.Shape
+	fieldShapeType := fieldShape.Type
+	fieldPath := parentFieldPath + fieldNames.Camel
+	fieldConfig := fieldConfigs[fieldPath]
+	field := NewField(crd, fieldPath, fieldNames, fieldShapeRef, fieldConfig)
+	switch fieldShapeType {
+	case "structure":
+		m.processStructField(crd, fieldPath+".", field)
+	case "list":
+		m.processListField(crd, fieldPath+".", field)
+	case "map":
+		m.processMapField(crd, fieldPath+".", field)
+	}
+	crd.Fields[fieldPath] = field
+}
+
+// processStructField recurses through the members of a nested field that
+// is a struct type and adds any Field objects to the supplied CRD.
+func (m *Model) processStructField(
+	crd *CRD,
+	fieldPath string,
+	field *Field,
+) {
+	fieldShape := field.ShapeRef.Shape
+	for memberName, memberRef := range fieldShape.MemberRefs {
+		m.processField(crd, fieldPath, field, memberName, memberRef)
 	}
 }
 
-// processNestedListField recurses through the members of a nested field that
+// processListField recurses through the members of a nested field that
 // is a list type that has a struct element type and adds any Field objects to
 // the supplied CRD.
-func (m *Model) processNestedListField(
+func (m *Model) processListField(
 	crd *CRD,
-	baseFieldPath string,
-	baseField *Field,
+	fieldPath string,
+	field *Field,
 ) {
-	baseFieldShape := baseField.ShapeRef.Shape
-	elementFieldShape := baseFieldShape.MemberRef.Shape
+	fieldShape := field.ShapeRef.Shape
+	elementFieldShape := fieldShape.MemberRef.Shape
 	if elementFieldShape.Type != "structure" {
 		return
 	}
-	fieldConfigs := crd.Config().ResourceFields(crd.Names.Original)
 	for memberName, memberRef := range elementFieldShape.MemberRefs {
-		memberNames := names.New(memberName)
-		memberShape := memberRef.Shape
-		memberShapeType := memberShape.Type
-		fieldPath := baseFieldPath + memberNames.Camel
-		fieldConfig := fieldConfigs[fieldPath]
-		field := NewField(crd, fieldPath, memberNames, memberRef, fieldConfig)
-		switch memberShapeType {
-		case "structure":
-			m.processNestedStructField(crd, fieldPath+".", field)
-		case "list":
-			m.processNestedListField(crd, fieldPath+"..", field)
-		case "map":
-			m.processNestedMapField(crd, fieldPath+"..", field)
-		}
-		crd.Fields[fieldPath] = field
+		m.processField(crd, fieldPath, field, memberName, memberRef)
 	}
 }
 
-// processNestedMapField recurses through the members of a nested field that
+// processMapField recurses through the members of a nested field that
 // is a map type that has a struct value type and adds any Field objects to
 // the supplied CRD.
-func (m *Model) processNestedMapField(
+func (m *Model) processMapField(
 	crd *CRD,
-	baseFieldPath string,
-	baseField *Field,
+	fieldPath string,
+	field *Field,
 ) {
-	baseFieldShape := baseField.ShapeRef.Shape
-	valueFieldShape := baseFieldShape.ValueRef.Shape
+	fieldShape := field.ShapeRef.Shape
+	valueFieldShape := fieldShape.ValueRef.Shape
 	if valueFieldShape.Type != "structure" {
 		return
 	}
-	fieldConfigs := crd.Config().ResourceFields(crd.Names.Original)
 	for memberName, memberRef := range valueFieldShape.MemberRefs {
-		memberNames := names.New(memberName)
-		memberShape := memberRef.Shape
-		memberShapeType := memberShape.Type
-		fieldPath := baseFieldPath + memberNames.Camel
-		fieldConfig := fieldConfigs[fieldPath]
-		field := NewField(crd, fieldPath, memberNames, memberRef, fieldConfig)
-		switch memberShapeType {
-		case "structure":
-			m.processNestedStructField(crd, fieldPath+".", field)
-		case "list":
-			m.processNestedListField(crd, fieldPath+"..", field)
-		case "map":
-			m.processNestedMapField(crd, fieldPath+"..", field)
-		}
-		crd.Fields[fieldPath] = field
+		m.processField(crd, fieldPath, field, memberName, memberRef)
 	}
 }
 
