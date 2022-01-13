@@ -1,6 +1,8 @@
 # Base image to use for the final stage
 ARG base_image=public.ecr.aws/eks-distro-build-tooling/eks-distro-minimal-base-nonroot:2021-12-01-1638322424
 # Build the manager binary
+# TODO(vijtrip2) move this builder image to public.ecr.aws/eks-distro-build-tooling/builder-base, when builder-base
+# supports golang 1.17
 FROM public.ecr.aws/bitnami/golang:1.17.5 as builder
 
 ARG service_alias
@@ -46,4 +48,6 @@ ARG service_alias
 ARG work_dir=/github.com/aws-controllers-k8s/$service_alias-controller
 WORKDIR /
 COPY --from=builder $work_dir/bin/controller $work_dir/LICENSE $work_dir/ATTRIBUTION.md /bin/
+# Make this image non-root by default
+USER 1000
 ENTRYPOINT ["/bin/controller"]
