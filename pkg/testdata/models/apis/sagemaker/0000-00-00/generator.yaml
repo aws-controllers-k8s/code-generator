@@ -65,7 +65,7 @@ ignore:
       - Project
       # TrainingJob
       - TransformJob
-      - TrialComponent
+      #- TrialComponent
       - Trial
       - UserProfile
       - Workforce

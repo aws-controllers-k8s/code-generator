@@ -15,6 +15,7 @@ package model_test
 
 import (
 	"sort"
+	"strings"
 
 	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
 )
@@ -30,7 +31,7 @@ func attrCamelNames(fields map[string]*ackmodel.Field) []string {
 
 func getCRDByName(name string, crds []*ackmodel.CRD) *ackmodel.CRD {
 	for _, c := range crds {
-		if c.Names.Original == name {
+		if strings.EqualFold(c.Names.Original, name) {
 			return c
 		}
 	}
@@ -39,7 +40,7 @@ func getCRDByName(name string, crds []*ackmodel.CRD) *ackmodel.CRD {
 
 func getTypeDefByName(name string, tdefs []*ackmodel.TypeDef) *ackmodel.TypeDef {
 	for _, td := range tdefs {
-		if td.Names.Original == name {
+		if strings.EqualFold(td.Names.Original, name) {
 			return td
 		}
 	}
