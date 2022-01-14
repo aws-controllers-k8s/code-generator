@@ -154,15 +154,48 @@ func NewField(
 	if shapeRef != nil {
 		shape = shapeRef.Shape
 	}
+	// this is a pointer to the "parent" containing Shape when the field being
+	// processed here is a structure or a list/map of structures.
+	var containerShape *awssdkmodel.Shape = shape
 
 	if shape != nil {
 		gte, gt, gtwp = CleanGoType(crd.sdkAPI, crd.cfg, shape, cfg)
-		if shape.Type == "structure" {
+		for {
+			// If the field is a slice or map of structs, we want to add
+			// MemberFields that describe the list or value struct elements so
+			// that a field path can be used to "find" nested struct member
+			// fields.
+			//
+			// For example, the EC2 resource DHCPOptions has a Field called
+			// DHCPConfigurations which is of type []*NewDHCPConfiguration
+			// where the NewDHCPConfiguration struct contains two fields, Key
+			// and Values. If we want to be able to refer to the
+			// DHCPOptions.DHCPConfigurations.Values field by field path, we
+			// need a Field.MemberField that describes the
+			// NewDHCPConfiguration.Values field.
+			//
+			// Here, we essentially dive down into list or map fields,
+			// searching for whether the list or map fields have structure list
+			// element or value element types and then rely on the code below
+			// to "unpack" those struct member fields.
+			if containerShape.Type == "list" {
+				containerShape = containerShape.MemberRef.Shape
+				continue
+			} else if containerShape.Type == "map" {
+				containerShape = containerShape.ValueRef.Shape
+				continue
+			}
+			break
+		}
+		if containerShape.Type == "structure" {
 			// "unpack" the member fields composing this struct field...
-			for _, memberName := range shape.MemberNames() {
+			for _, memberName := range containerShape.MemberNames() {
 				cleanMemberNames := names.New(memberName)
 				memberPath := path + "." + cleanMemberNames.Camel
-				memberField := NewField(crd, memberPath, cleanMemberNames, shape.MemberRefs[memberName], cfg)
+				memberShape := containerShape.MemberRefs[memberName]
+				memberField := NewField(
+					crd, memberPath, cleanMemberNames, memberShape, cfg,
+				)
 				memberFields[cleanMemberNames.Camel] = memberField
 			}
 		}
