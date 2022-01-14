@@ -68,7 +68,7 @@ operations:
     output_wrapper_field_path: VpcEndpoint
 
 resources:
-  DhcpOptions:
+  DHCPOptions:
 
   SecurityGroup:
     renames:
