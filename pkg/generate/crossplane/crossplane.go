@@ -135,27 +135,34 @@ func Crossplane(
 	)
 
 	metaVars := m.MetaVars()
+	detectedCRDVersions := make(map[string]struct{})
+	for _, crd := range crds {
+		detectedCRDVersions[crd.GetAPIVersion(metaVars.APIVersion)] = struct{}{}
+	}
 
 	// First add all the CRDs and API types
-	apiVars := &templateAPIVars{
-		metaVars,
-		enumDefs,
-		typeDefs,
-	}
-	for _, path := range apisGenericTemplatesPaths {
-		outPath := filepath.Join(
-			"apis",
-			metaVars.ServicePackageName,
-			metaVars.APIVersion,
-			"zz_"+strings.TrimSuffix(filepath.Base(path), ".tpl"),
-		)
-		if err = ts.Add(outPath, path, apiVars); err != nil {
-			return nil, err
+	for apiVersion := range detectedCRDVersions {
+		for _, path := range apisGenericTemplatesPaths {
+			apiVars := &templateAPIVars{
+				metaVars,
+				enumDefs,
+				typeDefs,
+			}
+			apiVars.APIVersion = apiVersion
+			outPath := filepath.Join(
+				"apis",
+				metaVars.ServicePackageName,
+				apiVersion,
+				"zz_"+strings.TrimSuffix(filepath.Base(path), ".tpl"),
+			)
+			if err = ts.Add(outPath, path, apiVars); err != nil {
+				return nil, err
+			}
 		}
 	}
 	for _, crd := range crds {
 		crdFileName := filepath.Join(
-			"apis", metaVars.ServicePackageName, metaVars.APIVersion,
+			"apis", metaVars.ServicePackageName, crd.GetAPIVersion(metaVars.APIVersion),
 			"zz_"+strcase.ToSnake(crd.Kind)+".go",
 		)
 		crdVars := &templateCRDVars{
@@ -177,6 +184,7 @@ func Crossplane(
 			metaVars,
 			crd,
 		}
+		crdVars.APIVersion = crd.GetAPIVersion(metaVars.APIVersion)
 		if err = ts.Add(outPath, controllerTmplPath, crdVars); err != nil {
 			return nil, err
 		}
@@ -188,6 +196,7 @@ func Crossplane(
 			metaVars,
 			crd,
 		}
+		crdVars.APIVersion = crd.GetAPIVersion(metaVars.APIVersion)
 		if err = ts.Add(outPath, conversionsTmplPath, crdVars); err != nil {
 			return nil, err
 		}

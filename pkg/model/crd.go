@@ -96,6 +96,16 @@ func (r *CRD) Config() *ackgenconfig.Config {
 	return r.cfg
 }
 
+// GetAPIVersion returns the configured API version for the CRD, or
+// the specified default version.
+func (r *CRD) GetAPIVersion(defaultVersion string) string {
+	// if not configured
+	if r.cfg == nil || r.cfg.Resources[r.Names.Original].APIVersion == nil {
+		return defaultVersion
+	}
+	return *r.cfg.Resources[r.Names.Original].APIVersion
+}
+
 // SDKAPIPackageName returns the aws-sdk-go package name used for this
 // resource's API
 func (r *CRD) SDKAPIPackageName() string {

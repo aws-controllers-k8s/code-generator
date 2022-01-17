@@ -49,7 +49,9 @@ func generateCrossplane(_ *cobra.Command, args []string) error {
 		return err
 	}
 	svcAlias := strings.ToLower(args[0])
-	optGeneratorConfigPath = filepath.Join(optOutputPath, "apis", svcAlias, optGenVersion, "generator-config.yaml")
+	if optGeneratorConfigPath == "" {
+		optGeneratorConfigPath = filepath.Join(optOutputPath, "apis", svcAlias, optGenVersion, "generator-config.yaml")
+	}
 	m, err := loadModel(svcAlias, optGenVersion, "aws.crossplane.io", cpgenerate.DefaultConfig)
 	if err != nil {
 		return err
