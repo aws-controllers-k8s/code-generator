@@ -104,3 +104,41 @@ func TestMemberFields_Containers_MapOfStruct(t *testing.T) {
 	assert.Equal(valueField.ShapeRef.Shape.Type, "string")
 	assert.Equal(valueField.Path, "InputArtifacts.Value")
 }
+
+func TestCustomFieldType(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "iam")
+
+	crds, err := g.GetCRDs()
+	require.Nil(err)
+
+	crd := getCRDByName("Role", crds)
+	require.NotNil(crd)
+
+	// The Role resource has a custom field called Policies that is of type
+	// []*string. This field is custom because it is not inferred via either
+	// the Create Input/Output shape or the SourceFieldConfig attribute in the
+	// generator.yaml file but rather via a `type` attribute of the
+	// FieldConfig, which overrides the Go type of the custom field.
+	policiesField := crd.Fields["Policies"]
+	require.NotNil(policiesField)
+
+	assert.Equal("[]*string", policiesField.GoType)
+	require.NotNil(policiesField.ShapeRef)
+
+	// A map and a scalar custom field are also added in the testdata
+	// generator.yaml file.
+	logConfigField := crd.Fields["LoggingConfig"]
+	require.NotNil(logConfigField)
+
+	assert.Equal("map[string]*bool", logConfigField.GoType)
+	require.NotNil(logConfigField.ShapeRef)
+
+	myIntField := crd.Fields["MyCustomInteger"]
+	require.NotNil(myIntField)
+
+	assert.Equal("*int64", myIntField.GoType)
+	require.NotNil(myIntField.ShapeRef)
+}

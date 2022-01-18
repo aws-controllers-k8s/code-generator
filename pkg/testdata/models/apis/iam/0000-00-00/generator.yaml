@@ -35,3 +35,11 @@ resources:
         set:
           # The input and output shapes are different...
           - from: PermissionsBoundary.PermissionsBoundaryArn
+      # Test the custom field creation inference for simple scalar, list or map
+      # fields
+      Policies:
+        type: "[]*string"
+      LoggingConfig:
+        type: "map[string]*bool"
+      MyCustomInteger:
+        type: "*int64"

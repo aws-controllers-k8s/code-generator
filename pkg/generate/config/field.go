@@ -352,5 +352,22 @@ type FieldConfig struct {
 	LateInitialize *LateInitializeConfig `json:"late_initialize,omitempty"`
 	// References instructs the code generator how to refer this field from
 	// other custom resource
-	References     *ReferencesConfig     `json:"references,omitempty"`
+	References *ReferencesConfig `json:"references,omitempty"`
+	// Type *overrides* the inferred Go type of the field. This is required for
+	// custom fields that are not inferred either as a Create Input/Output
+	// shape or via the SourceFieldConfig attribute.
+	//
+	// As an example, assume you have a Role resource where you want to add a
+	// custom spec field called Policies that is a slice of string pointers.
+	// The generator.yaml file might look like this:
+	//
+	// resources:
+	//   Role:
+	//     fields:
+	//       Policies:
+	//         type: []*string
+	//
+	// TODO(jaypipes,crtbry): Figure out if we can roll the CustomShape stuff
+	// into this type override...
+	Type *string `json:"type,omitempty"`
 }
