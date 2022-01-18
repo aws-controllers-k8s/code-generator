@@ -111,7 +111,7 @@ func GetOpTypeAndResourceNameFromOpID(
 		resName := strings.TrimPrefix(opID, "Describe")
 		if pluralize.IsPlural(resName) {
 			if resourceExistsInConfig(resName, cfg) {
-				return OpTypeGet, resName
+				return OpTypeList, resName
 			}
 			return OpTypeList, pluralize.Singular(resName)
 		}
