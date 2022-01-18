@@ -21,7 +21,7 @@ deployment:
     kubernetes.io/os: linux
   # Which tolerations to set?
   # See: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
-  tolerations: {}
+  tolerations: []
   # What affinity to set?
   # See: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity
   affinity: {}
