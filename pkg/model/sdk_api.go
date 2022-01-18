@@ -14,6 +14,7 @@
 package model
 
 import (
+	"fmt"
 	"strings"
 
 	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
@@ -28,6 +29,19 @@ const (
 	// well-known common struct names for things like a CRD itself, or its
 	// Spec/Status subfield struct type name.
 	ConflictingNameSuffix = "_SDK"
+)
+
+var (
+	// GoTypeToSDKShapeType is a map of Go types to aws-sdk-go
+	// private/model/api.Shape types
+	GoTypeToSDKShapeType = map[string]string{
+		"int":       "integer",
+		"int64":     "integer",
+		"float64":   "float",
+		"string":    "string",
+		"bool":      "boolean",
+		"time.Time": "timestamp",
+	}
 )
 
 // SDKAPI contains an API model for a single AWS service API
@@ -74,6 +88,72 @@ func (a *SDKAPI) GetOperationMap(cfg *ackgenconfig.Config) *OperationMap {
 	}
 	a.opMap = &opMap
 	return &opMap
+}
+
+// GetShapeRefFromType returns a ShapeRef given a string representing the Go
+// type. If no shape can be determined, returns nil.
+func (a *SDKAPI) GetShapeRefFromType(
+	typeOverride string,
+) *awssdkmodel.ShapeRef {
+	elemType := typeOverride
+	isSlice := strings.HasPrefix(typeOverride, "[]")
+	// TODO(jaypipes): Only handling maps with string keys at the moment...
+	isMap := strings.HasPrefix(typeOverride, "map[string]")
+	if isMap {
+		elemType = typeOverride[11:len(typeOverride)]
+	}
+	if isSlice {
+		elemType = typeOverride[2:len(typeOverride)]
+	}
+	isPtrElem := strings.HasPrefix(elemType, "*")
+	if isPtrElem {
+		elemType = elemType[1:len(elemType)]
+	}
+	// first check to see if the element type is a scalar and if it is, just
+	// create a ShapeRef to represent the type.
+	switch elemType {
+	case "string", "bool", "int", "int64", "float64", "time.Time":
+		sdkType, found := GoTypeToSDKShapeType[elemType]
+		if !found {
+			msg := fmt.Sprintf("GetShapeRefFromType: unsupported element type %s", elemType)
+			panic(msg)
+		}
+		if isSlice {
+			return &awssdkmodel.ShapeRef{
+				Shape: &awssdkmodel.Shape{
+					Type: "list",
+					MemberRef: awssdkmodel.ShapeRef{
+						Shape: &awssdkmodel.Shape{
+							Type: sdkType,
+						},
+					},
+				},
+			}
+		} else if isMap {
+			return &awssdkmodel.ShapeRef{
+				Shape: &awssdkmodel.Shape{
+					Type: "map",
+					KeyRef: awssdkmodel.ShapeRef{
+						Shape: &awssdkmodel.Shape{
+							Type: sdkType,
+						},
+					},
+					ValueRef: awssdkmodel.ShapeRef{
+						Shape: &awssdkmodel.Shape{
+							Type: sdkType,
+						},
+					},
+				},
+			}
+		} else {
+			return &awssdkmodel.ShapeRef{
+				Shape: &awssdkmodel.Shape{
+					Type: sdkType,
+				},
+			}
+		}
+	}
+	return nil
 }
 
 // GetCustomShapeRef finds a ShapeRef for a custom shape using either its member
