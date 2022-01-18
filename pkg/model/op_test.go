@@ -144,7 +144,7 @@ func TestGetOpTypeAndResourceNameFromOpID_PluralSingular(t *testing.T) {
 		},
 		{
 			"DescribeDhcpOptions",
-			model.OpTypeGet,
+			model.OpTypeList,
 			"DhcpOptions",
 		},
 		{
