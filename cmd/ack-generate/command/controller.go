@@ -63,7 +63,11 @@ func generateController(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	ts, err := ackgenerate.Controller(m, optTemplateDirs)
+	serviceAccountName, err := getServiceAccountName()
+	if err != nil {
+		return err
+	}
+	ts, err := ackgenerate.Controller(m, optTemplateDirs, serviceAccountName)
 	if err != nil {
 		return err
 	}

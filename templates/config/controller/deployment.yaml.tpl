@@ -61,6 +61,7 @@ spec:
             drop:
               - ALL
       terminationGracePeriodSeconds: 10
+      serviceAccountName: {{ .ServiceAccountName }}
       hostIPC: false
       hostNetwork: false
       hostPID: false

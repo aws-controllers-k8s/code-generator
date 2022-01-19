@@ -60,8 +60,7 @@ func Release(
 	// imageRepository is the Docker image repository to use when generating
 	// release files
 	imageRepository string,
-	// serviceAccountName is the name of the ServiceAccount and ClusterRole
-	// used in the Helm chart
+	// serviceAccountName is the name of the ServiceAccount used in the Helm chart
 	serviceAccountName string,
 ) (*templateset.TemplateSet, error) {
 	ts := templateset.New(
@@ -100,7 +99,6 @@ type templateReleaseVars struct {
 	// ImageRepository is the Docker image repository to inject into the Helm
 	// values template
 	ImageRepository string
-	// ServiceAccountName is the name of the service account and cluster role
-	// created by the Helm chart
+	// ServiceAccountName is the name of the ServiceAccount used in the Helm chart
 	ServiceAccountName string
 }

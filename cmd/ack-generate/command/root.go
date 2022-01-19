@@ -43,6 +43,7 @@ var (
 	optGeneratorConfigPath string
 	optMetadataConfigPath  string
 	optOutputPath          string
+	optServiceAccountName  string
 )
 
 var rootCmd = &cobra.Command{
@@ -120,6 +121,9 @@ func init() {
 	)
 	rootCmd.PersistentFlags().StringVar(
 		&optAWSSDKGoVersion, "aws-sdk-go-version", "", "Version of github.com/aws/aws-sdk-go used to generate apis and controllers files",
+	)
+	rootCmd.PersistentFlags().StringVar(
+		&optServiceAccountName, "service-account-name", "", "The name of the ServiceAccount used for ACK service controller",
 	)
 }
 
