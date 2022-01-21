@@ -33,6 +33,9 @@ type ResourceConfig struct {
 	// the code generator about a custom callback hooks that should be injected
 	// into the resource's manager or SDK binding code.
 	Hooks map[string]*HooksConfig `json:"hooks"`
+	// Synced contains instructions for the code generator to generate Go code
+	// that verifies whether a resource is synced or not.
+	Synced *SyncedConfig `json:"synced"`
 	// Renames identifies fields in Operations that should be renamed.
 	Renames *RenamesConfig `json:"renames,omitempty"`
 	// ListOperation contains instructions for the code generator to generate
@@ -85,6 +88,23 @@ type ResourceConfig struct {
 	// IsARNPrimaryKey determines whether the CRD uses the ARN as the primary
 	// identifier in the ReadOne operations.
 	IsARNPrimaryKey bool `json:"is_arn_primary_key"`
+}
+
+// SyncedConfig instructs the code generator on how to generate functions that checks
+// whether a resource was synced or not.
+type SyncedConfig struct {
+	// When is a list of conditions that should be satisfied in order to tell whether a
+	// a resource was synced or not.
+	When []SyncedCondition `json:"when"`
+}
+
+// SyncedCondition represent one of the unique condition that should be fullfiled in
+// order to assert whether a resource is synced.
+type SyncedCondition struct {
+	// Path of the field. e.g Status.Processing
+	Path *string `json:"path"`
+	// In contains a list of possible values `Path` should be equal to.
+	In []string `json:"in"`
 }
 
 // HooksConfig instructs the code generator how to inject custom callback hooks

@@ -4,6 +4,19 @@ resources:
       errors:
         404:
           code: ResourceNotFoundException
+    synced:
+      when:
+        - path: Status.TableStatus
+          in:
+            - AVAILABLE
+            - ACTIVE
+        - path: Spec.ProvisionedThroughput.ReadCapacityUnits
+          in:
+            - 0
+            - 10
+        - path: Status.ItemCount
+          in:
+            - 0
 operations:
   DescribeBackup:
     # DescribeBackupOutput is an unsual shape because it contains information for
