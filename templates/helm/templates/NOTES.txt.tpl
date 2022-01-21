@@ -1,4 +1,7 @@
-{{ "{{ .Chart.Name }}" }} has been installed. Check its status by running:
+{{ "{{ .Chart.Name }}" }} has been installed.
+This chart deploys "{{ .ImageRepository }}:{{ .ReleaseVersion }}".
+
+Check its status by running:
   kubectl --namespace {{ "{{ .Release.Namespace }}" }} get pods -l "app.kubernetes.io/instance={{ "{{ .Release.Name }}" }}"
 
 You are now able to create {{ .Metadata.Service.FullName }} ({{ .Metadata.Service.ShortName }})
