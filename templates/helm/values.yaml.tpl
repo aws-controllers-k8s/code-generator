@@ -28,6 +28,12 @@ deployment:
   # Which priorityClassName to set?
   # See: https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/#pod-priority
   priorityClassName: ""
+
+  # List of key/value pairs to be put in secret to act as a source for environment variables for the controller.
+  # Can be used to authenticate without IRSA
+  # eg. - AWS_ACCESS_KEY_ID: "YOUR_AWS_ACCESS_KEY_ID"
+  # eg. - AWS_SECRET_ACCESS_KEY: "YOUR_AWS_SECRET_ACCESS_KEY"
+  secretEnvVars: []
   
 metrics:
   service:
