@@ -58,6 +58,15 @@
         },
         "priorityClassName": {
           "type": "string"
+        },
+        "secretEnvVars": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
         }
       },
       "required": [
