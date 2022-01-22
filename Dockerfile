@@ -41,6 +41,7 @@ RUN GIT_VERSION=$service_controller_git_version && \
     go build -ldflags="-X ${VERSION_PKG}.GitVersion=${GIT_VERSION} \
     -X ${VERSION_PKG}.GitCommit=${GIT_COMMIT} \
     -X ${VERSION_PKG}.BuildDate=${BUILD_DATE}" \
+    -buildmode=pie \
     -a -o $work_dir/bin/controller $work_dir/cmd/controller/main.go
 
 FROM $base_image
