@@ -59,14 +59,25 @@
         "priorityClassName": {
           "type": "string"
         },
-        "secretEnvVars": {
+        "env": {
+          "description": "Environment variable related settings",
           "type": "object",
-          "additionalProperties": {
-            "type": "string"
+          "properties": {
+            "fromSecret": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "vars": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
           }
-        },
-        "secretName": {
-          "type": "string"
         }
       },
       "required": [

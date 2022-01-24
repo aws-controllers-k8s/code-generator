@@ -73,10 +73,10 @@ spec:
           value: {{ .Values.log.level | quote }}
         - name: ACK_RESOURCE_TAGS
           value: {{ join "," .Values.resourceTags | quote }}
-        {{- if .Values.deployment.secretEnvVars }}
+        {{- if .Values.deployment.env.fromSecret.vars }}
         envFrom:
         - secretRef:
-            name: {{ default (include "app.fullname" .) .Values.deployment.secretName }}
+            name: {{ default (include "app.fullname" .) .Values.deployment.env.fromSecret.name }}
         {{- end }}
         securityContext:
           allowPrivilegeEscalation: false

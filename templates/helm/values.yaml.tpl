@@ -29,14 +29,17 @@ deployment:
   # See: https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/#pod-priority
   priorityClassName: ""
 
-  # Map of key/value pairs to be put in secret to act as a source for environment variables for the controller.
-  # Can be used to authenticate without IRSA (although IRSA is recommended)
-  # eg. AWS_ACCESS_KEY_ID: "YOUR_AWS_ACCESS_KEY_ID"
-  # eg. AWS_SECRET_ACCESS_KEY: "YOUR_AWS_SECRET_ACCESS_KEY"
-  secretEnvVars: {}
-
-  # Name of the secret to store your envvars, defaults to app fullname
-  secretName: ""
+  # env contains configuration for environment variables in the Deployment
+  env:
+    # fromSecret contains configuration for environment variables in the Deployment
+    # read from a Secret that is automatically created by Helm
+    fromSecret:
+      # name is the name of the Secret that is created that contains environment
+      # variables inserted into the Deployment (defaults to the application full name)
+      name: ""
+      # vars contains a map of key/value pairs representing the environment variables
+      # that will be inserted into the Secret and read into the Deployment
+      vars: {}
   
 metrics:
   service:
