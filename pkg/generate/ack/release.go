@@ -28,6 +28,7 @@ var (
 		"helm/Chart.yaml.tpl",
 		"helm/values.yaml.tpl",
 		"helm/values.schema.json",
+		"helm/templates/NOTES.txt.tpl",
 		"helm/templates/role-reader.yaml.tpl",
 		"helm/templates/role-writer.yaml.tpl",
 		"helm/templates/_controller-role-kind-patch.yaml.tpl",
