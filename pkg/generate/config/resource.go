@@ -75,10 +75,12 @@ type ResourceConfig struct {
 	// All ShortNames must be distinct from any other ShortNames installed into the cluster,
 	// otherwise the CRD will fail to install.
 	ShortNames []string `json:"shortNames,omitempty"`
-	// APIVersion represents the API version of the generated CRD.
+	// APIVersions represents the API versions defined for the generated CRD.
 	// Default version to be used is the one specified via the "--version"
-	// command-line argument.
-	APIVersion *string `json:"api_version,omitempty"`
+	// command-line argument, if none is specified here.
+	// For the Crossplane pipeline, the generation target is the version
+	// marked as the storage version.
+	APIVersions []APIVersion `json:"api_versions,omitempty"`
 	// IsAdoptable determines whether the CRD should be accepted by the adoption reconciler.
 	// If set to false, the user will be given an error if they attempt to adopt a resource
 	// with this type.

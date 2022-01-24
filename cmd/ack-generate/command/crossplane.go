@@ -50,7 +50,10 @@ func generateCrossplane(_ *cobra.Command, args []string) error {
 	}
 	svcAlias := strings.ToLower(args[0])
 	if optGeneratorConfigPath == "" {
-		optGeneratorConfigPath = filepath.Join(optOutputPath, "apis", svcAlias, optGenVersion, "generator-config.yaml")
+		// default generator configuration file path is now: apis/<service>/<generator-config.yaml>
+		// as this configuration is per API group (per service), and
+		// resources can exist in multiple versions.
+		optGeneratorConfigPath = filepath.Join(optOutputPath, "apis", svcAlias, "generator-config.yaml")
 	}
 	m, err := loadModel(svcAlias, optGenVersion, "aws.crossplane.io", cpgenerate.DefaultConfig)
 	if err != nil {

@@ -96,14 +96,21 @@ func (r *CRD) Config() *ackgenconfig.Config {
 	return r.cfg
 }
 
-// GetAPIVersion returns the configured API version for the CRD, or
+// GetStorageVersion returns the configured storage API version for the CRD, or
 // the specified default version.
-func (r *CRD) GetAPIVersion(defaultVersion string) string {
+func (r *CRD) GetStorageVersion(defaultVersion string) (string, error) {
 	// if not configured
-	if r.cfg == nil || r.cfg.Resources[r.Names.Original].APIVersion == nil {
-		return defaultVersion
+	if r.cfg == nil || len(r.cfg.Resources[r.Names.Original].APIVersions) == 0 {
+		return defaultVersion, nil
 	}
-	return *r.cfg.Resources[r.Names.Original].APIVersion
+
+	for _, v := range r.cfg.Resources[r.Names.Original].APIVersions {
+		if v.Storage != nil && *v.Storage {
+			return v.Name, nil
+		}
+	}
+	return "", fmt.Errorf("exactly one configured version must be marked as the storage version for the %q CRD",
+		r.Names.Original)
 }
 
 // SDKAPIPackageName returns the aws-sdk-go package name used for this
