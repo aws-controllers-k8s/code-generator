@@ -60,13 +60,13 @@
           "type": "string"
         },
         "secretEnvVars": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "string"
-            }
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
           }
+        },
+        "secretName": {
+          "type": "string"
         }
       },
       "required": [

@@ -76,7 +76,7 @@ spec:
         {{- if .Values.deployment.secretEnvVars }}
         envFrom:
         - secretRef:
-            name: {{ include "app.fullname" . }}
+            name: {{ default (include "app.fullname" .) .Values.deployment.secretName }}
         {{- end }}
         securityContext:
           allowPrivilegeEscalation: false
