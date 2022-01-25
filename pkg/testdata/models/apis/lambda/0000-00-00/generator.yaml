@@ -11,3 +11,17 @@ resources:
         from:
           operation: GetFunction
           path: Code.RepositoryType
+    synced:
+      when:
+        - path: Status.State
+          in:
+            - AVAILABLE
+            - ACTIVE
+        - path: Status.LastUpdateStatus
+          in:
+            - AVAILABLE
+            - ACTIVE
+        - path: Status.CodeSize
+          in:
+            - 1
+            - 2

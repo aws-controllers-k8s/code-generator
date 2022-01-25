@@ -16,12 +16,17 @@ import (
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
+	ackutil "github.com/aws-controllers-k8s/runtime/pkg/util"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 
 	svcsdk "github.com/aws/aws-sdk-go/service/{{ .ServicePackageName }}"
 	svcsdkapi "github.com/aws/aws-sdk-go/service/{{ .ServicePackageName }}/{{ .ServicePackageName }}iface"
+)
+
+var (
+	_ = ackutil.InStrings
 )
 
 // +kubebuilder:rbac:groups={{ .APIGroup }},resources={{ ToLower .CRD.Plural }},verbs=get;list;watch;create;update;patch;delete
@@ -232,6 +237,17 @@ func (rm *resourceManager) lateInitializeFromReadOneOutput(
 	latest acktypes.AWSResource,
 ) acktypes.AWSResource {
 {{ GoCodeLateInitializeFromReadOne .CRD "observed" "latest" 1 }}
+}
+
+// IsSynced returns true if the resource is synced.
+func (rm *resourceManager) IsSynced(ctx context.Context, res acktypes.AWSResource) (bool, error) {
+	r := rm.concreteResource(res)
+	if r.ko == nil {
+		// Should never happen... if it does, it's buggy code.
+		panic("resource manager's IsSynced() method received resource with nil CR object")
+	}
+{{ GoCodeIsSynced .CRD "r.ko" 1}}
+	return true, nil
 }
 
 // newResourceManager returns a new struct implementing

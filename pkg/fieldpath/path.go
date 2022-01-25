@@ -118,6 +118,11 @@ func (p *Path) Empty() bool {
 	return len(p.parts) == 0
 }
 
+// Size returns the Path number of parts
+func (p *Path) Size() int {
+	return len(p.parts)
+}
+
 // ShapeRef returns an aws-sdk-go ShapeRef within the supplied ShapeRef that
 // matches the Path. Returns nil if no matching ShapeRef could be found.
 //

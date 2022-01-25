@@ -120,6 +120,9 @@ var (
 		"GoCodeCompare": func(r *ackmodel.CRD, deltaVarName string, sourceVarName string, targetVarName string, indentLevel int) string {
 			return code.CompareResource(r.Config(), r, deltaVarName, sourceVarName, targetVarName, indentLevel)
 		},
+		"GoCodeIsSynced": func(r *ackmodel.CRD, resVarName string, indentLevel int) string {
+			return code.ResourceIsSynced(r.Config(), r, resVarName, indentLevel)
+		},
 		"GoCodeCompareStruct": func(r *ackmodel.CRD, shape *awssdkmodel.Shape, deltaVarName string, sourceVarName string, targetVarName string, fieldPath string, indentLevel int) string {
 			return code.CompareStruct(r.Config(), r, nil, shape, deltaVarName, sourceVarName, targetVarName, fieldPath, indentLevel)
 		},
