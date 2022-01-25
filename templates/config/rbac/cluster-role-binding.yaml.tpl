@@ -8,5 +8,5 @@ roleRef:
   name: ack-{{ .ServicePackageName }}-controller
 subjects:
 - kind: ServiceAccount
-  name: default
+  name: {{ .ServiceAccountName }}
   namespace: ack-system

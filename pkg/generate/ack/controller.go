@@ -35,6 +35,7 @@ var (
 		"config/rbac/cluster-role-binding.yaml.tpl",
 		"config/rbac/role-reader.yaml.tpl",
 		"config/rbac/role-writer.yaml.tpl",
+		"config/rbac/service-account.yaml.tpl",
 		"config/rbac/kustomization.yaml.tpl",
 		"config/crd/kustomization.yaml.tpl",
 		"config/overlays/namespaced/kustomization.yaml.tpl",
@@ -167,6 +168,8 @@ var (
 func Controller(
 	m *ackmodel.Model,
 	templateBasePaths []string,
+	// serviceAccountName is the name of the ServiceAccount used in the Helm chart
+	serviceAccountName string,
 ) (*templateset.TemplateSet, error) {
 	crds, err := m.GetCRDs()
 	if err != nil {
@@ -227,6 +230,7 @@ func Controller(
 	configVars := &templateConfigVars{
 		metaVars,
 		m.GetConfig(),
+		serviceAccountName,
 	}
 	if err = ts.Add("pkg/resource/registry.go", "pkg/resource/registry.go.tpl", configVars); err != nil {
 		return nil, err
@@ -253,7 +257,7 @@ func Controller(
 	// Finally, add the configuration YAML file templates
 	for _, path := range controllerConfigTemplatePaths {
 		outPath := strings.TrimSuffix(path, ".tpl")
-		if err = ts.Add(outPath, path, metaVars); err != nil {
+		if err = ts.Add(outPath, path, configVars); err != nil {
 			return nil, err
 		}
 	}
@@ -271,5 +275,6 @@ type templateCmdVars struct {
 // access to the generator configuration definition
 type templateConfigVars struct {
 	templateset.MetaVars
-	GeneratorConfig *ackgenconfig.Config
+	GeneratorConfig    *ackgenconfig.Config
+	ServiceAccountName string
 }
