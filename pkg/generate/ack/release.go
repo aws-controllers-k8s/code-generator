@@ -24,6 +24,7 @@ import (
 
 var (
 	releaseTemplatePaths = []string{
+		"config/controller/kustomization.yaml.tpl",
 		"helm/templates/cluster-role-binding.yaml.tpl",
 		"helm/Chart.yaml.tpl",
 		"helm/values.yaml.tpl",
@@ -33,8 +34,10 @@ var (
 		"helm/templates/role-writer.yaml.tpl",
 		"helm/templates/_controller-role-kind-patch.yaml.tpl",
 	}
-	releaseIncludePaths = []string{}
-	releaseCopyPaths    = []string{
+	releaseIncludePaths = []string{
+		"config/controller/kustomization_def.yaml.tpl",
+	}
+	releaseCopyPaths = []string{
 		"helm/templates/_helpers.tpl",
 		"helm/templates/deployment.yaml",
 		"helm/templates/metrics-service.yaml",
