@@ -243,14 +243,13 @@ if [[ $ACK_GENERATE_OLM == "true" ]]; then
     DEFAULT_ACK_GENERATE_OLMCONFIG_PATH="$SERVICE_CONTROLLER_SOURCE_PATH/olm/olmconfig.yaml"
     ACK_GENERATE_OLMCONFIG_PATH=${ACK_GENERATE_OLMCONFIG_PATH:-$DEFAULT_ACK_GENERATE_OLMCONFIG_PATH}
 
-    olm_version=$(echo $RELEASE_VERSION | tr -d "v")
-    ag_olm_args="$SERVICE $olm_version -o $SERVICE_CONTROLLER_SOURCE_PATH --template-dirs $TEMPLATES_DIR --olm-config $ACK_GENERATE_OLMCONFIG_PATH --aws-sdk-go-version $AWS_SDK_GO_VERSION"
+    ag_olm_args="$SERVICE $RELEASE_VERSION -o $SERVICE_CONTROLLER_SOURCE_PATH --template-dirs $TEMPLATES_DIR --olm-config $ACK_GENERATE_OLMCONFIG_PATH --aws-sdk-go-version $AWS_SDK_GO_VERSION"
 
     if [ -n "$ACK_GENERATE_CONFIG_PATH" ]; then
         ag_olm_args="$ag_olm_args --generator-config-path $ACK_GENERATE_CONFIG_PATH"
     fi
 
     $ACK_GENERATE_BIN_PATH olm $ag_olm_args
-    $SCRIPTS_DIR/olm-create-bundle.sh "$SERVICE" "$olm_version"
+    $SCRIPTS_DIR/olm-create-bundle.sh "$SERVICE" "$RELEASE_VERSION"
 
 fi
