@@ -99,7 +99,7 @@ func (f *Field) GetSetterConfig(opType OpType) *ackgenconfig.SetFieldConfig {
 //          path: Status.APIID
 // ```
 // For the above configuration, 'HasReference' for 'ApiId'(Original name) field
-// will return true because a corresponding 'ApiRef' field will be generated
+// will return true because a corresponding 'APIRef' field will be generated
 // by ACK code-generator
 func (f *Field) HasReference() bool {
 	return f.FieldConfig != nil && f.FieldConfig.References != nil

@@ -181,6 +181,8 @@ func TestGetReferenceFieldName(t *testing.T) {
 		{"Clusters", "ClusterRefs", &listShape},
 		// When the resource name indicates plural but it is singular. Ex: DHCPOptions
 		{"Clusters", "ClustersRef", &stringShape},
+		{"BlueDeploymentId", "BlueDeploymentRef", &stringShape},
+		{"GreenDeploymentId", "GreenDeploymentRef", &stringShape},
 	}
 
 	for _, tc := range testCases {
