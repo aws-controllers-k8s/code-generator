@@ -196,8 +196,8 @@ func TestAPIGatewayV2_WithReference(t *testing.T) {
 	assert.Equal("integration", crd.Names.Snake)
 
 	assert.NotNil(crd.SpecFields["ApiId"])
-	assert.NotNil(crd.SpecFields["ApiIdRef"])
-	assert.Equal("*ackv1alpha1.AWSResourceReferenceWrapper", crd.SpecFields["ApiIdRef"].GoType)
+	assert.NotNil(crd.SpecFields["ApiRef"])
+	assert.Equal("*ackv1alpha1.AWSResourceReferenceWrapper", crd.SpecFields["ApiRef"].GoType)
 
 	// List of References
 	crd = getCRDByName("VpcLink", crds)
@@ -208,6 +208,6 @@ func TestAPIGatewayV2_WithReference(t *testing.T) {
 	assert.Equal("vpc_link", crd.Names.Snake)
 
 	assert.NotNil(crd.SpecFields["SecurityGroupIds"])
-	assert.NotNil(crd.SpecFields["SecurityGroupIdsRef"])
-	assert.Equal("[]*ackv1alpha1.AWSResourceReferenceWrapper", crd.SpecFields["SecurityGroupIdsRef"].GoType)
+	assert.NotNil(crd.SpecFields["SecurityGroupRefs"])
+	assert.Equal("[]*ackv1alpha1.AWSResourceReferenceWrapper", crd.SpecFields["SecurityGroupRefs"].GoType)
 }

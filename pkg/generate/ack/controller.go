@@ -154,8 +154,8 @@ var (
 		"GoCodeIncompleteLateInitialization": func(r *ackmodel.CRD, resVarName string, indentLevel int) string {
 			return code.IncompleteLateInitialization(r.Config(), r, resVarName, indentLevel)
 		},
-		"GoCodeReferencesValidation": func(r *ackmodel.CRD, sourceVarName string, referenceFieldSuffix string, indentLevel int) string {
-			return code.ReferenceFieldsValidation(r, sourceVarName, referenceFieldSuffix, indentLevel)
+		"GoCodeReferencesValidation": func(r *ackmodel.CRD, sourceVarName string, indentLevel int) string {
+			return code.ReferenceFieldsValidation(r, sourceVarName, indentLevel)
 		},
 		"GoCodeContainsReferences": func(r *ackmodel.CRD, sourceVarName string) string {
 			return code.ReferenceFieldsPresent(r, sourceVarName)
