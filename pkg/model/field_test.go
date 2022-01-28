@@ -1,11 +1,17 @@
 package model_test
 
 import (
+	"fmt"
 	"testing"
+
+	"github.com/aws-controllers-k8s/code-generator/pkg/names"
+
+	"github.com/aws/aws-sdk-go/private/model/api"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 	"github.com/aws-controllers-k8s/code-generator/pkg/testutil"
 )
 
@@ -141,4 +147,51 @@ func TestCustomFieldType(t *testing.T) {
 
 	assert.Equal("*int64", myIntField.GoType)
 	require.NotNil(myIntField.ShapeRef)
+}
+
+func TestGetReferenceFieldName(t *testing.T) {
+	assert := assert.New(t)
+
+	stringShape := api.ShapeRef{
+		Shape: &api.Shape{
+			Type: "string",
+		},
+	}
+
+	listShape := api.ShapeRef{
+		Shape: &api.Shape{
+			Type: "list",
+		},
+	}
+
+	testCases := []struct {
+		fieldName                  string
+		expectedReferenceFieldName string
+		shapeRef                   *api.ShapeRef
+	}{
+		{"ClusterName", "ClusterRef", &stringShape},
+		{"ClusterNames", "ClusterRefs", &listShape},
+		{"ClusterARN", "ClusterRef", &stringShape},
+		{"ClusterARNs", "ClusterRefs", &listShape},
+		{"ClusterID", "ClusterRef", &stringShape},
+		{"ClusterId", "ClusterRef", &stringShape},
+		{"ClusterIds", "ClusterRefs", &listShape},
+		{"ClusterIDs", "ClusterRefs", &listShape},
+		{"Cluster", "ClusterRef", &stringShape},
+		{"Clusters", "ClusterRefs", &listShape},
+		// When the resource name indicates plural but it is singular. Ex: DHCPOptions
+		{"Clusters", "ClustersRef", &stringShape},
+		{"BlueDeploymentId", "BlueDeploymentRef", &stringShape},
+		{"GreenDeploymentId", "GreenDeploymentRef", &stringShape},
+	}
+
+	for _, tc := range testCases {
+		f := model.Field{}
+		f.ShapeRef = tc.shapeRef
+		f.Names = names.New(tc.fieldName)
+		referenceFieldName := f.GetReferenceFieldName().Camel
+		msg := fmt.Sprintf("for %s, expected reference field name of %s but got %s",
+			tc.fieldName, tc.expectedReferenceFieldName, referenceFieldName)
+		assert.Equal(tc.expectedReferenceFieldName, referenceFieldName, msg)
+	}
 }

@@ -207,6 +207,15 @@ func (r *CRD) AddSpecField(
 	}
 	r.SpecFields[memberNames.Original] = f
 	r.Fields[fPath] = f
+
+	// If this field has a ReferencesConfig, Add the new
+	// Reference field inside Spec as well
+	if fConfig != nil && fConfig.References != nil {
+		referenceFieldNames := f.GetReferenceFieldName()
+		rf := NewReferenceField(r, referenceFieldNames, shapeRef)
+		r.SpecFields[referenceFieldNames.Original] = rf
+		r.Fields[referenceFieldNames.Camel] = rf
+	}
 }
 
 // AddStatusField adds a new Field of a given name and shape into the Status

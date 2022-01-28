@@ -278,9 +278,9 @@ type LateInitializeConfig struct {
 //          resource: API
 //          path: Status.APIID
 //```
-// The above configuration will result in generation of a new field 'APIIDRef'
+// The above configuration will result in generation of a new field 'APIRef'
 // of type 'AWSResourceReference' for ApiGatewayv2-Integration crd.
-// When 'APIIDRef' field is present in custom resource manifest, reconciler will
+// When 'APIRef' field is present in custom resource manifest, reconciler will
 // read the referred 'API' resource and copy the value from 'Status.APIID' in
 // 'Integration' resource's 'APIID' field
 type ReferencesConfig struct {
