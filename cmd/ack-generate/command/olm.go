@@ -58,6 +58,9 @@ func init() {
 	olmCmd.PersistentFlags().BoolVar(
 		&optDisableCommonKeywords, "no-common-keywords", false, "does not include common keywords in the rendered cluster service version",
 	)
+	olmCmd.PersistentFlags().StringVar(
+		&optImageRepository, "image-repository", "", "the Docker image repository that stores the ACK service controller. Default: 'public.ecr.aws/aws-controllers-k8s/$service-controller'",
+	)
 
 	rootCmd.AddCommand(olmCmd)
 }
@@ -74,6 +77,9 @@ func generateOLMAssets(cmd *cobra.Command, args []string) error {
 	svcAlias := strings.ToLower(args[0])
 	if optOutputPath == "" {
 		optOutputPath = filepath.Join(optServicesDir, svcAlias)
+	}
+	if optImageRepository == "" {
+		optImageRepository = fmt.Sprintf("public.ecr.aws/aws-controllers-k8s/%s-controller", svcAlias)
 	}
 
 	version := args[1]
@@ -119,7 +125,7 @@ func generateOLMAssets(cmd *cobra.Command, args []string) error {
 	}
 
 	// generate templates
-	ts, err := olmgenerate.BundleAssets(m, commonMeta, svcConf, version, optTemplateDirs)
+	ts, err := olmgenerate.BundleAssets(m, commonMeta, svcConf, version, optImageRepository, optTemplateDirs)
 	if err != nil {
 		return err
 	}

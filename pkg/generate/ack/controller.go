@@ -30,7 +30,6 @@ var (
 	controllerConfigTemplatePaths = []string{
 		"config/controller/deployment.yaml.tpl",
 		"config/controller/service.yaml.tpl",
-		"config/controller/kustomization.yaml.tpl",
 		"config/default/kustomization.yaml.tpl",
 		"config/rbac/cluster-role-binding.yaml.tpl",
 		"config/rbac/role-reader.yaml.tpl",
@@ -41,7 +40,6 @@ var (
 		"config/overlays/namespaced/kustomization.yaml.tpl",
 	}
 	controllerIncludePaths = []string{
-		"config/controller/kustomization_def.yaml.tpl",
 		"boilerplate.go.tpl",
 		"pkg/resource/references_read_referenced_resource.go.tpl",
 		"pkg/resource/sdk_find_read_one.go.tpl",

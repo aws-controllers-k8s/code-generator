@@ -35,7 +35,7 @@ Usage:
   $(basename "$0") <service> <version>
 
 <service> should be an AWS service API aliases that you wish to build -- e.g.
-'s3' 'sns' or 'sqs'
+'s3' 'sns' or 'sqs'. <version> should be the semver of the OLM bundle.
 
 Environment variables:
   BUNDLE_DEFAULT_CHANNEL                    The default channel to publish the OLM bundle to.

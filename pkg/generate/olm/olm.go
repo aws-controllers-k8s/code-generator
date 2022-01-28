@@ -6,6 +6,7 @@ import (
 	ttpl "text/template"
 	"time"
 
+	ackgenerate "github.com/aws-controllers-k8s/code-generator/pkg/generate/ack"
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate/templateset"
 	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
 	opsv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
@@ -41,7 +42,8 @@ func BundleAssets(
 	m *ackmodel.Model,
 	commonMeta CommonMetadata,
 	serviceConfig ServiceConfig,
-	vers string,
+	releaseVersion string,
+	imageRepository string,
 	templateBasePaths []string,
 ) (*templateset.TemplateSet, error) {
 
@@ -57,8 +59,13 @@ func BundleAssets(
 		return nil, err
 	}
 
+	olmVersion := strings.TrimLeft(releaseVersion, "v")
 	olmVars := templateOLMVars{
-		vers,
+		ackgenerate.ImageReleaseVars{
+			ReleaseVersion:  releaseVersion,
+			ImageRepository: imageRepository,
+		},
+		olmVersion,
 		time.Now().Format("2006-01-02 15:04:05"),
 		m.MetaVars(),
 		commonMeta,
@@ -88,6 +95,7 @@ func BundleAssets(
 }
 
 type templateOLMVars struct {
+	ackgenerate.ImageReleaseVars
 	Version   string
 	CreatedAt string
 	templateset.MetaVars

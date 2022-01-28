@@ -24,6 +24,7 @@ import (
 
 var (
 	releaseTemplatePaths = []string{
+		"config/controller/kustomization.yaml.tpl",
 		"helm/templates/cluster-role-binding.yaml.tpl",
 		"helm/Chart.yaml.tpl",
 		"helm/values.yaml.tpl",
@@ -33,8 +34,10 @@ var (
 		"helm/templates/role-writer.yaml.tpl",
 		"helm/templates/_controller-role-kind-patch.yaml.tpl",
 	}
-	releaseIncludePaths = []string{}
-	releaseCopyPaths    = []string{
+	releaseIncludePaths = []string{
+		"config/controller/kustomization_def.yaml.tpl",
+	}
+	releaseCopyPaths = []string{
 		"helm/templates/_helpers.tpl",
 		"helm/templates/deployment.yaml",
 		"helm/templates/metrics-service.yaml",
@@ -73,9 +76,11 @@ func Release(
 	metaVars := m.MetaVars()
 	releaseVars := &templateReleaseVars{
 		metaVars,
+		ImageReleaseVars{
+			ReleaseVersion:  releaseVersion,
+			ImageRepository: imageRepository,
+		},
 		metadata,
-		releaseVersion,
-		imageRepository,
 		serviceAccountName,
 	}
 	for _, path := range releaseTemplatePaths {
@@ -88,17 +93,21 @@ func Release(
 	return ts, nil
 }
 
-// templateReleaseVars contains template variables for the template that
-// outputs Go code for a release artifact
-type templateReleaseVars struct {
-	templateset.MetaVars
-	Metadata *ackmetadata.ServiceMetadata
+type ImageReleaseVars struct {
 	// ReleaseVersion is the semver release tag (or Git SHA1 commit) that is
 	// used for the binary image artifacts and Helm release version
 	ReleaseVersion string
 	// ImageRepository is the Docker image repository to inject into the Helm
 	// values template
 	ImageRepository string
+}
+
+// templateReleaseVars contains template variables for the template that
+// outputs Go code for a release artifact
+type templateReleaseVars struct {
+	templateset.MetaVars
+	ImageReleaseVars
+	Metadata *ackmetadata.ServiceMetadata
 	// ServiceAccountName is the name of the ServiceAccount used in the Helm chart
 	ServiceAccountName string
 }
