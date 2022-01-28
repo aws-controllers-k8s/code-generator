@@ -34,11 +34,9 @@ Where field is of type 'Field' from aws-controllers-k8s/code-generator/pkg/model
 					namespace, *arr.Name)
 			}
 			if !refResourceSynced {
-				//TODO(vijtrip2) Uncomment below return statment once
-				// ConditionTypeResourceSynced(True/False) is set for all resources
-				//return ackerr.ResourceReferenceNotSyncedFor(
-				//	"{{ .FieldConfig.References.Resource }}",
-				//	namespace, *arr.Name)
+				return ackerr.ResourceReferenceNotSyncedFor(
+					"{{ .FieldConfig.References.Resource }}",
+					namespace, *arr.Name)
 			}
 			if obj.{{ .FieldConfig.References.Path }} == nil {
 				return ackerr.ResourceReferenceMissingTargetFieldFor(

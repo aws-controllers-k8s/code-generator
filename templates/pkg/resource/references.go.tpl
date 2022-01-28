@@ -57,7 +57,7 @@ func (rm *resourceManager) ResolveReferences(
 // validateReferenceFields validates the reference field and corresponding
 // identifier field.
 func validateReferenceFields(ko *svcapitypes.{{ .CRD.Names.Camel }}) error {
-{{ GoCodeReferencesValidation .CRD "ko" "Ref" 1 -}}
+{{ GoCodeReferencesValidation .CRD "ko" 1 -}}
 	return nil
 }
 
@@ -69,7 +69,7 @@ func hasNonNilReferences(ko *svcapitypes.{{ .CRD.Names.Camel }}) bool {
 
 {{ range $fieldName, $field := .CRD.Fields }}
 {{ if $field.HasReference }}
-{{ $refField := index .CRD.Fields (print $field.Names.Camel "Ref") }}
+{{ $refField := index .CRD.Fields $field.GetReferenceFieldName.Camel }}
 // resolveReferenceFor{{ $field.Names.Camel }} reads the resource referenced
 // from {{ $refField.Names.Camel }} field and sets the {{ $field.Names.Camel }}
 // from referenced resource

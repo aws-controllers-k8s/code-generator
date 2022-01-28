@@ -28,13 +28,13 @@ func Test_ReferenceFieldsValidation_NoReferenceConfig(t *testing.T) {
 
 	g := testutil.NewModelForServiceWithOptions(t, "apigatewayv2",
 		&testutil.TestingModelOptions{
-		GeneratorConfigFile: "generator-with-reference.yaml",
-	})
+			GeneratorConfigFile: "generator-with-reference.yaml",
+		})
 
 	crd := testutil.GetCRDByName(t, g, "Api")
 	require.NotNil(crd)
 	expected := ""
-	assert.Equal(expected, code.ReferenceFieldsValidation(crd, "ko", "Ref", 1))
+	assert.Equal(expected, code.ReferenceFieldsValidation(crd, "ko", 1))
 }
 
 func Test_ReferenceFieldsValidation_SingleReference(t *testing.T) {
@@ -49,14 +49,14 @@ func Test_ReferenceFieldsValidation_SingleReference(t *testing.T) {
 	crd := testutil.GetCRDByName(t, g, "Integration")
 	require.NotNil(crd)
 	expected :=
-		`	if ko.Spec.APIIDRef != nil && ko.Spec.APIID != nil {
-		return ackerr.ResourceReferenceAndIDNotSupportedFor("APIID", "APIIDRef")
+		`	if ko.Spec.APIRef != nil && ko.Spec.APIID != nil {
+		return ackerr.ResourceReferenceAndIDNotSupportedFor("APIID", "APIRef")
 	}
-	if ko.Spec.APIIDRef == nil && ko.Spec.APIID == nil {
-		return ackerr.ResourceReferenceOrIDRequiredFor("APIID", "APIIDRef")
+	if ko.Spec.APIRef == nil && ko.Spec.APIID == nil {
+		return ackerr.ResourceReferenceOrIDRequiredFor("APIID", "APIRef")
 	}
 `
-	assert.Equal(expected, code.ReferenceFieldsValidation(crd, "ko", "Ref", 1))
+	assert.Equal(expected, code.ReferenceFieldsValidation(crd, "ko", 1))
 }
 
 func Test_ReferenceFieldsValidation_SliceOfReferences(t *testing.T) {
@@ -73,11 +73,11 @@ func Test_ReferenceFieldsValidation_SliceOfReferences(t *testing.T) {
 	crd := testutil.GetCRDByName(t, g, "VpcLink")
 	require.NotNil(crd)
 	expected :=
-		`	if ko.Spec.SecurityGroupIDsRef != nil && ko.Spec.SecurityGroupIDs != nil {
-		return ackerr.ResourceReferenceAndIDNotSupportedFor("SecurityGroupIDs", "SecurityGroupIDsRef")
+		`	if ko.Spec.SecurityGroupRefs != nil && ko.Spec.SecurityGroupIDs != nil {
+		return ackerr.ResourceReferenceAndIDNotSupportedFor("SecurityGroupIDs", "SecurityGroupRefs")
 	}
 `
-	assert.Equal(expected, code.ReferenceFieldsValidation(crd, "ko", "Ref", 1))
+	assert.Equal(expected, code.ReferenceFieldsValidation(crd, "ko", 1))
 }
 
 func Test_ReferenceFieldsPresent_NoReferenceConfig(t *testing.T) {
@@ -106,7 +106,7 @@ func Test_ReferenceFieldsPresent_SingleReference(t *testing.T) {
 
 	crd := testutil.GetCRDByName(t, g, "Integration")
 	require.NotNil(crd)
-	expected := "false || ko.Spec.APIIDRef != nil"
+	expected := "false || ko.Spec.APIRef != nil"
 	assert.Equal(expected, code.ReferenceFieldsPresent(crd, "ko"))
 }
 
@@ -123,6 +123,6 @@ func Test_ReferenceFieldsPresent_SliceOfReferences(t *testing.T) {
 	// just to test code generation for slices of reference
 	crd := testutil.GetCRDByName(t, g, "VpcLink")
 	require.NotNil(crd)
-	expected := "false || ko.Spec.SecurityGroupIDsRef != nil"
+	expected := "false || ko.Spec.SecurityGroupRefs != nil"
 	assert.Equal(expected, code.ReferenceFieldsPresent(crd, "ko"))
 }

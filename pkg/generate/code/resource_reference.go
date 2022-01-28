@@ -23,16 +23,15 @@ import (
 // ReferenceFieldsValidation produces the go code to validate reference field and
 // corresponding identifier field.
 // Sample code:
-// if ko.Spec.APIIDRef != nil && ko.Spec.APIID != nil {
-//		return ackerr.ResourceReferenceAndIDNotSupportedFor("APIID", "APIIDRef")
+// if ko.Spec.APIRef != nil && ko.Spec.APIID != nil {
+//		return ackerr.ResourceReferenceAndIDNotSupportedFor("APIID", "APIRef")
 //	}
-//	if ko.Spec.APIIDRef == nil && ko.Spec.APIID == nil {
-//		return ackerr.ResourceReferenceOrIDRequiredFor("APIID", "APIIDRef")
+//	if ko.Spec.APIRef == nil && ko.Spec.APIID == nil {
+//		return ackerr.ResourceReferenceOrIDRequiredFor("APIID", "APIRef")
 //	}
 func ReferenceFieldsValidation(
 	crd *model.CRD,
 	sourceVarName string,
-	referenceFieldSuffix string,
 	indentLevel int,
 ) string {
 	out := ""
@@ -41,25 +40,24 @@ func ReferenceFieldsValidation(
 			indent := strings.Repeat("\t", indentLevel)
 			// Validation to make sure both target field and reference are
 			// not present at the same time in desired resource
-			out += fmt.Sprintf("%sif %s.Spec.%s%s != nil"+
-				" && %s.Spec.%s != nil {\n", indent, sourceVarName, field.Names.Camel,
-				referenceFieldSuffix, sourceVarName, field.Names.Camel)
+			out += fmt.Sprintf("%sif %s.Spec.%s != nil"+
+				" && %s.Spec.%s != nil {\n", indent, sourceVarName,
+				field.GetReferenceFieldName().Camel, sourceVarName, field.Names.Camel)
 			out += fmt.Sprintf("%s\treturn "+
-				"ackerr.ResourceReferenceAndIDNotSupportedFor(\"%s\", \"%s%s\")\n",
-				indent,field.Names.Camel, field.Names.Camel, referenceFieldSuffix)
+				"ackerr.ResourceReferenceAndIDNotSupportedFor(\"%s\", \"%s\")\n",
+				indent, field.Names.Camel, field.GetReferenceFieldName().Camel)
 			out += fmt.Sprintf("%s}\n", indent)
 
 			// If the field is required, make sure either Ref or original
 			// field is present in the resource
 			if field.IsRequired() {
-				out += fmt.Sprintf("%sif %s.Spec.%s%s == nil &&"+
+				out += fmt.Sprintf("%sif %s.Spec.%s == nil &&"+
 					" %s.Spec.%s == nil {\n", indent, sourceVarName,
-					field.Names.Camel, referenceFieldSuffix, sourceVarName,
+					field.GetReferenceFieldName().Camel, sourceVarName,
 					field.Names.Camel)
 				out += fmt.Sprintf("%s\treturn "+
-					"ackerr.ResourceReferenceOrIDRequiredFor(\"%s\", \"%s%s\")\n",
-					indent, field.Names.Camel, field.Names.Camel,
-					referenceFieldSuffix)
+					"ackerr.ResourceReferenceOrIDRequiredFor(\"%s\", \"%s\")\n",
+					indent, field.Names.Camel, field.GetReferenceFieldName().Camel)
 				out += fmt.Sprintf("%s}\n", indent)
 			}
 		}
@@ -71,7 +69,7 @@ func ReferenceFieldsValidation(
 // a non-nil reference field is present in a resource. This checks helps in deciding
 // whether ACK.ReferencesResolved condition should be added to resource status
 // Sample Code:
-// return false || ko.Spec.APIIDRef != nil
+// return false || ko.Spec.APIRef != nil
 func ReferenceFieldsPresent(
 	crd *model.CRD,
 	sourceVarName string,
