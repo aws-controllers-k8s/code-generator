@@ -132,16 +132,6 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 				continue
 			}
 			crd.AddSpecField(memberNames, memberShapeRef)
-
-			// If this field has ReferencesConfig, add corresponding
-			// resource reference field in spec as well
-			fConfig := m.cfg.ResourceFields(crdName)[fieldName]
-			if fConfig != nil && fConfig.References != nil {
-				referenceFieldNames := names.New(fieldName + "Ref")
-				rf := NewReferenceField(crd, referenceFieldNames, memberShapeRef)
-				crd.SpecFields[referenceFieldNames.Original] = rf
-				crd.Fields[referenceFieldNames.Camel] = rf
-			}
 		}
 
 		// Now any additional Spec fields that are required from other API
