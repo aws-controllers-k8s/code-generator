@@ -135,33 +135,49 @@ func Crossplane(
 	)
 
 	metaVars := m.MetaVars()
+	detectedCRDVersions := make(map[string]bool)
+	for _, crd := range crds {
+		v, err := crd.GetStorageVersion(metaVars.APIVersion)
+		if err != nil {
+			return nil, err
+		}
+		detectedCRDVersions[v] = true
+	}
 
 	// First add all the CRDs and API types
-	apiVars := &templateAPIVars{
-		metaVars,
-		enumDefs,
-		typeDefs,
-	}
-	for _, path := range apisGenericTemplatesPaths {
-		outPath := filepath.Join(
-			"apis",
-			metaVars.ServicePackageName,
-			metaVars.APIVersion,
-			"zz_"+strings.TrimSuffix(filepath.Base(path), ".tpl"),
-		)
-		if err = ts.Add(outPath, path, apiVars); err != nil {
-			return nil, err
+	for apiVersion := range detectedCRDVersions {
+		for _, path := range apisGenericTemplatesPaths {
+			apiVars := &templateAPIVars{
+				metaVars,
+				enumDefs,
+				typeDefs,
+			}
+			apiVars.APIVersion = apiVersion
+			outPath := filepath.Join(
+				"apis",
+				metaVars.ServicePackageName,
+				apiVersion,
+				"zz_"+strings.TrimSuffix(filepath.Base(path), ".tpl"),
+			)
+			if err = ts.Add(outPath, path, apiVars); err != nil {
+				return nil, err
+			}
 		}
 	}
 	for _, crd := range crds {
+		v, err := crd.GetStorageVersion(metaVars.APIVersion)
+		if err != nil {
+			return nil, err
+		}
 		crdFileName := filepath.Join(
-			"apis", metaVars.ServicePackageName, metaVars.APIVersion,
+			"apis", metaVars.ServicePackageName, v,
 			"zz_"+strcase.ToSnake(crd.Kind)+".go",
 		)
 		crdVars := &templateCRDVars{
 			metaVars,
 			crd,
 		}
+		crdVars.APIVersion = v
 		if err = ts.Add(crdFileName, crdTemplatePath, crdVars); err != nil {
 			return nil, err
 		}
@@ -177,6 +193,9 @@ func Crossplane(
 			metaVars,
 			crd,
 		}
+		if crdVars.APIVersion, err = crd.GetStorageVersion(metaVars.APIVersion); err != nil {
+			return nil, err
+		}
 		if err = ts.Add(outPath, controllerTmplPath, crdVars); err != nil {
 			return nil, err
 		}
@@ -187,6 +206,9 @@ func Crossplane(
 		crdVars = &templateCRDVars{
 			metaVars,
 			crd,
+		}
+		if crdVars.APIVersion, err = crd.GetStorageVersion(metaVars.APIVersion); err != nil {
+			return nil, err
 		}
 		if err = ts.Add(outPath, conversionsTmplPath, crdVars); err != nil {
 			return nil, err
