@@ -34,7 +34,6 @@ ACK_GENERATE_API_VERSION=${ACK_GENERATE_API_VERSION:-"v1alpha1"}
 ACK_GENERATE_CONFIG_PATH=${ACK_GENERATE_CONFIG_PATH:-""}
 ACK_METADATA_CONFIG_PATH=${ACK_METADATA_CONFIG_PATH:-""}
 AWS_SDK_GO_VERSION=${AWS_SDK_GO_VERSION:-""}
-ACK_GENERATE_SERVICE_ACCOUNT_NAME=${ACK_GENERATE_SERVICE_ACCOUNT_NAME:-"ack-$SERVICE-controller"}
 
 DEFAULT_TEMPLATES_DIR="$ROOT_DIR/../../aws-controllers-k8s/code-generator/templates"
 TEMPLATES_DIR=${TEMPLATES_DIR:-$DEFAULT_TEMPLATES_DIR}
@@ -43,7 +42,6 @@ DEFAULT_RUNTIME_DIR="$ROOT_DIR/../runtime"
 RUNTIME_DIR=${RUNTIME_DIR:-$DEFAULT_RUNTIME_DIR}
 RUNTIME_API_VERSION=${RUNTIME_API_VERSION:-"v1alpha1"}
 NON_RELEASE_VERSION="v0.0.0-non-release-version"
-K8S_RBAC_ROLE_NAME=${K8S_RBAC_ROLE_NAME:-"ack-$SERVICE-controller"}
 
 USAGE="
 Usage:
@@ -82,14 +80,14 @@ Environment variables:
                                         Default: public.ecr.aws/aws-controllers-k8s/{SERVICE}-controller
   ACK_GENERATE_SERVICE_ACCOUNT_NAME:    Name of the Kubernetes Service Account and
                                         Cluster Role to use in Helm chart.
-                                        Default: $ACK_GENERATE_SERVICE_ACCOUNT_NAME
+                                        Default: ack-{SERVICE}-controller
   AWS_SDK_GO_VERSION:                   Overrides the version of github.com/aws/aws-sdk-go used
                                         by 'ack-generate' to fetch the service API Specifications.
                                         Default: Version of aws/aws-sdk-go in service go.mod
   K8S_RBAC_ROLE_NAME:                   Name of the Kubernetes Role to use when
                                         generating the RBAC manifests for the
                                         custom resource definitions.
-                                        Default: $K8S_RBAC_ROLE_NAME
+                                        Default: ack-{SERVICE}-controller
   RELEASE_VERSION:                      SemVer version tag for the release.
                                         Default: v0.0.0-non-release-version
 "
@@ -121,6 +119,9 @@ SERVICE=$(echo "$1" | tr '[:upper:]' '[:lower:]')
 # $GOPATH/src/github.com/aws-controllers-k8s/$AWS_SERVICE-controller/
 DEFAULT_SERVICE_CONTROLLER_SOURCE_PATH="$ROOT_DIR/../$SERVICE-controller"
 SERVICE_CONTROLLER_SOURCE_PATH=${SERVICE_CONTROLLER_SOURCE_PATH:-$DEFAULT_SERVICE_CONTROLLER_SOURCE_PATH}
+
+K8S_RBAC_ROLE_NAME=${K8S_RBAC_ROLE_NAME:-"ack-$SERVICE-controller"}
+ACK_GENERATE_SERVICE_ACCOUNT_NAME=${ACK_GENERATE_SERVICE_ACCOUNT_NAME:-"ack-$SERVICE-controller"}
 
 DEFAULT_IMAGE_REPOSITORY="public.ecr.aws/aws-controllers-k8s/$SERVICE-controller"
 ACK_GENERATE_IMAGE_REPOSITORY=${ACK_GENERATE_IMAGE_REPOSITORY:-"$DEFAULT_IMAGE_REPOSITORY"}
