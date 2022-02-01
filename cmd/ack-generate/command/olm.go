@@ -58,9 +58,6 @@ func init() {
 	olmCmd.PersistentFlags().BoolVar(
 		&optDisableCommonKeywords, "no-common-keywords", false, "does not include common keywords in the rendered cluster service version",
 	)
-	olmCmd.PersistentFlags().StringVar(
-		&optImageRepository, "image-repository", "", "the Docker image repository that stores the ACK service controller. Default: 'public.ecr.aws/aws-controllers-k8s/$service-controller'",
-	)
 
 	rootCmd.AddCommand(olmCmd)
 }

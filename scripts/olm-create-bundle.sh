@@ -9,7 +9,6 @@ SCRIPTS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 ROOT_DIR="$SCRIPTS_DIR/.."
 BUILD_DIR="$ROOT_DIR/build"
 DEFAULT_BUNDLE_CHANNEL="alpha"
-DEFAULT_SERVICE_CONTROLLER_CONTAINER_REPOSITORY="public.ecr.aws/aws-controllers-k8s"
 PRESERVE=${PRESERVE:-"false"}
 
 export DOCKER_BUILDKIT=${DOCKER_BUILDKIT:-1}
@@ -38,38 +37,33 @@ Usage:
 's3' 'sns' or 'sqs'. <version> should be the semver of the OLM bundle.
 
 Environment variables:
-  BUNDLE_DEFAULT_CHANNEL                    The default channel to publish the OLM bundle to.
-                                            Default: $DEFAULT_BUNDLE_CHANNEL
-  BUNDLE_VERSION                            The semantic version of the bundle should it need
-                                            to differ from the version of the controller which is
-                                            passed into the script. Optional. If unset, this
-                                            value will match that passed in by the user as the
-                                            <version> parameter (i.e. the controller version)
-  BUNDLE_CHANNELS                           A comma-separated list of channels the bundle belongs
-                                            to (e.g. \"alpha,beta\").
-                                            Default: $DEFAULT_BUNDLE_CHANNEL
-  BUNDLE_OUTPUT_PATH:                       Specify a path for the OLM bundle to output to.
-                                            Default: {SERVICE_CONTROLLER_SOURCE_PATH}/olm
-  AWS_SERVICE_DOCKER_IMG:                   Specify the docker image for the AWS service.
-                                            This should include the registry, namespace,
-                                            image name, and tag. Takes precedence over
-                                            SERVICE_CONTROLLER_CONTAINER_REPOSITORY
-  SERVICE_CONTROLLER_SOURCE_PATH:           Path to the service controller source code
-                                            repository.
-                                            Default: ../{SERVICE}-controller
-  SERVICE_CONTROLLER_CONTAINER_REPOSITORY   The container repository where the controller exists.
-                                            This should include the registry, namespace, and
-                                            image name.
-                                            Default: $DEFAULT_SERVICE_CONTROLLER_CONTAINER_REPOSITORY
-  TMP_DIR                                   Directory where kustomize assets will be temporarily
-                                            copied before they are modified and passed to bundle
-                                            generation logic.
-                                            Default: $BUILD_DIR/tmp-olm-{RANDOMSTRING}
-  PRESERVE:                                 Preserves modified kustomize configs for
-                                            inspection. (<true|false>)
-                                            Default: false
-  BUNDLE_GENERATE_EXTRA_ARGS                Extra arguments to pass into the command
-                                            'operator-sdk generate bundle'.
+  BUNDLE_DEFAULT_CHANNEL            The default channel to publish the OLM bundle to.
+                                    Default: $DEFAULT_BUNDLE_CHANNEL
+  BUNDLE_VERSION                    The semantic version of the bundle should it need
+                                    to differ from the version of the controller which is
+                                    passed into the script. Optional. If unset, this
+                                    value will match that passed in by the user as the
+                                    <version> parameter (i.e. the controller version)
+  BUNDLE_CHANNELS                   A comma-separated list of channels the bundle belongs
+                                    to (e.g. \"alpha,beta\").
+                                    Default: $DEFAULT_BUNDLE_CHANNEL
+  BUNDLE_OUTPUT_PATH:               Specify a path for the OLM bundle to output to.
+                                    Default: {SERVICE_CONTROLLER_SOURCE_PATH}/olm
+  ACK_GENERATE_IMAGE_REPOSITORY:    Specify a Docker image repository to use
+                                    for release artifacts
+                                    Default: public.ecr.aws/aws-controllers-k8s/{SERVICE}-controller
+  SERVICE_CONTROLLER_SOURCE_PATH:   Path to the service controller source code
+                                    repository.
+                                    Default: ../{SERVICE}-controller
+  TMP_DIR                           Directory where kustomize assets will be temporarily
+                                    copied before they are modified and passed to bundle
+                                    generation logic.
+                                    Default: $BUILD_DIR/tmp-olm-{RANDOMSTRING}
+  PRESERVE:                         Preserves modified kustomize configs for
+                                    inspection. (<true|false>)
+                                    Default: false
+  BUNDLE_GENERATE_EXTRA_ARGS        Extra arguments to pass into the command
+                                    'operator-sdk generate bundle'.
 "
 
 if [ $# -ne 2 ]; then
@@ -103,29 +97,11 @@ if [[ ! -d $SERVICE_CONTROLLER_SOURCE_PATH ]]; then
     exit 1
 fi
 
-# Set controller image.
-if [ -n "$AWS_SERVICE_DOCKER_IMG" ] && [ -n "$SERVICE_CONTROLLER_CONTAINER_REPOSITORY" ] ; then
-  # It's possible to set the repository (i.e. everything except the tag) as well as the
-  # entire path including the tag using AWS_SERVIC_DOCKER_IMG. If the latter is set, it
-  # will take precedence, so inform the user that this will happen in case the usage of
-  # each configurable is unclear before runtime. 
-  echo "both AWS_SERVICE_DOCKER_IMG and SERVICE_CONTROLLER_CONTAINER REPOSITORY are set."
-  echo "AWS_SERVICE_DOCKER_IMG is expected to be more complete and will take precedence."
-  echo "Ignoring SERVICE_CONTROLLER_CONTAINER_REPOSITORY."
-fi
-
-SERVICE_CONTROLLER_CONTAINER_REPOSITORY=${SERVICE_CONTROLLER_CONTAINER_REPOSITORY:-$DEFAULT_SERVICE_CONTROLLER_CONTAINER_REPOSITORY}
-DEFAULT_AWS_SERVICE_DOCKER_IMAGE="$SERVICE_CONTROLLER_CONTAINER_REPOSITORY/$SERVICE-controller:v$VERSION"
-AWS_SERVICE_DOCKER_IMG=${AWS_SERVICE_DOCKER_IMG:-$DEFAULT_AWS_SERVICE_DOCKER_IMAGE}
-
 trap "clean_up" EXIT
 
 # prepare the temporary config dir
 mkdir -p $TMP_DIR
 cp -a $SERVICE_CONTROLLER_SOURCE_PATH/config $TMP_DIR
-pushd $tmp_kustomize_config_dir/controller 1>/dev/null
-kustomize edit set image controller="$AWS_SERVICE_DOCKER_IMG"
-popd 1>/dev/null
 
 # remove crd/common from bases to prevent inclusion of AdoptedResource CRD from being generated in the bundle directory
 sed -i.orig '/^bases:$/d' $tmp_kustomize_config_dir/crd/kustomization.yaml
