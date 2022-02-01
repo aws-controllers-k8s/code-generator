@@ -125,6 +125,10 @@ func (frm *fakeRM) ResolveReferences(context.Context, rtclient.Reader, acktypes.
 	return nil, nil
 }
 
+func (frm *fakeRM) IsSynced(context.Context, acktypes.AWSResource) (bool, error) {
+	return true, nil
+}
+
 // This test is mostly just a hack to introduce a Go module dependency between
 // the ACK runtime library and the code generator. The code generator doesn't
 // actually depend on Go code in the ACK runtime, but it *produces* templated

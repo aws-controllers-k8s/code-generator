@@ -3,8 +3,8 @@ module github.com/aws-controllers-k8s/code-generator
 go 1.17
 
 require (
-	github.com/aws-controllers-k8s/runtime v0.16.3
-	github.com/aws/aws-sdk-go v1.37.10
+	github.com/aws-controllers-k8s/runtime v0.16.4
+	github.com/aws/aws-sdk-go v1.42.0
 	github.com/dlclark/regexp2 v1.4.0
 	// pin to v0.1.1 due to release problem with v0.1.2
 	github.com/gertd/go-pluralize v0.1.1
