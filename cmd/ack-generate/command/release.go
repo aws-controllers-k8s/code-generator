@@ -26,10 +26,7 @@ import (
 	ackmetadata "github.com/aws-controllers-k8s/code-generator/pkg/metadata"
 )
 
-var (
-	optReleaseOutputPath string
-	optImageRepository   string
-)
+var optReleaseOutputPath string
 
 var releaseCmd = &cobra.Command{
 	Use:   "release <service> <release_version>",
@@ -38,9 +35,6 @@ var releaseCmd = &cobra.Command{
 }
 
 func init() {
-	releaseCmd.PersistentFlags().StringVar(
-		&optImageRepository, "image-repository", "", "the Docker image repository to use in release artifacts. Defaults to 'public.ecr.aws/aws-controllers-k8s/$service-controller'",
-	)
 	releaseCmd.PersistentFlags().StringVarP(
 		&optReleaseOutputPath, "output", "o", "", "path to root directory to create generated files. Defaults to "+optServicesDir+"/$service",
 	)

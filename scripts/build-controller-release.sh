@@ -249,6 +249,9 @@ if [[ $ACK_GENERATE_OLM == "true" ]]; then
     if [ -n "$ACK_GENERATE_CONFIG_PATH" ]; then
         ag_olm_args="$ag_olm_args --generator-config-path $ACK_GENERATE_CONFIG_PATH"
     fi
+    if [ -n "$ACK_GENERATE_IMAGE_REPOSITORY" ]; then
+        ag_olm_args="$ag_olm_args --image-repository $ACK_GENERATE_IMAGE_REPOSITORY"
+    fi
 
     $ACK_GENERATE_BIN_PATH olm $ag_olm_args
     $SCRIPTS_DIR/olm-create-bundle.sh "$SERVICE" "$RELEASE_VERSION"

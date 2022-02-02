@@ -44,6 +44,7 @@ var (
 	optMetadataConfigPath  string
 	optOutputPath          string
 	optServiceAccountName  string
+	optImageRepository     string
 )
 
 var rootCmd = &cobra.Command{
@@ -124,6 +125,9 @@ func init() {
 	)
 	rootCmd.PersistentFlags().StringVar(
 		&optServiceAccountName, "service-account-name", "", "The name of the ServiceAccount used for ACK service controller",
+	)
+	rootCmd.PersistentFlags().StringVar(
+		&optImageRepository, "image-repository", "", "the Docker image repository to use in release artifacts. Defaults to 'public.ecr.aws/aws-controllers-k8s/$service-controller'",
 	)
 }
 
