@@ -308,6 +308,7 @@ func SetResource(
 					setCfg,
 					sourceAdaptedVarName,
 					sourceMemberShapeRef,
+					f.Names.Camel,
 					indentLevel+1,
 				)
 				out += setResourceForScalar(
@@ -578,6 +579,7 @@ func setResourceReadMany(
 					setCfg,
 					sourceAdaptedVarName,
 					sourceMemberShapeRef,
+					f.Names.Camel,
 					indentLevel+2,
 				)
 				out += setResourceForScalar(
@@ -1156,6 +1158,8 @@ func setResourceForContainer(
 	sourceVarName string,
 	// ShapeRef of the source struct field
 	sourceShapeRef *awssdkmodel.ShapeRef,
+	// currentPath is the absolute path to targetFieldName for nested fields
+	currentPath string,
 	indentLevel int,
 ) string {
 	switch sourceShapeRef.Shape.Type {
@@ -1168,6 +1172,7 @@ func setResourceForContainer(
 			targetSetCfg,
 			sourceVarName,
 			sourceShapeRef,
+			currentPath,
 			indentLevel,
 		)
 	case "list":
@@ -1179,6 +1184,7 @@ func setResourceForContainer(
 			targetSetCfg,
 			sourceVarName,
 			sourceShapeRef,
+			currentPath,
 			indentLevel,
 		)
 	case "map":
@@ -1190,6 +1196,7 @@ func setResourceForContainer(
 			targetSetCfg,
 			sourceVarName,
 			sourceShapeRef,
+			currentPath,
 			indentLevel,
 		)
 	default:
@@ -1219,6 +1226,8 @@ func SetResourceForStruct(
 	sourceVarName string,
 	// ShapeRef of the source struct field
 	sourceShapeRef *awssdkmodel.ShapeRef,
+	// currentPath is the absolute path to targetFieldName for nested fields
+	currentPath string,
 	indentLevel int,
 ) string {
 	out := ""
@@ -1259,6 +1268,7 @@ func SetResourceForStruct(
 					nil,
 					sourceAdaptedVarName,
 					memberShapeRef,
+					currentPath+"."+cleanNames.Camel,
 					indentLevel+1,
 				)
 				out += setResourceForScalar(
@@ -1300,6 +1310,8 @@ func setResourceForSlice(
 	sourceVarName string,
 	// ShapeRef of the source slice field
 	sourceShapeRef *awssdkmodel.ShapeRef,
+	// currentPath is the absolute path to targetFieldName for nested fields
+	currentPath string,
 	indentLevel int,
 ) string {
 	out := ""
@@ -1378,6 +1390,7 @@ func setResourceForSlice(
 			targetSetCfg,
 			iterVarName,
 			&sourceShape.MemberRef,
+			currentPath,
 			indentLevel+1,
 		)
 	}
@@ -1411,6 +1424,8 @@ func setResourceForMap(
 	sourceVarName string,
 	// ShapeRef of the source map field
 	sourceShapeRef *awssdkmodel.ShapeRef,
+	// currentPath is the absolute path to targetFieldName for nested fields
+	currentPath string,
 	indentLevel int,
 ) string {
 	out := ""
@@ -1443,6 +1458,7 @@ func setResourceForMap(
 		nil,
 		valIterVarName,
 		&sourceShape.ValueRef,
+		currentPath,
 		indentLevel+1,
 	)
 	addressOfVar := ""

@@ -114,7 +114,7 @@ var (
 			if setCfg != nil && setCfg.Ignore {
 				return ""
 			}
-			return code.SetResourceForStruct(r.Config(), r, targetFieldName, targetVarName, targetShapeRef, setCfg, sourceVarName, sourceShapeRef, indentLevel)
+			return code.SetResourceForStruct(r.Config(), r, targetFieldName, targetVarName, targetShapeRef, setCfg, sourceVarName, sourceShapeRef, "", indentLevel)
 		},
 		"GoCodeCompare": func(r *ackmodel.CRD, deltaVarName string, sourceVarName string, targetVarName string, indentLevel int) string {
 			return code.CompareResource(r.Config(), r, deltaVarName, sourceVarName, targetVarName, indentLevel)
