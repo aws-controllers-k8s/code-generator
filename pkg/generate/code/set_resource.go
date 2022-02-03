@@ -1238,6 +1238,29 @@ func SetResourceForStruct(
 	for memberIndex, memberName := range sourceShape.MemberNames() {
 		targetMemberShapeRef := targetShape.MemberRefs[memberName]
 		if targetMemberShapeRef == nil {
+			// This can happen when the targetShape is a primitive
+			// and the sourceShape is a struct like when EC2 resource DHCPOptions
+			// needs to set NewDhcpConfiguration.Values (targetShape = string) field from
+			// DhcpConfiguration.Values (sourceShape = AttributeValue). AttributeValue
+			// has a 'Value' member whereas the string shape does not. However,
+			// there is a possibility that the targetShape can be set from
+			// a different member within sourceShape using SetConfig.
+			if currentField, ok := r.Fields[currentPath]; ok {
+				setCfg := currentField.GetSetterConfig(model.OpTypeList)
+				if setCfg != nil && setCfg.From != nil {
+					// If the Field's SetConfig refers to a member in
+					// sourceShape, then update targetMemberShapeRef
+					// to the intended target, targetShape.
+					fp := fieldpath.FromString(*setCfg.From)
+					updatedSourceShapeRef := fp.ShapeRef(sourceShapeRef)
+					if updatedSourceShapeRef != nil && updatedSourceShapeRef.Shape != nil {
+						targetMemberShapeRef = targetShapeRef
+					}
+				}
+			}
+		}
+		if targetMemberShapeRef == nil {
+			// No member or SetConfig overrides
 			continue
 		}
 		memberVarName := fmt.Sprintf("%sf%d", targetVarName, memberIndex)
@@ -1251,6 +1274,7 @@ func SetResourceForStruct(
 		qualifiedTargetVar := fmt.Sprintf(
 			"%s.%s", targetVarName, cleanNames.Camel,
 		)
+
 		switch memberShape.Type {
 		case "list", "structure", "map":
 			{
@@ -1279,6 +1303,14 @@ func SetResourceForStruct(
 				)
 			}
 		default:
+			if _, found := targetShape.MemberRefs[memberName]; !found {
+				// This is only possible when a SetCfg is applied and
+				// targetShape is a primitive. tartgetShape has
+				// no members; therefore, remove the memberName from qualifiedTargetVar.
+				// Dereference sourceAdaptedVarName because primitives are being set.
+				qualifiedTargetVar = targetVarName
+				sourceAdaptedVarName = "*" + sourceAdaptedVarName
+			}
 			out += setResourceForScalar(
 				qualifiedTargetVar,
 				sourceAdaptedVarName,
