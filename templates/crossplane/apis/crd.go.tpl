@@ -18,9 +18,11 @@ import (
 
 // {{ .CRD.Kind }}Parameters defines the desired state of {{ .CRD.Kind }}
 type {{ .CRD.Kind }}Parameters struct {
+	{{- if ne .APIGroup "iam.aws.crossplane.io"  }}
 	// Region is which region the {{ .CRD.Kind }} will be created.
 	// +kubebuilder:validation:Required
 	Region string `json:"region"`
+	{{- end }}
 	{{- range $fieldName, $field := .CRD.SpecFields }}
 	{{- if $field.ShapeRef }}
 	{{ $field.ShapeRef.Documentation }}

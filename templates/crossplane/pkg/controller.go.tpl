@@ -44,7 +44,11 @@ func (c *connector) Connect(ctx context.Context, mg cpresource.Managed) (managed
 	if !ok {
 		return nil, errors.New(errUnexpectedObject)
 	}
+	{{- if ne .APIGroup "iam.aws.crossplane.io"  }}
 	sess, err := awsclient.GetConfigV1(ctx, c.kube, mg, cr.Spec.ForProvider.Region)
+	{{- else }}
+	sess, err := awsclient.GetConfigV1(ctx, c.kube, mg, awsclient.GlobalRegion)
+	{{- end }}
 	if err != nil {
 		return nil, errors.Wrap(err, errCreateSession)
 	}
