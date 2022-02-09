@@ -25,6 +25,7 @@ func (rm *resourceManager) sdkFind(
 {{ $hookCode }}
 {{- end }}
 	var resp {{ .CRD.GetOutputShapeGoType .CRD.Ops.GetAttributes }}
+    _ = resp
 	resp, err = rm.sdkapi.{{ .CRD.Ops.GetAttributes.ExportedName }}WithContext(ctx, input)
 {{- if $hookCode := Hook .CRD "sdk_get_attributes_post_request" }}
 {{ $hookCode }}
