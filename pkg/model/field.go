@@ -149,6 +149,35 @@ func (f *Field) GetReferenceFieldName() names.Names {
 	return names.New(refName)
 }
 
+// ReferencedServiceName returns the serviceName for the referenced resource
+// when the field has 'ReferencesConfig'
+// If the field does not have 'ReferencesConfig', empty string is returned
+func (f *Field) ReferencedServiceName() (referencedServiceName string) {
+	if f.FieldConfig != nil && f.FieldConfig.References != nil {
+		if f.FieldConfig.References.ServiceName != "" {
+			return f.FieldConfig.References.ServiceName
+		} else {
+			return f.CRD.sdkAPI.API.PackageName()
+		}
+	}
+	return referencedServiceName
+}
+
+// ReferencedResourceNamePlural returns the plural of referenced resource
+// when the field has a 'ReferencesConfig'
+// If the field does not have 'ReferencesConfig', empty string is returned
+func (f *Field) ReferencedResourceNamePlural() string {
+	var referencedResourceName string
+	pluralize := pluralize.NewClient()
+	if f.FieldConfig != nil && f.FieldConfig.References != nil {
+		referencedResourceName = f.FieldConfig.References.Resource
+	}
+	if referencedResourceName != "" {
+		return pluralize.Plural(referencedResourceName)
+	}
+	return referencedResourceName
+}
+
 // NewReferenceField returns a pointer to a new Field object.
 // The go-type of field is either slice of '*AWSResourceReferenceWrapper' or
 // '*AWSResourceReferenceWrapper' depending on whether 'shapeRef' parameter

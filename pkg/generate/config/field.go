@@ -284,6 +284,12 @@ type LateInitializeConfig struct {
 // read the referred 'API' resource and copy the value from 'Status.APIID' in
 // 'Integration' resource's 'APIID' field
 type ReferencesConfig struct {
+	// ServiceName mentions the AWS service name where 'Resource' exists
+	// ServiceName is the package name for AWS service package in
+	// aws-sdk-go/models/apis/<package_name>
+	// When not specified, 'ServiceName' defaults to service name of controller
+	// which contains generator.yaml
+	ServiceName string `json:"service_name,omitempty"`
 	// Resource mentions the K8s resource which is read to resolve the
 	// reference
 	Resource string `json:"resource"`

@@ -12,7 +12,11 @@ Where field is of type 'Field' from aws-controllers-k8s/code-generator/pkg/model
 				Namespace: namespace,
 				Name: *arr.Name,
 			}
+			{{ if eq .FieldConfig.References.ServiceName "" -}}
 			obj := svcapitypes.{{ .FieldConfig.References.Resource }}{}
+			{{ else -}}
+			obj := {{ .ReferencedServiceName }}apitypes.{{ .FieldConfig.References.Resource }}{}
+			{{ end -}}
 			err := apiReader.Get(ctx, namespacedName, &obj)
 			if err != nil {
 				return err
