@@ -1226,14 +1226,20 @@ func SetResourceForStruct(
 	sourceShape := sourceShapeRef.Shape
 	targetShape := targetShapeRef.Shape
 
-	for targetMemberIndex, targetMemberName := range targetShape.MemberNames() {
+	for _, targetMemberName := range targetShape.MemberNames() {
 		sourceMemberShapeRef := sourceShape.MemberRefs[targetMemberName]
 		if sourceMemberShapeRef == nil {
 			continue
 		}
+		// Upstream logic iterates over sourceShape members and therefore uses
+		// the sourceShape's index; continue using sourceShape's index here for consistency.
+		sourceMemberIndex, err := GetMemberIndex(sourceShape, targetMemberName)
+		if err != nil {
+			continue
+		}
 
 		targetMemberShapeRef := targetShape.MemberRefs[targetMemberName]
-		indexedVarName := fmt.Sprintf("%sf%d", targetVarName, targetMemberIndex)
+		indexedVarName := fmt.Sprintf("%sf%d", targetVarName, sourceMemberIndex)
 		sourceMemberShape := sourceMemberShapeRef.Shape
 		targetMemberCleanNames := names.New(targetMemberName)
 		sourceAdaptedVarName := sourceVarName + "." + targetMemberName

@@ -193,9 +193,9 @@ func FindPrimaryIdentifierFieldNames(
 // GetMemberIndex returns the index of memberName by iterating over
 // shape's slice of member names for deterministic ordering
 func GetMemberIndex(shape *awssdkmodel.Shape, memberName string) (int, error) {
-	for sourceIndex, sourceMemberName := range shape.MemberNames() {
-		if strings.EqualFold(sourceMemberName, memberName) {
-			return sourceIndex, nil
+	for index, shapeMemberName := range shape.MemberNames() {
+		if strings.EqualFold(shapeMemberName, memberName) {
+			return index, nil
 		}
 	}
 	return -1, fmt.Errorf("Could not find %s in shape %s", memberName, shape.ShapeName)
