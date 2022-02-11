@@ -14,6 +14,7 @@
 package code
 
 import (
+	"fmt"
 	"strings"
 
 	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
@@ -187,4 +188,15 @@ func FindPrimaryIdentifierFieldNames(
 		)
 	}
 	return crField, shapeField
+}
+
+// GetMemberIndex returns the index of memberName by iterating over
+// shape's slice of member names for deterministic ordering
+func GetMemberIndex(shape *awssdkmodel.Shape, memberName string) (int, error) {
+	for sourceIndex, sourceMemberName := range shape.MemberNames() {
+		if strings.EqualFold(sourceMemberName, memberName) {
+			return sourceIndex, nil
+		}
+	}
+	return -1, fmt.Errorf("Could not find %s in shape %s", memberName, shape.ShapeName)
 }
