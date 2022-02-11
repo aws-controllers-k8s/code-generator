@@ -1235,7 +1235,9 @@ func SetResourceForStruct(
 		// the sourceShape's index; continue using sourceShape's index here for consistency.
 		sourceMemberIndex, err := GetMemberIndex(sourceShape, targetMemberName)
 		if err != nil {
-			continue
+			msg := fmt.Sprintf(
+				"could not determine source shape index: %v", err)
+			panic(msg)
 		}
 
 		targetMemberShapeRef := targetShape.MemberRefs[targetMemberName]
