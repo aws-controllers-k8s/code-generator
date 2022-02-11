@@ -177,3 +177,26 @@ func TestFindPluralizedIdentifiersInShape_EC2_SG_ReadMany_Rename(t *testing.T) {
 	assert.Equal(expModelIdentifier, crIdentifier)
 	assert.Equal(expShapeIdentifier, shapeIdentifier)
 }
+
+func TestGetMemberIndex_EC2_DHCPOptions_ReadMany(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "ec2")
+
+	crd := testutil.GetCRDByName(t, g, "DhcpOptions")
+	require.NotNil(crd)
+
+	op := crd.Ops.ReadMany
+	inputShape := op.InputRef.Shape
+	// inputShape members: [DhcpOptionsIds DryRun Filters MaxResults NextToken]
+
+	memberIndex, _ := code.GetMemberIndex(inputShape, "DhcpOptionsIds")
+	assert.Equal(0, memberIndex)
+	memberIndex, _ = code.GetMemberIndex(inputShape, "MaxResults")
+	assert.Equal(3, memberIndex)
+
+	memberIndex, err := code.GetMemberIndex(inputShape, "notValidMember")
+	assert.Equal(-1, memberIndex)
+	assert.NotNil(err)
+}

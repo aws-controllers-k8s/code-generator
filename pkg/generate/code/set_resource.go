@@ -1226,45 +1226,55 @@ func SetResourceForStruct(
 	sourceShape := sourceShapeRef.Shape
 	targetShape := targetShapeRef.Shape
 
-	for memberIndex, memberName := range sourceShape.MemberNames() {
-		targetMemberShapeRef := targetShape.MemberRefs[memberName]
-		if targetMemberShapeRef == nil {
+	for _, targetMemberName := range targetShape.MemberNames() {
+		sourceMemberShapeRef := sourceShape.MemberRefs[targetMemberName]
+		if sourceMemberShapeRef == nil {
 			continue
 		}
-		memberVarName := fmt.Sprintf("%sf%d", targetVarName, memberIndex)
-		memberShapeRef := sourceShape.MemberRefs[memberName]
-		memberShape := memberShapeRef.Shape
-		cleanNames := names.New(memberName)
-		sourceAdaptedVarName := sourceVarName + "." + memberName
+		// Upstream logic iterates over sourceShape members and therefore uses
+		// the sourceShape's index; continue using sourceShape's index here for consistency.
+		sourceMemberIndex, err := GetMemberIndex(sourceShape, targetMemberName)
+		if err != nil {
+			msg := fmt.Sprintf(
+				"could not determine source shape index: %v", err)
+			panic(msg)
+		}
+
+		targetMemberShapeRef := targetShape.MemberRefs[targetMemberName]
+		indexedVarName := fmt.Sprintf("%sf%d", targetVarName, sourceMemberIndex)
+		sourceMemberShape := sourceMemberShapeRef.Shape
+		targetMemberCleanNames := names.New(targetMemberName)
+		sourceAdaptedVarName := sourceVarName + "." + targetMemberName
 		out += fmt.Sprintf(
 			"%sif %s != nil {\n", indent, sourceAdaptedVarName,
 		)
 		qualifiedTargetVar := fmt.Sprintf(
-			"%s.%s", targetVarName, cleanNames.Camel,
+			"%s.%s", targetVarName, targetMemberCleanNames.Camel,
 		)
-		switch memberShape.Type {
+
+		switch sourceMemberShape.Type {
 		case "list", "structure", "map":
 			{
 				out += varEmptyConstructorK8sType(
 					cfg, r,
-					memberVarName,
+					indexedVarName,
 					targetMemberShapeRef.Shape,
 					indentLevel+1,
 				)
 				out += setResourceForContainer(
 					cfg, r,
-					cleanNames.Camel,
-					memberVarName,
+					targetMemberCleanNames.Camel,
+					indexedVarName,
 					targetMemberShapeRef,
 					nil,
 					sourceAdaptedVarName,
-					memberShapeRef,
+					sourceMemberShapeRef,
 					indentLevel+1,
 				)
 				out += setResourceForScalar(
 					qualifiedTargetVar,
-					memberVarName,
-					memberShapeRef,
+					indexedVarName,
+					sourceMemberShapeRef,
 					indentLevel+1,
 				)
 			}
@@ -1272,7 +1282,7 @@ func SetResourceForStruct(
 			out += setResourceForScalar(
 				qualifiedTargetVar,
 				sourceAdaptedVarName,
-				memberShapeRef,
+				sourceMemberShapeRef,
 				indentLevel+1,
 			)
 		}
