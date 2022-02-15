@@ -308,6 +308,8 @@ func SetResource(
 					setCfg,
 					sourceAdaptedVarName,
 					sourceMemberShapeRef,
+					f.Names.Camel,
+					opType,
 					indentLevel+1,
 				)
 				out += setResourceForScalar(
@@ -578,6 +580,8 @@ func setResourceReadMany(
 					setCfg,
 					sourceAdaptedVarName,
 					sourceMemberShapeRef,
+					f.Names.Camel,
+					model.OpTypeList,
 					indentLevel+2,
 				)
 				out += setResourceForScalar(
@@ -1156,6 +1160,9 @@ func setResourceForContainer(
 	sourceVarName string,
 	// ShapeRef of the source struct field
 	sourceShapeRef *awssdkmodel.ShapeRef,
+	// targetFieldPath is the absolute path for the target containing field
+	targetFieldPath string,
+	op model.OpType,
 	indentLevel int,
 ) string {
 	switch sourceShapeRef.Shape.Type {
@@ -1168,6 +1175,8 @@ func setResourceForContainer(
 			targetSetCfg,
 			sourceVarName,
 			sourceShapeRef,
+			targetFieldPath,
+			op,
 			indentLevel,
 		)
 	case "list":
@@ -1179,6 +1188,8 @@ func setResourceForContainer(
 			targetSetCfg,
 			sourceVarName,
 			sourceShapeRef,
+			targetFieldPath,
+			op,
 			indentLevel,
 		)
 	case "map":
@@ -1190,6 +1201,8 @@ func setResourceForContainer(
 			targetSetCfg,
 			sourceVarName,
 			sourceShapeRef,
+			targetFieldPath,
+			op,
 			indentLevel,
 		)
 	default:
@@ -1219,6 +1232,9 @@ func SetResourceForStruct(
 	sourceVarName string,
 	// ShapeRef of the source struct field
 	sourceShapeRef *awssdkmodel.ShapeRef,
+	// targetFieldPath is the absolute path to targetFieldName
+	targetFieldPath string,
+	op model.OpType,
 	indentLevel int,
 ) string {
 	out := ""
@@ -1251,6 +1267,7 @@ func SetResourceForStruct(
 		qualifiedTargetVar := fmt.Sprintf(
 			"%s.%s", targetVarName, targetMemberCleanNames.Camel,
 		)
+		updatedTargetFieldPath := targetFieldPath + "." + targetMemberCleanNames.Camel
 
 		switch sourceMemberShape.Type {
 		case "list", "structure", "map":
@@ -1269,6 +1286,8 @@ func SetResourceForStruct(
 					nil,
 					sourceAdaptedVarName,
 					sourceMemberShapeRef,
+					updatedTargetFieldPath,
+					op,
 					indentLevel+1,
 				)
 				out += setResourceForScalar(
@@ -1310,6 +1329,9 @@ func setResourceForSlice(
 	sourceVarName string,
 	// ShapeRef of the source slice field
 	sourceShapeRef *awssdkmodel.ShapeRef,
+	// targetFieldPath is the absolute path to targetFieldName
+	targetFieldPath string,
+	op model.OpType,
 	indentLevel int,
 ) string {
 	out := ""
@@ -1388,6 +1410,8 @@ func setResourceForSlice(
 			targetSetCfg,
 			iterVarName,
 			&sourceShape.MemberRef,
+			targetFieldPath,
+			op,
 			indentLevel+1,
 		)
 	}
@@ -1421,6 +1445,9 @@ func setResourceForMap(
 	sourceVarName string,
 	// ShapeRef of the source map field
 	sourceShapeRef *awssdkmodel.ShapeRef,
+	// targetFieldPath is the absolute path to targetFieldName
+	targetFieldPath string,
+	op model.OpType,
 	indentLevel int,
 ) string {
 	out := ""
@@ -1453,6 +1480,8 @@ func setResourceForMap(
 		nil,
 		valIterVarName,
 		&sourceShape.ValueRef,
+		targetFieldPath,
+		op,
 		indentLevel+1,
 	)
 	addressOfVar := ""
