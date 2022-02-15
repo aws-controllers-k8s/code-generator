@@ -1242,8 +1242,11 @@ func SetResourceForStruct(
 	sourceShape := sourceShapeRef.Shape
 	targetShape := targetShapeRef.Shape
 
+	var sourceMemberShapeRef *awssdkmodel.ShapeRef
+	var sourceAdaptedVarName, qualifiedTargetVar string
+
 	for _, targetMemberName := range targetShape.MemberNames() {
-		sourceMemberShapeRef := sourceShape.MemberRefs[targetMemberName]
+		sourceMemberShapeRef = sourceShape.MemberRefs[targetMemberName]
 		if sourceMemberShapeRef == nil {
 			continue
 		}
@@ -1260,11 +1263,11 @@ func SetResourceForStruct(
 		indexedVarName := fmt.Sprintf("%sf%d", targetVarName, sourceMemberIndex)
 		sourceMemberShape := sourceMemberShapeRef.Shape
 		targetMemberCleanNames := names.New(targetMemberName)
-		sourceAdaptedVarName := sourceVarName + "." + targetMemberName
+		sourceAdaptedVarName = sourceVarName + "." + targetMemberName
 		out += fmt.Sprintf(
 			"%sif %s != nil {\n", indent, sourceAdaptedVarName,
 		)
-		qualifiedTargetVar := fmt.Sprintf(
+		qualifiedTargetVar = fmt.Sprintf(
 			"%s.%s", targetVarName, targetMemberCleanNames.Camel,
 		)
 		updatedTargetFieldPath := targetFieldPath + "." + targetMemberCleanNames.Camel
@@ -1308,6 +1311,52 @@ func SetResourceForStruct(
 		out += fmt.Sprintf(
 			"%s}\n", indent,
 		)
+	}
+	if len(targetShape.MemberNames()) == 0 {
+		// This scenario can occur when the targetShape is a primitive, but
+		// the sourceShape is a struct. For example, EC2 resource DHCPOptions
+		// has a field NewDhcpConfiguration.Values(targetShape = string) whose name
+		// aligns with DhcpConfiguration.Values(sourceShape = AttributeValue).
+		// Although the names correspond, the shapes/types are different and the intent
+		// is to set NewDhcpConfiguration.Values using DhcpConfiguration.Values.Value
+		// (AttributeValue.Value) shape instead. This behavior can be configured using
+		// SetConfig.
+
+		// Check if target field has a SetConfig, validate SetConfig.From points
+		// to a shape within sourceShape, and generate Go code using
+		// said shape. Using the example above, SetConfig is set
+		// for NewDhcpConfiguration.Values and Setconfig.From points
+		// to AttributeValue.Value (string), which leads to generating Go
+		// code referencing DhcpConfiguration.Values.Value instead of 'Values'.
+
+		if targetField, ok := r.Fields[targetFieldPath]; ok {
+			setCfg := targetField.GetSetterConfig(model.OpTypeList)
+			if setCfg != nil && setCfg.From != nil {
+				fp := fieldpath.FromString(*setCfg.From)
+				sourceMemberShapeRef = fp.ShapeRef(sourceShapeRef)
+				if sourceMemberShapeRef != nil && sourceMemberShapeRef.Shape != nil {
+					names := names.New(sourceMemberShapeRef.LocationName)
+					sourceAdaptedVarName = sourceVarName + "." + names.Camel
+					out += fmt.Sprintf(
+						"%sif %s != nil {\n", indent, sourceAdaptedVarName,
+					)
+					qualifiedTargetVar = targetVarName
+
+					// Use setResourceForScalar and dereference sourceAdaptedVarName
+					// because primitives are being set.
+					sourceAdaptedVarName = "*" + sourceAdaptedVarName
+					out += setResourceForScalar(
+						qualifiedTargetVar,
+						sourceAdaptedVarName,
+						sourceMemberShapeRef,
+						indentLevel+1,
+					)
+					out += fmt.Sprintf(
+						"%s}\n", indent,
+					)
+				}
+			}
+		}
 	}
 	return out
 }
