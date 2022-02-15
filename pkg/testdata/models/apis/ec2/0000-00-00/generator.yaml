@@ -68,8 +68,11 @@ operations:
     output_wrapper_field_path: VpcEndpoint
 
 resources:
-  DHCPOptions:
-
+  DhcpOptions:
+    fields:
+      DHCPConfigurations.Values:
+        set:
+          - from: AttributeValue.Value
   SecurityGroup:
     renames:
       operations:

@@ -1160,7 +1160,7 @@ func setResourceForContainer(
 	sourceVarName string,
 	// ShapeRef of the source struct field
 	sourceShapeRef *awssdkmodel.ShapeRef,
-	// targetFieldPath is the absolute path for the target containing field
+	// targetFieldPath is the field path for the target containing field
 	targetFieldPath string,
 	op model.OpType,
 	indentLevel int,
@@ -1232,7 +1232,7 @@ func SetResourceForStruct(
 	sourceVarName string,
 	// ShapeRef of the source struct field
 	sourceShapeRef *awssdkmodel.ShapeRef,
-	// targetFieldPath is the absolute path to targetFieldName
+	// targetFieldPath is the field path to targetFieldName
 	targetFieldPath string,
 	op model.OpType,
 	indentLevel int,
@@ -1330,7 +1330,7 @@ func SetResourceForStruct(
 		// code referencing DhcpConfiguration.Values.Value instead of 'Values'.
 
 		if targetField, ok := r.Fields[targetFieldPath]; ok {
-			setCfg := targetField.GetSetterConfig(model.OpTypeList)
+			setCfg := targetField.GetSetterConfig(op)
 			if setCfg != nil && setCfg.From != nil {
 				fp := fieldpath.FromString(*setCfg.From)
 				sourceMemberShapeRef = fp.ShapeRef(sourceShapeRef)
@@ -1378,7 +1378,7 @@ func setResourceForSlice(
 	sourceVarName string,
 	// ShapeRef of the source slice field
 	sourceShapeRef *awssdkmodel.ShapeRef,
-	// targetFieldPath is the absolute path to targetFieldName
+	// targetFieldPath is the field path to targetFieldName
 	targetFieldPath string,
 	op model.OpType,
 	indentLevel int,
@@ -1494,7 +1494,7 @@ func setResourceForMap(
 	sourceVarName string,
 	// ShapeRef of the source map field
 	sourceShapeRef *awssdkmodel.ShapeRef,
-	// targetFieldPath is the absolute path to targetFieldName
+	// targetFieldPath is the field path to targetFieldName
 	targetFieldPath string,
 	op model.OpType,
 	indentLevel int,
