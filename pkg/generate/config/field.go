@@ -284,9 +284,15 @@ type LateInitializeConfig struct {
 // read the referred 'API' resource and copy the value from 'Status.APIID' in
 // 'Integration' resource's 'APIID' field
 type ReferencesConfig struct {
-	// ServiceName mentions the AWS service name where 'Resource' exists
-	// ServiceName is the package name for AWS service package in
-	// aws-sdk-go/models/apis/<package_name>
+	// ServiceName mentions the AWS service name where "Resource" exists.
+	// This field is used to generate the API Group for the "Resource".
+	//
+	// ServiceName is the go package name for AWS service in
+	// aws-sdk-go/service/<package_name>/api.go
+	// Ex: Use "opensearchservice" to refer "Domain" resource from
+	// opensearchservice-controller because it is the go package name for
+	// "aws-sdk-go/service/opensearchservice/api.go"
+	//
 	// When not specified, 'ServiceName' defaults to service name of controller
 	// which contains generator.yaml
 	ServiceName string `json:"service_name,omitempty"`
