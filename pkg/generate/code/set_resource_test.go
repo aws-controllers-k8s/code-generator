@@ -3169,3 +3169,75 @@ func TestSetResource_IAM_Role_NestedSetConfig(t *testing.T) {
 		code.SetResource(crd.Config(), crd, model.OpTypeGet, "resp", "ko", 1),
 	)
 }
+
+func TestSetResource_EC2_DHCPOptions_NestedSetConfig(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "ec2")
+
+	crd := testutil.GetCRDByName(t, g, "DhcpOptions")
+	require.NotNil(crd)
+
+	// The input and output shapes for the DhcpConfigurations.Values are different
+	// and we have a custom SetConfig for this field in our generator.yaml file
+	// to configure the SetResource function to set the value of the resource's
+	// (nested) Spec.DHCPConfigurations.Values to the value of the (nested)
+	// GetDhcpOptionsResponse.DhcpOptions.DhcpConfigurations.Values.Value field
+	expected := `
+	if resp.DhcpOptions.DhcpConfigurations != nil {
+		f0 := []*svcapitypes.NewDHCPConfiguration{}
+		for _, f0iter := range resp.DhcpOptions.DhcpConfigurations {
+			f0elem := &svcapitypes.NewDHCPConfiguration{}
+			if f0iter.Key != nil {
+				f0elem.Key = f0iter.Key
+			}
+			if f0iter.Values != nil {
+				f0elemf1 := []*string{}
+				for _, f0elemf1iter := range f0iter.Values {
+					var f0elemf1elem string
+					if f0elemf1iter.Value != nil {
+						f0elemf1elem = *f0elemf1iter.Value
+					}
+					f0elemf1 = append(f0elemf1, &f0elemf1elem)
+				}
+				f0elem.Values = f0elemf1
+			}
+			f0 = append(f0, f0elem)
+		}
+		ko.Spec.DHCPConfigurations = f0
+	} else {
+		ko.Spec.DHCPConfigurations = nil
+	}
+	if resp.DhcpOptions.DhcpOptionsId != nil {
+		ko.Status.DHCPOptionsID = resp.DhcpOptions.DhcpOptionsId
+	} else {
+		ko.Status.DHCPOptionsID = nil
+	}
+	if resp.DhcpOptions.OwnerId != nil {
+		ko.Status.OwnerID = resp.DhcpOptions.OwnerId
+	} else {
+		ko.Status.OwnerID = nil
+	}
+	if resp.DhcpOptions.Tags != nil {
+		f3 := []*svcapitypes.Tag{}
+		for _, f3iter := range resp.DhcpOptions.Tags {
+			f3elem := &svcapitypes.Tag{}
+			if f3iter.Key != nil {
+				f3elem.Key = f3iter.Key
+			}
+			if f3iter.Value != nil {
+				f3elem.Value = f3iter.Value
+			}
+			f3 = append(f3, f3elem)
+		}
+		ko.Status.Tags = f3
+	} else {
+		ko.Status.Tags = nil
+	}
+`
+	assert.Equal(
+		expected,
+		code.SetResource(crd.Config(), crd, model.OpTypeCreate, "resp", "ko", 1),
+	)
+}
