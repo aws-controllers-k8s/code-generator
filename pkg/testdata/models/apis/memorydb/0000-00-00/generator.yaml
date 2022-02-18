@@ -1,0 +1,18 @@
+ignore:
+  resource_names:
+    - Snapshot
+    - ACL
+    - Cluster
+    - SubnetGroup
+    - ParameterGroup
+resources:
+  User:
+    exceptions:
+      terminal_codes:
+        - InvalidParameterValueException
+        - UserAlreadyExistsFault
+    fields:
+      AuthenticationMode.Passwords:
+        is_secret: true
+        compare:
+          is_ignored: true
