@@ -61,6 +61,8 @@ code paths:
 * delta_post_compare
 * late_initialize_pre_read_one
 * late_initialize_post_read_one
+* pre_resolve_references
+* post_resolve_references
 
 The "pre_build_request" hooks are called BEFORE the call to construct
 the Input shape that is used in the API operation and therefore BEFORE
@@ -110,6 +112,13 @@ readOne call inside AWSResourceManager.LateInitialize() method
 The "late_initialize_post_read_one" hooks are called AFTER making the
 readOne call inside AWSResourceManager.LateInitialize() method
 
+The "pre_resolve_references" hooks are called BEFORE resolving the
+references for all Reference fields inside AWSResourceManager.ResolveReferences()
+method
+
+The "post_resolve_references" hooks are called AFTER resolving the
+references for all Reference fields inside AWSResourceManager.ResolveReferences()
+method
 */
 
 // ResourceHookCode returns a string with custom callback code for a resource
