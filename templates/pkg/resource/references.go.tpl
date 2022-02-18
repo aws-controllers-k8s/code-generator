@@ -40,7 +40,7 @@ func (rm *resourceManager) ResolveReferences(
 	namespace := res.MetaObject().GetNamespace()
 	ko := rm.concreteResource(res).ko.DeepCopy()
 	err := validateReferenceFields(ko)
-{{- if $hookCode := Hook .CRD "pre_resolve_references" }}
+{{- if $hookCode := Hook .CRD "references_pre_resolve" }}
 {{ $hookCode }}
 {{- end }}
 	{{ range $fieldName, $field := .CRD.Fields -}}
@@ -50,7 +50,7 @@ func (rm *resourceManager) ResolveReferences(
 	}
 	{{ end -}}
 	{{ end -}}
-{{- if $hookCode := Hook .CRD "post_resolve_references" }}
+{{- if $hookCode := Hook .CRD "references_post_resolve" }}
 {{ $hookCode }}
 {{- end }}
 	if hasNonNilReferences(ko) {
