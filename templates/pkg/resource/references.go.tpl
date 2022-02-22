@@ -18,7 +18,6 @@ import (
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 {{ end -}}
 	acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
-	svcapitypes "github.com/aws-controllers-k8s/{{ .ServicePackageName }}-controller/apis/{{ .APIVersion }}"
 {{ $servicePackageName := .ServicePackageName -}}
 {{ $apiVersion := .APIVersion -}}
 {{ if .CRD.HasReferenceFields -}}
@@ -28,6 +27,8 @@ import (
 {{ end -}}
 {{ end -}}
 {{ end -}}
+
+	svcapitypes "github.com/aws-controllers-k8s/{{ .ServicePackageName }}-controller/apis/{{ .APIVersion }}"
 )
 
 {{ if .CRD.HasReferenceFields -}}
