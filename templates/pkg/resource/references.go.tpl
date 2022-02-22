@@ -18,9 +18,28 @@ import (
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 {{ end -}}
 	acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
+{{ $servicePackageName := .ServicePackageName -}}
+{{ $apiVersion := .APIVersion -}}
+{{ if .CRD.HasReferenceFields -}}
+{{ range $fieldName, $field := .CRD.Fields -}}
+{{ if and $field.HasReference (not (eq $field.ReferencedServiceName $servicePackageName)) -}}
+    {{ $field.ReferencedServiceName }}apitypes "github.com/aws-controllers-k8s/{{ $field.ReferencedServiceName }}-controller/apis/{{ $apiVersion }}"
+{{ end -}}
+{{ end -}}
+{{ end -}}
 
 	svcapitypes "github.com/aws-controllers-k8s/{{ .ServicePackageName }}-controller/apis/{{ .APIVersion }}"
 )
+
+{{ if .CRD.HasReferenceFields -}}
+{{ range $fieldName, $field := .CRD.Fields -}}
+{{ if and $field.HasReference (not (eq $field.ReferencedServiceName $servicePackageName)) -}}
+// +kubebuilder:rbac:groups={{ $field.ReferencedServiceName -}}.services.k8s.aws,resources={{ ToLower $field.ReferencedResourceNamePlural }},verbs=get;list
+// +kubebuilder:rbac:groups={{ $field.ReferencedServiceName -}}.services.k8s.aws,resources={{ ToLower $field.ReferencedResourceNamePlural }}/status,verbs=get;list
+
+{{ end -}}
+{{ end -}}
+{{ end -}}
 
 // ResolveReferences finds if there are any Reference field(s) present
 // inside AWSResource passed in the parameter and attempts to resolve
