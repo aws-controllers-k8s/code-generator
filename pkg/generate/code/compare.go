@@ -562,7 +562,9 @@ func CompareStruct(
 		secondResAdaptedVarName := secondResVarName + "." + memberNameClean
 
 		var compareConfig *ackgenconfig.CompareFieldConfig
-		fieldConfig := fieldConfigs[memberFieldPath]
+		// memberFieldPath contains the field path along with the prefix cfg.PrefixConfig.SpecField + "." hence we
+		// would need to substring to exclude cfg.PrefixConfig.SpecField + "." to get correct field config.
+		fieldConfig := fieldConfigs[memberFieldPath[len(cfg.PrefixConfig.SpecField) + 1 :len(memberFieldPath)]]
 		if fieldConfig != nil {
 			compareConfig = fieldConfig.Compare
 		}

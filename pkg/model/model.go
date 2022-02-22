@@ -541,7 +541,7 @@ func replaceSecretAttrGoType(
 		)
 		panic(msg)
 	}
-	attr.GoType = "*ackv1alpha1.SecretKeyReference"
+	attr.GoType = field.GoType
 }
 
 // processFields is responsible for walking all of the CRDs' Spec and
