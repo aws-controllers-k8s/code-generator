@@ -17,9 +17,11 @@ GO_LDFLAGS=-ldflags "-X $(IMPORT_PATH)/pkg/version.Version=$(VERSION) \
 # We need to use the codegen tag when building and testing because the
 # aws-sdk-go/private/model/api package is gated behind a build tag "codegen"...
 GO_TAGS=-tags codegen
+GO_LOCAL_TAGS=-modfile=go.local.mod $(GO_TAGS)
 
-.PHONY: all build-ack-generate build-controller test \
-	build-controller-image local-build-controller-image
+.PHONY: all local-build-ack-generate build-ack-generate local-build-controller \
+	build-controller test local-test build-controller-image \
+	local-build-controller-image
 
 all: test
 
@@ -28,12 +30,19 @@ build-ack-generate:	## Build ack-generate binary
 	@go build ${GO_TAGS} ${GO_LDFLAGS} -o bin/ack-generate cmd/ack-generate/main.go
 	@echo "ok."
 
+local-build-ack-generate:	## Build ack-generate binary using the local go.mod
+	@echo -n "building ack-generate ... "
+	@go build ${GO_LOCAL_TAGS} ${GO_LDFLAGS} -o bin/ack-generate cmd/ack-generate/main.go
+	@echo "ok."
+
 build-controller: build-ack-generate ## Generate controller code for SERVICE
 	@./scripts/install-controller-gen.sh
 	@echo "==== building $(AWS_SERVICE)-controller ===="
 	@./scripts/build-controller.sh $(AWS_SERVICE)
 	@echo "==== building $(AWS_SERVICE)-controller release artifacts ===="
 	@./scripts/build-controller-release.sh $(AWS_SERVICE)
+
+local-build-controller: local-build-ack-generate build-controller ## Generate controller code for SERVICE using the local go.mod
 
 build-controller-image: export LOCAL_MODULES = false
 build-controller-image:	## Build container image for SERVICE
@@ -48,6 +57,9 @@ check-versions: ## Checks the code-generator version matches the runtime depende
 
 test: 				## Run code tests
 	go test ${GO_TAGS} ./...
+
+local-test:			## Run code tests using the local go.mod
+	go test ${GO_LOCAL_TAGS} ./...
 
 help:           	## Show this help.
 	@grep -F -h "##" $(MAKEFILE_LIST) | grep -F -v grep | sed -e 's/\\$$//' \
