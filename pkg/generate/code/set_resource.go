@@ -20,11 +20,11 @@ import (
 
 	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
 
-	"github.com/aws-controllers-k8s/code-generator/pkg/fieldpath"
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 	"github.com/aws-controllers-k8s/code-generator/pkg/names"
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
+	"github.com/aws-controllers-k8s/runtime/pkg/fieldpath"
 )
 
 // SetResource returns the Go code that sets a CRD's field value to the value
