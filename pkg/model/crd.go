@@ -794,6 +794,28 @@ func (r *CRD) HasReferenceFields() bool {
 	return false
 }
 
+// ReferencedServiceNames returns the set of service names for ACK controllers
+// whose resources are referenced inside the CRD. The service name is
+// the go package name for the AWS service inside aws-sdk-go.
+//
+// If a CRD has no reference fields, nil is returned(zero vale of slice)
+func (r *CRD) ReferencedServiceNames() (serviceNames []string) {
+	// We are using Map to implement a Set of service names
+	serviceNamesMap := make(map[string]struct{})
+	existsValue := struct{}{}
+
+	for _, field := range r.Fields {
+		if serviceName := field.ReferencedServiceName(); serviceName != "" {
+			serviceNamesMap[serviceName] = existsValue
+		}
+	}
+
+	for serviceName, _ := range serviceNamesMap {
+		serviceNames = append(serviceNames, serviceName)
+	}
+	return serviceNames
+}
+
 // NewCRD returns a pointer to a new `ackmodel.CRD` struct that describes a
 // single top-level resource in an AWS service API
 func NewCRD(

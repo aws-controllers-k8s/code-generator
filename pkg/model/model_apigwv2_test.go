@@ -65,6 +65,8 @@ func TestAPIGatewayV2_Api(t *testing.T) {
 	// The required property should get overriden for Name and ProtocolType fields.
 	assert.False(crd.SpecFields["Name"].IsRequired())
 	assert.False(crd.SpecFields["ProtocolType"].IsRequired())
+
+	assert.Nil(crd.ReferencedServiceNames())
 }
 
 func TestAPIGatewayV2_Route(t *testing.T) {
@@ -174,6 +176,8 @@ func TestAPIGatewayV2_Route(t *testing.T) {
 		"RouteID",
 	}
 	assert.Equal(expStatusFieldCamel, attrCamelNames(statusFields))
+
+	assert.Nil(crd.ReferencedServiceNames())
 }
 
 func TestAPIGatewayV2_WithReference(t *testing.T) {
@@ -188,26 +192,36 @@ func TestAPIGatewayV2_WithReference(t *testing.T) {
 	require.Nil(err)
 
 	// Single reference
-	crd := getCRDByName("Integration", crds)
-	require.NotNil(crd)
+	integrationCrd := getCRDByName("Integration", crds)
+	require.NotNil(integrationCrd)
 
-	assert.Equal("Integration", crd.Names.Camel)
-	assert.Equal("integration", crd.Names.CamelLower)
-	assert.Equal("integration", crd.Names.Snake)
+	assert.Equal("Integration", integrationCrd.Names.Camel)
+	assert.Equal("integration", integrationCrd.Names.CamelLower)
+	assert.Equal("integration", integrationCrd.Names.Snake)
 
-	assert.NotNil(crd.SpecFields["ApiId"])
-	assert.NotNil(crd.SpecFields["ApiRef"])
-	assert.Equal("*ackv1alpha1.AWSResourceReferenceWrapper", crd.SpecFields["ApiRef"].GoType)
+	assert.NotNil(integrationCrd.SpecFields["ApiId"])
+	assert.NotNil(integrationCrd.SpecFields["ApiRef"])
+	assert.Equal("*ackv1alpha1.AWSResourceReferenceWrapper", integrationCrd.SpecFields["ApiRef"].GoType)
+
+	referencedServiceNames := integrationCrd.ReferencedServiceNames()
+	assert.NotNil(referencedServiceNames)
+	assert.Contains(referencedServiceNames, "apigatewayv2")
+	assert.Equal(1, len(referencedServiceNames))
 
 	// List of References
-	crd = getCRDByName("VpcLink", crds)
-	require.NotNil(crd)
+	vpcLinkCrd := getCRDByName("VpcLink", crds)
+	require.NotNil(vpcLinkCrd)
 
-	assert.Equal("VPCLink", crd.Names.Camel)
-	assert.Equal("vpcLink", crd.Names.CamelLower)
-	assert.Equal("vpc_link", crd.Names.Snake)
+	assert.Equal("VPCLink", vpcLinkCrd.Names.Camel)
+	assert.Equal("vpcLink", vpcLinkCrd.Names.CamelLower)
+	assert.Equal("vpc_link", vpcLinkCrd.Names.Snake)
 
-	assert.NotNil(crd.SpecFields["SecurityGroupIds"])
-	assert.NotNil(crd.SpecFields["SecurityGroupRefs"])
-	assert.Equal("[]*ackv1alpha1.AWSResourceReferenceWrapper", crd.SpecFields["SecurityGroupRefs"].GoType)
+	assert.NotNil(vpcLinkCrd.SpecFields["SecurityGroupIds"])
+	assert.NotNil(vpcLinkCrd.SpecFields["SecurityGroupRefs"])
+	assert.Equal("[]*ackv1alpha1.AWSResourceReferenceWrapper", vpcLinkCrd.SpecFields["SecurityGroupRefs"].GoType)
+
+	referencedServiceNames = vpcLinkCrd.ReferencedServiceNames()
+	assert.NotNil(referencedServiceNames)
+	assert.Contains(referencedServiceNames, "ec2")
+	assert.Equal(1, len(referencedServiceNames))
 }

@@ -21,9 +21,9 @@ import (
 {{ $servicePackageName := .ServicePackageName -}}
 {{ $apiVersion := .APIVersion -}}
 {{ if .CRD.HasReferenceFields -}}
-{{ range $fieldName, $field := .CRD.Fields -}}
-{{ if and $field.HasReference (not (eq $field.ReferencedServiceName $servicePackageName)) -}}
-    {{ $field.ReferencedServiceName }}apitypes "github.com/aws-controllers-k8s/{{ $field.ReferencedServiceName }}-controller/apis/{{ $apiVersion }}"
+{{ range $referencedServiceName := .CRD.ReferencedServiceNames -}}
+{{ if not (eq $referencedServiceName $servicePackageName) -}}
+    {{ $referencedServiceName }}apitypes "github.com/aws-controllers-k8s/{{ $referencedServiceName }}-controller/apis/{{ $apiVersion }}"
 {{- end }}
 {{- end }}
 {{- end }}
