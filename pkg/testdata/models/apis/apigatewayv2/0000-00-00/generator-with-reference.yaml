@@ -16,7 +16,7 @@ resources:
         references:
           resource: Subnet
           path: Status.SubnetID
-          service_name: ec2
+          service_name: ec2-modified #This is a dummy service name to validate multiple service references
 ignore:
   resource_names:
     - ApiMapping

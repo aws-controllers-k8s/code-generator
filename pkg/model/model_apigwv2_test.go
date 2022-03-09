@@ -223,5 +223,6 @@ func TestAPIGatewayV2_WithReference(t *testing.T) {
 	referencedServiceNames = vpcLinkCrd.ReferencedServiceNames()
 	assert.NotNil(referencedServiceNames)
 	assert.Contains(referencedServiceNames, "ec2")
-	assert.Equal(1, len(referencedServiceNames))
+	assert.Contains(referencedServiceNames, "ec2-modified")
+	assert.Equal(2, len(referencedServiceNames))
 }
