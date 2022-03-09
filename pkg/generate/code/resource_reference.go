@@ -35,7 +35,9 @@ func ReferenceFieldsValidation(
 	indentLevel int,
 ) string {
 	out := ""
-	for _, field := range crd.Fields {
+	// Sorted fieldnames are used for consistent code-generation
+	for _, fieldName := range crd.SortedFieldNames() {
+		field := crd.Fields[fieldName]
 		if field.HasReference() {
 			indent := strings.Repeat("\t", indentLevel)
 			// Validation to make sure both target field and reference are
@@ -75,7 +77,9 @@ func ReferenceFieldsPresent(
 	sourceVarName string,
 ) string {
 	out := "false"
-	for _, field := range crd.Fields {
+	// Sorted fieldnames are used for consistent code-generation
+	for _, fieldName := range crd.SortedFieldNames() {
+		field := crd.Fields[fieldName]
 		if field.IsReference() {
 			out += fmt.Sprintf(" || %s.Spec.%s != nil", sourceVarName,
 				field.Names.Camel)

@@ -76,6 +76,12 @@ func Test_ReferenceFieldsValidation_SliceOfReferences(t *testing.T) {
 		`	if ko.Spec.SecurityGroupRefs != nil && ko.Spec.SecurityGroupIDs != nil {
 		return ackerr.ResourceReferenceAndIDNotSupportedFor("SecurityGroupIDs", "SecurityGroupRefs")
 	}
+	if ko.Spec.SubnetRefs != nil && ko.Spec.SubnetIDs != nil {
+		return ackerr.ResourceReferenceAndIDNotSupportedFor("SubnetIDs", "SubnetRefs")
+	}
+	if ko.Spec.SubnetRefs == nil && ko.Spec.SubnetIDs == nil {
+		return ackerr.ResourceReferenceOrIDRequiredFor("SubnetIDs", "SubnetRefs")
+	}
 `
 	assert.Equal(expected, code.ReferenceFieldsValidation(crd, "ko", 1))
 }
@@ -123,6 +129,6 @@ func Test_ReferenceFieldsPresent_SliceOfReferences(t *testing.T) {
 	// just to test code generation for slices of reference
 	crd := testutil.GetCRDByName(t, g, "VpcLink")
 	require.NotNil(crd)
-	expected := "false || ko.Spec.SecurityGroupRefs != nil"
+	expected := "false || ko.Spec.SecurityGroupRefs != nil || ko.Spec.SubnetRefs != nil"
 	assert.Equal(expected, code.ReferenceFieldsPresent(crd, "ko"))
 }

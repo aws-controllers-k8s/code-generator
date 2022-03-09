@@ -816,6 +816,17 @@ func (r *CRD) ReferencedServiceNames() (serviceNames []string) {
 	return serviceNames
 }
 
+// SortedFieldNames returns the fieldNames of the CRD in a sorted
+// order.
+func (r *CRD) SortedFieldNames() []string {
+	fieldNames := make([]string, 0, len(r.Fields))
+	for fieldName := range r.Fields {
+		fieldNames = append(fieldNames, fieldName)
+	}
+	sort.Strings(fieldNames)
+	return fieldNames
+}
+
 // NewCRD returns a pointer to a new `ackmodel.CRD` struct that describes a
 // single top-level resource in an AWS service API
 func NewCRD(
