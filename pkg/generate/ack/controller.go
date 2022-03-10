@@ -241,12 +241,22 @@ func Controller(
 
 	// Next add the template for the main.go file
 	snakeCasedCRDNames := make([]string, 0)
+	// using Map to implement the Set
+	referencedServiceNamesMap := make(map[string]struct{})
 	for _, crd := range crds {
 		snakeCasedCRDNames = append(snakeCasedCRDNames, crd.Names.Snake)
+		for _, serviceName := range crd.ReferencedServiceNames() {
+			referencedServiceNamesMap[serviceName] = struct{}{}
+		}
+	}
+	referencedServiceNames := make([]string, 0)
+	for serviceName := range referencedServiceNamesMap {
+		referencedServiceNames = append(referencedServiceNames, serviceName)
 	}
 	cmdVars := &templateCmdVars{
 		metaVars,
 		snakeCasedCRDNames,
+		referencedServiceNames,
 	}
 	if err = ts.Add("cmd/controller/main.go", "cmd/controller/main.go.tpl", cmdVars); err != nil {
 		return nil, err
@@ -267,6 +277,10 @@ func Controller(
 type templateCmdVars struct {
 	templateset.MetaVars
 	SnakeCasedCRDNames []string
+	// ReferencedServiceNames contains the service name for ACK controllers whose
+	// resources are referenced inside the CRDs.
+	// Service name is go package name of AWS service in aws-sdk-go.
+	ReferencedServiceNames []string
 }
 
 // templateConfigVars contains template variables for the templates that require
