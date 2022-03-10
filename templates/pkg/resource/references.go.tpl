@@ -24,7 +24,7 @@ import (
 {{ range $referencedServiceName := .CRD.ReferencedServiceNames -}}
 {{ if not (eq $referencedServiceName $servicePackageName) -}}
     {{ $referencedServiceName }}apitypes "github.com/aws-controllers-k8s/{{ $referencedServiceName }}-controller/apis/{{ $apiVersion }}"
-{{- end }}
+{{ end }}
 {{- end }}
 {{- end }}
 
