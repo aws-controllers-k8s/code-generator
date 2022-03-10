@@ -19,8 +19,18 @@ import (
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
 	svcresource "github.com/aws-controllers-k8s/{{ .ServicePackageName }}-controller/pkg/resource"
 	svctypes "github.com/aws-controllers-k8s/{{ .ServicePackageName }}-controller/apis/{{ .APIVersion }}"
+{{- /* Import the go types from service controllers whose resources are referenced in this service controller.
+If these referenced types are not added to scheme, this service controller will not be able to read
+resources across service controller. */ -}}
+{{- $servicePackageName := .ServicePackageName }}
+{{- $apiVersion := .APIVersion }}
+{{- range $referencedServiceName := .ReferencedServiceNames }}
+{{- if not (eq $referencedServiceName $servicePackageName) }}
+    {{ $referencedServiceName }}apitypes "github.com/aws-controllers-k8s/{{ $referencedServiceName }}-controller/apis/{{ $apiVersion }}"
+{{- end }}
+{{- end }}
 	{{/* TODO(a-hilaly): import apis/* packages to register webhooks */}}
-	{{ $serviceAlias := .ServicePackageName }} {{range $crdName := .SnakeCasedCRDNames }}_ "github.com/aws-controllers-k8s/{{ $serviceAlias }}-controller/pkg/resource/{{ $crdName }}"
+	{{range $crdName := .SnakeCasedCRDNames }}_ "github.com/aws-controllers-k8s/{{ $servicePackageName }}-controller/pkg/resource/{{ $crdName }}"
 	{{end}}
 )
 
@@ -37,6 +47,11 @@ func init() {
 	{{/* TODO(a-hilaly): register all the apis/* schemes */}}
 	_ = svctypes.AddToScheme(scheme)
 	_ = ackv1alpha1.AddToScheme(scheme)
+{{- range $referencedServiceName := .ReferencedServiceNames }}
+{{- if not (eq $referencedServiceName $servicePackageName) }}
+    _ = {{ $referencedServiceName }}apitypes.AddToScheme(scheme)
+{{- end }}
+{{- end }}
 }
 
 func main() {
