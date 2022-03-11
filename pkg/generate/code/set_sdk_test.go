@@ -1800,3 +1800,30 @@ func TestSetSDK_EC2_VPC_ReadMany(t *testing.T) {
 		code.SetSDK(crd.Config(), crd, model.OpTypeList, "r.ko", "res", 1),
 	)
 }
+
+func Test_SetSDK_ECR_Repository_newListRequestPayload(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "ecr", &testutil.TestingModelOptions{
+		GeneratorConfigFile: "generator-renamed-identifier-field.yaml",
+	})
+
+	crd := testutil.GetCRDByName(t, g, "Repository")
+	require.NotNil(crd)
+
+	expected := `
+	if r.ko.Status.RegistryID != nil {
+		res.SetRegistryId(*r.ko.Status.RegistryID)
+	}
+	if r.ko.Spec.Name != nil {
+		f3 := []*string{}
+		f3 = append(f3, r.ko.Spec.Name)
+		res.SetRepositoryNames(f3)
+	}
+`
+	assert.Equal(
+		expected,
+		code.SetSDK(crd.Config(), crd, model.OpTypeList, "r.ko", "res", 1),
+	)
+}

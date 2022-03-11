@@ -109,8 +109,18 @@ func FindPluralizedIdentifiersInShape(
 	pluralize := pluralize.NewClient()
 	for _, si := range shapeIdentifiers {
 		for _, ci := range crIdentifiers {
-			if strings.EqualFold(pluralize.Singular(si),
-				pluralize.Singular(ci)) {
+			// If the identifier field is renamed, we must take that into
+			// consideration in order to find the corresponding matching
+			// shapeIdentifier.
+			siRenamed, _ := r.Config().ResourceFieldRename(
+				r.Names.Original,
+				op.Name,
+				pluralize.Singular(si),
+			)
+			if strings.EqualFold(
+				siRenamed,
+				pluralize.Singular(ci),
+			) {
 				// The CRD identifiers being used for comparison reflect any
 				// renamed field names in the API model shape.
 				if crField == "" {
