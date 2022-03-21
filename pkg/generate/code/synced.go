@@ -121,7 +121,12 @@ func scalarFieldEqual(
 ) string {
 	out := ""
 	fieldPath := fmt.Sprintf("%s.%s", resVarName, *condCfg.Path)
-
+	// if r.ko.Status.Status == nil
+	out += fmt.Sprintf("\tif %s == nil {\n", fieldPath)
+	// return false, nil
+	out += "\t\treturn false, nil\n"
+	// }
+	out += "\t}\n"
 	valuesSlice := ""
 	switch goType {
 	case "string":
@@ -174,9 +179,8 @@ func fieldPathSafeEqual(
 	subFieldPath := rootPath
 	for index, shape := range shapes {
 		if index == len(shapes)-1 {
-			// Some aws-sdk-go scalar shapes don't contain the real name of a shape
-			// In this case we use the full path given in condition.Path
-			subFieldPath = fmt.Sprintf("%s.%s", resVarName, *condCfg.Path)
+			// We would check for nil in scalarFieldEqual method so no need to loop anymore
+			break
 		} else {
 			subFieldPath += "." + shape.Shape.ShapeName
 		}
