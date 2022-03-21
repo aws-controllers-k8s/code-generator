@@ -11,6 +11,20 @@ resources:
       terminal_codes:
         - InvalidParameterValueException
         - UserAlreadyExistsFault
+    renames:
+      operations:
+        CreateUser:
+          input_fields:
+            UserName: Name
+        UpdateUser:
+          input_fields:
+            UserName: Name
+        DeleteUser:
+          input_fields:
+            UserName: Name
+        DescribeUsers:
+          input_fields:
+            UserName: Name
     fields:
       AuthenticationMode.Passwords:
         is_secret: true
