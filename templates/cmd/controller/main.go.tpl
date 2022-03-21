@@ -5,6 +5,7 @@ package main
 import (
 	"os"
 
+	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
 	ackcfg "github.com/aws-controllers-k8s/runtime/pkg/config"
 	ackrt "github.com/aws-controllers-k8s/runtime/pkg/runtime"
 	ackrtutil "github.com/aws-controllers-k8s/runtime/pkg/util"
@@ -16,7 +17,6 @@ import (
 	ctrlrtmetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
 	svcsdk "github.com/aws/aws-sdk-go/service/{{ .ServicePackageName }}"
 
-	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
 	svcresource "github.com/aws-controllers-k8s/{{ .ServicePackageName }}-controller/pkg/resource"
 	svctypes "github.com/aws-controllers-k8s/{{ .ServicePackageName }}-controller/apis/{{ .APIVersion }}"
 {{- /* Import the go types from service controllers whose resources are referenced in this service controller.
@@ -26,20 +26,21 @@ resources across service controller. */ -}}
 {{- $apiVersion := .APIVersion }}
 {{- range $referencedServiceName := .ReferencedServiceNames }}
 {{- if not (eq $referencedServiceName $servicePackageName) }}
-    {{ $referencedServiceName }}apitypes "github.com/aws-controllers-k8s/{{ $referencedServiceName }}-controller/apis/{{ $apiVersion }}"
+	{{ $referencedServiceName }}apitypes "github.com/aws-controllers-k8s/{{ $referencedServiceName }}-controller/apis/{{ $apiVersion }}"
 {{- end }}
 {{- end }}
 	{{/* TODO(a-hilaly): import apis/* packages to register webhooks */}}
 	{{range $crdName := .SnakeCasedCRDNames }}_ "github.com/aws-controllers-k8s/{{ $servicePackageName }}-controller/pkg/resource/{{ $crdName }}"
 	{{end}}
+	"github.com/aws-controllers-k8s/{{ .ServicePackageName }}-controller/pkg/version"
 )
 
 var (
-	awsServiceAPIGroup = "{{ .APIGroup }}"
-	awsServiceAlias	= "{{ .ServicePackageName }}"
-	awsServiceEndpointsID = svcsdk.EndpointsID
-	scheme			 = runtime.NewScheme()
-	setupLog		   = ctrlrt.Log.WithName("setup")
+	awsServiceAPIGroup      = "{{ .APIGroup }}"
+	awsServiceAlias	        = "{{ .ServicePackageName }}"
+	awsServiceEndpointsID   = svcsdk.EndpointsID
+	scheme			        = runtime.NewScheme()
+	setupLog		        = ctrlrt.Log.WithName("setup")
 )
 
 func init() {
@@ -49,7 +50,7 @@ func init() {
 	_ = ackv1alpha1.AddToScheme(scheme)
 {{- range $referencedServiceName := .ReferencedServiceNames }}
 {{- if not (eq $referencedServiceName $servicePackageName) }}
-    _ = {{ $referencedServiceName }}apitypes.AddToScheme(scheme)
+	_ = {{ $referencedServiceName }}apitypes.AddToScheme(scheme)
 {{- end }}
 {{- end }}
 }
@@ -78,13 +79,13 @@ func main() {
 	}
 
 	mgr, err := ctrlrt.NewManager(ctrlrt.GetConfigOrDie(), ctrlrt.Options{
-		Scheme:             scheme,
-		Port:               port,
-		Host:               host,
+		Scheme:			    scheme,
+		Port:			    port,
+		Host:			    host,
 		MetricsBindAddress: ackCfg.MetricsAddr,
-		LeaderElection:	    ackCfg.EnableLeaderElection,
+		LeaderElection:		ackCfg.EnableLeaderElection,
 		LeaderElectionID:   awsServiceAPIGroup,
-		Namespace:          ackCfg.WatchNamespace,
+		Namespace:		    ackCfg.WatchNamespace,
 	})
 	if err != nil {
 		setupLog.Error(
@@ -102,7 +103,11 @@ func main() {
 	)
 	sc := ackrt.NewServiceController(
 		awsServiceAlias, awsServiceAPIGroup, awsServiceEndpointsID,
-		ackrt.VersionInfo{},	// TODO: populate version info
+		ackrt.VersionInfo{
+			version.GitCommit,
+			version.GitVersion,
+			version.BuildDate,
+		},
 	).WithLogger(
 		ctrlrt.Log,
 	).WithResourceManagerFactories(
