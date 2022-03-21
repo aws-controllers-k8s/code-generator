@@ -10,6 +10,8 @@ ROOT_DIR="$SCRIPTS_DIR/.."
 BUILD_DIR="$ROOT_DIR/build"
 DEFAULT_BUNDLE_CHANNEL="alpha"
 PRESERVE=${PRESERVE:-"false"}
+DEFAULT_OPERATOR_SDK_BIN_PATH="$ROOT_DIR/../code-generator/bin"
+OPERATOR_SDK_BIN_PATH=${OPERATOR_SDK_BIN_PATH:-$DEFAULT_OPERATOR_SDK_BIN_PATH}
 
 export DOCKER_BUILDKIT=${DOCKER_BUILDKIT:-1}
 
@@ -17,7 +19,7 @@ source "$SCRIPTS_DIR/lib/common.sh"
 
 check_is_installed uuidgen
 check_is_installed kustomize "You can install kustomize with the helper scripts/install-kustomize.sh"
-check_is_installed operator-sdk "You can install Operator SDK with the helmer scripts/install-operator-sdk.sh"
+check_is_installed ${OPERATOR_SDK_BIN_PATH}/operator-sdk "You can install Operator SDK with the helper scripts/install-operator-sdk.sh"
 
 function clean_up {
     if [[ "$PRESERVE" == false ]]; then
@@ -64,6 +66,8 @@ Environment variables:
                                     Default: false
   BUNDLE_GENERATE_EXTRA_ARGS        Extra arguments to pass into the command
                                     'operator-sdk generate bundle'.
+  OPERATOR_SDK_BIN_PATH             Overrides the path to the operator-sdk binary.
+                                    Default: $DEFAULT_OPERATOR_SDK_BIN_PATH
 "
 
 if [ $# -ne 2 ]; then
@@ -127,7 +131,7 @@ fi
 # in the controller-specific repositories.
 mkdir -p $BUNDLE_OUTPUT_PATH
 pushd $BUNDLE_OUTPUT_PATH 1> /dev/null
-kustomize build $tmp_kustomize_config_dir/manifests | operator-sdk generate bundle $opsdk_gen_bundle_args 
+kustomize build $tmp_kustomize_config_dir/manifests | ${OPERATOR_SDK_BIN_PATH}/operator-sdk generate bundle $opsdk_gen_bundle_args
 popd 1> /dev/null
 
-operator-sdk bundle validate $BUNDLE_OUTPUT_PATH/bundle
+${OPERATOR_SDK_BIN_PATH}/operator-sdk bundle validate $BUNDLE_OUTPUT_PATH/bundle
