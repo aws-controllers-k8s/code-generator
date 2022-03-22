@@ -46,6 +46,11 @@ func (ids *fakeIdentifiers) OwnerAccountID() *ackv1alpha1.AWSAccountID {
 	return &owner
 }
 
+func (ids *fakeIdentifiers) Region() *ackv1alpha1.AWSRegion {
+	region := ackv1alpha1.AWSRegion("us-west-2")
+	return &region
+}
+
 type fakeDescriptor struct{}
 
 func (fd *fakeDescriptor) GroupKind() *metav1.GroupKind {
