@@ -158,6 +158,9 @@ var (
 		"GoCodeContainsReferences": func(r *ackmodel.CRD, sourceVarName string) string {
 			return code.ReferenceFieldsPresent(r, sourceVarName)
 		},
+		"NilFieldPathCheck": func(f *ackmodel.Field, sourceVarName string) string {
+			return code.NilFieldPathCheck(f, sourceVarName)
+		},
 	}
 )
 
