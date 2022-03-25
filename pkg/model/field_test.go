@@ -195,3 +195,35 @@ func TestGetReferenceFieldName(t *testing.T) {
 		assert.Equal(tc.expectedReferenceFieldName, referenceFieldName, msg)
 	}
 }
+
+func TestReferenceFieldPath(t *testing.T) {
+	assert := assert.New(t)
+
+	field := model.Field{}
+	//Non nested fieldPath
+	field.Path = "MyField"
+	field.Names = names.New("MyField")
+	assert.Equal("MyFieldRef", field.ReferenceFieldPath())
+
+	// Nested fieldPath
+	field.Path = "subPathA.subPathB.MyField"
+	field.Names = names.New("MyField")
+	assert.Equal("subPathA.subPathB.MyFieldRef", field.ReferenceFieldPath())
+}
+
+func TestCamelCasedFieldPath(t *testing.T) {
+	assert := assert.New(t)
+
+	field := model.Field{}
+	//Empty fieldPath
+	field.Path = ""
+	assert.Equal("", field.CamelCasedFieldPath())
+
+	//Non nested fieldPath
+	field.Path = "MyField"
+	assert.Equal("MyField", field.CamelCasedFieldPath())
+
+	// Nested fieldPath
+	field.Path = "subPathA.subPathB.MyField"
+	assert.Equal("subPathA_subPathB_MyField", field.CamelCasedFieldPath())
+}
