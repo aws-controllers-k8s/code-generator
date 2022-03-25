@@ -14,6 +14,8 @@
 package config
 
 import (
+	"strings"
+
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
 )
 
@@ -390,6 +392,30 @@ func (c *Config) ResourceFields(resourceName string) map[string]*FieldConfig {
 		return map[string]*FieldConfig{}
 	}
 	return resourceConfig.Fields
+}
+
+// ResourceFieldConfigIgnoreCase returns the FieldConfig for a field from
+// "resourceName" crd, where field.Path matches the passed "fieldPath" parameter.
+// This method performs the case-insensitive resource and fieldPath lookup.
+func (c *Config) ResourceFieldConfigIgnoreCase(resourceName string, fieldPath string) *FieldConfig {
+	var resourceConfig ResourceConfig
+	if c == nil {
+		return nil
+	}
+
+	for resName, resConfig := range c.Resources {
+		if strings.EqualFold(resName, resourceName) {
+			resourceConfig = resConfig
+			break
+		}
+	}
+
+	for fPath, fConfig := range resourceConfig.Fields {
+		if strings.EqualFold(fPath, fieldPath) {
+			return fConfig
+		}
+	}
+	return nil
 }
 
 // GetCompareIgnoredFields returns the list of field path to ignore when
