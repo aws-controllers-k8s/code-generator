@@ -86,6 +86,27 @@ func Test_ReferenceFieldsValidation_SliceOfReferences(t *testing.T) {
 	assert.Equal(expected, code.ReferenceFieldsValidation(crd, "ko", 1))
 }
 
+func Test_ReferenceFieldsValidation_NestedReference(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "apigatewayv2",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-nested-reference.yaml",
+		})
+
+	crd := testutil.GetCRDByName(t, g, "Authorizer")
+	require.NotNil(crd)
+	expected :=
+		`	if ko.Spec.JWTConfiguration != nil {
+		if ko.Spec.JWTConfiguration.IssuerRef != nil && ko.Spec.JWTConfiguration.Issuer != nil {
+			return ackerr.ResourceReferenceAndIDNotSupportedFor("JWTConfiguration.Issuer", "JWTConfiguration.IssuerRef")
+		}
+	}
+`
+	assert.Equal(expected, code.ReferenceFieldsValidation(crd, "ko", 1))
+}
+
 func Test_ReferenceFieldsPresent_NoReferenceConfig(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
@@ -112,7 +133,7 @@ func Test_ReferenceFieldsPresent_SingleReference(t *testing.T) {
 
 	crd := testutil.GetCRDByName(t, g, "Integration")
 	require.NotNil(crd)
-	expected := "false || ko.Spec.APIRef != nil"
+	expected := "false || (ko.Spec.APIRef != nil)"
 	assert.Equal(expected, code.ReferenceFieldsPresent(crd, "ko"))
 }
 
@@ -129,6 +150,21 @@ func Test_ReferenceFieldsPresent_SliceOfReferences(t *testing.T) {
 	// just to test code generation for slices of reference
 	crd := testutil.GetCRDByName(t, g, "VpcLink")
 	require.NotNil(crd)
-	expected := "false || ko.Spec.SecurityGroupRefs != nil || ko.Spec.SubnetRefs != nil"
+	expected := "false || (ko.Spec.SecurityGroupRefs != nil) || (ko.Spec.SubnetRefs != nil)"
+	assert.Equal(expected, code.ReferenceFieldsPresent(crd, "ko"))
+}
+
+func Test_ReferenceFieldsPresent_NestedReference(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "apigatewayv2",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-nested-reference.yaml",
+		})
+
+	crd := testutil.GetCRDByName(t, g, "Authorizer")
+	require.NotNil(crd)
+	expected := "false || (ko.Spec.JWTConfiguration != nil && ko.Spec.JWTConfiguration.IssuerRef != nil)"
 	assert.Equal(expected, code.ReferenceFieldsPresent(crd, "ko"))
 }
