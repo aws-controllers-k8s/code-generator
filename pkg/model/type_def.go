@@ -14,6 +14,8 @@
 package model
 
 import (
+	"strings"
+
 	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
 
 	"github.com/aws-controllers-k8s/code-generator/pkg/names"
@@ -25,4 +27,18 @@ type TypeDef struct {
 	Names names.Names
 	Attrs map[string]*Attr
 	Shape *awssdkmodel.Shape
+}
+
+// GetAttributeIgnoreCase returns the Attribute with name "attrName".
+// This method performs case-insensitive matching to find the Attribute.
+func (td *TypeDef) GetAttributeIgnoreCase(attrName string) *Attr {
+	if td == nil {
+		return nil
+	}
+	for aName, attr := range td.Attrs {
+		if strings.EqualFold(aName, attrName) {
+			return attr
+		}
+	}
+	return nil
 }

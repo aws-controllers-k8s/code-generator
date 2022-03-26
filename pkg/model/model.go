@@ -458,8 +458,65 @@ func (m *Model) processNestedFieldTypeDefs(
 				// struct)
 				replaceSecretAttrGoType(crd, field, tdefs)
 			}
+			if field.FieldConfig.References != nil {
+				updateTypeDefAttributeWithReference(fieldPath, tdefs)
+			}
 		}
 	}
+}
+
+// updateTypeDefAttributeWithReference adds a new AWSResourceReference attribute
+// for the corresponding attribute represented by fieldPath of nested field
+func updateTypeDefAttributeWithReference(fieldPath string, tdefs []*TypeDef) {
+	fp := ackfp.FromString(fieldPath)
+	if fp.Size() < 2 {
+		// TypeDef should only be updated with Reference fields for nested fieldPath.
+		// For non-nested fieldPath, the references are added directly to the resource
+		// Spec.
+		return
+	}
+	fieldName := fp.Pop()
+	// parent of fieldName determines the TypeDef
+	parentFieldName := fp.Pop()
+
+	var parentFieldTypeDef *TypeDef
+	for _, td := range tdefs {
+		if strings.EqualFold(td.Names.Original, parentFieldName) {
+			parentFieldTypeDef = td
+			break
+		}
+	}
+	if parentFieldTypeDef == nil {
+		panic(fmt.Sprintf("Unable to find a struct with name %s"+
+			" inside ServiceAPI to add reference for %s", parentFieldName,
+			fieldPath))
+	}
+
+	fieldAttr := parentFieldTypeDef.GetAttributeIgnoreCase(fieldName)
+	if fieldAttr == nil {
+		panic(fmt.Sprintf("Unable to find a member with name %s"+
+			" inside %s struct to create reference for %s",
+			fieldName, parentFieldName, fieldPath))
+	}
+
+	// Create a custom "model.Field" to generate ReferenceFieldName and reuse
+	// the existing method for generating top-level reference fields
+	fieldShapeRef := awssdkmodel.ShapeRef{Shape: fieldAttr.Shape}
+	field := &Field{
+		Names:    fieldAttr.Names,
+		ShapeRef: &fieldShapeRef,
+	}
+	refAttrName := field.GetReferenceFieldName()
+	refAttrShape := &awssdkmodel.Shape{
+		Documentation: "// Reference field for " + fieldAttr.Names.Camel,
+	}
+	refAttrGoType := "*ackv1alpha1.AWSResourceReferenceWrapper"
+	if fieldAttr.Shape.Type == "list" {
+		refAttrGoType = fmt.Sprintf("[]%s", refAttrGoType)
+	}
+	refAttr := NewAttr(refAttrName, refAttrGoType, refAttrShape)
+	// Add reference attribute to the parent field typedef
+	parentFieldTypeDef.Attrs[refAttrName.Original] = refAttr
 }
 
 // replaceSecretAttrGoType replaces a nested field Attr's GoType with
@@ -596,12 +653,11 @@ func (m *Model) processField(
 	fieldName string,
 	fieldShapeRef *awssdkmodel.ShapeRef,
 ) {
-	fieldConfigs := crd.Config().ResourceFields(crd.Names.Original)
 	fieldNames := names.New(fieldName)
 	fieldShape := fieldShapeRef.Shape
 	fieldShapeType := fieldShape.Type
 	fieldPath := parentFieldPath + fieldNames.Camel
-	fieldConfig := fieldConfigs[fieldPath]
+	fieldConfig := crd.Config().ResourceFieldConfigIgnoreCase(crd.Names.Original, fieldPath)
 	field := NewField(crd, fieldPath, fieldNames, fieldShapeRef, fieldConfig)
 	switch fieldShapeType {
 	case "structure":

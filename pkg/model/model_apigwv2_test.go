@@ -14,7 +14,10 @@
 package model_test
 
 import (
+	"strings"
 	"testing"
+
+	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -225,4 +228,33 @@ func TestAPIGatewayV2_WithReference(t *testing.T) {
 	assert.Contains(referencedServiceNames, "ec2")
 	assert.Contains(referencedServiceNames, "ec2-modified")
 	assert.Equal(2, len(referencedServiceNames))
+}
+
+func TestAPIGatewayV2_WithNestedReference(t *testing.T) {
+	_ = assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "apigatewayv2", &testutil.TestingModelOptions{
+		GeneratorConfigFile: "generator-with-nested-reference.yaml",
+	})
+
+	tds, err := g.GetTypeDefs()
+	require.Nil(err)
+	require.NotNil(tds)
+
+	var jwtConfigurationTD *model.TypeDef
+
+	for _, td := range tds {
+		if td != nil && strings.EqualFold(td.Names.Original, "jwtConfiguration") {
+			jwtConfigurationTD = td
+			break
+		}
+	}
+	assert.NotNil(t, jwtConfigurationTD)
+	issuerAttr := jwtConfigurationTD.GetAttributeIgnoreCase("Issuer")
+	issuerRefAttr := jwtConfigurationTD.GetAttributeIgnoreCase("IssuerRef")
+
+	assert.Equal(t, "Issuer", issuerAttr.Names.Camel)
+	assert.Equal(t, "IssuerRef", issuerRefAttr.Names.Camel)
+	assert.Equal(t, "*ackv1alpha1.AWSResourceReferenceWrapper", issuerRefAttr.GoType)
 }
