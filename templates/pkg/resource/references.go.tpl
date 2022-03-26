@@ -116,8 +116,8 @@ func resolveReferenceFor{{ $field.CamelCasedFieldPath }}(
 		for _, arrw := range ko.Spec.{{ $field.ReferenceFieldPath }} {
 			arr := arrw.From
 {{ template "read_referenced_resource_and_validate" $field }}
-			resolvedReferences = append(resolvedReferences,
-								   obj.{{ $field.FieldConfig.References.Path }})
+            referencedValue := string(*obj.{{ $field.FieldConfig.References.Path }})
+			resolvedReferences = append(resolvedReferences, &referencedValue)
 		}
 		ko.Spec.{{ $field.Path }} = resolvedReferences
 	}
@@ -128,7 +128,8 @@ func resolveReferenceFor{{ $field.CamelCasedFieldPath }}(
 		ko.Spec.{{ $field.ReferenceFieldPath }}.From != nil {
 			arr := ko.Spec.{{ $field.ReferenceFieldPath }}.From
 {{ template "read_referenced_resource_and_validate" $field }}
-			ko.Spec.{{ $field.Names.Camel }} = obj.{{ $field.FieldConfig.References.Path }}
+            referencedValue := string(*obj.{{ $field.FieldConfig.References.Path }})
+            ko.Spec.{{ $field.Path }} = &referencedValue
 	}
 	return nil
 }
