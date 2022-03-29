@@ -489,6 +489,7 @@ func updateTypeDefAttributeWithReference(fieldPath string, tdefs []*TypeDef, crd
 			" to add reference for %s", specFieldName,
 			fieldPath))
 	}
+
 	// Create a new fieldPath starting with ShapeName of Spec Field
 	// to determine the shape of typedef which will contain the reference
 	// attribute. We replace the spec-field Name with spec-field ShapeName in
@@ -533,24 +534,30 @@ func updateTypeDefAttributeWithReference(fieldPath string, tdefs []*TypeDef, crd
 			fieldName, parentFieldTypeDefName, fieldPath))
 	}
 
+	addReferenceAttribute(parentFieldTypeDef, fieldAttr)
+}
+
+// addReferenceAttribute creates a corresponding reference attribute for
+// "attr" attribute and adds it to "td" TypeDef
+func addReferenceAttribute(td *TypeDef, attr *Attr) {
 	// Create a custom "model.Field" to generate ReferenceFieldName and reuse
 	// the existing method for generating top-level reference fields
-	fieldShapeRef := awssdkmodel.ShapeRef{Shape: fieldAttr.Shape}
+	fieldShapeRef := awssdkmodel.ShapeRef{Shape: attr.Shape}
 	field := &Field{
-		Names:    fieldAttr.Names,
+		Names:    attr.Names,
 		ShapeRef: &fieldShapeRef,
 	}
 	refAttrName := field.GetReferenceFieldName()
 	refAttrShape := &awssdkmodel.Shape{
-		Documentation: "// Reference field for " + fieldAttr.Names.Camel,
+		Documentation: "// Reference field for " + attr.Names.Camel,
 	}
 	refAttrGoType := "*ackv1alpha1.AWSResourceReferenceWrapper"
-	if fieldAttr.Shape.Type == "list" {
+	if attr.Shape.Type == "list" {
 		refAttrGoType = fmt.Sprintf("[]%s", refAttrGoType)
 	}
 	refAttr := NewAttr(refAttrName, refAttrGoType, refAttrShape)
 	// Add reference attribute to the parent field typedef
-	parentFieldTypeDef.Attrs[refAttrName.Original] = refAttr
+	td.Attrs[refAttrName.Original] = refAttr
 }
 
 // replaceSecretAttrGoType replaces a nested field Attr's GoType with
