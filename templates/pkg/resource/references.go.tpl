@@ -65,7 +65,7 @@ func (rm *resourceManager) ResolveReferences(
 	{{ range $fieldName, $field := .CRD.Fields -}}
 	{{ if $field.HasReference -}}
 	if err == nil {
-		err = resolveReferenceFor{{ $field.CamelCasedFieldPath }}(ctx, apiReader, namespace, ko)
+		err = resolveReferenceFor{{ $field.FieldPathWithUnderscore }}(ctx, apiReader, namespace, ko)
 	}
 	{{ end -}}
 	{{ end -}}
@@ -94,10 +94,10 @@ func hasNonNilReferences(ko *svcapitypes.{{ .CRD.Names.Camel }}) bool {
 
 {{ range $fieldName, $field := .CRD.Fields }}
 {{ if $field.HasReference }}
-// resolveReferenceFor{{ $field.CamelCasedFieldPath }} reads the resource referenced
+// resolveReferenceFor{{ $field.FieldPathWithUnderscore }} reads the resource referenced
 // from {{ $field.ReferenceFieldPath }} field and sets the {{ $field.Path }}
 // from referenced resource
-func resolveReferenceFor{{ $field.CamelCasedFieldPath }}(
+func resolveReferenceFor{{ $field.FieldPathWithUnderscore }}(
 	ctx context.Context,
 	apiReader client.Reader,
 	namespace string,

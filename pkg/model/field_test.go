@@ -211,19 +211,19 @@ func TestReferenceFieldPath(t *testing.T) {
 	assert.Equal("subPathA.subPathB.MyFieldRef", field.ReferenceFieldPath())
 }
 
-func TestCamelCasedFieldPath(t *testing.T) {
+func TestFieldPathWithUnderscore(t *testing.T) {
 	assert := assert.New(t)
 
 	field := model.Field{}
 	//Empty fieldPath
 	field.Path = ""
-	assert.Equal("", field.CamelCasedFieldPath())
+	assert.Equal("", field.FieldPathWithUnderscore())
 
 	//Non nested fieldPath
 	field.Path = "MyField"
-	assert.Equal("MyField", field.CamelCasedFieldPath())
+	assert.Equal("MyField", field.FieldPathWithUnderscore())
 
 	// Nested fieldPath
 	field.Path = "subPathA.subPathB.MyField"
-	assert.Equal("subPathA_subPathB_MyField", field.CamelCasedFieldPath())
+	assert.Equal("subPathA_subPathB_MyField", field.FieldPathWithUnderscore())
 }

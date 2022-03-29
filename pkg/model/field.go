@@ -186,10 +186,10 @@ func (f *Field) ReferenceFieldPath() string {
 	return fmt.Sprintf("%s%s", fieldPathPrefix, f.GetReferenceFieldName().Camel)
 }
 
-// CamelCasedFieldPath replaces the period in fieldPath with
+// FieldPathWithUnderscore replaces the period in fieldPath with
 // underscore. This method is useful for generating go method
 // name from the fieldPath.
-func (f *Field) CamelCasedFieldPath() string {
+func (f *Field) FieldPathWithUnderscore() string {
 	return strings.ReplaceAll(f.Path, ".", "_")
 }
 
