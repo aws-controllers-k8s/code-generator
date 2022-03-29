@@ -199,7 +199,7 @@ func (r *CRD) AddSpecField(
 	shapeRef *awssdkmodel.ShapeRef,
 ) {
 	fPath := memberNames.Camel
-	fConfig := r.cfg.ResourceFieldConfigIgnoreCase(r.Names.Original, fPath)
+	fConfig := r.cfg.ResourceFieldByPath(r.Names.Original, fPath)
 	f := NewField(r, fPath, memberNames, shapeRef, fConfig)
 	if fConfig != nil && fConfig.Print != nil {
 		r.addSpecPrintableColumn(f)
@@ -224,7 +224,7 @@ func (r *CRD) AddStatusField(
 	shapeRef *awssdkmodel.ShapeRef,
 ) {
 	fPath := memberNames.Camel
-	fConfig := r.cfg.ResourceFieldConfigIgnoreCase(r.Names.Original, fPath)
+	fConfig := r.cfg.ResourceFieldByPath(r.Names.Original, fPath)
 	f := NewField(r, fPath, memberNames, shapeRef, fConfig)
 	if fConfig != nil && fConfig.Print != nil {
 		r.addStatusPrintableColumn(f)

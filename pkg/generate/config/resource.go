@@ -394,10 +394,10 @@ func (c *Config) ResourceFields(resourceName string) map[string]*FieldConfig {
 	return resourceConfig.Fields
 }
 
-// ResourceFieldConfigIgnoreCase returns the FieldConfig for a field from
+// ResourceFieldByPath returns the FieldConfig for a field from
 // "resourceName" crd, where field.Path matches the passed "fieldPath" parameter.
 // This method performs the case-insensitive resource and fieldPath lookup.
-func (c *Config) ResourceFieldConfigIgnoreCase(resourceName string, fieldPath string) *FieldConfig {
+func (c *Config) ResourceFieldByPath(resourceName string, fieldPath string) *FieldConfig {
 	var resourceConfig ResourceConfig
 	if c == nil {
 		return nil

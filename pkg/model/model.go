@@ -698,7 +698,7 @@ func (m *Model) processField(
 	fieldShape := fieldShapeRef.Shape
 	fieldShapeType := fieldShape.Type
 	fieldPath := parentFieldPath + fieldNames.Camel
-	fieldConfig := crd.Config().ResourceFieldConfigIgnoreCase(crd.Names.Original, fieldPath)
+	fieldConfig := crd.Config().ResourceFieldByPath(crd.Names.Original, fieldPath)
 	field := NewField(crd, fieldPath, fieldNames, fieldShapeRef, fieldConfig)
 	switch fieldShapeType {
 	case "structure":
