@@ -29,9 +29,9 @@ type TypeDef struct {
 	Shape *awssdkmodel.Shape
 }
 
-// GetAttributeIgnoreCase returns the Attribute with name "attrName".
+// GetAttribute returns the Attribute with name "attrName".
 // This method performs case-insensitive matching to find the Attribute.
-func (td *TypeDef) GetAttributeIgnoreCase(attrName string) *Attr {
+func (td *TypeDef) GetAttribute(attrName string) *Attr {
 	if td == nil {
 		return nil
 	}

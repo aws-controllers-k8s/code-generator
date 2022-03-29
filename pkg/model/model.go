@@ -527,7 +527,7 @@ func updateTypeDefAttributeWithReference(fieldPath string, tdefs []*TypeDef, crd
 			fieldPath))
 	}
 
-	fieldAttr := parentFieldTypeDef.GetAttributeIgnoreCase(fieldName)
+	fieldAttr := parentFieldTypeDef.GetAttribute(fieldName)
 	if fieldAttr == nil {
 		panic(fmt.Sprintf("Unable to find a member with name %s"+
 			" inside %s TypeDef to create reference for %s",

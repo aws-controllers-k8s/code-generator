@@ -251,8 +251,8 @@ func TestAPIGatewayV2_WithNestedReference(t *testing.T) {
 		}
 	}
 	assert.NotNil(t, jwtConfigurationTD)
-	issuerAttr := jwtConfigurationTD.GetAttributeIgnoreCase("Issuer")
-	issuerRefAttr := jwtConfigurationTD.GetAttributeIgnoreCase("IssuerRef")
+	issuerAttr := jwtConfigurationTD.GetAttribute("Issuer")
+	issuerRefAttr := jwtConfigurationTD.GetAttribute("IssuerRef")
 
 	assert.Equal(t, "Issuer", issuerAttr.Names.Camel)
 	assert.Equal(t, "IssuerRef", issuerRefAttr.Names.Camel)

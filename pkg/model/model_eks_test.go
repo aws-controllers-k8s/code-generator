@@ -47,8 +47,8 @@ func TestEKS_WithNestedReference(t *testing.T) {
 		}
 	}
 	assert.NotNil(t, vpcConfigRequestTD)
-	securityGroupIdsAttr := vpcConfigRequestTD.GetAttributeIgnoreCase("SecurityGroupIds")
-	securityGroupRefsAttr := vpcConfigRequestTD.GetAttributeIgnoreCase("SecurityGroupRefs")
+	securityGroupIdsAttr := vpcConfigRequestTD.GetAttribute("SecurityGroupIds")
+	securityGroupRefsAttr := vpcConfigRequestTD.GetAttribute("SecurityGroupRefs")
 
 	assert.Equal(t, "SecurityGroupIDs", securityGroupIdsAttr.Names.Camel)
 	assert.Equal(t, "SecurityGroupRefs", securityGroupRefsAttr.Names.Camel)
