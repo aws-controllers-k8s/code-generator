@@ -17,16 +17,15 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/aws-controllers-k8s/code-generator/pkg/model"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 	"github.com/aws-controllers-k8s/code-generator/pkg/testutil"
 )
 
 func TestEKS_WithNestedReference(t *testing.T) {
-	_ = assert.New(t)
+	assert := assert.New(t)
 	require := require.New(t)
 
 	g := testutil.NewModelForServiceWithOptions(t, "eks", &testutil.TestingModelOptions{
@@ -46,11 +45,13 @@ func TestEKS_WithNestedReference(t *testing.T) {
 			break
 		}
 	}
-	assert.NotNil(t, vpcConfigRequestTD)
+	assert.NotNil(vpcConfigRequestTD)
 	securityGroupIdsAttr := vpcConfigRequestTD.GetAttribute("SecurityGroupIds")
+	assert.NotNil(securityGroupIdsAttr)
 	securityGroupRefsAttr := vpcConfigRequestTD.GetAttribute("SecurityGroupRefs")
+	assert.NotNil(securityGroupRefsAttr)
 
-	assert.Equal(t, "SecurityGroupIDs", securityGroupIdsAttr.Names.Camel)
-	assert.Equal(t, "SecurityGroupRefs", securityGroupRefsAttr.Names.Camel)
-	assert.Equal(t, "[]*ackv1alpha1.AWSResourceReferenceWrapper", securityGroupRefsAttr.GoType)
+	assert.Equal("SecurityGroupIDs", securityGroupIdsAttr.Names.Camel)
+	assert.Equal("SecurityGroupRefs", securityGroupRefsAttr.Names.Camel)
+	assert.Equal("[]*ackv1alpha1.AWSResourceReferenceWrapper", securityGroupRefsAttr.GoType)
 }
