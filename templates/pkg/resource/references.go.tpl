@@ -103,7 +103,7 @@ func resolveReferenceFor{{ $field.FieldPathWithUnderscore }}(
 	namespace string,
 	ko *svcapitypes.{{ .CRD.Names.Camel }},
 ) error {
-{{ $nilCheck := NilFieldPathCheck $field "ko.Spec" -}}
+{{ $nilCheck := CheckNilFieldPath $field "ko.Spec" -}}
 {{ if not (eq $nilCheck "") -}}
     if {{ $nilCheck }} {
         return nil
