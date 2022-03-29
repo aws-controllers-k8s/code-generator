@@ -136,3 +136,22 @@ func TestCheckRequiredFields_StatusField_ReadMany(t *testing.T) {
 		strings.TrimSpace(gotCode),
 	)
 }
+
+func TestCheckNilFieldPath(t *testing.T) {
+	// Empty FieldPath
+	field := model.Field{Path: ""}
+	assert.Equal(t, "", code.CheckNilFieldPath(&field, "ko.Spec"))
+	// FieldPath only has fieldName
+	field.Path = "JWTConfiguration"
+	assert.Equal(t, "", code.CheckNilFieldPath(&field, "ko.Spec"))
+	// Nested FieldPath
+	field.Path = "JWTConfiguration.Issuer"
+	assert.Equal(t,
+		"ko.Spec.JWTConfiguration == nil",
+		code.CheckNilFieldPath(&field, "ko.Spec"))
+	// Multi Level Nested FieldPath
+	field.Path = "JWTConfiguration.Issuer.FieldName"
+	assert.Equal(t,
+		"ko.Spec.JWTConfiguration == nil || ko.Spec.JWTConfiguration.Issuer == nil",
+		code.CheckNilFieldPath(&field, "ko.Spec"))
+}

@@ -19,6 +19,7 @@ import (
 
 	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
 
+	"github.com/aws-controllers-k8s/code-generator/pkg/fieldpath"
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 )
@@ -191,4 +192,27 @@ func checkRequiredFieldsMissingFromShapeReadMany(
 
 	result = fmt.Sprintf("%s == nil", resVarPath)
 	return fmt.Sprintf("%sreturn %s\n", indent, result)
+}
+
+// CheckNilFieldPath returns the condition statement for Nil check
+// on a field path. This nil check on field path is useful to avoid
+// nil pointer panics when accessing a field value.
+//
+// This function only outputs the logical condition and not the "if" block
+// so that the output can be reused in many templates, where
+// logic inside "if" block can be different.
+//
+// Example Output for fieldpath "JWTConfiguration.Issuer.SomeField" is
+// "ko.Spec.JWTConfiguration == nil || ko.Spec.JWTConfiguration.Issuer == nil"
+func CheckNilFieldPath(field *model.Field, sourceVarName string) string {
+	out := ""
+	fp := fieldpath.FromString(field.Path)
+	// remove fieldName from fieldPath before adding nil checks
+	fp.Pop()
+	fieldNamePrefix := ""
+	for fp.Size() > 0 {
+		fieldNamePrefix = fmt.Sprintf("%s.%s", fieldNamePrefix, fp.PopFront())
+		out += fmt.Sprintf(" || %s%s == nil", sourceVarName, fieldNamePrefix)
+	}
+	return strings.TrimPrefix(out, " || ")
 }
