@@ -475,7 +475,9 @@ func updateTypeDefAttributeWithReference(fieldPath string, tdefs []*TypeDef, crd
 		// Spec.
 		return
 	}
-	// First part of nested reference fieldPath is the name of Spec field
+	// First part of nested reference fieldPath is the name of top level Spec
+	// field. Ex: For 'ResourcesVpcConfig.SecurityGroupIds' fieldpath the
+	// specFieldName is 'ResourcesVpcConfig'
 	specFieldName := fp.Front()
 	var specField *Field
 	for fName, field := range crd.SpecFields {
