@@ -785,7 +785,7 @@ func (r *CRD) HasMember(
 // field. Otherwise returns false
 func (r *CRD) HasReferenceFields() bool {
 	for _, field := range r.Fields {
-		if field.IsReference() {
+		if field.HasReference() {
 			return true
 		}
 	}
