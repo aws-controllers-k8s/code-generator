@@ -459,7 +459,7 @@ func (m *Model) processNestedFieldTypeDefs(
 				replaceSecretAttrGoType(crd, field, tdefs)
 			}
 			if field.FieldConfig.References != nil {
-				updateTypeDefAttributeWithReference(fieldPath, tdefs)
+				updateTypeDefAttributeWithReference(fieldPath, tdefs, crd)
 			}
 		}
 	}
@@ -467,7 +467,7 @@ func (m *Model) processNestedFieldTypeDefs(
 
 // updateTypeDefAttributeWithReference adds a new AWSResourceReference attribute
 // for the corresponding attribute represented by fieldPath of nested field
-func updateTypeDefAttributeWithReference(fieldPath string, tdefs []*TypeDef) {
+func updateTypeDefAttributeWithReference(fieldPath string, tdefs []*TypeDef, crd *CRD) {
 	fp := ackfp.FromString(fieldPath)
 	if fp.Size() < 2 {
 		// TypeDef should only be updated with Reference fields for nested fieldPath.
@@ -475,28 +475,62 @@ func updateTypeDefAttributeWithReference(fieldPath string, tdefs []*TypeDef) {
 		// Spec.
 		return
 	}
-	fieldName := fp.Pop()
-	// parent of fieldName determines the TypeDef
-	parentFieldName := fp.Pop()
+	// First part of nested reference fieldPath is the name of Spec field
+	specFieldName := fp.Front()
+	var specField *Field
+	for fName, field := range crd.SpecFields {
+		if strings.EqualFold(fName, specFieldName) {
+			specField = field
+			break
+		}
+	}
+	if specField == nil {
+		panic(fmt.Sprintf("Unable to find a spec field with name %s"+
+			" to add reference for %s", specFieldName,
+			fieldPath))
+	}
+	// Create a new fieldPath starting with ShapeName of Spec Field
+	// to determine the shape of typedef which will contain the reference
+	// attribute. We replace the spec-field Name with spec-field ShapeName in
+	// the beginning of field path and leave rest of nested member names as is.
+	// Ex: ResourcesVpcConfig.SecurityGroupIDs will become VPCConfigRequest.SecurityGroupIDs
+	// for Cluster resource in eks-controller.
+	specFieldShapeName := specField.ShapeRef.ShapeName
+	fieldShapePath := strings.Replace(fieldPath, specFieldName, specFieldShapeName, 1)
+	fsp := ackfp.FromString(fieldShapePath)
+
+	// "fieldName" is the member name for which reference field will be created.
+	// Ex: SecurityGroupIDs in ResourcesVpcConfig.SecurityGroupIDs
+	fieldName := fsp.Pop()
+	// "parentFieldName" is the Shape/Member name whose "TypeDef" contains the
+	// "fieldName" as attribute. To add a corresponding reference for "fieldName"
+	// , we will add new attribute in TypeDef for "parentFieldName".
+	parentFieldName := fsp.Back()
+	parentFieldShapeRef := fsp.ShapeRef(specField.ShapeRef)
+	if parentFieldShapeRef == nil {
+		panic(fmt.Sprintf("Unable to find a shape member with name %s"+
+			" to add a reference for %s", parentFieldName, fieldPath))
+	}
+	parentFieldTypeDefName := parentFieldShapeRef.ShapeName
 
 	var parentFieldTypeDef *TypeDef
 	for _, td := range tdefs {
-		if strings.EqualFold(td.Names.Original, parentFieldName) {
+		if strings.EqualFold(td.Names.Original, parentFieldTypeDefName) {
 			parentFieldTypeDef = td
 			break
 		}
 	}
 	if parentFieldTypeDef == nil {
-		panic(fmt.Sprintf("Unable to find a struct with name %s"+
-			" inside ServiceAPI to add reference for %s", parentFieldName,
+		panic(fmt.Sprintf("Unable to find a TypeDef with name %s"+
+			" inside service model to add reference for %s", parentFieldTypeDefName,
 			fieldPath))
 	}
 
 	fieldAttr := parentFieldTypeDef.GetAttributeIgnoreCase(fieldName)
 	if fieldAttr == nil {
 		panic(fmt.Sprintf("Unable to find a member with name %s"+
-			" inside %s struct to create reference for %s",
-			fieldName, parentFieldName, fieldPath))
+			" inside %s TypeDef to create reference for %s",
+			fieldName, parentFieldTypeDefName, fieldPath))
 	}
 
 	// Create a custom "model.Field" to generate ReferenceFieldName and reuse
