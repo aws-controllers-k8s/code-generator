@@ -65,7 +65,7 @@ func (rm *resourceManager) ResolveReferences(
 	{{ range $fieldName, $field := .CRD.Fields -}}
 	{{ if $field.HasReference -}}
 	if err == nil {
-		err = resolveReferenceFor{{ $field.Names.Camel }}(ctx, apiReader, namespace, ko)
+		err = resolveReferenceFor{{ $field.FieldPathWithUnderscore }}(ctx, apiReader, namespace, ko)
 	}
 	{{ end -}}
 	{{ end -}}
@@ -94,36 +94,42 @@ func hasNonNilReferences(ko *svcapitypes.{{ .CRD.Names.Camel }}) bool {
 
 {{ range $fieldName, $field := .CRD.Fields }}
 {{ if $field.HasReference }}
-{{ $refField := index .CRD.Fields $field.GetReferenceFieldName.Camel }}
-// resolveReferenceFor{{ $field.Names.Camel }} reads the resource referenced
-// from {{ $refField.Names.Camel }} field and sets the {{ $field.Names.Camel }}
+// resolveReferenceFor{{ $field.FieldPathWithUnderscore }} reads the resource referenced
+// from {{ $field.ReferenceFieldPath }} field and sets the {{ $field.Path }}
 // from referenced resource
-func resolveReferenceFor{{ $field.Names.Camel }}(
+func resolveReferenceFor{{ $field.FieldPathWithUnderscore }}(
 	ctx context.Context,
 	apiReader client.Reader,
 	namespace string,
 	ko *svcapitypes.{{ .CRD.Names.Camel }},
 ) error {
+{{ $nilCheck := CheckNilFieldPath $field "ko.Spec" -}}
+{{ if not (eq $nilCheck "") -}}
+    if {{ $nilCheck }} {
+        return nil
+    }
+{{ end -}}
 {{ if eq $field.ShapeRef.Shape.Type "list" -}}
-	if ko.Spec.{{ $refField.Names.Camel }} != nil &&
-	   len(ko.Spec.{{ $refField.Names.Camel }}) > 0 {
+	if ko.Spec.{{ $field.ReferenceFieldPath }} != nil &&
+	   len(ko.Spec.{{ $field.ReferenceFieldPath }}) > 0 {
 		resolvedReferences := []*string{}
-		for _, arrw := range ko.Spec.{{ $refField.Names.Camel }} {
+		for _, arrw := range ko.Spec.{{ $field.ReferenceFieldPath }} {
 			arr := arrw.From
 {{ template "read_referenced_resource_and_validate" $field }}
-			resolvedReferences = append(resolvedReferences,
-								   obj.{{ $field.FieldConfig.References.Path }})
+            referencedValue := string(*obj.{{ $field.FieldConfig.References.Path }})
+			resolvedReferences = append(resolvedReferences, &referencedValue)
 		}
-		ko.Spec.{{ $field.Names.Camel }} = resolvedReferences
+		ko.Spec.{{ $field.Path }} = resolvedReferences
 	}
 	return nil
 }
 {{ else -}}
-	if ko.Spec.{{ $refField.Names.Camel }} != nil &&
-		ko.Spec.{{ $refField.Names.Camel}}.From != nil {
-			arr := ko.Spec.{{ $refField.Names.Camel }}.From
+	if ko.Spec.{{ $field.ReferenceFieldPath }} != nil &&
+		ko.Spec.{{ $field.ReferenceFieldPath }}.From != nil {
+			arr := ko.Spec.{{ $field.ReferenceFieldPath }}.From
 {{ template "read_referenced_resource_and_validate" $field }}
-			ko.Spec.{{ $field.Names.Camel }} = obj.{{ $field.FieldConfig.References.Path }}
+            referencedValue := string(*obj.{{ $field.FieldConfig.References.Path }})
+            ko.Spec.{{ $field.Path }} = &referencedValue
 	}
 	return nil
 }

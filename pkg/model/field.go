@@ -178,6 +178,21 @@ func (f *Field) ReferencedResourceNamePlural() string {
 	return referencedResourceName
 }
 
+// ReferenceFieldPath returns the fieldPath for the corresponding
+// Reference field. It replaces the fieldName with ReferenceFieldName
+// at the end of fieldPath
+func (f *Field) ReferenceFieldPath() string {
+	fieldPathPrefix := strings.TrimSuffix(f.Path, f.Names.Camel)
+	return fmt.Sprintf("%s%s", fieldPathPrefix, f.GetReferenceFieldName().Camel)
+}
+
+// FieldPathWithUnderscore replaces the period in fieldPath with
+// underscore. This method is useful for generating go method
+// name from the fieldPath.
+func (f *Field) FieldPathWithUnderscore() string {
+	return strings.ReplaceAll(f.Path, ".", "_")
+}
+
 // NewReferenceField returns a pointer to a new Field object.
 // The go-type of field is either slice of '*AWSResourceReferenceWrapper' or
 // '*AWSResourceReferenceWrapper' depending on whether 'shapeRef' parameter

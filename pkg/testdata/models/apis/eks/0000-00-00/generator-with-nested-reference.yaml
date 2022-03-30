@@ -1,0 +1,8 @@
+resources:
+  Cluster:
+    fields:
+      ResourcesVpcConfig.SecurityGroupIds:
+        references:
+          service_name: ec2
+          resource: SecurityGroup
+          path: Status.ID

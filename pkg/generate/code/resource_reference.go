@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/aws-controllers-k8s/code-generator/pkg/fieldpath"
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 )
 
@@ -35,32 +36,54 @@ func ReferenceFieldsValidation(
 	indentLevel int,
 ) string {
 	out := ""
+	fieldAccessPrefix := fmt.Sprintf("%s%s", sourceVarName,
+		crd.Config().PrefixConfig.SpecField)
 	// Sorted fieldnames are used for consistent code-generation
 	for _, fieldName := range crd.SortedFieldNames() {
 		field := crd.Fields[fieldName]
+		var fIndent string
 		if field.HasReference() {
-			indent := strings.Repeat("\t", indentLevel)
+			fIndentLevel := indentLevel
+			fp := fieldpath.FromString(field.Path)
+			// remove fieldName from fieldPath before adding nil checks
+			fp.Pop()
+			fieldNamePrefix := crd.Config().PrefixConfig.SpecField
+			// this loop outputs a nil-guard for each level of nested field path
+			for fp.Size() > 0 {
+				fIndent = strings.Repeat("\t", fIndentLevel)
+				fieldNamePrefix = fmt.Sprintf("%s.%s", fieldNamePrefix, fp.PopFront())
+				out += fmt.Sprintf("%sif %s%s != nil {\n", fIndent, sourceVarName, fieldNamePrefix)
+				fIndentLevel++
+			}
+			fIndent = strings.Repeat("\t", fIndentLevel)
 			// Validation to make sure both target field and reference are
 			// not present at the same time in desired resource
-			out += fmt.Sprintf("%sif %s.Spec.%s != nil"+
-				" && %s.Spec.%s != nil {\n", indent, sourceVarName,
-				field.GetReferenceFieldName().Camel, sourceVarName, field.Names.Camel)
+			out += fmt.Sprintf("%sif %s.%s != nil"+
+				" && %s.%s != nil {\n", fIndent, fieldAccessPrefix,
+				field.ReferenceFieldPath(), fieldAccessPrefix, field.Path)
 			out += fmt.Sprintf("%s\treturn "+
 				"ackerr.ResourceReferenceAndIDNotSupportedFor(\"%s\", \"%s\")\n",
-				indent, field.Names.Camel, field.GetReferenceFieldName().Camel)
-			out += fmt.Sprintf("%s}\n", indent)
+				fIndent, field.Path, field.ReferenceFieldPath())
+
+			// Close out all the curly braces with proper indentation
+			for fIndentLevel >= indentLevel {
+				fIndent = strings.Repeat("\t", fIndentLevel)
+				out += fmt.Sprintf("%s}\n", fIndent)
+				fIndentLevel--
+			}
+
+			fIndent = strings.Repeat("\t", indentLevel)
 
 			// If the field is required, make sure either Ref or original
 			// field is present in the resource
 			if field.IsRequired() {
-				out += fmt.Sprintf("%sif %s.Spec.%s == nil &&"+
-					" %s.Spec.%s == nil {\n", indent, sourceVarName,
-					field.GetReferenceFieldName().Camel, sourceVarName,
-					field.Names.Camel)
+				out += fmt.Sprintf("%sif %s.%s == nil &&"+
+					" %s.%s == nil {\n", fIndent, fieldAccessPrefix,
+					field.ReferenceFieldPath(), fieldAccessPrefix, field.Path)
 				out += fmt.Sprintf("%s\treturn "+
 					"ackerr.ResourceReferenceOrIDRequiredFor(\"%s\", \"%s\")\n",
-					indent, field.Names.Camel, field.GetReferenceFieldName().Camel)
-				out += fmt.Sprintf("%s}\n", indent)
+					fIndent, field.Path, field.ReferenceFieldPath())
+				out += fmt.Sprintf("%s}\n", fIndent)
 			}
 		}
 	}
@@ -71,18 +94,31 @@ func ReferenceFieldsValidation(
 // a non-nil reference field is present in a resource. This checks helps in deciding
 // whether ACK.ReferencesResolved condition should be added to resource status
 // Sample Code:
-// return false || ko.Spec.APIRef != nil
+// return false || (ko.Spec.APIRef != nil)
 func ReferenceFieldsPresent(
 	crd *model.CRD,
 	sourceVarName string,
 ) string {
 	out := "false"
+	fieldAccessPrefix := fmt.Sprintf("%s%s", sourceVarName,
+		crd.Config().PrefixConfig.SpecField)
 	// Sorted fieldnames are used for consistent code-generation
 	for _, fieldName := range crd.SortedFieldNames() {
 		field := crd.Fields[fieldName]
-		if field.IsReference() {
-			out += fmt.Sprintf(" || %s.Spec.%s != nil", sourceVarName,
-				field.Names.Camel)
+		if field.HasReference() {
+			out += " || ("
+			fp := fieldpath.FromString(field.Path)
+			// remove fieldName from fieldPath before adding nil checks
+			// for nested fieldPath
+			fp.Pop()
+			fieldNamePrefix := ""
+			for fp.Size() > 0 {
+				fieldNamePrefix = fmt.Sprintf("%s.%s", fieldNamePrefix, fp.PopFront())
+				out += fmt.Sprintf("%s%s != nil && ", fieldAccessPrefix, fieldNamePrefix)
+			}
+			out += fmt.Sprintf("%s.%s != nil", fieldAccessPrefix,
+				field.ReferenceFieldPath())
+			out += ")"
 		}
 	}
 	return out

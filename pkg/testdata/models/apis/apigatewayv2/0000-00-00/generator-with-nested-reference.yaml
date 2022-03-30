@@ -1,0 +1,21 @@
+resources:
+  Authorizer:
+    fields:
+      JwtConfiguration.Issuer:
+        references:
+          resource: API
+          path: Status.APIID
+ignore:
+  resource_names:
+    - Api
+    - ApiMapping
+    - Deployment
+    - DomainName
+    - Integration
+    - IntegrationResponse
+    - Model
+    - Route
+    - RouteResponse
+    - Stage
+    - VpcLink
+
