@@ -6,7 +6,7 @@ GO111MODULE=on
 AWS_SERVICE=$(shell echo $(SERVICE) | tr '[:upper:]' '[:lower:]')
 
 # Build ldflags
-VERSION ?= "v0.18.1"
+VERSION ?= $(shell git describe --tags --always --dirty)
 GITCOMMIT=$(shell git rev-parse HEAD)
 BUILDDATE=$(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
 IMPORT_PATH=github.com/aws-controllers-k8s/code-generator
@@ -51,9 +51,6 @@ build-controller-image:	## Build container image for SERVICE
 local-build-controller-image: export LOCAL_MODULES = true
 local-build-controller-image:	## Build container image for SERVICE allowing local modules
 	@./scripts/build-controller-image.sh $(AWS_SERVICE)
-
-check-versions: ## Checks the code-generator version matches the runtime dependency version
-	@./scripts/check-versions.sh $(VERSION)
 
 test: 				## Run code tests
 	go test ${GO_CMD_FLAGS} ./...
