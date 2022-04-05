@@ -475,3 +475,49 @@ func TestCompareResource_APIGatewayv2_Route(t *testing.T) {
 		),
 	)
 }
+
+func TestCompareResource_MemoryDB_User(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "memorydb")
+
+	crd := testutil.GetCRDByName(t, g, "User")
+	require.NotNil(crd)
+	expected := `
+	if ackcompare.HasNilDifference(a.ko.Spec.AccessString, b.ko.Spec.AccessString) {
+		delta.Add("Spec.AccessString", a.ko.Spec.AccessString, b.ko.Spec.AccessString)
+	} else if a.ko.Spec.AccessString != nil && b.ko.Spec.AccessString != nil {
+		if *a.ko.Spec.AccessString != *b.ko.Spec.AccessString {
+			delta.Add("Spec.AccessString", a.ko.Spec.AccessString, b.ko.Spec.AccessString)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.AuthenticationMode, b.ko.Spec.AuthenticationMode) {
+		delta.Add("Spec.AuthenticationMode", a.ko.Spec.AuthenticationMode, b.ko.Spec.AuthenticationMode)
+	} else if a.ko.Spec.AuthenticationMode != nil && b.ko.Spec.AuthenticationMode != nil {
+		if ackcompare.HasNilDifference(a.ko.Spec.AuthenticationMode.Type, b.ko.Spec.AuthenticationMode.Type) {
+			delta.Add("Spec.AuthenticationMode.Type", a.ko.Spec.AuthenticationMode.Type, b.ko.Spec.AuthenticationMode.Type)
+		} else if a.ko.Spec.AuthenticationMode.Type != nil && b.ko.Spec.AuthenticationMode.Type != nil {
+			if *a.ko.Spec.AuthenticationMode.Type != *b.ko.Spec.AuthenticationMode.Type {
+				delta.Add("Spec.AuthenticationMode.Type", a.ko.Spec.AuthenticationMode.Type, b.ko.Spec.AuthenticationMode.Type)
+			}
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.Name, b.ko.Spec.Name) {
+		delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
+	} else if a.ko.Spec.Name != nil && b.ko.Spec.Name != nil {
+		if *a.ko.Spec.Name != *b.ko.Spec.Name {
+			delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
+		}
+	}
+	if !reflect.DeepEqual(a.ko.Spec.Tags, b.ko.Spec.Tags) {
+		delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
+	}
+`
+	assert.Equal(
+		expected,
+		code.CompareResource(
+			crd.Config(), crd, "delta", "a.ko", "b.ko", 1,
+		),
+	)
+}
