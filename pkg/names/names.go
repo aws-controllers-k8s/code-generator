@@ -85,6 +85,7 @@ var (
 		{"Cname", "CNAME", "cname", nil},
 		{"Cpu", "CPU", "cpu", nil},
 		{"Crl", "CRL", "crl", nil},
+		{"Cps", "CPS", "cps", nil},
 		{"Csr", "CSR", "csr", nil},
 		{"Dhcp", "DHCP", "dhcp", nil},
 		{"Dns", "DNS", "dns", nil},
