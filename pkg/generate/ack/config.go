@@ -13,7 +13,7 @@
 
 package ack
 
-import "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
+import "github.com/aws-controllers-k8s/code-generator/pkg/config"
 
 // DefaultConfig is the default configuration for generating ACK code
 var DefaultConfig = config.Config{

@@ -17,8 +17,8 @@ import (
 	"fmt"
 	"strings"
 
+	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/fieldpath"
-	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 
 	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"

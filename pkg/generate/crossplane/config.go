@@ -13,7 +13,7 @@
 
 package crossplane
 
-import "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
+import "github.com/aws-controllers-k8s/code-generator/pkg/config"
 
 // DefaultConfig is the default config object for Crossplane controllers.
 var DefaultConfig = config.Config{

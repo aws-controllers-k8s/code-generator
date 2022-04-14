@@ -18,7 +18,7 @@ import (
 	"sort"
 	"strings"
 
-	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
+	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 )
 
