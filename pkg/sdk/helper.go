@@ -23,7 +23,7 @@ import (
 
 	"gopkg.in/src-d/go-git.v4"
 
-	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
+	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
 

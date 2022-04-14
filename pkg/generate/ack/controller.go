@@ -18,8 +18,8 @@ import (
 	"strings"
 	ttpl "text/template"
 
+	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate/code"
-	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate/templateset"
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"

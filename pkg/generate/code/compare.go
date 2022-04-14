@@ -20,7 +20,7 @@ import (
 
 	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
 
-	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
+	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 	"github.com/aws-controllers-k8s/code-generator/pkg/names"
 )
@@ -565,7 +565,7 @@ func CompareStruct(
 		// memberFieldPath contains the field path along with the prefix cfg.PrefixConfig.SpecField + "." hence we
 		// would need to substring to exclude cfg.PrefixConfig.SpecField + "." to get correct field config.
 		specFieldLen := len(strings.TrimPrefix(cfg.PrefixConfig.SpecField, "."))
-		fieldConfig := fieldConfigs[memberFieldPath[specFieldLen + 1: len(memberFieldPath)]]
+		fieldConfig := fieldConfigs[memberFieldPath[specFieldLen+1:len(memberFieldPath)]]
 		if fieldConfig != nil {
 			compareConfig = fieldConfig.Compare
 		}

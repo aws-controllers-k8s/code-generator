@@ -19,8 +19,8 @@ import (
 	"strings"
 	"testing"
 
+	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/config"
 	ackgenerate "github.com/aws-controllers-k8s/code-generator/pkg/generate/ack"
-	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
 	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
 	acksdk "github.com/aws-controllers-k8s/code-generator/pkg/sdk"
 )

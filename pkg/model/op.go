@@ -19,7 +19,7 @@ import (
 	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
 	"github.com/gertd/go-pluralize"
 
-	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/generate/config"
+	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/config"
 )
 
 type OpType int
