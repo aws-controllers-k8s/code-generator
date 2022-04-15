@@ -16,6 +16,8 @@ package config
 import (
 	"strings"
 
+	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
+
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
 )
 
@@ -326,6 +328,9 @@ type ReconcileConfig struct {
 
 // ResourceConfig returns the ResourceConfig for a given named resource
 func (c *Config) ResourceConfig(name string) (*ResourceConfig, bool) {
+	if c == nil {
+		return nil, false
+	}
 	rc, ok := c.Resources[name]
 	return &rc, ok
 }
@@ -534,4 +539,99 @@ func (c *Config) GetResourcePrintAddAgeColumn(resourceName string) bool {
 		return rConfig.Print.AddAgeColumn
 	}
 	return false
+}
+
+// UpdateConditionsCustomMethodName returns custom update conditions operation
+// as *string for custom resource, if specified in generator config
+func (c *Config) UpdateConditionsCustomMethodName(resourceName string) string {
+	if c == nil {
+		return ""
+	}
+	resGenConfig, found := c.Resources[resourceName]
+	if !found {
+		return ""
+	}
+	return resGenConfig.UpdateConditionsCustomMethodName
+}
+
+// ReconcileRequeuOnSuccessSeconds returns the duration after which to requeue
+// the custom resource as int, if specified in generator config.
+func (c *Config) ReconcileRequeuOnSuccessSeconds(resourceName string) int {
+	if c == nil {
+		return 0
+	}
+	resGenConfig, found := c.Resources[resourceName]
+	if !found {
+		return 0
+	}
+	reconcile := resGenConfig.Reconcile
+	if reconcile != nil {
+		return reconcile.RequeueOnSuccessSeconds
+	}
+	// handles the default case
+	return 0
+}
+
+// CustomUpdateMethodName returns the name of the custom resourceManager method
+// for updating the resource state, if any has been specified in the generator
+// config
+func (c *Config) CustomUpdateMethodName(resourceName string) string {
+	if c == nil {
+		return ""
+	}
+	rConfig, found := c.Resources[resourceName]
+	if found {
+		if rConfig.UpdateOperation != nil {
+			return rConfig.UpdateOperation.CustomMethodName
+		}
+	}
+	return ""
+}
+
+// GetAllRenames returns all of the CRD's field renames observed in the generator config
+// for a given map of operations.
+func (c *Config) GetAllRenames(
+	resourceName string,
+	operations map[string]*awssdkmodel.Operation,
+) (map[string]string, error) {
+	renames := make(map[string]string)
+	if c == nil {
+		return renames, nil
+	}
+	resourceConfig, ok := c.Resources[resourceName]
+	if !ok {
+		return renames, nil
+	}
+	if resourceConfig.Renames == nil || resourceConfig.Renames.Operations == nil {
+		return renames, nil
+	}
+
+	opRenameConfigs := resourceConfig.Renames.Operations
+	for opName, opRenameConfigs := range opRenameConfigs {
+		for _, op := range operations {
+			if opName != op.Name {
+				continue
+			}
+			for old, new := range opRenameConfigs.InputFields {
+				renames[old] = new
+			}
+			for old, new := range opRenameConfigs.OutputFields {
+				renames[old] = new
+			}
+		}
+	}
+	return renames, nil
+}
+
+// TerminalExceptionCodes returns terminal exception codes as
+// []string for custom resource, if specified in generator config
+func (c *Config) TerminalExceptionCodes(resourceName string) []string {
+	if c == nil {
+		return nil
+	}
+	resGenConfig, found := c.Resources[resourceName]
+	if found && resGenConfig.Exceptions != nil {
+		return resGenConfig.Exceptions.TerminalCodes
+	}
+	return nil
 }

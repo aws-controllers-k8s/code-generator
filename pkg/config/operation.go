@@ -96,3 +96,93 @@ func (a *StringArray) UnmarshalJSON(b []byte) error {
 	}
 	return nil
 }
+
+// GetOutputWrapperFieldPath returns the JSON-Path of the output wrapper field
+// as *string for a given operation, if specified in generator config.
+func (c *Config) GetOutputWrapperFieldPath(
+	op *awssdkmodel.Operation,
+) *string {
+	if op == nil {
+		return nil
+	}
+	if c == nil {
+		return nil
+	}
+	opConfig, found := c.Operations[op.Name]
+	if !found {
+		return nil
+	}
+
+	if opConfig.OutputWrapperFieldPath == "" {
+		return nil
+	}
+	return &opConfig.OutputWrapperFieldPath
+}
+
+// SetOutputCustomMethodName returns custom set output operation as *string for
+// given operation on custom resource, if specified in generator config
+func (c *Config) SetOutputCustomMethodName(
+	// The operation to look for the Output shape
+	op *awssdkmodel.Operation,
+) *string {
+	if op == nil {
+		return nil
+	}
+	if c == nil {
+		return nil
+	}
+	opConfig, found := c.Operations[op.Name]
+	if !found {
+		return nil
+	}
+
+	if opConfig.SetOutputCustomMethodName == "" {
+		return nil
+	}
+	return &opConfig.SetOutputCustomMethodName
+}
+
+// GetCustomImplementation returns custom implementation method name for the
+// supplied operation as specified in generator config
+func (c *Config) GetCustomImplementation(
+	// The type of operation
+	op *awssdkmodel.Operation,
+) string {
+	if op == nil || c == nil {
+		return ""
+	}
+
+	operationConfig, found := c.Operations[op.Name]
+	if !found {
+		return ""
+	}
+
+	return operationConfig.CustomImplementation
+}
+
+// GetCustomCheckRequiredFieldsMissingMethod returns custom check required fields missing method
+// as string for custom resource, if specified in generator config
+func (c *Config) GetCustomCheckRequiredFieldsMissingMethod(
+	// The type of operation
+	op *awssdkmodel.Operation,
+) string {
+	if op == nil || c == nil {
+		return ""
+	}
+
+	operationConfig, found := c.Operations[op.Name]
+	if !found {
+		return ""
+	}
+
+	return operationConfig.CustomCheckRequiredFieldsMissingMethod
+}
+
+// OperationConfig returns the OperationConfig for a given operation
+func (c *Config) OperationConfig(opID string) (*OperationConfig, bool) {
+	if c == nil {
+		return nil, false
+	}
+	opConfig, ok := c.Operations[opID]
+	return &opConfig, ok
+}

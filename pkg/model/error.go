@@ -16,14 +16,7 @@ package model
 // TerminalExceptionCodes returns terminal exception codes as
 // []string for custom resource, if specified in generator config
 func (r *CRD) TerminalExceptionCodes() []string {
-	if r.cfg == nil {
-		return nil
-	}
-	resGenConfig, found := r.cfg.Resources[r.Names.Original]
-	if found && resGenConfig.Exceptions != nil {
-		return resGenConfig.Exceptions.TerminalCodes
-	}
-	return nil
+	return r.cfg.TerminalExceptionCodes(r.Names.Original)
 }
 
 // ExceptionCode returns the name of the resource's Exception code for the
