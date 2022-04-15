@@ -14,7 +14,7 @@
 package model
 
 // TerminalExceptionCodes returns terminal exception codes as
-// []string for custom resource, if specified in generator config
+// []string for custom resource
 func (r *CRD) TerminalExceptionCodes() []string {
 	return r.cfg.TerminalExceptionCodes(r.Names.Original)
 }

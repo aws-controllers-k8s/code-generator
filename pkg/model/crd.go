@@ -398,7 +398,7 @@ func (r *CRD) GetPrimaryKeyField() (*Field, error) {
 }
 
 // SetOutputCustomMethodName returns custom set output operation as *string for
-// given operation on custom resource, if specified in generator config
+// given operation on custom resource
 func (r *CRD) SetOutputCustomMethodName(
 	// The operation to look for the Output shape
 	op *awssdkmodel.Operation,
@@ -420,7 +420,7 @@ func (r *CRD) GetOutputShapeGoType(
 }
 
 // GetOutputWrapperFieldPath returns the JSON-Path of the output wrapper field
-// as *string for a given operation, if specified in generator config.
+// as *string for a given operation.
 func (r *CRD) GetOutputWrapperFieldPath(
 	op *awssdkmodel.Operation,
 ) *string {
@@ -428,7 +428,7 @@ func (r *CRD) GetOutputWrapperFieldPath(
 }
 
 // GetOutputShape returns the Output shape for a given operation and applies
-// wrapper field path overrides, if specified in generator config.
+// wrapper field path overrides.
 func (r *CRD) GetOutputShape(
 	op *awssdkmodel.Operation,
 ) (*awssdkmodel.Shape, error) {
@@ -499,13 +499,13 @@ func (r *CRD) GetCustomImplementation(
 }
 
 // UpdateConditionsCustomMethodName returns custom update conditions operation
-// as *string for custom resource, if specified in generator config
+// as *string for custom resource
 func (r *CRD) UpdateConditionsCustomMethodName() string {
 	return r.cfg.UpdateConditionsCustomMethodName(r.Names.Original)
 }
 
 // GetCustomCheckRequiredFieldsMissingMethod returns custom check required fields missing method
-// as string for custom resource, if specified in generator config
+// as string for custom resource
 func (r *CRD) GetCustomCheckRequiredFieldsMissingMethod(
 	// The type of operation
 	op *awssdkmodel.Operation,
@@ -558,7 +558,7 @@ func (r *CRD) PrintAgeColumn() bool {
 }
 
 // ReconcileRequeuOnSuccessSeconds returns the duration after which to requeue
-// the custom resource as int, if specified in generator config.
+// the custom resource as int
 func (r *CRD) ReconcileRequeuOnSuccessSeconds() int {
 	return r.cfg.ReconcileRequeuOnSuccessSeconds(r.Names.Original)
 }
