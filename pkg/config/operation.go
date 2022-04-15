@@ -59,26 +59,6 @@ func (c *Config) IsIgnoredOperation(operation *awssdkmodel.Operation) bool {
 	return util.InStrings(operation.Name, c.Ignore.Operations)
 }
 
-// ListOpMatchFieldNames returns a slice of strings representing the field
-// names in the List operation's Output shape's element Shape that we should
-// check a corresponding value in the target Spec exists.
-func (c *Config) ListOpMatchFieldNames(
-	resName string,
-) []string {
-	res := []string{}
-	if c == nil {
-		return res
-	}
-	rConfig, found := c.Resources[resName]
-	if !found {
-		return res
-	}
-	if rConfig.ListOperation == nil {
-		return res
-	}
-	return rConfig.ListOperation.MatchFields
-}
-
 // UnmarshalJSON parses input for a either a string or
 // or a list and returns a StringArray.
 func (a *StringArray) UnmarshalJSON(b []byte) error {
@@ -176,6 +156,18 @@ func (c *Config) GetCustomCheckRequiredFieldsMissingMethod(
 	}
 
 	return operationConfig.CustomCheckRequiredFieldsMissingMethod
+}
+
+// OverrideValues returns a list of member values to override for a given operation
+func (c *Config) OverrideValues(operationName string) (map[string]string, bool) {
+	if c == nil {
+		return nil, false
+	}
+	oConfig, ok := c.Operations[operationName]
+	if !ok {
+		return nil, false
+	}
+	return oConfig.OverrideValues, ok
 }
 
 // OperationConfig returns the OperationConfig for a given operation

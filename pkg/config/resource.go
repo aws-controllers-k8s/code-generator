@@ -326,7 +326,7 @@ type ReconcileConfig struct {
 	RequeueOnSuccessSeconds int `json:"requeue_on_success_seconds,omitempty"`
 }
 
-// ResourceConfig returns the ResourceConfig for a given named resource
+// ResourceConfig returns the ResourceConfig for a given resource name
 func (c *Config) ResourceConfig(name string) (*ResourceConfig, bool) {
 	if c == nil {
 		return nil, false
@@ -337,7 +337,7 @@ func (c *Config) ResourceConfig(name string) (*ResourceConfig, bool) {
 
 // UnpacksAttributesMap returns true if the underlying API has
 // Get{Resource}Attributes/Set{Resource}Attributes API calls that map real,
-// schema'd fields to a raw `map[string]*string` for this resource (see SNS and
+// schema'd fields to a raw `map[string]*string` for a given resource name (see SNS and
 // SQS APIs)
 func (c *Config) UnpacksAttributesMap(resourceName string) bool {
 	if c == nil {
@@ -371,18 +371,6 @@ func (c *Config) SetAttributesSingleAttribute(resourceName string) bool {
 		return false
 	}
 	return resGenConfig.UnpackAttributesMapConfig.SetAttributesSingleAttribute
-}
-
-// OverrideValues gives list of member values to override.
-func (c *Config) OverrideValues(operationName string) (map[string]string, bool) {
-	if c == nil {
-		return nil, false
-	}
-	oConfig, ok := c.Operations[operationName]
-	if !ok {
-		return nil, false
-	}
-	return oConfig.OverrideValues, ok
 }
 
 // ResourceFields returns a map, keyed by target/renamed field name, of
@@ -439,7 +427,7 @@ func (c *Config) GetCompareIgnoredFields(resName string) []string {
 	return rConfig.Compare.Ignore
 }
 
-// IsIgnoredResource returns true if Operation Name is configured to be ignored
+// IsIgnoredResource returns true if resource name is configured to be ignored
 // in generator config for the AWS service
 func (c *Config) IsIgnoredResource(resourceName string) bool {
 	if resourceName == "" {
@@ -634,4 +622,24 @@ func (c *Config) TerminalExceptionCodes(resourceName string) []string {
 		return resGenConfig.Exceptions.TerminalCodes
 	}
 	return nil
+}
+
+// ListOpMatchFieldNames returns a slice of strings representing the field
+// names in the List operation's Output shape's element Shape that we should
+// check a corresponding value in the target Spec exists.
+func (c *Config) ListOpMatchFieldNames(
+	resName string,
+) []string {
+	res := []string{}
+	if c == nil {
+		return res
+	}
+	rConfig, found := c.Resources[resName]
+	if !found {
+		return res
+	}
+	if rConfig.ListOperation == nil {
+		return res
+	}
+	return rConfig.ListOperation.MatchFields
 }
