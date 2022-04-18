@@ -323,19 +323,15 @@ func NewSDKAPI(api *awssdkmodel.API, apiGroupSuffix string) *SDKAPI {
 	}
 }
 
-// Override the operation type and/or resource name if specified in config
+// Override the operation type and/or resource name, if specified in config
 func getOpTypeAndResourceName(opID string, cfg *ackgenconfig.Config) ([]OpType, string) {
 	opType, resName := GetOpTypeAndResourceNameFromOpID(opID, cfg)
 	opTypes := []OpType{opType}
 
-	if cfg == nil {
-		return opTypes, resName
-	}
-	if operationConfig, exists := cfg.Operations[opID]; exists {
+	if operationConfig, exists := cfg.OperationConfig(opID); exists {
 		if operationConfig.ResourceName != "" {
 			resName = operationConfig.ResourceName
 		}
-
 		for _, operationType := range operationConfig.OperationType {
 			opType = OpTypeFromString(operationType)
 			opTypes = append(opTypes, opType)

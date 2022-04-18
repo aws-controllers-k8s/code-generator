@@ -99,12 +99,13 @@ func (r *CRD) Config() *ackgenconfig.Config {
 // GetStorageVersion returns the configured storage API version for the CRD, or
 // the specified default version.
 func (r *CRD) GetStorageVersion(defaultVersion string) (string, error) {
+	apiVersions := r.cfg.GetAPIVersions(r.Names.Original)
 	// if not configured
-	if r.cfg == nil || len(r.cfg.Resources[r.Names.Original].APIVersions) == 0 {
+	if len(apiVersions) == 0 {
 		return defaultVersion, nil
 	}
 
-	for _, v := range r.cfg.Resources[r.Names.Original].APIVersions {
+	for _, v := range apiVersions {
 		if v.Storage != nil && *v.Storage {
 			return v.Name, nil
 		}
@@ -309,18 +310,15 @@ func (r *CRD) UnpackAttributes() {
 // IsPrimaryARNField returns true if the supplied field name is likely the resource's
 // ARN identifier field.
 func (r *CRD) IsPrimaryARNField(fieldName string) bool {
-	if r.cfg != nil && !r.cfg.IncludeACKMetadata {
+	if !r.cfg.IncludeACKMetadata {
 		return false
 	}
-	rConfig, found := r.cfg.Resources[r.Names.Original]
-	if found {
-		for fName, fConfig := range rConfig.Fields {
-			if fConfig.IsARN {
-				return strings.EqualFold(fieldName, fName)
-			}
+	fieldConfigs := r.cfg.ResourceFields(r.Names.Original)
+	for fName, fConfig := range fieldConfigs {
+		if fConfig.IsARN {
+			return strings.EqualFold(fieldName, fName)
 		}
 	}
-
 	return strings.EqualFold(fieldName, "arn") ||
 		strings.EqualFold(fieldName, r.Names.Original+"arn")
 }
@@ -353,7 +351,6 @@ func (r *CRD) GetImmutableFieldPaths() []string {
 // HasImmutableFieldChanges helper function that return true if there are any immutable field changes
 func (r *CRD) HasImmutableFieldChanges() bool {
 	fConfigs := r.cfg.ResourceFields(r.Names.Original)
-
 	for _, fieldConfig := range fConfigs {
 		if fieldConfig.IsImmutable {
 			return true
@@ -365,10 +362,7 @@ func (r *CRD) HasImmutableFieldChanges() bool {
 // IsARNPrimaryKey returns true if the CRD uses its ARN as its primary key in
 // ReadOne calls.
 func (r *CRD) IsARNPrimaryKey() bool {
-	if r.cfg == nil {
-		return false
-	}
-	resGenConfig, found := r.cfg.Resources[r.Names.Original]
+	resGenConfig, found := r.cfg.ResourceConfig(r.Names.Original)
 	if !found {
 		return false
 	}
@@ -404,26 +398,12 @@ func (r *CRD) GetPrimaryKeyField() (*Field, error) {
 }
 
 // SetOutputCustomMethodName returns custom set output operation as *string for
-// given operation on custom resource, if specified in generator config
+// given operation on custom resource
 func (r *CRD) SetOutputCustomMethodName(
 	// The operation to look for the Output shape
 	op *awssdkmodel.Operation,
 ) *string {
-	if op == nil {
-		return nil
-	}
-	if r.cfg == nil {
-		return nil
-	}
-	resGenConfig, found := r.cfg.Operations[op.Name]
-	if !found {
-		return nil
-	}
-
-	if resGenConfig.SetOutputCustomMethodName == "" {
-		return nil
-	}
-	return &resGenConfig.SetOutputCustomMethodName
+	return r.cfg.SetOutputCustomMethodName(op)
 }
 
 // GetOutputShapeGoType returns the Go type of the supplied operation's Output
@@ -440,29 +420,15 @@ func (r *CRD) GetOutputShapeGoType(
 }
 
 // GetOutputWrapperFieldPath returns the JSON-Path of the output wrapper field
-// as *string for a given operation, if specified in generator config.
+// as *string for a given operation.
 func (r *CRD) GetOutputWrapperFieldPath(
 	op *awssdkmodel.Operation,
 ) *string {
-	if op == nil {
-		return nil
-	}
-	if r.cfg == nil {
-		return nil
-	}
-	opConfig, found := r.cfg.Operations[op.Name]
-	if !found {
-		return nil
-	}
-
-	if opConfig.OutputWrapperFieldPath == "" {
-		return nil
-	}
-	return &opConfig.OutputWrapperFieldPath
+	return r.cfg.GetOutputWrapperFieldPath(op)
 }
 
 // GetOutputShape returns the Output shape for a given operation and applies
-// wrapper field path overrides, if specified in generator config.
+// wrapper field path overrides.
 func (r *CRD) GetOutputShape(
 	op *awssdkmodel.Operation,
 ) (*awssdkmodel.Shape, error) {
@@ -529,59 +495,32 @@ func (r *CRD) GetCustomImplementation(
 	// The type of operation
 	op *awssdkmodel.Operation,
 ) string {
-	if op == nil || r.cfg == nil {
-		return ""
-	}
-
-	operationConfig, found := r.cfg.Operations[op.Name]
-	if !found {
-		return ""
-	}
-
-	return operationConfig.CustomImplementation
+	return r.cfg.GetCustomImplementation(op)
 }
 
 // UpdateConditionsCustomMethodName returns custom update conditions operation
-// as *string for custom resource, if specified in generator config
+// as *string for custom resource
 func (r *CRD) UpdateConditionsCustomMethodName() string {
-	if r.cfg == nil {
-		return ""
-	}
-	resGenConfig, found := r.cfg.Resources[r.Names.Original]
-	if !found {
-		return ""
-	}
-	return resGenConfig.UpdateConditionsCustomMethodName
+	return r.cfg.UpdateConditionsCustomMethodName(r.Names.Original)
 }
 
 // GetCustomCheckRequiredFieldsMissingMethod returns custom check required fields missing method
-// as string for custom resource, if specified in generator config
+// as string for custom resource
 func (r *CRD) GetCustomCheckRequiredFieldsMissingMethod(
 	// The type of operation
 	op *awssdkmodel.Operation,
 ) string {
-	if op == nil || r.cfg == nil {
-		return ""
-	}
-
-	operationConfig, found := r.cfg.Operations[op.Name]
-	if !found {
-		return ""
-	}
-
-	return operationConfig.CustomCheckRequiredFieldsMissingMethod
+	return r.cfg.GetCustomCheckRequiredFieldsMissingMethod(op)
 }
 
 // SpecIdentifierField returns the name of the "Name" or string identifier field
 // in the Spec.
 func (r *CRD) SpecIdentifierField() *string {
-	if r.cfg != nil {
-		rConfig, found := r.cfg.Resources[r.Names.Original]
-		if found {
-			for fName, fConfig := range rConfig.Fields {
-				if fConfig.IsPrimaryKey {
-					return &fName
-				}
+	rConfig, found := r.cfg.ResourceConfig(r.Names.Original)
+	if found {
+		for fName, fConfig := range rConfig.Fields {
+			if fConfig.IsPrimaryKey {
+				return &fName
 			}
 		}
 	}
@@ -600,10 +539,6 @@ func (r *CRD) SpecIdentifierField() *string {
 
 // IsAdoptable returns true if the resource can be adopted
 func (r *CRD) IsAdoptable() bool {
-	if r.cfg == nil {
-		// Should never reach this condition
-		return false
-	}
 	return r.cfg.ResourceIsAdoptable(r.Names.Original)
 }
 
@@ -623,37 +558,16 @@ func (r *CRD) PrintAgeColumn() bool {
 }
 
 // ReconcileRequeuOnSuccessSeconds returns the duration after which to requeue
-// the custom resource as int, if specified in generator config.
+// the custom resource as int
 func (r *CRD) ReconcileRequeuOnSuccessSeconds() int {
-	if r.cfg == nil {
-		return 0
-	}
-	resGenConfig, found := r.cfg.Resources[r.Names.Original]
-	if !found {
-		return 0
-	}
-	reconcile := resGenConfig.Reconcile
-	if reconcile != nil {
-		return reconcile.RequeueOnSuccessSeconds
-	}
-	// handles the default case
-	return 0
+	return r.cfg.ReconcileRequeuOnSuccessSeconds(r.Names.Original)
 }
 
 // CustomUpdateMethodName returns the name of the custom resourceManager method
 // for updating the resource state, if any has been specified in the generator
 // config
 func (r *CRD) CustomUpdateMethodName() string {
-	if r.cfg == nil {
-		return ""
-	}
-	rConfig, found := r.cfg.Resources[r.Names.Original]
-	if found {
-		if rConfig.UpdateOperation != nil {
-			return rConfig.UpdateOperation.CustomMethodName
-		}
-	}
-	return ""
+	return r.cfg.CustomUpdateMethodName(r.Names.Original)
 }
 
 // ListOpMatchFieldNames returns a slice of strings representing the field
@@ -666,34 +580,9 @@ func (r *CRD) ListOpMatchFieldNames() []string {
 // GetAllRenames returns all the field renames observed in the generator config
 // for a given OpType.
 func (r *CRD) GetAllRenames(op OpType) (map[string]string, error) {
-	renames := make(map[string]string)
-	resourceConfig, ok := r.cfg.Resources[r.Names.Original]
-	if !ok {
-		return renames, nil
-	}
-
 	opMap := r.sdkAPI.GetOperationMap(r.cfg)
 	operations := (*opMap)[op]
-
-	if resourceConfig.Renames == nil || resourceConfig.Renames.Operations == nil {
-		return renames, nil
-	}
-
-	opRenameConfigs := resourceConfig.Renames.Operations
-	for opName, opRenameConfigs := range opRenameConfigs {
-		for _, op := range operations {
-			if opName != op.Name {
-				continue
-			}
-			for old, new := range opRenameConfigs.InputFields {
-				renames[old] = new
-			}
-			for old, new := range opRenameConfigs.OutputFields {
-				renames[old] = new
-			}
-		}
-	}
-	return renames, nil
+	return r.cfg.GetAllRenames(r.Names.Original, operations)
 }
 
 // GetIdentifiers returns the identifier fields of a given CRD which

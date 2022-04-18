@@ -23,3 +23,16 @@ type APIVersion struct {
 	// One and only one version can be set as the storage version.
 	Storage *bool `json:"storage,omitempty"`
 }
+
+// GetAPIVersions returns the API version(s) for a CRD
+func (c *Config) GetAPIVersions(crdName string) []APIVersion {
+	res := []APIVersion{}
+	if c == nil {
+		return res
+	}
+	resConfig, found := c.Resources[crdName]
+	if !found {
+		return res
+	}
+	return resConfig.APIVersions
+}

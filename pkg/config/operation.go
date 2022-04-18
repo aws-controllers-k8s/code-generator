@@ -59,26 +59,6 @@ func (c *Config) IsIgnoredOperation(operation *awssdkmodel.Operation) bool {
 	return util.InStrings(operation.Name, c.Ignore.Operations)
 }
 
-// ListOpMatchFieldNames returns a slice of strings representing the field
-// names in the List operation's Output shape's element Shape that we should
-// check a corresponding value in the target Spec exists.
-func (c *Config) ListOpMatchFieldNames(
-	resName string,
-) []string {
-	res := []string{}
-	if c == nil {
-		return res
-	}
-	rConfig, found := c.Resources[resName]
-	if !found {
-		return res
-	}
-	if rConfig.ListOperation == nil {
-		return res
-	}
-	return rConfig.ListOperation.MatchFields
-}
-
 // UnmarshalJSON parses input for a either a string or
 // or a list and returns a StringArray.
 func (a *StringArray) UnmarshalJSON(b []byte) error {
@@ -95,4 +75,106 @@ func (a *StringArray) UnmarshalJSON(b []byte) error {
 		*a = multi
 	}
 	return nil
+}
+
+// GetOutputWrapperFieldPath returns the JSON-Path of the output wrapper field
+// as *string for a given operation, if specified in generator config.
+func (c *Config) GetOutputWrapperFieldPath(
+	op *awssdkmodel.Operation,
+) *string {
+	if op == nil {
+		return nil
+	}
+	if c == nil {
+		return nil
+	}
+	opConfig, found := c.Operations[op.Name]
+	if !found {
+		return nil
+	}
+
+	if opConfig.OutputWrapperFieldPath == "" {
+		return nil
+	}
+	return &opConfig.OutputWrapperFieldPath
+}
+
+// SetOutputCustomMethodName returns custom set output operation as *string for
+// given operation on custom resource, if specified in generator config
+func (c *Config) SetOutputCustomMethodName(
+	// The operation to look for the Output shape
+	op *awssdkmodel.Operation,
+) *string {
+	if op == nil {
+		return nil
+	}
+	if c == nil {
+		return nil
+	}
+	opConfig, found := c.Operations[op.Name]
+	if !found {
+		return nil
+	}
+
+	if opConfig.SetOutputCustomMethodName == "" {
+		return nil
+	}
+	return &opConfig.SetOutputCustomMethodName
+}
+
+// GetCustomImplementation returns custom implementation method name for the
+// supplied operation as specified in generator config
+func (c *Config) GetCustomImplementation(
+	// The type of operation
+	op *awssdkmodel.Operation,
+) string {
+	if op == nil || c == nil {
+		return ""
+	}
+
+	operationConfig, found := c.Operations[op.Name]
+	if !found {
+		return ""
+	}
+
+	return operationConfig.CustomImplementation
+}
+
+// GetCustomCheckRequiredFieldsMissingMethod returns custom check required fields missing method
+// as string for custom resource, if specified in generator config
+func (c *Config) GetCustomCheckRequiredFieldsMissingMethod(
+	// The type of operation
+	op *awssdkmodel.Operation,
+) string {
+	if op == nil || c == nil {
+		return ""
+	}
+
+	operationConfig, found := c.Operations[op.Name]
+	if !found {
+		return ""
+	}
+
+	return operationConfig.CustomCheckRequiredFieldsMissingMethod
+}
+
+// OverrideValues returns a list of member values to override for a given operation
+func (c *Config) OverrideValues(operationName string) (map[string]string, bool) {
+	if c == nil {
+		return nil, false
+	}
+	oConfig, ok := c.Operations[operationName]
+	if !ok {
+		return nil, false
+	}
+	return oConfig.OverrideValues, ok
+}
+
+// OperationConfig returns the OperationConfig for a given operation
+func (c *Config) OperationConfig(opID string) (*OperationConfig, bool) {
+	if c == nil {
+		return nil, false
+	}
+	opConfig, ok := c.Operations[opID]
+	return &opConfig, ok
 }
