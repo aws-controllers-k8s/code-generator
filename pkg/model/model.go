@@ -92,7 +92,7 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 	setAttributesOps := (*opMap)[OpTypeSetAttributes]
 
 	for crdName, createOp := range createOps {
-		if m.cfg.IsIgnoredResource(crdName) {
+		if m.cfg.IsResourceIgnored(crdName) {
 			continue
 		}
 		crdNames := names.New(crdName)
@@ -127,7 +127,7 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 			)
 			memberNames := names.New(fieldName)
 			memberNames.ModelOriginal = memberName
-			if memberName == "Attributes" && m.cfg.UnpacksAttributesMap(crdName) {
+			if memberName == "Attributes" && m.cfg.ResourceContainsAttributesMap(crdName) {
 				crd.UnpackAttributes()
 				continue
 			}
@@ -225,7 +225,7 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 			memberNames := names.New(fieldName)
 
 			//TODO:(brycahta) should we support overriding these fields?
-			if memberName == "Attributes" && m.cfg.UnpacksAttributesMap(crdName) {
+			if memberName == "Attributes" && m.cfg.ResourceContainsAttributesMap(crdName) {
 				continue
 			}
 			if crd.IsPrimaryARNField(memberName) {
@@ -301,25 +301,25 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 // operations to nil that are configured to be ignored in generator config for
 // the AWS service
 func (m *Model) RemoveIgnoredOperations(ops *Ops) {
-	if m.cfg.IsIgnoredOperation(ops.Create) {
+	if m.cfg.IsOperationIgnored(ops.Create) {
 		ops.Create = nil
 	}
-	if m.cfg.IsIgnoredOperation(ops.ReadOne) {
+	if m.cfg.IsOperationIgnored(ops.ReadOne) {
 		ops.ReadOne = nil
 	}
-	if m.cfg.IsIgnoredOperation(ops.ReadMany) {
+	if m.cfg.IsOperationIgnored(ops.ReadMany) {
 		ops.ReadMany = nil
 	}
-	if m.cfg.IsIgnoredOperation(ops.Update) {
+	if m.cfg.IsOperationIgnored(ops.Update) {
 		ops.Update = nil
 	}
-	if m.cfg.IsIgnoredOperation(ops.Delete) {
+	if m.cfg.IsOperationIgnored(ops.Delete) {
 		ops.Delete = nil
 	}
-	if m.cfg.IsIgnoredOperation(ops.GetAttributes) {
+	if m.cfg.IsOperationIgnored(ops.GetAttributes) {
 		ops.GetAttributes = nil
 	}
-	if m.cfg.IsIgnoredOperation(ops.SetAttributes) {
+	if m.cfg.IsOperationIgnored(ops.SetAttributes) {
 		ops.SetAttributes = nil
 	}
 }

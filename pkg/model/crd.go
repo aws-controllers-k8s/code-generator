@@ -261,7 +261,7 @@ func (r *CRD) SpecFieldNames() []string {
 // schema'd fields to a raw `map[string]*string` for this resource (see SNS and
 // SQS APIs)
 func (r *CRD) UnpacksAttributesMap() bool {
-	return r.cfg.UnpacksAttributesMap(r.Names.Original)
+	return r.cfg.ResourceContainsAttributesMap(r.Names.Original)
 }
 
 // CompareIgnoredFields returns the list of fields compare logic should ignore
@@ -275,14 +275,14 @@ func (r *CRD) CompareIgnoredFields() []string {
 // the SNS SetPlatformApplicationAttributes API call, which sets multiple
 // attributes at once. :shrug:
 func (r *CRD) SetAttributesSingleAttribute() bool {
-	return r.cfg.GetSetAttributesSingleAttribute(r.Names.Original)
+	return r.cfg.ResourceSetsSingleAttribute(r.Names.Original)
 }
 
 // UnpackAttributes grabs instructions about fields that are represented in the
 // AWS API as a `map[string]*string` but are actually real, schema'd fields and
 // adds Field definitions for those fields.
 func (r *CRD) UnpackAttributes() {
-	if !r.cfg.UnpacksAttributesMap(r.Names.Original) {
+	if !r.cfg.ResourceContainsAttributesMap(r.Names.Original) {
 		return
 	}
 	fieldConfigs := r.cfg.GetResourceFields(r.Names.Original)
@@ -539,7 +539,7 @@ func (r *CRD) SpecIdentifierField() *string {
 
 // IsAdoptable returns true if the resource can be adopted
 func (r *CRD) IsAdoptable() bool {
-	return r.cfg.ResourceIsAdoptable(r.Names.Original)
+	return r.cfg.IsResourceAdoptable(r.Names.Original)
 }
 
 // GetResourcePrintOrderByName returns the Printer Column order-by field name
@@ -554,7 +554,7 @@ func (r *CRD) GetResourcePrintOrderByName() string {
 // PrintAgeColumn returns whether the code generator should append 'Age'
 // kubebuilder:printcolumn comment marker
 func (r *CRD) PrintAgeColumn() bool {
-	return r.cfg.GetResourcePrintAddAgeColumn(r.Names.Camel)
+	return r.cfg.ResourceDisplaysAgeColumn(r.Names.Camel)
 }
 
 // ReconcileRequeuOnSuccessSeconds returns the duration after which to requeue

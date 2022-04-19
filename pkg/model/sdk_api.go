@@ -219,7 +219,7 @@ func (a *SDKAPI) CRDNames(cfg *ackgenconfig.Config) []names.Names {
 	createOps := (*opMap)[OpTypeCreate]
 	crdNames := []names.Names{}
 	for crdName := range createOps {
-		if cfg.IsIgnoredResource(crdName) {
+		if cfg.IsResourceIgnored(crdName) {
 			continue
 		}
 		crdNames = append(crdNames, names.New(crdName))

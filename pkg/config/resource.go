@@ -326,20 +326,39 @@ type ReconcileConfig struct {
 	RequeueOnSuccessSeconds int `json:"requeue_on_success_seconds,omitempty"`
 }
 
-// GetResourceConfig returns the ResourceConfig for a given resource name
-func (c *Config) GetResourceConfig(name string) (*ResourceConfig, bool) {
-	if c == nil {
-		return nil, false
+// IsResourceIgnored returns true if resource name is configured to be ignored
+// in generator config for the AWS service
+func (c *Config) IsResourceIgnored(resourceName string) bool {
+	if resourceName == "" {
+		return true
 	}
-	rc, ok := c.Resources[name]
-	return &rc, ok
+	if c == nil {
+		return false
+	}
+	return util.InStrings(resourceName, c.Ignore.ResourceNames)
 }
 
-// UnpacksAttributesMap returns true if the underlying API has
+// IsResourceAdoptable returns true if resource name is configured to be adoptable.
+// Default behavior is every resource can be adopted using AdoptionReconciler
+func (c *Config) IsResourceAdoptable(resourceName string) bool {
+	if c == nil {
+		return true
+	}
+	rConfig, ok := c.Resources[resourceName]
+	if !ok {
+		return true
+	}
+	if rConfig.IsAdoptable == nil {
+		return true
+	}
+	return *rConfig.IsAdoptable
+}
+
+// ResourceContainsAttributesMap returns true if the underlying API has
 // Get{Resource}Attributes/Set{Resource}Attributes API calls that map real,
 // schema'd fields to a raw `map[string]*string` for a given resource name (see SNS and
 // SQS APIs)
-func (c *Config) UnpacksAttributesMap(resourceName string) bool {
+func (c *Config) ResourceContainsAttributesMap(resourceName string) bool {
 	if c == nil {
 		return false
 	}
@@ -357,12 +376,28 @@ func (c *Config) UnpacksAttributesMap(resourceName string) bool {
 	return false
 }
 
-// GetSetAttributesSingleAttribute returns true if the supplied resource name has
+// ResourceDisplaysAgeColumn returns true if the resource is
+// configured to display resource age (created since date)
+func (c *Config) ResourceDisplaysAgeColumn(resourceName string) bool {
+	if c == nil {
+		return false
+	}
+	rConfig, ok := c.Resources[resourceName]
+	if !ok {
+		return false
+	}
+	if rConfig.Print != nil {
+		return rConfig.Print.AddAgeColumn
+	}
+	return false
+}
+
+// ResourceSetsSingleAttribute returns true if the supplied resource name has
 // a SetAttributes operation that only actually changes a single attribute at a
 // time. See: SNS SetTopicAttributes API call, which is entirely different from
 // the SNS SetPlatformApplicationAttributes API call, which sets multiple
 // attributes at once. :shrug:
-func (c *Config) GetSetAttributesSingleAttribute(resourceName string) bool {
+func (c *Config) ResourceSetsSingleAttribute(resourceName string) bool {
 	if c == nil {
 		return false
 	}
@@ -371,6 +406,15 @@ func (c *Config) GetSetAttributesSingleAttribute(resourceName string) bool {
 		return false
 	}
 	return resGenConfig.UnpackAttributesMapConfig.SetAttributesSingleAttribute
+}
+
+// GetResourceConfig returns the ResourceConfig for a given resource name
+func (c *Config) GetResourceConfig(name string) (*ResourceConfig, bool) {
+	if c == nil {
+		return nil, false
+	}
+	rc, ok := c.Resources[name]
+	return &rc, ok
 }
 
 // GetResourceFields returns a map, keyed by target/renamed field name, of
@@ -427,18 +471,6 @@ func (c *Config) GetCompareIgnoredFields(resName string) []string {
 	return rConfig.Compare.Ignore
 }
 
-// IsIgnoredResource returns true if resource name is configured to be ignored
-// in generator config for the AWS service
-func (c *Config) IsIgnoredResource(resourceName string) bool {
-	if resourceName == "" {
-		return true
-	}
-	if c == nil {
-		return false
-	}
-	return util.InStrings(resourceName, c.Ignore.ResourceNames)
-}
-
 // GetResourceFieldRename returns the renamed field for a Resource, a
 // supplied Operation ID and original field name and whether or not a renamed
 // override field name was found
@@ -483,22 +515,6 @@ func (c *Config) GetResourceShortNames(resourceName string) []string {
 	return rConfig.ShortNames
 }
 
-// ResourceIsAdoptable returns whether the given CRD is adoptable
-func (c *Config) ResourceIsAdoptable(resourceName string) bool {
-	if c == nil {
-		return true
-	}
-	rConfig, ok := c.Resources[resourceName]
-	if !ok {
-		return true
-	}
-	// Default to True
-	if rConfig.IsAdoptable == nil {
-		return true
-	}
-	return *rConfig.IsAdoptable
-}
-
 // GetResourcePrintOrderByName returns the Printer Column order-by field name
 func (c *Config) GetResourcePrintOrderByName(resourceName string) string {
 	if c == nil {
@@ -512,21 +528,6 @@ func (c *Config) GetResourcePrintOrderByName(resourceName string) string {
 		return rConfig.Print.OrderBy
 	}
 	return ""
-}
-
-// GetResourcePrintAddAgeColumn returns the resource printer AddAgeColumn config
-func (c *Config) GetResourcePrintAddAgeColumn(resourceName string) bool {
-	if c == nil {
-		return false
-	}
-	rConfig, ok := c.Resources[resourceName]
-	if !ok {
-		return false
-	}
-	if rConfig.Print != nil {
-		return rConfig.Print.AddAgeColumn
-	}
-	return false
 }
 
 // GetUpdateConditionsCustomMethodName returns custom update conditions operation
