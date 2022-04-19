@@ -92,7 +92,7 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 	setAttributesOps := (*opMap)[OpTypeSetAttributes]
 
 	for crdName, createOp := range createOps {
-		if m.cfg.IsResourceIgnored(crdName) {
+		if m.cfg.ResourceIsIgnored(crdName) {
 			continue
 		}
 		crdNames := names.New(crdName)
@@ -301,25 +301,25 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 // operations to nil that are configured to be ignored in generator config for
 // the AWS service
 func (m *Model) RemoveIgnoredOperations(ops *Ops) {
-	if m.cfg.IsOperationIgnored(ops.Create) {
+	if m.cfg.OperationIsIgnored(ops.Create) {
 		ops.Create = nil
 	}
-	if m.cfg.IsOperationIgnored(ops.ReadOne) {
+	if m.cfg.OperationIsIgnored(ops.ReadOne) {
 		ops.ReadOne = nil
 	}
-	if m.cfg.IsOperationIgnored(ops.ReadMany) {
+	if m.cfg.OperationIsIgnored(ops.ReadMany) {
 		ops.ReadMany = nil
 	}
-	if m.cfg.IsOperationIgnored(ops.Update) {
+	if m.cfg.OperationIsIgnored(ops.Update) {
 		ops.Update = nil
 	}
-	if m.cfg.IsOperationIgnored(ops.Delete) {
+	if m.cfg.OperationIsIgnored(ops.Delete) {
 		ops.Delete = nil
 	}
-	if m.cfg.IsOperationIgnored(ops.GetAttributes) {
+	if m.cfg.OperationIsIgnored(ops.GetAttributes) {
 		ops.GetAttributes = nil
 	}
-	if m.cfg.IsOperationIgnored(ops.SetAttributes) {
+	if m.cfg.OperationIsIgnored(ops.SetAttributes) {
 		ops.SetAttributes = nil
 	}
 }

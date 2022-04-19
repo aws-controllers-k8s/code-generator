@@ -47,9 +47,9 @@ type OperationConfig struct {
 	OperationType StringArray `json:"operation_type"`
 }
 
-// IsOperationIgnored returns true if Operation Name is configured to be ignored
+// OperationIsIgnored returns true if Operation Name is configured to be ignored
 // in generator config for the AWS service
-func (c *Config) IsOperationIgnored(operation *awssdkmodel.Operation) bool {
+func (c *Config) OperationIsIgnored(operation *awssdkmodel.Operation) bool {
 	if c == nil {
 		return false
 	}

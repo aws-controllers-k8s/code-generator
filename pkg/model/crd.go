@@ -539,7 +539,7 @@ func (r *CRD) SpecIdentifierField() *string {
 
 // IsAdoptable returns true if the resource can be adopted
 func (r *CRD) IsAdoptable() bool {
-	return r.cfg.IsResourceAdoptable(r.Names.Original)
+	return r.cfg.ResourceIsAdoptable(r.Names.Original)
 }
 
 // GetResourcePrintOrderByName returns the Printer Column order-by field name

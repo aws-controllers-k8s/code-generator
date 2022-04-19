@@ -326,9 +326,9 @@ type ReconcileConfig struct {
 	RequeueOnSuccessSeconds int `json:"requeue_on_success_seconds,omitempty"`
 }
 
-// IsResourceIgnored returns true if resource name is configured to be ignored
+// ResourceIsIgnored returns true if resource name is configured to be ignored
 // in generator config for the AWS service
-func (c *Config) IsResourceIgnored(resourceName string) bool {
+func (c *Config) ResourceIsIgnored(resourceName string) bool {
 	if resourceName == "" {
 		return true
 	}
@@ -338,9 +338,9 @@ func (c *Config) IsResourceIgnored(resourceName string) bool {
 	return util.InStrings(resourceName, c.Ignore.ResourceNames)
 }
 
-// IsResourceAdoptable returns true if resource name is configured to be adoptable.
+// ResourceIsAdoptable returns true if resource name is configured to be adoptable.
 // Default behavior is every resource can be adopted using AdoptionReconciler
-func (c *Config) IsResourceAdoptable(resourceName string) bool {
+func (c *Config) ResourceIsAdoptable(resourceName string) bool {
 	if c == nil {
 		return true
 	}
