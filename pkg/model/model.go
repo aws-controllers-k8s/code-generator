@@ -120,7 +120,7 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 				return nil, ErrNilShapePointer
 			}
 			// Handles field renames, if applicable
-			fieldName, _ := m.cfg.GetResourceFieldRename(
+			fieldName := m.cfg.GetResourceFieldName(
 				crd.Names.Original,
 				createOp.Name,
 				memberName,
@@ -212,7 +212,7 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 			}
 			// Check that the field in the output shape isn't the same as
 			// fields in the input shape (handles field renames, if applicable)
-			fieldName, _ := m.cfg.GetResourceFieldRename(
+			fieldName := m.cfg.GetResourceFieldName(
 				crd.Names.Original,
 				createOp.Name,
 				memberName,

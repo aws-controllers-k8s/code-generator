@@ -409,12 +409,12 @@ func (c *Config) ResourceSetsSingleAttribute(resourceName string) bool {
 }
 
 // GetResourceConfig returns the ResourceConfig for a given resource name
-func (c *Config) GetResourceConfig(name string) (*ResourceConfig, bool) {
+func (c *Config) GetResourceConfig(resourceName string) *ResourceConfig {
 	if c == nil {
-		return nil, false
+		return nil
 	}
-	rc, ok := c.Resources[name]
-	return &rc, ok
+	rc, _ := c.Resources[resourceName]
+	return &rc
 }
 
 // GetResourceFields returns a map, keyed by target/renamed field name, of
@@ -455,13 +455,13 @@ func (c *Config) GetResourceFieldByPath(resourceName string, fieldPath string) *
 	return nil
 }
 
-// GetCompareIgnoredFields returns the list of field path to ignore when
-// comparing two differnt objects
-func (c *Config) GetCompareIgnoredFields(resName string) []string {
+// GetCompareIgnoredFields returns the list of field paths to ignore when
+// comparing two different objects
+func (c *Config) GetCompareIgnoredFields(resourceName string) []string {
 	if c == nil {
 		return nil
 	}
-	rConfig, ok := c.Resources[resName]
+	rConfig, ok := c.Resources[resourceName]
 	if !ok {
 		return nil
 	}
@@ -471,39 +471,38 @@ func (c *Config) GetCompareIgnoredFields(resName string) []string {
 	return rConfig.Compare.Ignore
 }
 
-// GetResourceFieldRename returns the renamed field for a Resource, a
-// supplied Operation ID and original field name and whether or not a renamed
-// override field name was found
-func (c *Config) GetResourceFieldRename(
-	resName string,
+// GetResourceFieldName returns a resource field name
+// after applying rename overrides, if configured
+func (c *Config) GetResourceFieldName(
+	resourceName string,
 	opID string,
 	origFieldName string,
-) (string, bool) {
+) string {
 	if c == nil {
-		return origFieldName, false
+		return origFieldName
 	}
-	rConfig, ok := c.Resources[resName]
+	rConfig, ok := c.Resources[resourceName]
 	if !ok {
-		return origFieldName, false
+		return origFieldName
 	}
 	if rConfig.Renames == nil {
-		return origFieldName, false
+		return origFieldName
 	}
 	oRenames, ok := rConfig.Renames.Operations[opID]
 	if !ok {
-		return origFieldName, false
+		return origFieldName
 	}
 	renamed, ok := oRenames.InputFields[origFieldName]
 	if !ok {
 		renamed, ok = oRenames.OutputFields[origFieldName]
 		if !ok {
-			return origFieldName, false
+			return origFieldName
 		}
 	}
-	return renamed, true
+	return renamed
 }
 
-// ResourceShortNames returns the CRD list of aliases
+// GetResourceShortNames returns the CRD list of aliases
 func (c *Config) GetResourceShortNames(resourceName string) []string {
 	if c == nil {
 		return nil
@@ -543,9 +542,9 @@ func (c *Config) GetUpdateConditionsCustomMethodName(resourceName string) string
 	return resGenConfig.UpdateConditionsCustomMethodName
 }
 
-// GetReconcileRequeuOnSuccessSeconds returns the duration after which to requeue
+// GetReconcileRequeueOnSuccessSeconds returns the duration after which to requeue
 // the custom resource as int, if specified in generator config.
-func (c *Config) GetReconcileRequeuOnSuccessSeconds(resourceName string) int {
+func (c *Config) GetReconcileRequeueOnSuccessSeconds(resourceName string) int {
 	if c == nil {
 		return 0
 	}
@@ -582,17 +581,17 @@ func (c *Config) GetCustomUpdateMethodName(resourceName string) string {
 func (c *Config) GetAllRenames(
 	resourceName string,
 	operations map[string]*awssdkmodel.Operation,
-) (map[string]string, error) {
+) map[string]string {
 	renames := make(map[string]string)
 	if c == nil {
-		return renames, nil
+		return renames
 	}
 	resourceConfig, ok := c.Resources[resourceName]
 	if !ok {
-		return renames, nil
+		return renames
 	}
 	if resourceConfig.Renames == nil || resourceConfig.Renames.Operations == nil {
-		return renames, nil
+		return renames
 	}
 
 	opRenameConfigs := resourceConfig.Renames.Operations
@@ -609,7 +608,7 @@ func (c *Config) GetAllRenames(
 			}
 		}
 	}
-	return renames, nil
+	return renames
 }
 
 // GetTerminalExceptionCodes returns terminal exception codes as

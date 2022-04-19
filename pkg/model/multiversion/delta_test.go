@@ -385,10 +385,10 @@ func TestComputeFieldsDiff_ECR(t *testing.T) {
 				field.ShapeRef.Shape = newEmptyStructShape(tt.args.src.mutateShape)
 			}
 
-			srcRenames, err := srcCRD.GetAllRenames(ackmodel.OpTypeCreate)
-			require.Nil(err)
-			dstRenames, err := dstCRD.GetAllRenames(ackmodel.OpTypeCreate)
-			require.Nil(err)
+			srcRenames := srcCRD.GetAllRenames(ackmodel.OpTypeCreate)
+			require.NotNil(srcRenames)
+			dstRenames := dstCRD.GetAllRenames(ackmodel.OpTypeCreate)
+			require.NotNil(dstRenames)
 			renames, err := multiversion.ComputeRenamesDelta(srcRenames, dstRenames)
 			require.Nil(err)
 

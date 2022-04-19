@@ -362,8 +362,8 @@ func (r *CRD) HasImmutableFieldChanges() bool {
 // IsARNPrimaryKey returns true if the CRD uses its ARN as its primary key in
 // ReadOne calls.
 func (r *CRD) IsARNPrimaryKey() bool {
-	resGenConfig, found := r.cfg.GetResourceConfig(r.Names.Original)
-	if !found {
+	resGenConfig := r.cfg.GetResourceConfig(r.Names.Original)
+	if resGenConfig == nil {
 		return false
 	}
 	return resGenConfig.IsARNPrimaryKey
@@ -516,8 +516,8 @@ func (r *CRD) GetCustomCheckRequiredFieldsMissingMethod(
 // SpecIdentifierField returns the name of the "Name" or string identifier field
 // in the Spec.
 func (r *CRD) SpecIdentifierField() *string {
-	rConfig, found := r.cfg.GetResourceConfig(r.Names.Original)
-	if found {
+	rConfig := r.cfg.GetResourceConfig(r.Names.Original)
+	if rConfig != nil {
 		for fName, fConfig := range rConfig.Fields {
 			if fConfig.IsPrimaryKey {
 				return &fName
@@ -560,7 +560,7 @@ func (r *CRD) PrintAgeColumn() bool {
 // ReconcileRequeuOnSuccessSeconds returns the duration after which to requeue
 // the custom resource as int
 func (r *CRD) ReconcileRequeuOnSuccessSeconds() int {
-	return r.cfg.GetReconcileRequeuOnSuccessSeconds(r.Names.Original)
+	return r.cfg.GetReconcileRequeueOnSuccessSeconds(r.Names.Original)
 }
 
 // CustomUpdateMethodName returns the name of the custom resourceManager method
@@ -579,7 +579,7 @@ func (r *CRD) ListOpMatchFieldNames() []string {
 
 // GetAllRenames returns all the field renames observed in the generator config
 // for a given OpType.
-func (r *CRD) GetAllRenames(op OpType) (map[string]string, error) {
+func (r *CRD) GetAllRenames(op OpType) map[string]string {
 	opMap := r.sdkAPI.GetOperationMap(r.cfg)
 	operations := (*opMap)[op]
 	return r.cfg.GetAllRenames(r.Names.Original, operations)
@@ -625,19 +625,16 @@ func (r *CRD) GetSanitizedMemberPath(
 	op *awssdkmodel.Operation,
 	koVarName string) (string, error) {
 	resVarPath := koVarName
-	cleanMemberNames := names.New(memberName)
-	pathFieldName := cleanMemberNames.Camel
 	cfg := r.Config()
 
 	// Handles field renames, if applicable
-	fieldName, fieldRenamed := cfg.GetResourceFieldRename(
+	fieldName := cfg.GetResourceFieldName(
 		r.Names.Original,
 		op.Name,
 		memberName,
 	)
-	if fieldRenamed {
-		pathFieldName = fieldName
-	}
+	cleanFieldNames := names.New(fieldName)
+	pathFieldName := cleanFieldNames.Camel
 
 	inSpec, inStatus := r.HasMember(fieldName, op.Name)
 	if inSpec {
@@ -657,7 +654,7 @@ func (r *CRD) HasMember(
 	memberName string,
 	operationName string,
 ) (inSpec bool, inStatus bool) {
-	fieldName, _ := r.Config().GetResourceFieldRename(
+	fieldName := r.Config().GetResourceFieldName(
 		r.Names.Original,
 		operationName,
 		memberName,

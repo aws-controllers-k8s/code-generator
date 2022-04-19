@@ -189,7 +189,7 @@ func SetResource(
 		targetAdaptedVarName := targetVarName
 
 		// Handles field renames, if applicable
-		fieldName, _ := cfg.GetResourceFieldRename(
+		fieldName := cfg.GetResourceFieldName(
 			r.Names.Original,
 			op.Name,
 			memberName,
@@ -523,7 +523,7 @@ func setResourceReadMany(
 		targetAdaptedVarName := targetVarName
 
 		// Handles field renames, if applicable
-		fieldName, foundFieldRename := cfg.GetResourceFieldRename(
+		fieldName := cfg.GetResourceFieldName(
 			r.Names.Original,
 			op.Name,
 			memberName,
@@ -535,11 +535,6 @@ func setResourceReadMany(
 		} else if inStatus {
 			targetAdaptedVarName += cfg.PrefixConfig.StatusField
 			f = r.StatusFields[fieldName]
-		} else if foundFieldRename {
-			msg := fmt.Sprintf(
-				"Field rename %s for operation %s is not part of %s Spec or"+
-					" Status fields", memberName, op.Name, r.Names.Camel)
-			panic(msg)
 		} else {
 			// field not found in Spec or Status
 			continue
@@ -990,7 +985,7 @@ func SetResourceIdentifiers(
 		}
 
 		// Handles field renames, if applicable
-		fieldName, _ := cfg.GetResourceFieldRename(
+		fieldName := cfg.GetResourceFieldName(
 			r.Names.Original,
 			op.Name,
 			memberName,

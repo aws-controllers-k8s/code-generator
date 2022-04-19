@@ -54,7 +54,7 @@ func FindIdentifiersInShape(
 
 	// Handles field renames
 	opType, _ := model.GetOpTypeAndResourceNameFromOpID(op.Name, r.Config())
-	renames, _ := r.GetAllRenames(opType)
+	renames := r.GetAllRenames(opType)
 	for _, memberName := range shape.MemberNames() {
 		lookupName := memberName
 		if renamedName, found := renames[memberName]; found {
@@ -111,8 +111,9 @@ func FindPluralizedIdentifiersInShape(
 		for _, ci := range crIdentifiers {
 			// If the identifier field is renamed, we must take that into
 			// consideration in order to find the corresponding matching
-			// shapeIdentifier.
-			siRenamed, _ := r.Config().GetResourceFieldRename(
+			// shapeIdentifier. Fetch field name from the config to apply
+			// renames, if applicable
+			siRenamed := r.Config().GetResourceFieldName(
 				r.Names.Original,
 				op.Name,
 				pluralize.Singular(si),
@@ -191,7 +192,8 @@ func FindPrimaryIdentifierFieldNames(
 			panic("Could not find corresponding spec or status field " +
 				"for primary identifier " + shapeField)
 		}
-		crField, _ = cfg.GetResourceFieldRename(
+		// Fetch field name from config to apply renames, if applicable
+		crField = cfg.GetResourceFieldName(
 			r.Names.Original,
 			op.Name,
 			shapeField,

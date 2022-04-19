@@ -215,7 +215,7 @@ func SetSDK(
 		sourceAdaptedVarName := sourceVarName
 
 		// Handles field renames, if applicable
-		fieldName, _ := cfg.GetResourceFieldRename(
+		fieldName := cfg.GetResourceFieldName(
 			r.Names.Original,
 			op.Name,
 			memberName,
@@ -778,7 +778,7 @@ func setSDKReadMany(
 		}
 
 		// Handles field renames, if applicable
-		fieldName, _ := cfg.GetResourceFieldRename(
+		fieldName := cfg.GetResourceFieldName(
 			r.Names.Original,
 			op.Name,
 			memberName,

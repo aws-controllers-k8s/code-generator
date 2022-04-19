@@ -69,15 +69,8 @@ type CRDDelta struct {
 // spec and status fields deltas. src is the CRD of the spoke (source) version
 // and dst is the CRD of the hub (destination) version.
 func ComputeCRDFieldDeltas(src, dst *ackmodel.CRD) (*CRDDelta, error) {
-	dstRenames, err := dst.GetAllRenames(ackmodel.OpTypeCreate)
-	if err != nil {
-		return nil, fmt.Errorf("cannot get resource field renames: %s", err)
-	}
-
-	srcRenames, err := src.GetAllRenames(ackmodel.OpTypeCreate)
-	if err != nil {
-		return nil, fmt.Errorf("cannot get resource field renames: %s", err)
-	}
+	dstRenames := dst.GetAllRenames(ackmodel.OpTypeCreate)
+	srcRenames := src.GetAllRenames(ackmodel.OpTypeCreate)
 
 	renames, err := ComputeRenamesDelta(srcRenames, dstRenames)
 	if err != nil {
