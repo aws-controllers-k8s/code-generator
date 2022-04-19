@@ -17,6 +17,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/aws-controllers-k8s/code-generator/pkg/config"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -154,4 +156,26 @@ func TestCheckNilFieldPath(t *testing.T) {
 	assert.Equal(t,
 		"ko.Spec.JWTConfiguration == nil || ko.Spec.JWTConfiguration.Issuer == nil",
 		code.CheckNilFieldPath(&field, "ko.Spec"))
+}
+
+func TestCheckNilReferencesPath(t *testing.T) {
+	field := model.Field{}
+	// Empty ReferencesPath
+	referenceFieldConfig := config.ReferencesConfig{Path: ""}
+	fieldConfig := config.FieldConfig{References: &referenceFieldConfig}
+	field.FieldConfig = &fieldConfig
+	assert.Equal(t, "", code.CheckNilReferencesPath(&field, "obj"))
+	// Non nested ReferencesPath
+	referenceFieldConfig.Path = "Status"
+	assert.Equal(t, "", code.CheckNilReferencesPath(&field, "obj"))
+	// Nested ReferencesPath
+	referenceFieldConfig.Path = "Status.ACKResourceMetadata"
+	assert.Equal(t,
+		"obj.Status.ACKResourceMetadata == nil",
+		code.CheckNilReferencesPath(&field, "obj"))
+	// Multi Level Nested ReferencesPath
+	referenceFieldConfig.Path = "Status.ACKResourceMetadata.ARN"
+	assert.Equal(t,
+		"obj.Status.ACKResourceMetadata == nil || obj.Status.ACKResourceMetadata.ARN == nil",
+		code.CheckNilReferencesPath(&field, "obj"))
 }
