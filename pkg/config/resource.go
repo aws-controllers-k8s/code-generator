@@ -326,8 +326,8 @@ type ReconcileConfig struct {
 	RequeueOnSuccessSeconds int `json:"requeue_on_success_seconds,omitempty"`
 }
 
-// ResourceConfig returns the ResourceConfig for a given resource name
-func (c *Config) ResourceConfig(name string) (*ResourceConfig, bool) {
+// GetResourceConfig returns the ResourceConfig for a given resource name
+func (c *Config) GetResourceConfig(name string) (*ResourceConfig, bool) {
 	if c == nil {
 		return nil, false
 	}
@@ -357,12 +357,12 @@ func (c *Config) UnpacksAttributesMap(resourceName string) bool {
 	return false
 }
 
-// SetAttributesSingleAttribute returns true if the supplied resource name has
+// GetSetAttributesSingleAttribute returns true if the supplied resource name has
 // a SetAttributes operation that only actually changes a single attribute at a
 // time. See: SNS SetTopicAttributes API call, which is entirely different from
 // the SNS SetPlatformApplicationAttributes API call, which sets multiple
 // attributes at once. :shrug:
-func (c *Config) SetAttributesSingleAttribute(resourceName string) bool {
+func (c *Config) GetSetAttributesSingleAttribute(resourceName string) bool {
 	if c == nil {
 		return false
 	}
@@ -373,10 +373,10 @@ func (c *Config) SetAttributesSingleAttribute(resourceName string) bool {
 	return resGenConfig.UnpackAttributesMapConfig.SetAttributesSingleAttribute
 }
 
-// ResourceFields returns a map, keyed by target/renamed field name, of
+// GetResourceFields returns a map, keyed by target/renamed field name, of
 // FieldConfig struct pointers that instruct the code generator how to handle
 // the interpretation of special Resource fields (both Spec and Status)
-func (c *Config) ResourceFields(resourceName string) map[string]*FieldConfig {
+func (c *Config) GetResourceFields(resourceName string) map[string]*FieldConfig {
 	if c == nil {
 		return map[string]*FieldConfig{}
 	}
@@ -387,10 +387,10 @@ func (c *Config) ResourceFields(resourceName string) map[string]*FieldConfig {
 	return resourceConfig.Fields
 }
 
-// ResourceFieldByPath returns the FieldConfig for a field from
+// GetResourceFieldByPath returns the FieldConfig for a field from
 // "resourceName" crd, where field.Path matches the passed "fieldPath" parameter.
 // This method performs the case-insensitive resource and fieldPath lookup.
-func (c *Config) ResourceFieldByPath(resourceName string, fieldPath string) *FieldConfig {
+func (c *Config) GetResourceFieldByPath(resourceName string, fieldPath string) *FieldConfig {
 	var resourceConfig ResourceConfig
 	if c == nil {
 		return nil
@@ -439,10 +439,10 @@ func (c *Config) IsIgnoredResource(resourceName string) bool {
 	return util.InStrings(resourceName, c.Ignore.ResourceNames)
 }
 
-// ResourceFieldRename returns the renamed field for a Resource, a
+// GetResourceFieldRename returns the renamed field for a Resource, a
 // supplied Operation ID and original field name and whether or not a renamed
 // override field name was found
-func (c *Config) ResourceFieldRename(
+func (c *Config) GetResourceFieldRename(
 	resName string,
 	opID string,
 	origFieldName string,
@@ -472,7 +472,7 @@ func (c *Config) ResourceFieldRename(
 }
 
 // ResourceShortNames returns the CRD list of aliases
-func (c *Config) ResourceShortNames(resourceName string) []string {
+func (c *Config) GetResourceShortNames(resourceName string) []string {
 	if c == nil {
 		return nil
 	}
@@ -529,9 +529,9 @@ func (c *Config) GetResourcePrintAddAgeColumn(resourceName string) bool {
 	return false
 }
 
-// UpdateConditionsCustomMethodName returns custom update conditions operation
+// GetUpdateConditionsCustomMethodName returns custom update conditions operation
 // as *string for custom resource, if specified in generator config
-func (c *Config) UpdateConditionsCustomMethodName(resourceName string) string {
+func (c *Config) GetUpdateConditionsCustomMethodName(resourceName string) string {
 	if c == nil {
 		return ""
 	}
@@ -542,9 +542,9 @@ func (c *Config) UpdateConditionsCustomMethodName(resourceName string) string {
 	return resGenConfig.UpdateConditionsCustomMethodName
 }
 
-// ReconcileRequeuOnSuccessSeconds returns the duration after which to requeue
+// GetReconcileRequeuOnSuccessSeconds returns the duration after which to requeue
 // the custom resource as int, if specified in generator config.
-func (c *Config) ReconcileRequeuOnSuccessSeconds(resourceName string) int {
+func (c *Config) GetReconcileRequeuOnSuccessSeconds(resourceName string) int {
 	if c == nil {
 		return 0
 	}
@@ -560,10 +560,10 @@ func (c *Config) ReconcileRequeuOnSuccessSeconds(resourceName string) int {
 	return 0
 }
 
-// CustomUpdateMethodName returns the name of the custom resourceManager method
+// GetCustomUpdateMethodName returns the name of the custom resourceManager method
 // for updating the resource state, if any has been specified in the generator
 // config
-func (c *Config) CustomUpdateMethodName(resourceName string) string {
+func (c *Config) GetCustomUpdateMethodName(resourceName string) string {
 	if c == nil {
 		return ""
 	}
@@ -611,9 +611,9 @@ func (c *Config) GetAllRenames(
 	return renames, nil
 }
 
-// TerminalExceptionCodes returns terminal exception codes as
+// GetTerminalExceptionCodes returns terminal exception codes as
 // []string for custom resource, if specified in generator config
-func (c *Config) TerminalExceptionCodes(resourceName string) []string {
+func (c *Config) GetTerminalExceptionCodes(resourceName string) []string {
 	if c == nil {
 		return nil
 	}
@@ -624,10 +624,10 @@ func (c *Config) TerminalExceptionCodes(resourceName string) []string {
 	return nil
 }
 
-// ListOpMatchFieldNames returns a slice of strings representing the field
+// GetListOpMatchFieldNames returns a slice of strings representing the field
 // names in the List operation's Output shape's element Shape that we should
 // check a corresponding value in the target Spec exists.
-func (c *Config) ListOpMatchFieldNames(
+func (c *Config) GetListOpMatchFieldNames(
 	resName string,
 ) []string {
 	res := []string{}

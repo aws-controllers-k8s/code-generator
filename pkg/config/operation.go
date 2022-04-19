@@ -99,9 +99,9 @@ func (c *Config) GetOutputWrapperFieldPath(
 	return &opConfig.OutputWrapperFieldPath
 }
 
-// SetOutputCustomMethodName returns custom set output operation as *string for
+// GetSetOutputCustomMethodName returns custom set output operation as *string for
 // given operation on custom resource, if specified in generator config
-func (c *Config) SetOutputCustomMethodName(
+func (c *Config) GetSetOutputCustomMethodName(
 	// The operation to look for the Output shape
 	op *awssdkmodel.Operation,
 ) *string {
@@ -159,7 +159,7 @@ func (c *Config) GetCustomCheckRequiredFieldsMissingMethod(
 }
 
 // OverrideValues returns a list of member values to override for a given operation
-func (c *Config) OverrideValues(operationName string) (map[string]string, bool) {
+func (c *Config) GetOverrideValues(operationName string) (map[string]string, bool) {
 	if c == nil {
 		return nil, false
 	}
@@ -171,7 +171,7 @@ func (c *Config) OverrideValues(operationName string) (map[string]string, bool) 
 }
 
 // OperationConfig returns the OperationConfig for a given operation
-func (c *Config) OperationConfig(opID string) (*OperationConfig, bool) {
+func (c *Config) GetOperationConfig(opID string) (*OperationConfig, bool) {
 	if c == nil {
 		return nil, false
 	}

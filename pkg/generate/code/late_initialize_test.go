@@ -31,7 +31,7 @@ func Test_FindLateInitializedFieldNames_EmptyFieldConfig(t *testing.T) {
 	crd := testutil.GetCRDByName(t, g, "Repository")
 	require.NotNil(crd)
 	// NO fieldConfig
-	assert.Empty(crd.Config().ResourceFields(crd.Names.Original))
+	assert.Empty(crd.Config().GetResourceFields(crd.Names.Original))
 	expected :=
 		`	var lateInitializeFieldNames = []string{}
 `
@@ -47,8 +47,8 @@ func Test_FindLateInitializedFieldNames_NoLateInitializations(t *testing.T) {
 	crd := testutil.GetCRDByName(t, g, "Repository")
 	require.NotNil(crd)
 	// FieldConfig without lateInitialize
-	assert.NotEmpty(crd.Config().ResourceFields(crd.Names.Original)["Name"])
-	assert.Nil(crd.Config().ResourceFields(crd.Names.Original)["Name"].LateInitialize)
+	assert.NotEmpty(crd.Config().GetResourceFields(crd.Names.Original)["Name"])
+	assert.Nil(crd.Config().GetResourceFields(crd.Names.Original)["Name"].LateInitialize)
 	expected :=
 		`	var lateInitializeFieldNames = []string{}
 `
@@ -63,10 +63,10 @@ func Test_FindLateInitializedFieldNames(t *testing.T) {
 
 	crd := testutil.GetCRDByName(t, g, "Repository")
 	require.NotNil(crd)
-	assert.NotEmpty(crd.Config().ResourceFields(crd.Names.Original)["Name"])
-	assert.NotEmpty(crd.Config().ResourceFields(crd.Names.Original)["ImageTagMutability"])
-	assert.NotNil(crd.Config().ResourceFields(crd.Names.Original)["Name"].LateInitialize)
-	assert.NotNil(crd.Config().ResourceFields(crd.Names.Original)["ImageTagMutability"].LateInitialize)
+	assert.NotEmpty(crd.Config().GetResourceFields(crd.Names.Original)["Name"])
+	assert.NotEmpty(crd.Config().GetResourceFields(crd.Names.Original)["ImageTagMutability"])
+	assert.NotNil(crd.Config().GetResourceFields(crd.Names.Original)["Name"].LateInitialize)
+	assert.NotNil(crd.Config().GetResourceFields(crd.Names.Original)["ImageTagMutability"].LateInitialize)
 	expected :=
 		`	var lateInitializeFieldNames = []string{"ImageTagMutability","Name",}
 `
@@ -82,7 +82,7 @@ func Test_LateInitializeFromReadOne_NoFieldsToLateInitialize(t *testing.T) {
 	crd := testutil.GetCRDByName(t, g, "Repository")
 	require.NotNil(crd)
 	// NO fieldConfig
-	assert.Empty(crd.Config().ResourceFields(crd.Names.Original))
+	assert.Empty(crd.Config().GetResourceFields(crd.Names.Original))
 	expected := "	return latest"
 	assert.Equal(expected, code.LateInitializeFromReadOne(crd.Config(), crd, "observed", "latest", 1))
 }
@@ -95,10 +95,10 @@ func Test_LateInitializeFromReadOne_NonNestedPath(t *testing.T) {
 
 	crd := testutil.GetCRDByName(t, g, "Repository")
 	require.NotNil(crd)
-	assert.NotEmpty(crd.Config().ResourceFields(crd.Names.Original)["Name"])
-	assert.NotEmpty(crd.Config().ResourceFields(crd.Names.Original)["ImageTagMutability"])
-	assert.NotNil(crd.Config().ResourceFields(crd.Names.Original)["Name"].LateInitialize)
-	assert.NotNil(crd.Config().ResourceFields(crd.Names.Original)["ImageTagMutability"].LateInitialize)
+	assert.NotEmpty(crd.Config().GetResourceFields(crd.Names.Original)["Name"])
+	assert.NotEmpty(crd.Config().GetResourceFields(crd.Names.Original)["ImageTagMutability"])
+	assert.NotNil(crd.Config().GetResourceFields(crd.Names.Original)["Name"].LateInitialize)
+	assert.NotNil(crd.Config().GetResourceFields(crd.Names.Original)["ImageTagMutability"].LateInitialize)
 	expected :=
 		`	observedKo := rm.concreteResource(observed).ko.DeepCopy()
 	latestKo := rm.concreteResource(latest).ko.DeepCopy()
@@ -120,10 +120,10 @@ func Test_LateInitializeFromReadOne_NestedPath(t *testing.T) {
 
 	crd := testutil.GetCRDByName(t, g, "Repository")
 	require.NotNil(crd)
-	assert.NotEmpty(crd.Config().ResourceFields(crd.Names.Original)["Name"])
-	assert.NotEmpty(crd.Config().ResourceFields(crd.Names.Original)["ImageScanningConfiguration.ScanOnPush"])
-	assert.NotNil(crd.Config().ResourceFields(crd.Names.Original)["Name"].LateInitialize)
-	assert.NotNil(crd.Config().ResourceFields(crd.Names.Original)["ImageScanningConfiguration.ScanOnPush"].LateInitialize)
+	assert.NotEmpty(crd.Config().GetResourceFields(crd.Names.Original)["Name"])
+	assert.NotEmpty(crd.Config().GetResourceFields(crd.Names.Original)["ImageScanningConfiguration.ScanOnPush"])
+	assert.NotNil(crd.Config().GetResourceFields(crd.Names.Original)["Name"].LateInitialize)
+	assert.NotNil(crd.Config().GetResourceFields(crd.Names.Original)["ImageScanningConfiguration.ScanOnPush"].LateInitialize)
 	expected :=
 		`	observedKo := rm.concreteResource(observed).ko.DeepCopy()
 	latestKo := rm.concreteResource(latest).ko.DeepCopy()
@@ -188,10 +188,10 @@ func Test_IncompleteLateInitialization(t *testing.T) {
 
 	crd := testutil.GetCRDByName(t, g, "Repository")
 	require.NotNil(crd)
-	assert.NotEmpty(crd.Config().ResourceFields(crd.Names.Original)["Name"])
-	assert.NotEmpty(crd.Config().ResourceFields(crd.Names.Original)["ImageScanningConfiguration.ScanOnPush"])
-	assert.NotNil(crd.Config().ResourceFields(crd.Names.Original)["Name"].LateInitialize)
-	assert.NotNil(crd.Config().ResourceFields(crd.Names.Original)["ImageScanningConfiguration.ScanOnPush"].LateInitialize)
+	assert.NotEmpty(crd.Config().GetResourceFields(crd.Names.Original)["Name"])
+	assert.NotEmpty(crd.Config().GetResourceFields(crd.Names.Original)["ImageScanningConfiguration.ScanOnPush"])
+	assert.NotNil(crd.Config().GetResourceFields(crd.Names.Original)["Name"].LateInitialize)
+	assert.NotNil(crd.Config().GetResourceFields(crd.Names.Original)["ImageScanningConfiguration.ScanOnPush"].LateInitialize)
 	expected :=
 		`	ko := rm.concreteResource(latest).ko.DeepCopy()
 	if ko.Spec.ImageScanningConfiguration != nil {

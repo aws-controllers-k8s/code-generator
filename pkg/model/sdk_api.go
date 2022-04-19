@@ -328,7 +328,7 @@ func getOpTypeAndResourceName(opID string, cfg *ackgenconfig.Config) ([]OpType, 
 	opType, resName := GetOpTypeAndResourceNameFromOpID(opID, cfg)
 	opTypes := []OpType{opType}
 
-	if operationConfig, exists := cfg.OperationConfig(opID); exists {
+	if operationConfig, exists := cfg.GetOperationConfig(opID); exists {
 		if operationConfig.ResourceName != "" {
 			resName = operationConfig.ResourceName
 		}

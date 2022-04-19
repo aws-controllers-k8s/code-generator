@@ -39,7 +39,7 @@ func CheckExceptionMessage(
 	r *model.CRD,
 	httpStatusCode int,
 ) string {
-	rConfig, ok := cfg.ResourceConfig(r.Names.Original)
+	rConfig, ok := cfg.GetResourceConfig(r.Names.Original)
 	if ok && rConfig.Exceptions != nil {
 		excConfig, ok := rConfig.Exceptions.Errors[httpStatusCode]
 		if !ok {

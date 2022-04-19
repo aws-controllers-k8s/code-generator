@@ -57,7 +57,7 @@ func ResourceIsSynced(
 	indentLevel int,
 ) string {
 	out := "\n"
-	resConfig, ok := cfg.ResourceConfig(r.Names.Original)
+	resConfig, ok := cfg.GetResourceConfig(r.Names.Original)
 	if !ok || resConfig.Synced == nil || len(resConfig.Synced.When) == 0 {
 		return out
 	}

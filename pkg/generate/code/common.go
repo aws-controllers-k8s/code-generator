@@ -112,7 +112,7 @@ func FindPluralizedIdentifiersInShape(
 			// If the identifier field is renamed, we must take that into
 			// consideration in order to find the corresponding matching
 			// shapeIdentifier.
-			siRenamed, _ := r.Config().ResourceFieldRename(
+			siRenamed, _ := r.Config().GetResourceFieldRename(
 				r.Names.Original,
 				op.Name,
 				pluralize.Singular(si),
@@ -191,7 +191,7 @@ func FindPrimaryIdentifierFieldNames(
 			panic("Could not find corresponding spec or status field " +
 				"for primary identifier " + shapeField)
 		}
-		crField, _ = cfg.ResourceFieldRename(
+		crField, _ = cfg.GetResourceFieldRename(
 			r.Names.Original,
 			op.Name,
 			shapeField,

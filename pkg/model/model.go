@@ -120,7 +120,7 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 				return nil, ErrNilShapePointer
 			}
 			// Handles field renames, if applicable
-			fieldName, _ := m.cfg.ResourceFieldRename(
+			fieldName, _ := m.cfg.GetResourceFieldRename(
 				crd.Names.Original,
 				createOp.Name,
 				memberName,
@@ -136,7 +136,7 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 
 		// Now any additional Spec fields that are required from other API
 		// operations.
-		for targetFieldName, fieldConfig := range m.cfg.ResourceFields(crdName) {
+		for targetFieldName, fieldConfig := range m.cfg.GetResourceFields(crdName) {
 			if fieldConfig.IsReadOnly {
 				// It's a Status field...
 				continue
@@ -212,7 +212,7 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 			}
 			// Check that the field in the output shape isn't the same as
 			// fields in the input shape (handles field renames, if applicable)
-			fieldName, _ := m.cfg.ResourceFieldRename(
+			fieldName, _ := m.cfg.GetResourceFieldRename(
 				crd.Names.Original,
 				createOp.Name,
 				memberName,
@@ -238,7 +238,7 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 
 		// Now add the additional Status fields that are required from other
 		// API operations.
-		for targetFieldName, fieldConfig := range m.cfg.ResourceFields(crdName) {
+		for targetFieldName, fieldConfig := range m.cfg.GetResourceFields(crdName) {
 			if !fieldConfig.IsReadOnly {
 				// It's a Spec field...
 				continue
@@ -700,7 +700,7 @@ func (m *Model) processField(
 	fieldShape := fieldShapeRef.Shape
 	fieldShapeType := fieldShape.Type
 	fieldPath := parentFieldPath + fieldNames.Camel
-	fieldConfig := crd.Config().ResourceFieldByPath(crd.Names.Original, fieldPath)
+	fieldConfig := crd.Config().GetResourceFieldByPath(crd.Names.Original, fieldPath)
 	field := NewField(crd, fieldPath, fieldNames, fieldShapeRef, fieldConfig)
 	switch fieldShapeType {
 	case "structure":

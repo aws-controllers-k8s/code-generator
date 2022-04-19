@@ -189,7 +189,7 @@ func SetResource(
 		targetAdaptedVarName := targetVarName
 
 		// Handles field renames, if applicable
-		fieldName, _ := cfg.ResourceFieldRename(
+		fieldName, _ := cfg.GetResourceFieldRename(
 			r.Names.Original,
 			op.Name,
 			memberName,
@@ -523,7 +523,7 @@ func setResourceReadMany(
 		targetAdaptedVarName := targetVarName
 
 		// Handles field renames, if applicable
-		fieldName, foundFieldRename := cfg.ResourceFieldRename(
+		fieldName, foundFieldRename := cfg.GetResourceFieldRename(
 			r.Names.Original,
 			op.Name,
 			memberName,
@@ -763,7 +763,7 @@ func SetResourceGetAttributes(
 
 	// did we output an ACKResourceMetadata guard and constructor snippet?
 	mdGuardOut := false
-	fieldConfigs := cfg.ResourceFields(r.Names.Original)
+	fieldConfigs := cfg.GetResourceFields(r.Names.Original)
 	sortedAttrFieldNames := []string{}
 	for fName, fConfig := range fieldConfigs {
 		if fConfig.IsAttribute {
@@ -990,7 +990,7 @@ func SetResourceIdentifiers(
 		}
 
 		// Handles field renames, if applicable
-		fieldName, _ := cfg.ResourceFieldRename(
+		fieldName, _ := cfg.GetResourceFieldRename(
 			r.Names.Original,
 			op.Name,
 			memberName,

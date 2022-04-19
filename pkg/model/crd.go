@@ -200,7 +200,7 @@ func (r *CRD) AddSpecField(
 	shapeRef *awssdkmodel.ShapeRef,
 ) {
 	fPath := memberNames.Camel
-	fConfig := r.cfg.ResourceFieldByPath(r.Names.Original, fPath)
+	fConfig := r.cfg.GetResourceFieldByPath(r.Names.Original, fPath)
 	f := NewField(r, fPath, memberNames, shapeRef, fConfig)
 	if fConfig != nil && fConfig.Print != nil {
 		r.addSpecPrintableColumn(f)
@@ -225,7 +225,7 @@ func (r *CRD) AddStatusField(
 	shapeRef *awssdkmodel.ShapeRef,
 ) {
 	fPath := memberNames.Camel
-	fConfig := r.cfg.ResourceFieldByPath(r.Names.Original, fPath)
+	fConfig := r.cfg.GetResourceFieldByPath(r.Names.Original, fPath)
 	f := NewField(r, fPath, memberNames, shapeRef, fConfig)
 	if fConfig != nil && fConfig.Print != nil {
 		r.addStatusPrintableColumn(f)
@@ -275,7 +275,7 @@ func (r *CRD) CompareIgnoredFields() []string {
 // the SNS SetPlatformApplicationAttributes API call, which sets multiple
 // attributes at once. :shrug:
 func (r *CRD) SetAttributesSingleAttribute() bool {
-	return r.cfg.SetAttributesSingleAttribute(r.Names.Original)
+	return r.cfg.GetSetAttributesSingleAttribute(r.Names.Original)
 }
 
 // UnpackAttributes grabs instructions about fields that are represented in the
@@ -285,7 +285,7 @@ func (r *CRD) UnpackAttributes() {
 	if !r.cfg.UnpacksAttributesMap(r.Names.Original) {
 		return
 	}
-	fieldConfigs := r.cfg.ResourceFields(r.Names.Original)
+	fieldConfigs := r.cfg.GetResourceFields(r.Names.Original)
 	for fieldName, fieldConfig := range fieldConfigs {
 		if !fieldConfig.IsAttribute {
 			continue
@@ -313,7 +313,7 @@ func (r *CRD) IsPrimaryARNField(fieldName string) bool {
 	if !r.cfg.IncludeACKMetadata {
 		return false
 	}
-	fieldConfigs := r.cfg.ResourceFields(r.Names.Original)
+	fieldConfigs := r.cfg.GetResourceFields(r.Names.Original)
 	for fName, fConfig := range fieldConfigs {
 		if fConfig.IsARN {
 			return strings.EqualFold(fieldName, fName)
@@ -326,7 +326,7 @@ func (r *CRD) IsPrimaryARNField(fieldName string) bool {
 // IsSecretField returns true if the supplied field *path* refers to a Field
 // that is a SecretKeyReference
 func (r *CRD) IsSecretField(path string) bool {
-	fConfigs := r.cfg.ResourceFields(r.Names.Original)
+	fConfigs := r.cfg.GetResourceFields(r.Names.Original)
 	fConfig, found := fConfigs[path]
 	if found {
 		return fConfig.IsSecret
@@ -336,7 +336,7 @@ func (r *CRD) IsSecretField(path string) bool {
 
 // GetImmutableFieldPaths returns list of immutable field paths present in CRD
 func (r *CRD) GetImmutableFieldPaths() []string {
-	fConfigs := r.cfg.ResourceFields(r.Names.Original)
+	fConfigs := r.cfg.GetResourceFields(r.Names.Original)
 	var immutableFields []string
 
 	for field, fieldConfig := range fConfigs {
@@ -350,7 +350,7 @@ func (r *CRD) GetImmutableFieldPaths() []string {
 
 // HasImmutableFieldChanges helper function that return true if there are any immutable field changes
 func (r *CRD) HasImmutableFieldChanges() bool {
-	fConfigs := r.cfg.ResourceFields(r.Names.Original)
+	fConfigs := r.cfg.GetResourceFields(r.Names.Original)
 	for _, fieldConfig := range fConfigs {
 		if fieldConfig.IsImmutable {
 			return true
@@ -362,7 +362,7 @@ func (r *CRD) HasImmutableFieldChanges() bool {
 // IsARNPrimaryKey returns true if the CRD uses its ARN as its primary key in
 // ReadOne calls.
 func (r *CRD) IsARNPrimaryKey() bool {
-	resGenConfig, found := r.cfg.ResourceConfig(r.Names.Original)
+	resGenConfig, found := r.cfg.GetResourceConfig(r.Names.Original)
 	if !found {
 		return false
 	}
@@ -372,7 +372,7 @@ func (r *CRD) IsARNPrimaryKey() bool {
 // GetPrimaryKeyField returns the field designated as the primary key, nil if
 // none are specified or an error if multiple are designated.
 func (r *CRD) GetPrimaryKeyField() (*Field, error) {
-	fConfigs := r.cfg.ResourceFields(r.Names.Original)
+	fConfigs := r.cfg.GetResourceFields(r.Names.Original)
 
 	var primaryField *Field
 	for fieldName, fieldConfig := range fConfigs {
@@ -403,7 +403,7 @@ func (r *CRD) SetOutputCustomMethodName(
 	// The operation to look for the Output shape
 	op *awssdkmodel.Operation,
 ) *string {
-	return r.cfg.SetOutputCustomMethodName(op)
+	return r.cfg.GetSetOutputCustomMethodName(op)
 }
 
 // GetOutputShapeGoType returns the Go type of the supplied operation's Output
@@ -501,7 +501,7 @@ func (r *CRD) GetCustomImplementation(
 // UpdateConditionsCustomMethodName returns custom update conditions operation
 // as *string for custom resource
 func (r *CRD) UpdateConditionsCustomMethodName() string {
-	return r.cfg.UpdateConditionsCustomMethodName(r.Names.Original)
+	return r.cfg.GetUpdateConditionsCustomMethodName(r.Names.Original)
 }
 
 // GetCustomCheckRequiredFieldsMissingMethod returns custom check required fields missing method
@@ -516,7 +516,7 @@ func (r *CRD) GetCustomCheckRequiredFieldsMissingMethod(
 // SpecIdentifierField returns the name of the "Name" or string identifier field
 // in the Spec.
 func (r *CRD) SpecIdentifierField() *string {
-	rConfig, found := r.cfg.ResourceConfig(r.Names.Original)
+	rConfig, found := r.cfg.GetResourceConfig(r.Names.Original)
 	if found {
 		for fName, fConfig := range rConfig.Fields {
 			if fConfig.IsPrimaryKey {
@@ -560,21 +560,21 @@ func (r *CRD) PrintAgeColumn() bool {
 // ReconcileRequeuOnSuccessSeconds returns the duration after which to requeue
 // the custom resource as int
 func (r *CRD) ReconcileRequeuOnSuccessSeconds() int {
-	return r.cfg.ReconcileRequeuOnSuccessSeconds(r.Names.Original)
+	return r.cfg.GetReconcileRequeuOnSuccessSeconds(r.Names.Original)
 }
 
 // CustomUpdateMethodName returns the name of the custom resourceManager method
 // for updating the resource state, if any has been specified in the generator
 // config
 func (r *CRD) CustomUpdateMethodName() string {
-	return r.cfg.CustomUpdateMethodName(r.Names.Original)
+	return r.cfg.GetCustomUpdateMethodName(r.Names.Original)
 }
 
 // ListOpMatchFieldNames returns a slice of strings representing the field
 // names in the List operation's Output shape's element Shape that we should
 // check a corresponding value in the target Spec exists.
 func (r *CRD) ListOpMatchFieldNames() []string {
-	return r.cfg.ListOpMatchFieldNames(r.Names.Original)
+	return r.cfg.GetListOpMatchFieldNames(r.Names.Original)
 }
 
 // GetAllRenames returns all the field renames observed in the generator config
@@ -630,7 +630,7 @@ func (r *CRD) GetSanitizedMemberPath(
 	cfg := r.Config()
 
 	// Handles field renames, if applicable
-	fieldName, fieldRenamed := cfg.ResourceFieldRename(
+	fieldName, fieldRenamed := cfg.GetResourceFieldRename(
 		r.Names.Original,
 		op.Name,
 		memberName,
@@ -657,7 +657,7 @@ func (r *CRD) HasMember(
 	memberName string,
 	operationName string,
 ) (inSpec bool, inStatus bool) {
-	fieldName, _ := r.Config().ResourceFieldRename(
+	fieldName, _ := r.Config().GetResourceFieldRename(
 		r.Names.Original,
 		operationName,
 		memberName,
@@ -736,6 +736,6 @@ func NewCRD(
 		SpecFields:               map[string]*Field{},
 		StatusFields:             map[string]*Field{},
 		Fields:                   map[string]*Field{},
-		ShortNames:               cfg.ResourceShortNames(kind),
+		ShortNames:               cfg.GetResourceShortNames(kind),
 	}
 }
