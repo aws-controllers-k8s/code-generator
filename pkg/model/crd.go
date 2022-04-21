@@ -266,7 +266,7 @@ func (r *CRD) UnpacksAttributesMap() bool {
 
 // CompareIgnoredFields returns the list of fields compare logic should ignore
 func (r *CRD) CompareIgnoredFields() []string {
-	return r.cfg.GetCompareIgnoredFields(r.Names.Original)
+	return r.cfg.GetCompareIgnoredFieldPaths(r.Names.Original)
 }
 
 // SetAttributesSingleAttribute returns true if the supplied resource name has

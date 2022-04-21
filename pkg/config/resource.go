@@ -455,9 +455,9 @@ func (c *Config) GetResourceFieldByPath(resourceName string, fieldPath string) *
 	return nil
 }
 
-// GetCompareIgnoredFields returns the list of field paths to ignore when
+// GetCompareIgnoredFieldPaths returns the list of field paths to ignore when
 // comparing two different objects
-func (c *Config) GetCompareIgnoredFields(resourceName string) []string {
+func (c *Config) GetCompareIgnoredFieldPaths(resourceName string) []string {
 	if c == nil {
 		return nil
 	}
