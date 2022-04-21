@@ -161,6 +161,9 @@ var (
 		"CheckNilFieldPath": func(f *ackmodel.Field, sourceVarName string) string {
 			return code.CheckNilFieldPath(f, sourceVarName)
 		},
+		"CheckNilReferencesPath": func(f *ackmodel.Field, sourceVarName string) string {
+			return code.CheckNilReferencesPath(f, sourceVarName)
+		},
 	}
 )
 

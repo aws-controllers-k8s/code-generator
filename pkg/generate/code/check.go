@@ -216,3 +216,29 @@ func CheckNilFieldPath(field *model.Field, sourceVarName string) string {
 	}
 	return strings.TrimPrefix(out, " || ")
 }
+
+// CheckNilReferencesPath returns the condition statement for Nil check
+// on the path in ReferencesConfig. This nil check on the reference path is
+// useful to avoid nil pointer panics when accessing the referenced value.
+//
+// This function only outputs the logical condition and not the "if" block
+// so that the output can be reused in many templates, where
+// logic inside "if" block can be different.
+//
+// Example Output for ReferencesConfig path "Status.ACKResourceMetadata.ARN",
+// and sourceVarName "obj" is
+// "obj.Status.ACKResourceMetadata == nil || obj.Status.ACKResourceMetadata.ARN == nil"
+func CheckNilReferencesPath(field *model.Field, sourceVarName string) string {
+	out := ""
+	if field.HasReference() {
+		refPath := fieldpath.FromString(field.FieldConfig.References.Path)
+		// Remove the front from reference path because "Spec" or "Status" being
+		// an struct cannot be added in nil check
+		fieldNamePrefix := "." + refPath.PopFront()
+		for refPath.Size() > 0 {
+			fieldNamePrefix = fmt.Sprintf("%s.%s", fieldNamePrefix, refPath.PopFront())
+			out += fmt.Sprintf(" || %s%s == nil", sourceVarName, fieldNamePrefix)
+		}
+	}
+	return strings.TrimPrefix(out, " || ")
+}

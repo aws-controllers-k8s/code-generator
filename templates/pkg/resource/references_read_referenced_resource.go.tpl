@@ -42,10 +42,13 @@ Where field is of type 'Field' from aws-controllers-k8s/code-generator/pkg/model
 					"{{ .FieldConfig.References.Resource }}",
 					namespace, *arr.Name)
 			}
-			if obj.{{ .FieldConfig.References.Path }} == nil {
+			{{ $nilCheck := CheckNilReferencesPath . "obj" -}}
+			{{ if not (eq $nilCheck "") -}}
+			if {{ $nilCheck }} {
 				return ackerr.ResourceReferenceMissingTargetFieldFor(
 					"{{ .FieldConfig.References.Resource }}",
 					namespace, *arr.Name,
 					"{{ .FieldConfig.References.Path }}")
 			}
+			{{- end -}}
 {{- end -}}

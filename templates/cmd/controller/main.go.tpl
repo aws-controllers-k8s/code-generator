@@ -16,9 +16,6 @@ import (
 	ctrlrt "sigs.k8s.io/controller-runtime"
 	ctrlrtmetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
 	svcsdk "github.com/aws/aws-sdk-go/service/{{ .ServicePackageName }}"
-
-	svcresource "github.com/aws-controllers-k8s/{{ .ServicePackageName }}-controller/pkg/resource"
-	svctypes "github.com/aws-controllers-k8s/{{ .ServicePackageName }}-controller/apis/{{ .APIVersion }}"
 {{- /* Import the go types from service controllers whose resources are referenced in this service controller.
 If these referenced types are not added to scheme, this service controller will not be able to read
 resources across service controller. */ -}}
@@ -29,6 +26,9 @@ resources across service controller. */ -}}
 	{{ $referencedServiceName }}apitypes "github.com/aws-controllers-k8s/{{ $referencedServiceName }}-controller/apis/{{ $apiVersion }}"
 {{- end }}
 {{- end }}
+
+	svcresource "github.com/aws-controllers-k8s/{{ .ServicePackageName }}-controller/pkg/resource"
+	svctypes "github.com/aws-controllers-k8s/{{ .ServicePackageName }}-controller/apis/{{ .APIVersion }}"
 	{{/* TODO(a-hilaly): import apis/* packages to register webhooks */}}
 	{{range $crdName := .SnakeCasedCRDNames }}_ "github.com/aws-controllers-k8s/{{ $servicePackageName }}-controller/pkg/resource/{{ $crdName }}"
 	{{end}}
