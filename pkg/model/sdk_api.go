@@ -219,7 +219,7 @@ func (a *SDKAPI) CRDNames(cfg *ackgenconfig.Config) []names.Names {
 	createOps := (*opMap)[OpTypeCreate]
 	crdNames := []names.Names{}
 	for crdName := range createOps {
-		if cfg.IsIgnoredResource(crdName) {
+		if cfg.ResourceIsIgnored(crdName) {
 			continue
 		}
 		crdNames = append(crdNames, names.New(crdName))
@@ -328,7 +328,7 @@ func getOpTypeAndResourceName(opID string, cfg *ackgenconfig.Config) ([]OpType, 
 	opType, resName := GetOpTypeAndResourceNameFromOpID(opID, cfg)
 	opTypes := []OpType{opType}
 
-	if operationConfig, exists := cfg.OperationConfig(opID); exists {
+	if operationConfig, exists := cfg.GetOperationConfig(opID); exists {
 		if operationConfig.ResourceName != "" {
 			resName = operationConfig.ResourceName
 		}

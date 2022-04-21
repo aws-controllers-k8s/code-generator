@@ -136,7 +136,7 @@ func SetSDK(
 		// attrMap["KmsMasterKeyId"] = r.ko.Spec.KMSMasterKeyID
 		// attrMap["Policy"] = r.ko.Spec.Policy
 		// res.SetAttributes(attrMap)
-		fieldConfigs := cfg.ResourceFields(r.Names.Original)
+		fieldConfigs := cfg.GetResourceFields(r.Names.Original)
 		out += fmt.Sprintf("%sattrMap := map[string]*string{}\n", indent)
 		sortedAttrFieldNames := []string{}
 		for fName, fConfig := range fieldConfigs {
@@ -166,7 +166,7 @@ func SetSDK(
 		out += fmt.Sprintf("%s%s.SetAttributes(attrMap)\n", indent, targetVarName)
 	}
 
-	opConfig, override := cfg.OverrideValues(op.Name)
+	opConfig, override := cfg.GetOverrideValues(op.Name)
 	for memberIndex, memberName := range inputShape.MemberNames() {
 		if r.UnpacksAttributesMap() && memberName == "Attributes" {
 			continue
@@ -215,7 +215,7 @@ func SetSDK(
 		sourceAdaptedVarName := sourceVarName
 
 		// Handles field renames, if applicable
-		fieldName, _ := cfg.ResourceFieldRename(
+		fieldName := cfg.GetResourceFieldName(
 			r.Names.Original,
 			op.Name,
 			memberName,
@@ -647,7 +647,7 @@ func SetSDKSetAttributes(
 			//     attrMap["Policy"] = r.ko.Spec.Policy
 			// }
 			// res.SetAttributes(attrMap)
-			fieldConfigs := cfg.ResourceFields(r.Names.Original)
+			fieldConfigs := cfg.GetResourceFields(r.Names.Original)
 			out += fmt.Sprintf("%sattrMap := map[string]*string{}\n", indent)
 			sortedAttrFieldNames := []string{}
 			for fName, fConfig := range fieldConfigs {
@@ -755,7 +755,7 @@ func setSDKReadMany(
 	indent := strings.Repeat("\t", indentLevel)
 
 	resVarPath := ""
-	opConfig, override := cfg.OverrideValues(op.Name)
+	opConfig, override := cfg.GetOverrideValues(op.Name)
 	var err error
 	for memberIndex, memberName := range inputShape.MemberNames() {
 		if override {
@@ -778,7 +778,7 @@ func setSDKReadMany(
 		}
 
 		// Handles field renames, if applicable
-		fieldName, _ := cfg.ResourceFieldRename(
+		fieldName := cfg.GetResourceFieldName(
 			r.Names.Original,
 			op.Name,
 			memberName,

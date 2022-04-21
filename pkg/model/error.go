@@ -16,7 +16,7 @@ package model
 // TerminalExceptionCodes returns terminal exception codes as
 // []string for custom resource
 func (r *CRD) TerminalExceptionCodes() []string {
-	return r.cfg.TerminalExceptionCodes(r.Names.Original)
+	return r.cfg.GetTerminalExceptionCodes(r.Names.Original)
 }
 
 // ExceptionCode returns the name of the resource's Exception code for the

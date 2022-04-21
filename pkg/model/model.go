@@ -92,7 +92,7 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 	setAttributesOps := (*opMap)[OpTypeSetAttributes]
 
 	for crdName, createOp := range createOps {
-		if m.cfg.IsIgnoredResource(crdName) {
+		if m.cfg.ResourceIsIgnored(crdName) {
 			continue
 		}
 		crdNames := names.New(crdName)
@@ -120,14 +120,14 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 				return nil, ErrNilShapePointer
 			}
 			// Handles field renames, if applicable
-			fieldName, _ := m.cfg.ResourceFieldRename(
+			fieldName := m.cfg.GetResourceFieldName(
 				crd.Names.Original,
 				createOp.Name,
 				memberName,
 			)
 			memberNames := names.New(fieldName)
 			memberNames.ModelOriginal = memberName
-			if memberName == "Attributes" && m.cfg.UnpacksAttributesMap(crdName) {
+			if memberName == "Attributes" && m.cfg.ResourceContainsAttributesMap(crdName) {
 				crd.UnpackAttributes()
 				continue
 			}
@@ -136,7 +136,7 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 
 		// Now any additional Spec fields that are required from other API
 		// operations.
-		for targetFieldName, fieldConfig := range m.cfg.ResourceFields(crdName) {
+		for targetFieldName, fieldConfig := range m.cfg.GetResourceFields(crdName) {
 			if fieldConfig.IsReadOnly {
 				// It's a Status field...
 				continue
@@ -212,7 +212,7 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 			}
 			// Check that the field in the output shape isn't the same as
 			// fields in the input shape (handles field renames, if applicable)
-			fieldName, _ := m.cfg.ResourceFieldRename(
+			fieldName := m.cfg.GetResourceFieldName(
 				crd.Names.Original,
 				createOp.Name,
 				memberName,
@@ -225,7 +225,7 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 			memberNames := names.New(fieldName)
 
 			//TODO:(brycahta) should we support overriding these fields?
-			if memberName == "Attributes" && m.cfg.UnpacksAttributesMap(crdName) {
+			if memberName == "Attributes" && m.cfg.ResourceContainsAttributesMap(crdName) {
 				continue
 			}
 			if crd.IsPrimaryARNField(memberName) {
@@ -238,7 +238,7 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 
 		// Now add the additional Status fields that are required from other
 		// API operations.
-		for targetFieldName, fieldConfig := range m.cfg.ResourceFields(crdName) {
+		for targetFieldName, fieldConfig := range m.cfg.GetResourceFields(crdName) {
 			if !fieldConfig.IsReadOnly {
 				// It's a Spec field...
 				continue
@@ -301,25 +301,25 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 // operations to nil that are configured to be ignored in generator config for
 // the AWS service
 func (m *Model) RemoveIgnoredOperations(ops *Ops) {
-	if m.cfg.IsIgnoredOperation(ops.Create) {
+	if m.cfg.OperationIsIgnored(ops.Create) {
 		ops.Create = nil
 	}
-	if m.cfg.IsIgnoredOperation(ops.ReadOne) {
+	if m.cfg.OperationIsIgnored(ops.ReadOne) {
 		ops.ReadOne = nil
 	}
-	if m.cfg.IsIgnoredOperation(ops.ReadMany) {
+	if m.cfg.OperationIsIgnored(ops.ReadMany) {
 		ops.ReadMany = nil
 	}
-	if m.cfg.IsIgnoredOperation(ops.Update) {
+	if m.cfg.OperationIsIgnored(ops.Update) {
 		ops.Update = nil
 	}
-	if m.cfg.IsIgnoredOperation(ops.Delete) {
+	if m.cfg.OperationIsIgnored(ops.Delete) {
 		ops.Delete = nil
 	}
-	if m.cfg.IsIgnoredOperation(ops.GetAttributes) {
+	if m.cfg.OperationIsIgnored(ops.GetAttributes) {
 		ops.GetAttributes = nil
 	}
-	if m.cfg.IsIgnoredOperation(ops.SetAttributes) {
+	if m.cfg.OperationIsIgnored(ops.SetAttributes) {
 		ops.SetAttributes = nil
 	}
 }
@@ -700,7 +700,7 @@ func (m *Model) processField(
 	fieldShape := fieldShapeRef.Shape
 	fieldShapeType := fieldShape.Type
 	fieldPath := parentFieldPath + fieldNames.Camel
-	fieldConfig := crd.Config().ResourceFieldByPath(crd.Names.Original, fieldPath)
+	fieldConfig := crd.Config().GetResourceFieldByPath(crd.Names.Original, fieldPath)
 	field := NewField(crd, fieldPath, fieldNames, fieldShapeRef, fieldConfig)
 	switch fieldShapeType {
 	case "structure":

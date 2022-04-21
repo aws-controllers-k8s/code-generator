@@ -94,7 +94,7 @@ func CompareResource(
 ) string {
 	out := "\n"
 
-	fieldConfigs := cfg.ResourceFields(r.Names.Original)
+	fieldConfigs := cfg.GetResourceFields(r.Names.Original)
 
 	// We need a deterministic order to traverse our top-level fields...
 	specFieldNames := []string{}
@@ -544,7 +544,7 @@ func CompareStruct(
 ) string {
 	out := ""
 
-	fieldConfigs := cfg.ResourceFields(r.Names.Original)
+	fieldConfigs := cfg.GetResourceFields(r.Names.Original)
 
 	for _, memberName := range shape.MemberNames() {
 		memberShapeRef := shape.MemberRefs[memberName]
