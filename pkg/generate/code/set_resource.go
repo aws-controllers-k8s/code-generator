@@ -758,7 +758,7 @@ func SetResourceGetAttributes(
 
 	// did we output an ACKResourceMetadata guard and constructor snippet?
 	mdGuardOut := false
-	fieldConfigs := cfg.GetResourceFields(r.Names.Original)
+	fieldConfigs := cfg.GetFieldConfigs(r.Names.Original)
 	sortedAttrFieldNames := []string{}
 	for fName, fConfig := range fieldConfigs {
 		if fConfig.IsAttribute {

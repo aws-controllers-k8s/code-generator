@@ -56,7 +56,7 @@ func getSortedLateInitFieldsAndConfig(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,
 ) ([]string, map[string]*ackgenconfig.LateInitializeConfig) {
-	fieldNameToConfig := cfg.GetResourceFields(r.Names.Original)
+	fieldNameToConfig := cfg.GetFieldConfigs(r.Names.Original)
 	fieldNameToLateInitConfig := make(map[string]*ackgenconfig.LateInitializeConfig)
 	sortedLateInitFieldNames := make([]string, 0)
 	if len(fieldNameToConfig) > 0 {

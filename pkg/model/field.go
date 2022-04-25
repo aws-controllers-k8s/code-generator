@@ -275,7 +275,7 @@ func NewField(
 				cleanMemberNames := names.New(memberName)
 				memberPath := path + "." + cleanMemberNames.Camel
 				memberShape := containerShape.MemberRefs[memberName]
-				fConfigs := crd.cfg.GetResourceFields(crd.Names.Original)
+				fConfigs := crd.cfg.GetFieldConfigs(crd.Names.Original)
 				memberField := NewField(
 					crd, memberPath, cleanMemberNames, memberShape, fConfigs[memberPath],
 				)
