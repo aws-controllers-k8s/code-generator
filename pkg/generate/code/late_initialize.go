@@ -42,17 +42,16 @@ func FindLateInitializedFieldNames(
 	for fieldName := range lateInitConfigs {
 		lateInitFieldNames = append(lateInitFieldNames, fieldName)
 	}
-	if len(lateInitFieldNames) > 0 {
-		// sort the slice to help with short circuiting AWSResourceManager.LateInitialize()
-		sort.Strings(lateInitFieldNames)
-		out += fmt.Sprintf("%svar %s = []string{", indent, resVarName)
-		for _, fName := range lateInitFieldNames {
-			out += fmt.Sprintf("%q,", fName)
-		}
-		out += "}\n"
-	} else {
-		out += fmt.Sprintf("%svar %s = []string{}\n", indent, resVarName)
+	if len(lateInitFieldNames) == 0 {
+		return fmt.Sprintf("%svar %s = []string{}\n", indent, resVarName)
 	}
+	// sort the slice to help with short circuiting AWSResourceManager.LateInitialize()
+	sort.Strings(lateInitFieldNames)
+	out += fmt.Sprintf("%svar %s = []string{", indent, resVarName)
+	for _, fName := range lateInitFieldNames {
+		out += fmt.Sprintf("%q,", fName)
+	}
+	out += "}\n"
 	return out
 }
 
@@ -279,8 +278,7 @@ func IncompleteLateInitialization(
 		lateInitFieldNames = append(lateInitFieldNames, fieldName)
 	}
 	if len(lateInitFieldNames) == 0 {
-		out += fmt.Sprintf("%sreturn false", indent)
-		return out
+		return fmt.Sprintf("%sreturn false", indent)
 	}
 	sort.Strings(lateInitFieldNames)
 	out += fmt.Sprintf("%sko := rm.concreteResource(%s).ko.DeepCopy()\n", indent, resVarName)

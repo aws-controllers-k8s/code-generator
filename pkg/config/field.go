@@ -412,19 +412,6 @@ func (c *Config) GetFieldConfigByPath(resourceName string, fieldPath string) *Fi
 	return nil
 }
 
-// GetLateInitConfigByPath returns the LateInitializeConfig provided a resource and path to associated field.
-func (c *Config) GetLateInitConfigByPath(resourceName string, fieldPath string) *LateInitializeConfig {
-	if c == nil {
-		return nil
-	}
-	for fPath, fConfig := range c.GetFieldConfigs(resourceName) {
-		if strings.EqualFold(fPath, fieldPath) {
-			return fConfig.LateInitialize
-		}
-	}
-	return nil
-}
-
 // GetLateInitConfigs returns all LateInitializeConfigs for a given resource as a map.
 // The map is keyed by the resource's field names after applying renames, if applicable.
 func (c *Config) GetLateInitConfigs(resourceName string) map[string]*LateInitializeConfig {
@@ -440,4 +427,17 @@ func (c *Config) GetLateInitConfigs(resourceName string) map[string]*LateInitial
 		}
 	}
 	return fieldNameToLateInitConfig
+}
+
+// GetLateInitConfigByPath returns the LateInitializeConfig provided a resource and path to associated field.
+func (c *Config) GetLateInitConfigByPath(resourceName string, fieldPath string) *LateInitializeConfig {
+	if c == nil {
+		return nil
+	}
+	for fPath, fConfig := range c.GetFieldConfigs(resourceName) {
+		if strings.EqualFold(fPath, fieldPath) {
+			return fConfig.LateInitialize
+		}
+	}
+	return nil
 }
