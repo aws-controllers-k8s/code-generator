@@ -13,6 +13,8 @@
 
 package config
 
+import "strings"
+
 // SourceFieldConfig instructs the code generator how to handle a field in the
 // Resource's SpecFields/StatusFields collection that takes its value from an
 // abnormal source -- in other words, not the Create operation's Input or
@@ -382,4 +384,60 @@ type FieldConfig struct {
 	// TODO(jaypipes,crtbry): Figure out if we can roll the CustomShape stuff
 	// into this type override...
 	Type *string `json:"type,omitempty"`
+}
+
+// GetFieldConfigs returns all FieldConfigs for a given resource as a map.
+// The map is keyed by the resource's field names after applying renames, if applicable.
+func (c *Config) GetFieldConfigs(resourceName string) map[string]*FieldConfig {
+	if c == nil {
+		return map[string]*FieldConfig{}
+	}
+	resourceConfig, ok := c.Resources[resourceName]
+	if !ok {
+		return map[string]*FieldConfig{}
+	}
+	return resourceConfig.Fields
+}
+
+// GetFieldConfigByPath returns the FieldConfig provided a resource and path to associated field.
+func (c *Config) GetFieldConfigByPath(resourceName string, fieldPath string) *FieldConfig {
+	if c == nil {
+		return nil
+	}
+	for fPath, fConfig := range c.GetFieldConfigs(resourceName) {
+		if strings.EqualFold(fPath, fieldPath) {
+			return fConfig
+		}
+	}
+	return nil
+}
+
+// GetLateInitConfigs returns all LateInitializeConfigs for a given resource as a map.
+// The map is keyed by the resource's field names after applying renames, if applicable.
+func (c *Config) GetLateInitConfigs(resourceName string) map[string]*LateInitializeConfig {
+	if c == nil {
+		return nil
+	}
+	fieldNameToConfig := c.GetFieldConfigs(resourceName)
+	fieldNameToLateInitConfig := make(map[string]*LateInitializeConfig)
+	for fieldName := range fieldNameToConfig {
+		lateInitConfig := c.GetLateInitConfigByPath(resourceName, fieldName)
+		if lateInitConfig != nil {
+			fieldNameToLateInitConfig[fieldName] = lateInitConfig
+		}
+	}
+	return fieldNameToLateInitConfig
+}
+
+// GetLateInitConfigByPath returns the LateInitializeConfig provided a resource and path to associated field.
+func (c *Config) GetLateInitConfigByPath(resourceName string, fieldPath string) *LateInitializeConfig {
+	if c == nil {
+		return nil
+	}
+	for fPath, fConfig := range c.GetFieldConfigs(resourceName) {
+		if strings.EqualFold(fPath, fieldPath) {
+			return fConfig.LateInitialize
+		}
+	}
+	return nil
 }

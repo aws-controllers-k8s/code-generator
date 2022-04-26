@@ -136,7 +136,7 @@ func SetSDK(
 		// attrMap["KmsMasterKeyId"] = r.ko.Spec.KMSMasterKeyID
 		// attrMap["Policy"] = r.ko.Spec.Policy
 		// res.SetAttributes(attrMap)
-		fieldConfigs := cfg.GetResourceFields(r.Names.Original)
+		fieldConfigs := cfg.GetFieldConfigs(r.Names.Original)
 		out += fmt.Sprintf("%sattrMap := map[string]*string{}\n", indent)
 		sortedAttrFieldNames := []string{}
 		for fName, fConfig := range fieldConfigs {
@@ -647,7 +647,7 @@ func SetSDKSetAttributes(
 			//     attrMap["Policy"] = r.ko.Spec.Policy
 			// }
 			// res.SetAttributes(attrMap)
-			fieldConfigs := cfg.GetResourceFields(r.Names.Original)
+			fieldConfigs := cfg.GetFieldConfigs(r.Names.Original)
 			out += fmt.Sprintf("%sattrMap := map[string]*string{}\n", indent)
 			sortedAttrFieldNames := []string{}
 			for fName, fConfig := range fieldConfigs {

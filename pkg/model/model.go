@@ -136,7 +136,7 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 
 		// Now any additional Spec fields that are required from other API
 		// operations.
-		for targetFieldName, fieldConfig := range m.cfg.GetResourceFields(crdName) {
+		for targetFieldName, fieldConfig := range m.cfg.GetFieldConfigs(crdName) {
 			if fieldConfig.IsReadOnly {
 				// It's a Status field...
 				continue
@@ -238,7 +238,7 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 
 		// Now add the additional Status fields that are required from other
 		// API operations.
-		for targetFieldName, fieldConfig := range m.cfg.GetResourceFields(crdName) {
+		for targetFieldName, fieldConfig := range m.cfg.GetFieldConfigs(crdName) {
 			if !fieldConfig.IsReadOnly {
 				// It's a Spec field...
 				continue
@@ -700,7 +700,7 @@ func (m *Model) processField(
 	fieldShape := fieldShapeRef.Shape
 	fieldShapeType := fieldShape.Type
 	fieldPath := parentFieldPath + fieldNames.Camel
-	fieldConfig := crd.Config().GetResourceFieldByPath(crd.Names.Original, fieldPath)
+	fieldConfig := crd.Config().GetFieldConfigByPath(crd.Names.Original, fieldPath)
 	field := NewField(crd, fieldPath, fieldNames, fieldShapeRef, fieldConfig)
 	switch fieldShapeType {
 	case "structure":

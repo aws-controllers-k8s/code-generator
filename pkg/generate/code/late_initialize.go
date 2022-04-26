@@ -37,38 +37,22 @@ func FindLateInitializedFieldNames(
 ) string {
 	out := ""
 	indent := strings.Repeat("\t", indentLevel)
-	sortedFieldNames, _ := getSortedLateInitFieldsAndConfig(cfg, r)
-	if len(sortedFieldNames) > 0 {
-		out += fmt.Sprintf("%svar %s = []string{", indent, resVarName)
-		for _, fName := range sortedFieldNames {
-			out += fmt.Sprintf("%q,", fName)
-		}
-		out += "}\n"
-	} else {
-		out += fmt.Sprintf("%svar %s = []string{}\n", indent, resVarName)
+	var lateInitFieldNames []string
+	lateInitConfigs := cfg.GetLateInitConfigs(r.Names.Original)
+	for fieldName := range lateInitConfigs {
+		lateInitFieldNames = append(lateInitFieldNames, fieldName)
 	}
+	if len(lateInitFieldNames) == 0 {
+		return fmt.Sprintf("%svar %s = []string{}\n", indent, resVarName)
+	}
+	// sort the slice to help with short circuiting AWSResourceManager.LateInitialize()
+	sort.Strings(lateInitFieldNames)
+	out += fmt.Sprintf("%svar %s = []string{", indent, resVarName)
+	for _, fName := range lateInitFieldNames {
+		out += fmt.Sprintf("%q,", fName)
+	}
+	out += "}\n"
 	return out
-}
-
-// getSortedLateInitFieldsAndConfig returns the field names in alphabetically sorted order which have LateInitialization
-// configuration inside generator config and also a map from fieldName to LateInitializationConfig.
-func getSortedLateInitFieldsAndConfig(
-	cfg *ackgenconfig.Config,
-	r *model.CRD,
-) ([]string, map[string]*ackgenconfig.LateInitializeConfig) {
-	fieldNameToConfig := cfg.GetResourceFields(r.Names.Original)
-	fieldNameToLateInitConfig := make(map[string]*ackgenconfig.LateInitializeConfig)
-	sortedLateInitFieldNames := make([]string, 0)
-	if len(fieldNameToConfig) > 0 {
-		for fName, fConfig := range fieldNameToConfig {
-			if fConfig != nil && fConfig.LateInitialize != nil {
-				fieldNameToLateInitConfig[fName] = fConfig.LateInitialize
-				sortedLateInitFieldNames = append(sortedLateInitFieldNames, fName)
-			}
-		}
-		sort.Strings(sortedLateInitFieldNames)
-	}
-	return sortedLateInitFieldNames, fieldNameToLateInitConfig
 }
 
 // LateInitializeFromReadOne returns the gocode to set LateInitialization fields from the ReadOne output
@@ -147,14 +131,19 @@ func LateInitializeFromReadOne(
 ) string {
 	out := ""
 	indent := strings.Repeat("\t", indentLevel)
-	lateInitializedFieldNames, _ := getSortedLateInitFieldsAndConfig(cfg, r)
-	if len(lateInitializedFieldNames) == 0 {
+	var lateInitFieldNames []string
+	lateInitConfigs := cfg.GetLateInitConfigs(r.Names.Original)
+	for fieldName := range lateInitConfigs {
+		lateInitFieldNames = append(lateInitFieldNames, fieldName)
+	}
+	if len(lateInitFieldNames) == 0 {
 		return fmt.Sprintf("%sreturn %s", indent, targetResVarName)
 	}
+	sort.Strings(lateInitFieldNames)
 	out += fmt.Sprintf("%sobservedKo := rm.concreteResource(%s).ko.DeepCopy()\n", indent, sourceResVarName)
 	out += fmt.Sprintf("%slatestKo := rm.concreteResource(%s).ko.DeepCopy()\n", indent, targetResVarName)
 	// TODO(vijat@): Add validation for correct field path in lateInitializedFieldNames
-	for _, fName := range lateInitializedFieldNames {
+	for _, fName := range lateInitFieldNames {
 		// split the field name by period
 		// each substring represents a field.
 		fNameParts := strings.Split(fName, ".")
@@ -283,13 +272,17 @@ func IncompleteLateInitialization(
 ) string {
 	out := ""
 	indent := strings.Repeat("\t", indentLevel)
-	sortedLateInitFieldNames, _ := getSortedLateInitFieldsAndConfig(cfg, r)
-	if len(sortedLateInitFieldNames) == 0 {
-		out += fmt.Sprintf("%sreturn false", indent)
-		return out
+	var lateInitFieldNames []string
+	lateInitConfigs := cfg.GetLateInitConfigs(r.Names.Original)
+	for fieldName := range lateInitConfigs {
+		lateInitFieldNames = append(lateInitFieldNames, fieldName)
 	}
+	if len(lateInitFieldNames) == 0 {
+		return fmt.Sprintf("%sreturn false", indent)
+	}
+	sort.Strings(lateInitFieldNames)
 	out += fmt.Sprintf("%sko := rm.concreteResource(%s).ko.DeepCopy()\n", indent, resVarName)
-	for _, fName := range sortedLateInitFieldNames {
+	for _, fName := range lateInitFieldNames {
 		// split the field name by period
 		// each substring represents a field.
 		fNameParts := strings.Split(fName, ".")

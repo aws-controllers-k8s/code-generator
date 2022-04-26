@@ -200,7 +200,7 @@ func (r *CRD) AddSpecField(
 	shapeRef *awssdkmodel.ShapeRef,
 ) {
 	fPath := memberNames.Camel
-	fConfig := r.cfg.GetResourceFieldByPath(r.Names.Original, fPath)
+	fConfig := r.cfg.GetFieldConfigByPath(r.Names.Original, fPath)
 	f := NewField(r, fPath, memberNames, shapeRef, fConfig)
 	if fConfig != nil && fConfig.Print != nil {
 		r.addSpecPrintableColumn(f)
@@ -225,7 +225,7 @@ func (r *CRD) AddStatusField(
 	shapeRef *awssdkmodel.ShapeRef,
 ) {
 	fPath := memberNames.Camel
-	fConfig := r.cfg.GetResourceFieldByPath(r.Names.Original, fPath)
+	fConfig := r.cfg.GetFieldConfigByPath(r.Names.Original, fPath)
 	f := NewField(r, fPath, memberNames, shapeRef, fConfig)
 	if fConfig != nil && fConfig.Print != nil {
 		r.addStatusPrintableColumn(f)
@@ -285,7 +285,7 @@ func (r *CRD) UnpackAttributes() {
 	if !r.cfg.ResourceContainsAttributesMap(r.Names.Original) {
 		return
 	}
-	fieldConfigs := r.cfg.GetResourceFields(r.Names.Original)
+	fieldConfigs := r.cfg.GetFieldConfigs(r.Names.Original)
 	for fieldName, fieldConfig := range fieldConfigs {
 		if !fieldConfig.IsAttribute {
 			continue
@@ -313,7 +313,7 @@ func (r *CRD) IsPrimaryARNField(fieldName string) bool {
 	if !r.cfg.IncludeACKMetadata {
 		return false
 	}
-	fieldConfigs := r.cfg.GetResourceFields(r.Names.Original)
+	fieldConfigs := r.cfg.GetFieldConfigs(r.Names.Original)
 	for fName, fConfig := range fieldConfigs {
 		if fConfig.IsARN {
 			return strings.EqualFold(fieldName, fName)
@@ -326,7 +326,7 @@ func (r *CRD) IsPrimaryARNField(fieldName string) bool {
 // IsSecretField returns true if the supplied field *path* refers to a Field
 // that is a SecretKeyReference
 func (r *CRD) IsSecretField(path string) bool {
-	fConfigs := r.cfg.GetResourceFields(r.Names.Original)
+	fConfigs := r.cfg.GetFieldConfigs(r.Names.Original)
 	fConfig, found := fConfigs[path]
 	if found {
 		return fConfig.IsSecret
@@ -336,7 +336,7 @@ func (r *CRD) IsSecretField(path string) bool {
 
 // GetImmutableFieldPaths returns list of immutable field paths present in CRD
 func (r *CRD) GetImmutableFieldPaths() []string {
-	fConfigs := r.cfg.GetResourceFields(r.Names.Original)
+	fConfigs := r.cfg.GetFieldConfigs(r.Names.Original)
 	var immutableFields []string
 
 	for field, fieldConfig := range fConfigs {
@@ -350,7 +350,7 @@ func (r *CRD) GetImmutableFieldPaths() []string {
 
 // HasImmutableFieldChanges helper function that return true if there are any immutable field changes
 func (r *CRD) HasImmutableFieldChanges() bool {
-	fConfigs := r.cfg.GetResourceFields(r.Names.Original)
+	fConfigs := r.cfg.GetFieldConfigs(r.Names.Original)
 	for _, fieldConfig := range fConfigs {
 		if fieldConfig.IsImmutable {
 			return true
@@ -372,7 +372,7 @@ func (r *CRD) IsARNPrimaryKey() bool {
 // GetPrimaryKeyField returns the field designated as the primary key, nil if
 // none are specified or an error if multiple are designated.
 func (r *CRD) GetPrimaryKeyField() (*Field, error) {
-	fConfigs := r.cfg.GetResourceFields(r.Names.Original)
+	fConfigs := r.cfg.GetFieldConfigs(r.Names.Original)
 
 	var primaryField *Field
 	for fieldName, fieldConfig := range fConfigs {

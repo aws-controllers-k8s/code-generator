@@ -14,8 +14,6 @@
 package config
 
 import (
-	"strings"
-
 	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
 
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
@@ -415,44 +413,6 @@ func (c *Config) GetResourceConfig(resourceName string) *ResourceConfig {
 	}
 	rc, _ := c.Resources[resourceName]
 	return &rc
-}
-
-// GetResourceFields returns a map, keyed by target/renamed field name, of
-// FieldConfig struct pointers that instruct the code generator how to handle
-// the interpretation of special Resource fields (both Spec and Status)
-func (c *Config) GetResourceFields(resourceName string) map[string]*FieldConfig {
-	if c == nil {
-		return map[string]*FieldConfig{}
-	}
-	resourceConfig, ok := c.Resources[resourceName]
-	if !ok {
-		return map[string]*FieldConfig{}
-	}
-	return resourceConfig.Fields
-}
-
-// GetResourceFieldByPath returns the FieldConfig for a field from
-// "resourceName" crd, where field.Path matches the passed "fieldPath" parameter.
-// This method performs the case-insensitive resource and fieldPath lookup.
-func (c *Config) GetResourceFieldByPath(resourceName string, fieldPath string) *FieldConfig {
-	var resourceConfig ResourceConfig
-	if c == nil {
-		return nil
-	}
-
-	for resName, resConfig := range c.Resources {
-		if strings.EqualFold(resName, resourceName) {
-			resourceConfig = resConfig
-			break
-		}
-	}
-
-	for fPath, fConfig := range resourceConfig.Fields {
-		if strings.EqualFold(fPath, fieldPath) {
-			return fConfig
-		}
-	}
-	return nil
 }
 
 // GetCompareIgnoredFieldPaths returns the list of field paths to ignore when
