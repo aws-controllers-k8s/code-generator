@@ -557,6 +557,12 @@ func (r *CRD) PrintAgeColumn() bool {
 	return r.cfg.ResourceDisplaysAgeColumn(r.Names.Camel)
 }
 
+// PrintSyncedColumn returns whether the code generator should append 'Sync'
+// kubebuilder:printcolumn comment marker
+func (r *CRD) PrintSyncedColumn() bool {
+	return r.cfg.ResourceDisplaysSyncedColumn(r.Names.Camel)
+}
+
 // ReconcileRequeuOnSuccessSeconds returns the duration after which to requeue
 // the custom resource as int
 func (r *CRD) ReconcileRequeuOnSuccessSeconds() int {
