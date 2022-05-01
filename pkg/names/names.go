@@ -82,13 +82,19 @@ var (
 		{"Bgp", "BGP", "bgp", nil},
 		{"Cors", "CORS", "cors", nil},
 		{"Cidr", "CIDR", "cidr", nil},
+		{"Cname", "CNAME", "cname", nil},
 		{"Cpu", "CPU", "cpu", nil},
+		{"Crl", "CRL", "crl", nil},
+		{"Cps", "CPS", "cps", nil},
+		{"Csr", "CSR", "csr", nil},
 		{"Dhcp", "DHCP", "dhcp", nil},
 		{"Dns", "DNS", "dns", nil},
 		{"Dpd", "DPD", "dpd", nil},
 		{"Ebs", "EBS", "ebs", nil},
 		{"Ec2", "EC2", "ec2", nil},
 		{"Ecr", "ECR", "ecr", nil},
+		// Prevent "Edit" from becoming "EDIt"
+		{"Edi", "EDI", "edi", regexp.MustCompile("Edi(?!t)", regexp.None)},
 		{"Efs", "EFS", "efs", nil},
 		{"Eks", "EKS", "eks", nil},
 		// Prevent "Enable" and "Enabling" from becoming "ENAble"
@@ -112,6 +118,8 @@ var (
 		// Prevent "Native" from becoming "NATive"
 		{"Nat", "NAT", "nat", regexp.MustCompile("Nat(?!i)", regexp.None)},
 		{"Oidc", "OIDC", "oidc", nil},
+		{"Ocsp", "OCSP", "ocsp", nil},
+		{"Rfc", "RFC", "rfc", nil},
 		{"Sdk", "SDK", "sdk", nil},
 		{"Sha256", "SHA256", "sha256", nil},
 		{"Sqs", "SQS", "sns", nil},
