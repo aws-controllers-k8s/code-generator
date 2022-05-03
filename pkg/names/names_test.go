@@ -69,6 +69,7 @@ func TestNames(t *testing.T) {
 		{"Package", "Package", "package_", "package_"},
 		{"RepositoryUriTest", "RepositoryURITest", "repositoryURITest", "repository_uri_test"},
 		{"RequestedAmiVersion", "RequestedAMIVersion", "requestedAMIVersion", "requested_ami_version"},
+		{"SriovNetSupport", "SRIOVNetSupport", "sriovNetSupport", "sriov_net_support"},
 		{"SSEKMSKeyID", "SSEKMSKeyID", "sseKMSKeyID", "sse_kms_key_id"},
 		{"UUID", "UUID", "uuid", "uuid"},
 		{"Vlan", "VLAN", "vlan", "vlan"},
