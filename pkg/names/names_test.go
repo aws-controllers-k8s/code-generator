@@ -70,6 +70,7 @@ func TestNames(t *testing.T) {
 		{"Package", "Package", "package_", "package_"},
 		{"Param", "Param", "param", "param"},
 		{"Ram", "RAM", "ram", "ram"},
+		{"RamdiskId", "RAMDiskID", "ramDiskID", "ram_disk_id"},
 		{"RamDiskId", "RAMDiskID", "ramDiskID", "ram_disk_id"},
 		{"RepositoryUriTest", "RepositoryURITest", "repositoryURITest", "repository_uri_test"},
 		{"RequestedAmiVersion", "RequestedAMIVersion", "requestedAMIVersion", "requested_ami_version"},
