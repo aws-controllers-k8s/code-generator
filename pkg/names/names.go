@@ -119,6 +119,8 @@ var (
 		{"Nat", "NAT", "nat", regexp.MustCompile("Nat(?!i)", regexp.None)},
 		{"Oidc", "OIDC", "oidc", nil},
 		{"Ocsp", "OCSP", "ocsp", nil},
+		// Capitalize the 'd' following RAM in certain cases
+		{"Ramdisk", "RAMDisk", "ramDisk", regexp.MustCompile("Ramdisk", regexp.None)},
 		// Model fields starting with 'Ram' refer to RAM
 		{"Ram", "RAM", "ram", regexp.MustCompile("Ram", regexp.None)},
 		{"Rfc", "RFC", "rfc", nil},
