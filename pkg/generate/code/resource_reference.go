@@ -36,8 +36,6 @@ func ReferenceFieldsValidation(
 	indentLevel int,
 ) string {
 	out := ""
-	fieldAccessPrefix := fmt.Sprintf("%s%s", sourceVarName,
-		crd.Config().PrefixConfig.SpecField)
 	// Sorted fieldnames are used for consistent code-generation
 	for _, fieldName := range crd.SortedFieldNames() {
 		field := crd.Fields[fieldName]
@@ -47,20 +45,48 @@ func ReferenceFieldsValidation(
 			fp := fieldpath.FromString(field.Path)
 			// remove fieldName from fieldPath before adding nil checks
 			fp.Pop()
-			fieldNamePrefix := crd.Config().PrefixConfig.SpecField
+
+			// prefix of the field path for referencing in the model
+			fieldNamePrefix := ""
+			// prefix of the field path for the generated code
+			pathVarPrefix := fmt.Sprintf("%s%s", sourceVarName, crd.Config().PrefixConfig.SpecField)
+
 			// this loop outputs a nil-guard for each level of nested field path
+			// or an iterator for any level that is a slice
+			fieldDepth := 0
 			for fp.Size() > 0 {
 				fIndent = strings.Repeat("\t", fIndentLevel)
-				fieldNamePrefix = fmt.Sprintf("%s.%s", fieldNamePrefix, fp.PopFront())
-				out += fmt.Sprintf("%sif %s%s != nil {\n", fIndent, sourceVarName, fieldNamePrefix)
+				currentField := fp.PopFront()
+
+				if fieldNamePrefix == "" {
+					fieldNamePrefix = currentField
+				} else {
+					fieldNamePrefix = fmt.Sprintf("%s.%s", fieldNamePrefix, currentField)
+				}
+				pathVarPrefix = fmt.Sprintf("%s.%s", pathVarPrefix, currentField)
+
+				fieldConfig, ok := crd.Fields[fieldNamePrefix]
+				if !ok {
+					panic(fmt.Sprintf("CRD %s has no Field with prefix %s", crd.Kind, fieldNamePrefix))
+				}
+				// field is a list
+				if len(fieldConfig.MemberFields) > 0 {
+					out += fmt.Sprintf("%sfor _, iter%d := range %s {\n", fIndent, fieldDepth, pathVarPrefix)
+					// reset the path variable name
+					pathVarPrefix = fmt.Sprintf("iter%d", fieldDepth)
+				} else {
+					out += fmt.Sprintf("%sif %s != nil {\n", fIndent, pathVarPrefix)
+				}
+
 				fIndentLevel++
+				fieldDepth++
 			}
+
 			fIndent = strings.Repeat("\t", fIndentLevel)
 			// Validation to make sure both target field and reference are
 			// not present at the same time in desired resource
 			out += fmt.Sprintf("%sif %s.%s != nil"+
-				" && %s.%s != nil {\n", fIndent, fieldAccessPrefix,
-				field.ReferenceFieldPath(), fieldAccessPrefix, field.Path)
+				" && %s.%s != nil {\n", fIndent, pathVarPrefix, field.GetReferenceFieldName().Camel, pathVarPrefix, field.Names.Camel)
 			out += fmt.Sprintf("%s\treturn "+
 				"ackerr.ResourceReferenceAndIDNotSupportedFor(\"%s\", \"%s\")\n",
 				fIndent, field.Path, field.ReferenceFieldPath())
@@ -78,8 +104,8 @@ func ReferenceFieldsValidation(
 			// field is present in the resource
 			if field.IsRequired() {
 				out += fmt.Sprintf("%sif %s.%s == nil &&"+
-					" %s.%s == nil {\n", fIndent, fieldAccessPrefix,
-					field.ReferenceFieldPath(), fieldAccessPrefix, field.Path)
+					" %s.%s == nil {\n", fIndent, pathVarPrefix,
+					field.ReferenceFieldPath(), pathVarPrefix, field.Path)
 				out += fmt.Sprintf("%s\treturn "+
 					"ackerr.ResourceReferenceOrIDRequiredFor(\"%s\", \"%s\")\n",
 					fIndent, field.Path, field.ReferenceFieldPath())

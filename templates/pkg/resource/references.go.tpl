@@ -109,7 +109,7 @@ func resolveReferenceFor{{ $field.FieldPathWithUnderscore }}(
         return nil
     }
 {{ end -}}
-{{ if eq $field.ShapeRef.Shape.Type "list" -}}
+{{ if gt (len $field.MemberFields) 0 -}}
 	if ko.Spec.{{ $field.ReferenceFieldPath }} != nil &&
 	   len(ko.Spec.{{ $field.ReferenceFieldPath }}) > 0 {
 		resolvedReferences := []*string{}
