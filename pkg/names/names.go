@@ -119,6 +119,8 @@ var (
 		{"Nat", "NAT", "nat", regexp.MustCompile("Nat(?!i)", regexp.None)},
 		{"Oidc", "OIDC", "oidc", nil},
 		{"Ocsp", "OCSP", "ocsp", nil},
+		// Model fields starting with 'Ram' refer to RAM
+		{"Ram", "RAM", "ram", regexp.MustCompile("Ram", regexp.None)},
 		{"Rfc", "RFC", "rfc", nil},
 		{"Sdk", "SDK", "sdk", nil},
 		{"Sha256", "SHA256", "sha256", nil},
