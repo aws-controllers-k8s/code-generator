@@ -602,8 +602,8 @@ func TestSetSDK_EC2_LaunchTemplate_Create(t *testing.T) {
 			}
 			f2.SetPlacement(f2f20)
 		}
-		if r.ko.Spec.LaunchTemplateData.RamDiskID != nil {
-			f2.SetRamDiskId(*r.ko.Spec.LaunchTemplateData.RamDiskID)
+		if r.ko.Spec.LaunchTemplateData.RAMDiskID != nil {
+			f2.SetRamDiskId(*r.ko.Spec.LaunchTemplateData.RAMDiskID)
 		}
 		if r.ko.Spec.LaunchTemplateData.SecurityGroupIDs != nil {
 			f2f22 := []*string{}
