@@ -10,8 +10,8 @@ spec:
       - name: controller
         envFrom:
           - configMapRef:
-              name: ack-user-config
+              name: ack-{{.ServicePackageName}}-user-config
               optional: false
           - secretRef:
-              name: ack-user-secrets
+              name: ack-{{.ServicePackageName}}-user-secrets
               optional: false
