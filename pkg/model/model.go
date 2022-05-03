@@ -498,7 +498,16 @@ func updateTypeDefAttributeWithReference(fieldPath string, tdefs []*TypeDef, crd
 	// the beginning of field path and leave rest of nested member names as is.
 	// Ex: ResourcesVpcConfig.SecurityGroupIDs will become VPCConfigRequest.SecurityGroupIDs
 	// for Cluster resource in eks-controller.
-	specFieldShapeName := specField.ShapeRef.ShapeName
+	specFieldShapeRef := specField.ShapeRef
+	specFieldShapeName := specFieldShapeRef.ShapeName
+	switch shapeType := specFieldShapeRef.Shape.Type; shapeType {
+	case "list":
+		specFieldShapeName = specField.ShapeRef.Shape.MemberRef.ShapeName
+		specFieldShapeRef = &specField.ShapeRef.Shape.MemberRef
+	case "map":
+		specFieldShapeName = specField.ShapeRef.Shape.ValueRef.ShapeName
+		specFieldShapeRef = &specField.ShapeRef.Shape.ValueRef
+	}
 	fieldShapePath := strings.Replace(fieldPath, specFieldName, specFieldShapeName, 1)
 	fsp := ackfp.FromString(fieldShapePath)
 
@@ -509,7 +518,7 @@ func updateTypeDefAttributeWithReference(fieldPath string, tdefs []*TypeDef, crd
 	// "fieldName" as attribute. To add a corresponding reference for "fieldName"
 	// , we will add new attribute in TypeDef for "parentFieldName".
 	parentFieldName := fsp.Back()
-	parentFieldShapeRef := fsp.ShapeRef(specField.ShapeRef)
+	parentFieldShapeRef := fsp.ShapeRef(specFieldShapeRef)
 	if parentFieldShapeRef == nil {
 		panic(fmt.Sprintf("Unable to find a shape member with name %s"+
 			" to add a reference for %s", parentFieldName, fieldPath))

@@ -14,7 +14,10 @@
 package model_test
 
 import (
+	"strings"
 	"testing"
+
+	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -151,4 +154,32 @@ func TestEC2_Volume(t *testing.T) {
 	// be included because it is the field value for the `attachments` status
 	// field
 	assert.NotNil(testutil.GetTypeDefByName(t, g, "VolumeAttachment"))
+}
+
+func TestEC2_NestedReference(t *testing.T) {
+	assert := assert.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "ec2", &testutil.TestingModelOptions{
+		GeneratorConfigFile: "generator-with-nested-reference.yaml",
+	})
+
+	tds, err := g.GetTypeDefs()
+	assert.Nil(err)
+	assert.NotNil(tds)
+
+	var createRouteInputTD *model.TypeDef
+
+	for _, td := range tds {
+		if td != nil && strings.EqualFold(td.Names.Original, "createRouteInput") {
+			createRouteInputTD = td
+			break
+		}
+	}
+	assert.NotNil(t, createRouteInputTD)
+	gatewayIdAttr := createRouteInputTD.GetAttribute("GatewayId")
+	gatewayRefAttr := createRouteInputTD.GetAttribute("GatewayRef")
+
+	assert.Equal("GatewayID", gatewayIdAttr.Names.Camel)
+	assert.Equal("GatewayRef", gatewayRefAttr.Names.Camel)
+	assert.Equal("*ackv1alpha1.AWSResourceReferenceWrapper", gatewayRefAttr.GoType)
 }
