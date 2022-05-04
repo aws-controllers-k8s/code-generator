@@ -142,14 +142,22 @@ func resolveReferenceFor{{ $field.FieldPathWithUnderscore }}(
 {{ $parentField := index .CRD.Fields $fp.String }}
 {{ if eq $parentField.ShapeRef.Shape.Type "list" -}}
 	if len(ko.Spec.{{ $parentField.Path }}) > 0 {
-		resolvedReferences := []*svcapitypes.{{ $parentField.GoTypeElem }}{}
-		for _, arrw := range ko.Spec.{{ $parentField.Path }} {
-			arr := arrw.{{ $field.GetReferenceFieldName.Camel }}.From
+		for _, elem := range ko.Spec.{{ $parentField.Path }} {
+			arrw := elem.{{ $field.GetReferenceFieldName.Camel }}
+
+			if arrw == nil || arrw.From == nil {
+				continue
+			}
+
+			arr := arrw.From
+			if arr.Name == nil || *arr.Name == "" {
+				return fmt.Errorf("provided resource reference is nil or empty")
+			}
+
 {{ template "read_referenced_resource_and_validate" $field }}
-            referencedValue := &svcapitypes.{{ $parentField.GoTypeElem }}{ {{ $field.Names.Camel }}: obj.{{ $field.FieldConfig.References.Path }} }
-			resolvedReferences = append(resolvedReferences, referencedValue)
+			val := string(*obj.{{ $field.FieldConfig.References.Path }})
+			elem.{{ $field.Names.Camel }} = &val
 		}
-		ko.Spec.{{ $parentField.Path }} = resolvedReferences
 	}
 	return nil
 }
