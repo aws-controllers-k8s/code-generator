@@ -69,8 +69,8 @@ func ReferenceFieldsValidation(
 				if !ok {
 					panic(fmt.Sprintf("CRD %s has no Field with prefix %s", crd.Kind, fieldNamePrefix))
 				}
-				// field is a list
-				if len(fieldConfig.MemberFields) > 0 {
+
+				if fieldConfig.ShapeRef.Shape.Type == "list" {
 					out += fmt.Sprintf("%sfor _, iter%d := range %s {\n", fIndent, fieldDepth, pathVarPrefix)
 					// reset the path variable name
 					pathVarPrefix = fmt.Sprintf("iter%d", fieldDepth)

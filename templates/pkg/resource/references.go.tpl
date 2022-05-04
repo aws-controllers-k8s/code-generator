@@ -109,7 +109,12 @@ func resolveReferenceFor{{ $field.FieldPathWithUnderscore }}(
         return nil
     }
 {{ end -}}
-{{ if gt (len $field.MemberFields) 0 -}}
+
+{{ $fp := ConstructFieldPath $field.Path -}}
+{{ $_ := $fp.Pop -}}
+
+{{ if eq $fp.Size 0 }}
+{{ if eq $field.ShapeRef.Shape.Type "list" -}}
 	if ko.Spec.{{ $field.ReferenceFieldPath }} != nil &&
 	   len(ko.Spec.{{ $field.ReferenceFieldPath }}) > 0 {
 		resolvedReferences := []*string{}
@@ -122,7 +127,6 @@ func resolveReferenceFor{{ $field.FieldPathWithUnderscore }}(
 		ko.Spec.{{ $field.Path }} = resolvedReferences
 	}
 	return nil
-}
 {{ else -}}
 	if ko.Spec.{{ $field.ReferenceFieldPath }} != nil &&
 		ko.Spec.{{ $field.ReferenceFieldPath }}.From != nil {
@@ -133,6 +137,23 @@ func resolveReferenceFor{{ $field.FieldPathWithUnderscore }}(
 	}
 	return nil
 }
+{{end -}}
+{{ else -}}
+{{ $parentField := index .CRD.Fields $fp.String }}
+{{ if eq $parentField.ShapeRef.Shape.Type "list" -}}
+	if len(ko.Spec.{{ $parentField.Path }}) > 0 {
+		resolvedReferences := []*svcapitypes.{{ $parentField.GoTypeElem }}{}
+		for _, arrw := range ko.Spec.{{ $parentField.Path }} {
+			arr := arrw.{{ $field.GetReferenceFieldName.Camel }}.From
+{{ template "read_referenced_resource_and_validate" $field }}
+            referencedValue := &svcapitypes.{{ $parentField.GoTypeElem }}{ {{ $field.Names.Camel }}: obj.{{ $field.FieldConfig.References.Path }} }
+			resolvedReferences = append(resolvedReferences, referencedValue)
+		}
+		ko.Spec.{{ $parentField.Path }} = resolvedReferences
+	}
+	return nil
+}
+{{ end -}}
 {{ end -}}
 {{ end -}}
 {{ end -}}
