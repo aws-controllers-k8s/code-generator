@@ -145,6 +145,10 @@ resources:
         references:
           resource: InternetGateway
           path: Status.InternetGatewayID
+      Routes.NATGatewayId:
+        references:
+          resource: NATGateway
+          path: Status.NATGatewayID
     hooks:
       sdk_create_post_set_output:
         template_path: hooks/route_table/sdk_create_post_set_output.go.tpl

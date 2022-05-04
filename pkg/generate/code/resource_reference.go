@@ -67,7 +67,7 @@ func ReferenceFieldsValidation(
 
 				fieldConfig, ok := crd.Fields[fieldNamePrefix]
 				if !ok {
-					panic(fmt.Sprintf("CRD %s has no Field with prefix %s", crd.Kind, fieldNamePrefix))
+					panic(fmt.Sprintf("CRD %s has no Field with path %s", crd.Kind, fieldNamePrefix))
 				}
 
 				if fieldConfig.ShapeRef.Shape.Type == "list" {
@@ -125,27 +125,47 @@ func ReferenceFieldsPresent(
 	crd *model.CRD,
 	sourceVarName string,
 ) string {
-	out := "false"
+	iteratorsOut := ""
+	returnOut := "return false"
 	fieldAccessPrefix := fmt.Sprintf("%s%s", sourceVarName,
 		crd.Config().PrefixConfig.SpecField)
 	// Sorted fieldnames are used for consistent code-generation
-	for _, fieldName := range crd.SortedFieldNames() {
+	for fieldIndex, fieldName := range crd.SortedFieldNames() {
 		field := crd.Fields[fieldName]
 		if field.HasReference() {
-			out += " || ("
 			fp := fieldpath.FromString(field.Path)
 			// remove fieldName from fieldPath before adding nil checks
 			// for nested fieldPath
 			fp.Pop()
+
+			// Determine whether the field is nested
+			if fp.Size() > 0 {
+				// Determine whether the field is inside a slice
+				parentField, ok := crd.Fields[fp.String()]
+				if !ok {
+					panic(fmt.Sprintf("CRD %s has no Field with path %s", crd.Kind, fp.String()))
+				}
+
+				if parentField.ShapeRef.Shape.Type == "list" {
+					iteratorsOut += fmt.Sprintf("for _, iter%d := range %s.%s {\n", fieldIndex, fieldAccessPrefix, parentField.Path)
+					iteratorsOut += fmt.Sprintf("\tif iter%d.%s != nil {\n", fieldIndex, field.GetReferenceFieldName().Camel)
+					iteratorsOut += fmt.Sprintf("\t\treturn true\n")
+					iteratorsOut += fmt.Sprintf("\t}\n")
+					iteratorsOut += fmt.Sprintf("}\n")
+					continue
+				}
+			}
+
+			returnOut += " || ("
 			fieldNamePrefix := ""
 			for fp.Size() > 0 {
 				fieldNamePrefix = fmt.Sprintf("%s.%s", fieldNamePrefix, fp.PopFront())
-				out += fmt.Sprintf("%s%s != nil && ", fieldAccessPrefix, fieldNamePrefix)
+				returnOut += fmt.Sprintf("%s%s != nil && ", fieldAccessPrefix, fieldNamePrefix)
 			}
-			out += fmt.Sprintf("%s.%s != nil", fieldAccessPrefix,
+			returnOut += fmt.Sprintf("%s.%s != nil", fieldAccessPrefix,
 				field.ReferenceFieldPath())
-			out += ")"
+			returnOut += ")"
 		}
 	}
-	return out
+	return iteratorsOut + returnOut
 }

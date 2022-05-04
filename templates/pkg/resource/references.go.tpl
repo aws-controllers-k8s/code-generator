@@ -89,7 +89,7 @@ func validateReferenceFields(ko *svcapitypes.{{ .CRD.Names.Camel }}) error {
 // hasNonNilReferences returns true if resource contains a reference to another
 // resource
 func hasNonNilReferences(ko *svcapitypes.{{ .CRD.Names.Camel }}) bool {
-	return {{ GoCodeContainsReferences .CRD "ko"}}
+	{{ GoCodeContainsReferences .CRD "ko"}}
 }
 
 {{ range $fieldName, $field := .CRD.Fields }}
@@ -136,8 +136,8 @@ func resolveReferenceFor{{ $field.FieldPathWithUnderscore }}(
             ko.Spec.{{ $field.Path }} = &referencedValue
 	}
 	return nil
-}
 {{end -}}
+}
 {{ else -}}
 {{ $parentField := index .CRD.Fields $fp.String }}
 {{ if eq $parentField.ShapeRef.Shape.Type "list" -}}
