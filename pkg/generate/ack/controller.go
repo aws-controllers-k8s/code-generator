@@ -15,6 +15,7 @@ package ack
 
 import (
 	"path/filepath"
+	"sort"
 	"strings"
 	ttpl "text/template"
 
@@ -263,6 +264,7 @@ func Controller(
 	for serviceName := range referencedServiceNamesMap {
 		referencedServiceNames = append(referencedServiceNames, serviceName)
 	}
+	sort.Strings(referencedServiceNames)
 	cmdVars := &templateCmdVars{
 		metaVars,
 		snakeCasedCRDNames,
