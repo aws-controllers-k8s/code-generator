@@ -181,14 +181,18 @@ func Test_ReferenceFieldsPresent_NestedSliceOfStructsReference(t *testing.T) {
 	crd := testutil.GetCRDByName(t, g, "RouteTable")
 	require.NotNil(crd)
 	expected :=
-		`for _, iter32 := range ko.Spec.Routes {
-	if iter32.GatewayRef != nil {
-		return true
+		`if ko.Spec.Routes != nil {
+	for _, iter32 := range ko.Spec.Routes {
+		if iter32.GatewayRef != nil {
+			return true
+		}
 	}
 }
-for _, iter35 := range ko.Spec.Routes {
-	if iter35.NATGatewayRef != nil {
-		return true
+if ko.Spec.Routes != nil {
+	for _, iter35 := range ko.Spec.Routes {
+		if iter35.NATGatewayRef != nil {
+			return true
+		}
 	}
 }
 return false || (ko.Spec.VPCRef != nil)`

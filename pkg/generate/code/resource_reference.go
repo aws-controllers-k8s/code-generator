@@ -171,10 +171,9 @@ func ReferenceFieldsPresent(
 				}
 			}
 
-			returnOut += " || (" + nestedStructNilCheck(*fp.Copy(), fieldAccessPrefix)
-			returnOut += fmt.Sprintf("%s.%s != nil", fieldAccessPrefix,
+			nilCheck := nestedStructNilCheck(*fp.Copy(), fieldAccessPrefix) + " && " + fmt.Sprintf("%s.%s != nil", fieldAccessPrefix,
 				field.ReferenceFieldPath())
-			returnOut += ")"
+			returnOut += " || (" + strings.TrimPrefix(nilCheck, " && ") + ")"
 		}
 	}
 	return iteratorsOut + returnOut
