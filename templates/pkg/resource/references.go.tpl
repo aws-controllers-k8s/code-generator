@@ -114,7 +114,7 @@ func resolveReferenceFor{{ $field.FieldPathWithUnderscore }}(
 {{ $_ := $fp.Pop -}}
 {{ $isNested := gt $fp.Size 0 -}}
 {{ $isList := eq $field.ShapeRef.Shape.Type "list" -}}
-{{ if not $isList -}}
+{{ if and (not $isList) (not $isNested) -}}
 	if ko.Spec.{{ $field.ReferenceFieldPath }} != nil &&
 		ko.Spec.{{ $field.ReferenceFieldPath }}.From != nil {
 			arr := ko.Spec.{{ $field.ReferenceFieldPath }}.From
@@ -156,7 +156,7 @@ func resolveReferenceFor{{ $field.FieldPathWithUnderscore }}(
 
 {{ template "read_referenced_resource_and_validate" $field }}
 			referencedValue := string(*obj.{{ $field.FieldConfig.References.Path }})
-			elem.{{ $field.Names.Camel }} = &val
+			elem.{{ $field.Names.Camel }} = &referencedValue
 		}
 	}
 	return nil
