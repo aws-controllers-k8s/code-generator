@@ -22,14 +22,20 @@ import (
 )
 
 // ReferenceFieldsValidation produces the go code to validate reference field and
-// corresponding identifier field.
+// corresponding identifier field. Iterates through all references within
+// slices, if necessary.
+// for _, iter0 := range ko.Spec.Routes {
+//   if iter0.GatewayRef != nil && iter0.GatewayID != nil {
+//     return ackerr.ResourceReferenceAndIDNotSupportedFor("Routes.GatewayID", "Routes.GatewayRef")
+//   }
+// }
 // Sample code:
 // if ko.Spec.APIRef != nil && ko.Spec.APIID != nil {
-//		return ackerr.ResourceReferenceAndIDNotSupportedFor("APIID", "APIRef")
-//	}
-//	if ko.Spec.APIRef == nil && ko.Spec.APIID == nil {
-//		return ackerr.ResourceReferenceOrIDRequiredFor("APIID", "APIRef")
-//	}
+//   return ackerr.ResourceReferenceAndIDNotSupportedFor("APIID", "APIRef")
+// }
+// if ko.Spec.APIRef == nil && ko.Spec.APIID == nil {
+//   return ackerr.ResourceReferenceOrIDRequiredFor("APIID", "APIRef")
+// }
 func ReferenceFieldsValidation(
 	crd *model.CRD,
 	sourceVarName string,
@@ -120,6 +126,11 @@ func ReferenceFieldsValidation(
 // a non-nil reference field is present in a resource. This checks helps in deciding
 // whether ACK.ReferencesResolved condition should be added to resource status
 // Sample Code:
+// for _, iter35 := range ko.Spec.Routes {
+//   if iter35.GatewayRef != nil {
+//     return true
+//   }
+// }
 // return false || (ko.Spec.APIRef != nil)
 func ReferenceFieldsPresent(
 	crd *model.CRD,
