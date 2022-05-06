@@ -126,9 +126,11 @@ func ReferenceFieldsValidation(
 // a non-nil reference field is present in a resource. This checks helps in deciding
 // whether ACK.ReferencesResolved condition should be added to resource status
 // Sample Code:
-// for _, iter35 := range ko.Spec.Routes {
-//   if iter35.GatewayRef != nil {
-//     return true
+// if ko.Spec.Routes != nil {
+//   for _, iter35 := range ko.Spec.Routes {
+//     if iter35.GatewayRef != nil {
+//       return true
+//     }
 //   }
 // }
 // return false || (ko.Spec.APIRef != nil)
@@ -158,25 +160,32 @@ func ReferenceFieldsPresent(
 				}
 
 				if parentField.ShapeRef.Shape.Type == "list" {
-					iteratorsOut += fmt.Sprintf("for _, iter%d := range %s.%s {\n", fieldIndex, fieldAccessPrefix, parentField.Path)
-					iteratorsOut += fmt.Sprintf("\tif iter%d.%s != nil {\n", fieldIndex, field.GetReferenceFieldName().Camel)
-					iteratorsOut += fmt.Sprintf("\t\treturn true\n")
+					iteratorsOut += fmt.Sprintf("if %s {\n", nestedStructNilCheck(*fp.Copy(), fieldAccessPrefix))
+					iteratorsOut += fmt.Sprintf("\tfor _, iter%d := range %s.%s {\n", fieldIndex, fieldAccessPrefix, parentField.Path)
+					iteratorsOut += fmt.Sprintf("\t\tif iter%d.%s != nil {\n", fieldIndex, field.GetReferenceFieldName().Camel)
+					iteratorsOut += fmt.Sprintf("\t\t\treturn true\n")
+					iteratorsOut += fmt.Sprintf("\t\t}\n")
 					iteratorsOut += fmt.Sprintf("\t}\n")
 					iteratorsOut += fmt.Sprintf("}\n")
 					continue
 				}
 			}
 
-			returnOut += " || ("
-			fieldNamePrefix := ""
-			for fp.Size() > 0 {
-				fieldNamePrefix = fmt.Sprintf("%s.%s", fieldNamePrefix, fp.PopFront())
-				returnOut += fmt.Sprintf("%s%s != nil && ", fieldAccessPrefix, fieldNamePrefix)
-			}
+			returnOut += " || (" + nestedStructNilCheck(*fp.Copy(), fieldAccessPrefix)
 			returnOut += fmt.Sprintf("%s.%s != nil", fieldAccessPrefix,
 				field.ReferenceFieldPath())
 			returnOut += ")"
 		}
 	}
 	return iteratorsOut + returnOut
+}
+
+func nestedStructNilCheck(path fieldpath.Path, fieldAccessPrefix string) string {
+	out := ""
+	fieldNamePrefix := ""
+	for path.Size() > 0 {
+		fieldNamePrefix = fmt.Sprintf("%s.%s", fieldNamePrefix, path.PopFront())
+		out += fmt.Sprintf("%s%s != nil && ", fieldAccessPrefix, fieldNamePrefix)
+	}
+	return strings.TrimSuffix(out, " && ")
 }
