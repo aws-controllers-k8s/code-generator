@@ -118,7 +118,7 @@ func Test_ReferenceFieldsPresent_NoReferenceConfig(t *testing.T) {
 
 	crd := testutil.GetCRDByName(t, g, "Api")
 	require.NotNil(crd)
-	expected := "false"
+	expected := "return false"
 	assert.Equal(expected, code.ReferenceFieldsPresent(crd, "ko"))
 }
 
@@ -133,7 +133,7 @@ func Test_ReferenceFieldsPresent_SingleReference(t *testing.T) {
 
 	crd := testutil.GetCRDByName(t, g, "Integration")
 	require.NotNil(crd)
-	expected := "false || (ko.Spec.APIRef != nil)"
+	expected := "return false || (ko.Spec.APIRef != nil)"
 	assert.Equal(expected, code.ReferenceFieldsPresent(crd, "ko"))
 }
 
@@ -150,7 +150,7 @@ func Test_ReferenceFieldsPresent_SliceOfReferences(t *testing.T) {
 	// just to test code generation for slices of reference
 	crd := testutil.GetCRDByName(t, g, "VpcLink")
 	require.NotNil(crd)
-	expected := "false || (ko.Spec.SecurityGroupRefs != nil) || (ko.Spec.SubnetRefs != nil)"
+	expected := "return false || (ko.Spec.SecurityGroupRefs != nil) || (ko.Spec.SubnetRefs != nil)"
 	assert.Equal(expected, code.ReferenceFieldsPresent(crd, "ko"))
 }
 
@@ -165,6 +165,36 @@ func Test_ReferenceFieldsPresent_NestedReference(t *testing.T) {
 
 	crd := testutil.GetCRDByName(t, g, "Authorizer")
 	require.NotNil(crd)
-	expected := "false || (ko.Spec.JWTConfiguration != nil && ko.Spec.JWTConfiguration.IssuerRef != nil)"
+	expected := "return false || (ko.Spec.JWTConfiguration != nil && ko.Spec.JWTConfiguration.IssuerRef != nil)"
+	assert.Equal(expected, code.ReferenceFieldsPresent(crd, "ko"))
+}
+
+func Test_ReferenceFieldsPresent_NestedSliceOfStructsReference(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "ec2",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-nested-reference.yaml",
+		})
+
+	crd := testutil.GetCRDByName(t, g, "RouteTable")
+	require.NotNil(crd)
+	expected :=
+		`if ko.Spec.Routes != nil {
+	for _, iter32 := range ko.Spec.Routes {
+		if iter32.GatewayRef != nil {
+			return true
+		}
+	}
+}
+if ko.Spec.Routes != nil {
+	for _, iter35 := range ko.Spec.Routes {
+		if iter35.NATGatewayRef != nil {
+			return true
+		}
+	}
+}
+return false || (ko.Spec.VPCRef != nil)`
 	assert.Equal(expected, code.ReferenceFieldsPresent(crd, "ko"))
 }

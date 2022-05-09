@@ -1,0 +1,335 @@
+ignore:
+  operations:
+    - ModifyTransitGateway
+    - ModifyVpcEndpoint
+  field_paths:
+    - AllocateAddressInput.DryRun
+    - CreateDhcpOptionsInput.DryRun
+    - CreateInternetGatewayInput.DryRun
+    - CreateNatGatewayInput.ClientToken
+    - CreateNatGatewayInput.DryRun
+    - CreateRouteInput.DryRun
+    - CreateRouteInput.RouteTableId
+    - CreateRouteTableInput.DryRun
+    - CreateSecurityGroupInput.DryRun
+    - CreateSubnetInput.DryRun
+    - CreateTransitGatewayInput.DryRun
+    - CreateVpcInput.DryRun
+    - CreateVpcEndpointInput.DryRun
+    - DeleteRouteInput.DryRun
+    - DeleteRouteInput.RouteTableId
+    # support EC2-VPC only
+    - DeleteSecurityGroupInput.GroupName
+    # support EC2-VPC only
+    - AllocateAddressInput.Domain
+    - AllocateAddressOutput.Domain
+  resource_names:
+    - AccountAttribute
+    - CapacityReservation
+    - CapacityReservationFleet
+    - CarrierGateway
+    - ClientVpnEndpoint
+    - ClientVpnRoute
+    - CustomerGateway
+    - DefaultSubnet
+    - DefaultVpc
+    - DhcpOptions
+    - EgressOnlyInternetGateway
+    - Fleet
+    - FpgaImage
+    - Image
+    - Instance
+    - InstanceEventWindow
+    - InstanceExportTask
+    - InternetGateway
+    - KeyPair
+    - LaunchTemplateVersion
+    - LaunchTemplate
+    - LocalGatewayRouteTableVpcAssociation
+    - LocalGatewayRoute
+    - ManagedPrefixList
+    - NatGateway
+    - NetworkAclEntry
+    - NetworkAcl
+    - NetworkInsightsPath
+    - NetworkInterfacePermission
+    - NetworkInterface
+    - PlacementGroup
+    - ReplaceRootVolumeTask
+    - ReservedInstancesListing
+    - RestoreImageTask
+    #- RouteTable
+    - Route
+    - SecurityGroup
+    - Snapshot
+    - SpotDatafeedSubscription
+    - StoreImageTask
+    - Subnet
+    - SubnetCidrReservation
+    - TrafficMirrorFilterRule
+    - TrafficMirrorFilter
+    - TrafficMirrorSession
+    - TrafficMirrorTarget
+    - TransitGatewayConnectPeer
+    - TransitGatewayConnect
+    - TransitGatewayMulticastDomain
+    - TransitGatewayPeeringAttachment
+    - TransitGatewayPrefixListReference
+    - TransitGatewayRouteTable
+    - TransitGatewayRoute
+    - TransitGatewayVpcAttachment
+    - TransitGateway
+    - Volume
+    - VpcEndpointConnectionNotification
+    - VpcEndpointServiceConfiguration
+    - VpcEndpoint
+    - Vpc
+    - VpcCidrBlock
+    - VpcPeeringConnection
+    - VpnConnectionRoute
+    - VpnConnection
+    - VpnGateway
+
+operations:
+  AllocateAddress:
+    operation_type:
+      - Create
+    resource_name: ElasticIPAddress
+  DescribeAddresses:
+    operation_type:
+      - List
+    resource_name: ElasticIPAddress
+  ReleaseAddress:
+    operation_type:
+      - Delete
+    resource_name: ElasticIPAddress
+  CreateNatGateway:
+    output_wrapper_field_path: NatGateway
+  CreateVpcEndpoint:
+    output_wrapper_field_path: VpcEndpoint
+  DeleteVpcEndpoints:
+    operation_type:
+      - Delete
+    resource_name: VpcEndpoint
+resources:
+  DhcpOptions:
+    fields:
+      DHCPConfigurations.Values:
+        set:
+          - from: AttributeValue.Value
+  RouteTable:
+    exceptions:
+      terminal_codes:
+        - InvalidVpcID.Malformed
+        - InvalidVpcID.NotFound
+        - InvalidParameterValue
+    fields:
+      # RouteStatuses as Route to ensure
+      # fields set server-side (active, origin)
+      # are exposed in Status
+      RouteStatuses:
+        from:
+          operation: DescribeRouteTables
+          path: RouteTables.Routes
+        is_read_only: true
+      # Routes as CreateRouteInput to ensure only
+      # user-editable fields are exposed in Spec
+      Routes:
+        custom_field:
+          list_of: CreateRouteInput
+      VpcId:
+        references:
+          resource: VPC
+          path: Status.VPCID
+      Routes.GatewayId:
+        references:
+          resource: InternetGateway
+          path: Status.InternetGatewayID
+      Routes.NATGatewayId:
+        references:
+          resource: NATGateway
+          path: Status.NATGatewayID
+    hooks:
+      sdk_create_post_set_output:
+        template_path: hooks/route_table/sdk_create_post_set_output.go.tpl
+      sdk_read_many_post_set_output:
+        template_path: hooks/route_table/sdk_read_many_post_set_output.go.tpl
+      sdk_file_end:
+        template_path: hooks/route_table/sdk_file_end.go.tpl
+    update_operation:
+      custom_method_name: customUpdateRouteTable
+  ElasticIPAddress:
+    exceptions:
+      terminal_codes:
+        - IdempotentParameterMismatch
+        - InvalidAction
+        - InvalidCharacter
+        - InvalidClientTokenId
+        - InvalidPaginationToken
+        - InvalidParameter
+        - InvalidParameterCombination
+        - InvalidParameterValue
+        - InvalidQueryParameter
+        - MalformedQueryString
+        - MissingAction
+        - MissingAuthenticationToken
+        - MissingParameter
+        - UnknownParameter
+        - UnsupportedInstanceAttribute
+        - UnsupportedOperation
+        - UnsupportedProtocol
+        - ValidationError
+    fields:
+      AllocationId:
+        is_primary_key: true
+        print:
+          name: ALLOCATION-ID
+      PublicIp:
+        print:
+          name: PUBLIC-IP
+    list_operation:
+      match_fields:
+        - AllocationId
+    hooks:
+      sdk_create_post_build_request:
+        template_path: hooks/elastic_ip_address/sdk_create_post_build_request.go.tpl
+      sdk_delete_post_build_request:
+        template_path: hooks/elastic_ip_address/sdk_delete_post_build_request.go.tpl
+      sdk_read_many_pre_build_request:
+        template_path: hooks/elastic_ip_address/sdk_read_many_pre_build_request.go.tpl
+      sdk_read_many_post_build_request:
+        template_path: hooks/elastic_ip_address/sdk_read_many_post_build_request.go.tpl
+  InternetGateway:
+    fields:
+      VPC:
+        from:
+          operation: AttachInternetGateway
+          path: VpcId
+        references:
+          resource: VPC
+          path: Status.VPCID
+    hooks:
+      sdk_create_post_set_output:
+        template_path: hooks/internet_gateway/sdk_create_post_set_output.go.tpl
+      sdk_read_many_post_set_output:
+        template_path: hooks/internet_gateway/sdk_read_many_post_set_output.go.tpl
+      sdk_delete_pre_build_request:
+        template_path: hooks/internet_gateway/sdk_delete_pre_build_request.go.tpl
+    update_operation:
+      custom_method_name: customUpdateInternetGateway
+  NatGateway:
+    fields:
+      AllocationId:
+        references:
+          resource: ElasticIPAddress
+          path: Status.AllocationID
+      SubnetId:
+        references:
+          resource: Subnet
+          path: Status.SubnetID
+    synced:
+      when:
+        - path: Status.State
+          in:
+            - available
+  SecurityGroup:
+    fields:
+      # support EC2-VPC only
+      Id:
+        is_primary_key: true
+      VpcId:
+        is_required: true
+        references:
+          resource: VPC
+          path: Status.VPCID
+    renames:
+      operations:
+        CreateSecurityGroup:
+          input_fields:
+            GroupName: Name
+          output_fields:
+            GroupId: Id
+        DeleteSecurityGroup:
+          input_fields:
+            GroupId: Id
+            GroupName: Name
+        DescribeSecurityGroups:
+          input_fields:
+            GroupIds: Ids
+            GroupNames: Names
+    exceptions:
+      terminal_codes:
+        - InvalidVpcID.Malformed
+        - InvalidVpcID.NotFound
+        - VPCIdNotSpecified
+  Subnet:
+    fields:
+      RouteTables:
+        custom_field:
+          list_of: String
+        references:
+          resource: RouteTable
+          path: Status.RouteTableID
+      VpcId:
+        references:
+          resource: VPC
+          path: Status.VPCID
+    exceptions:
+      terminal_codes:
+        - InvalidVpcID.Malformed
+        - InvalidVpcID.NotFound
+    hooks:
+      sdk_create_post_set_output:
+        template_path: hooks/subnet/sdk_create_post_set_output.go.tpl
+      sdk_read_many_post_set_output:
+        template_path: hooks/subnet/sdk_read_many_post_set_output.go.tpl
+    update_operation:
+      custom_method_name: customUpdateSubnet
+  Vpc:
+    update_operation:
+      custom_method_name: customUpdate
+    exceptions:
+      terminal_codes:
+        - InvalidParameterCombination
+    fields:
+      EnableDNSSupport:
+        from:
+          operation: ModifyVpcAttribute
+          path: EnableDnsSupport.Value
+      EnableDNSHostnames:
+        from:
+          operation: ModifyVpcAttribute
+          path: EnableDnsHostnames.Value
+    hooks:
+      sdk_create_post_set_output:
+        template_path: hooks/vpc/sdk_create_post_set_output.go.tpl
+      sdk_read_many_post_set_output:
+        template_path: hooks/vpc/sdk_read_many_post_set_output.go.tpl
+  VpcEndpoint:
+    fields:
+      PolicyDocument:
+        late_initialize: {}
+      VpcId:
+        references:
+          resource: VPC
+          path: Status.VPCID
+      RouteTableIds:
+        references:
+          resource: RouteTable
+          path: Status.RouteTableID
+      SecurityGroupIds:
+        references:
+          resource: SecurityGroup
+          path: Status.ID
+      SubnetIds:
+        references:
+          resource: Subnet
+          path: Status.SubnetID
+    exceptions:
+      terminal_codes:
+        - InvalidVpcId.Malformed
+        - InvalidVpcId.NotFound
+        - InvalidServiceName
+    hooks:
+      sdk_delete_post_build_request:
+        template_path: hooks/vpc_endpoint/sdk_delete_post_build_request.go.tpl

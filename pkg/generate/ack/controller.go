@@ -15,10 +15,12 @@ package ack
 
 import (
 	"path/filepath"
+	"sort"
 	"strings"
 	ttpl "text/template"
 
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/config"
+	"github.com/aws-controllers-k8s/code-generator/pkg/fieldpath"
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate/code"
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate/templateset"
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
@@ -59,6 +61,9 @@ var (
 		},
 		"ResourceExceptionCode": func(r *ackmodel.CRD, httpStatusCode int) string {
 			return r.ExceptionCode(httpStatusCode)
+		},
+		"ConstructFieldPath": func(targetFieldPath string) *fieldpath.Path {
+			return fieldpath.FromString(targetFieldPath)
 		},
 		"GoCodeSetExceptionMessageCheck": func(r *ackmodel.CRD, httpStatusCode int) string {
 			return code.CheckExceptionMessage(r.Config(), r, httpStatusCode)
@@ -259,6 +264,7 @@ func Controller(
 	for serviceName := range referencedServiceNamesMap {
 		referencedServiceNames = append(referencedServiceNames, serviceName)
 	}
+	sort.Strings(referencedServiceNames)
 	cmdVars := &templateCmdVars{
 		metaVars,
 		snakeCasedCRDNames,
