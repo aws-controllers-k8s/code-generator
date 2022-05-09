@@ -3066,6 +3066,22 @@ func TestSetResource_EC2_SecurityGroups_SetResourceIdentifiers(t *testing.T) {
 	} else {
 		ko.Status.ID = nil
 	}
+	if resp.Tags != nil {
+		f1 := []*svcapitypes.Tag{}
+		for _, f1iter := range resp.Tags {
+			f1elem := &svcapitypes.Tag{}
+			if f1iter.Key != nil {
+				f1elem.Key = f1iter.Key
+			}
+			if f1iter.Value != nil {
+				f1elem.Value = f1iter.Value
+			}
+			f1 = append(f1, f1elem)
+		}
+		ko.Status.Tags = f1
+	} else {
+		ko.Status.Tags = nil
+	}
 `
 	assert.Equal(
 		expected,

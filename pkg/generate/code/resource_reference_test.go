@@ -182,15 +182,15 @@ func Test_ReferenceFieldsPresent_NestedSliceOfStructsReference(t *testing.T) {
 	require.NotNil(crd)
 	expected :=
 		`if ko.Spec.Routes != nil {
-	for _, iter32 := range ko.Spec.Routes {
-		if iter32.GatewayRef != nil {
+	for _, iter35 := range ko.Spec.Routes {
+		if iter35.GatewayRef != nil {
 			return true
 		}
 	}
 }
 if ko.Spec.Routes != nil {
-	for _, iter35 := range ko.Spec.Routes {
-		if iter35.NATGatewayRef != nil {
+	for _, iter38 := range ko.Spec.Routes {
+		if iter38.NATGatewayRef != nil {
 			return true
 		}
 	}

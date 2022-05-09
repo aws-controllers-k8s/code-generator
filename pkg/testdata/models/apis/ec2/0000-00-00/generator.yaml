@@ -64,6 +64,8 @@ ignore:
     - VpnGateway
 
 operations:
+  CreateLaunchTemplate:
+    output_wrapper_field_path: LaunchTemplate
   CreateVpcEndpoint:
     output_wrapper_field_path: VpcEndpoint
 
