@@ -17,11 +17,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/aws-controllers-k8s/code-generator/pkg/model"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 	"github.com/aws-controllers-k8s/code-generator/pkg/testutil"
 )
 
@@ -126,6 +125,7 @@ func TestEC2_Volume(t *testing.T) {
 
 	expSpecFieldCamel := []string{
 		"AvailabilityZone",
+		"ClientToken",
 		"DryRun",
 		"Encrypted",
 		"IOPS",
@@ -135,6 +135,7 @@ func TestEC2_Volume(t *testing.T) {
 		"Size",
 		"SnapshotID",
 		"TagSpecifications",
+		"Throughput",
 		"VolumeType",
 	}
 	assert.Equal(expSpecFieldCamel, attrCamelNames(specFields))
