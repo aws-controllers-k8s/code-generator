@@ -74,6 +74,8 @@ func TestNames(t *testing.T) {
 		{"RamDiskId", "RAMDiskID", "ramDiskID", "ram_disk_id"},
 		{"RepositoryUriTest", "RepositoryURITest", "repositoryURITest", "repository_uri_test"},
 		{"RequestedAmiVersion", "RequestedAMIVersion", "requestedAMIVersion", "requested_ami_version"},
+		{"Sns", "SNS", "sns", "sns"},
+		{"Sqs", "SQS", "sqs", "sqs"},
 		{"SriovNetSupport", "SRIOVNetSupport", "sriovNetSupport", "sriov_net_support"},
 		{"SSEKMSKeyID", "SSEKMSKeyID", "sseKMSKeyID", "sse_kms_key_id"},
 		{"UUID", "UUID", "uuid", "uuid"},
