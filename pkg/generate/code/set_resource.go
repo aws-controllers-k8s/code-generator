@@ -440,9 +440,23 @@ func setResourceReadMany(
 	var sourceElemShape *awssdkmodel.Shape
 
 	// Find the element in the output shape that contains the list of
-	// resources. This heuristic is simplistic (just look for the field with a
-	// list type) but seems to be followed consistently by the aws-sdk-go for
-	// List operations.
+	// resources:
+	// Check if there's a wrapperFieldPath, which will
+	// point directly to the shape.
+	wrapperFieldPath := r.GetOutputWrapperFieldPath(op)
+	if wrapperFieldPath != nil {
+		// fieldpath API needs fully qualified name
+		wfp := fieldpath.FromString(outputShape.ShapeName + "." + *wrapperFieldPath)
+		wfpShapeRef := wfp.ShapeRef(&op.OutputRef)
+		if wfpShapeRef != nil {
+			listShapeName = wfpShapeRef.ShapeName
+			sourceElemShape = wfpShapeRef.Shape.MemberRef.Shape
+		}
+	}
+
+	// If listShape can't be found using wrapperFieldPath,
+	// then fall back to looking for the first field with a list type;
+	// this heuristic seems to work for most list operations in aws-sdk-go.
 	for memberName, memberShapeRef := range outputShape.MemberRefs {
 		if memberShapeRef.Shape.Type == "list" {
 			listShapeName = memberName
@@ -474,10 +488,15 @@ func setResourceReadMany(
 	out += fmt.Sprintf("%sfound := false\n", indent)
 	elemVarName := "elem"
 	pathToShape := listShapeName
+	if wrapperFieldPath != nil {
+		pathToShape = *wrapperFieldPath
+	}
+
 	// for _, elem := range resp.CacheClusters {
 	opening, closing, flIndentLvl := generateForRangeLoops(&op.OutputRef, pathToShape, sourceVarName, elemVarName, indentLevel)
 	innerForIndent := strings.Repeat("\t", flIndentLvl)
 	out += opening
+
 	for memberIndex, memberName := range sourceElemShape.MemberNames() {
 		sourceMemberShapeRef := sourceElemShape.MemberRefs[memberName]
 		sourceMemberShape := sourceMemberShapeRef.Shape
