@@ -4,6 +4,7 @@ ignore:
     - CreateVpcInput.DryRun
     - CreateVpcEndpointInput.DryRun
     - Instance.ClientToken
+    - InstanceNetworkInterfaceSpecification.Groups
     - RunInstancesInput.AdditionalInfo
     - RunInstancesInput.ClientToken
     - RunInstancesInput.DryRun
@@ -79,13 +80,27 @@ operations:
     operation_type:
       - Create
     resource_name: Instance
-
+  DescribeInstances:
+    #output shape: DescribeInstancesOutput
+    output_wrapper_field_path: Reservations.Instances
+    operation_type:
+      - List
+    resource_name: Instance
+  TerminateInstances:
+    operation_type:
+      - Delete
+    resource_name: Instance
 resources:
   DhcpOptions:
     fields:
       DHCPConfigurations.Values:
         set:
           - from: AttributeValue.Value
+  Instance:
+    fields:
+      SecurityGroups:
+        set:
+          - from: GroupName
   SecurityGroup:
     renames:
       operations:

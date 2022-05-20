@@ -3257,3 +3257,1050 @@ func TestSetResource_EC2_DHCPOptions_NestedSetConfig(t *testing.T) {
 		code.SetResource(crd.Config(), crd, model.OpTypeCreate, "resp", "ko", 1),
 	)
 }
+
+func TestSetResource_EC2_Instance_Create(t *testing.T) {
+	// Check that the RunInstances output (Reservation)
+	// uses the first element of the returned list of Instances
+	// to populate Instance CR
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "ec2")
+	op := model.OpTypeCreate
+
+	crd := testutil.GetCRDByName(t, g, "Instance")
+	require.NotNil(crd)
+
+	expected := `
+	found := false
+	for _, elem := range resp.Instances {
+		if elem.AmiLaunchIndex != nil {
+			ko.Status.AMILaunchIndex = elem.AmiLaunchIndex
+		} else {
+			ko.Status.AMILaunchIndex = nil
+		}
+		if elem.Architecture != nil {
+			ko.Status.Architecture = elem.Architecture
+		} else {
+			ko.Status.Architecture = nil
+		}
+		if elem.BlockDeviceMappings != nil {
+			f2 := []*svcapitypes.BlockDeviceMapping{}
+			for _, f2iter := range elem.BlockDeviceMappings {
+				f2elem := &svcapitypes.BlockDeviceMapping{}
+				if f2iter.DeviceName != nil {
+					f2elem.DeviceName = f2iter.DeviceName
+				}
+				if f2iter.Ebs != nil {
+					f2elemf1 := &svcapitypes.EBSBlockDevice{}
+					if f2iter.Ebs.DeleteOnTermination != nil {
+						f2elemf1.DeleteOnTermination = f2iter.Ebs.DeleteOnTermination
+					}
+					f2elem.EBS = f2elemf1
+				}
+				f2 = append(f2, f2elem)
+			}
+			ko.Spec.BlockDeviceMappings = f2
+		} else {
+			ko.Spec.BlockDeviceMappings = nil
+		}
+		if elem.BootMode != nil {
+			ko.Status.BootMode = elem.BootMode
+		} else {
+			ko.Status.BootMode = nil
+		}
+		if elem.CapacityReservationId != nil {
+			ko.Status.CapacityReservationID = elem.CapacityReservationId
+		} else {
+			ko.Status.CapacityReservationID = nil
+		}
+		if elem.CapacityReservationSpecification != nil {
+			f5 := &svcapitypes.CapacityReservationSpecification{}
+			if elem.CapacityReservationSpecification.CapacityReservationPreference != nil {
+				f5.CapacityReservationPreference = elem.CapacityReservationSpecification.CapacityReservationPreference
+			}
+			if elem.CapacityReservationSpecification.CapacityReservationTarget != nil {
+				f5f1 := &svcapitypes.CapacityReservationTarget{}
+				if elem.CapacityReservationSpecification.CapacityReservationTarget.CapacityReservationId != nil {
+					f5f1.CapacityReservationID = elem.CapacityReservationSpecification.CapacityReservationTarget.CapacityReservationId
+				}
+				if elem.CapacityReservationSpecification.CapacityReservationTarget.CapacityReservationResourceGroupArn != nil {
+					f5f1.CapacityReservationResourceGroupARN = elem.CapacityReservationSpecification.CapacityReservationTarget.CapacityReservationResourceGroupArn
+				}
+				f5.CapacityReservationTarget = f5f1
+			}
+			ko.Spec.CapacityReservationSpecification = f5
+		} else {
+			ko.Spec.CapacityReservationSpecification = nil
+		}
+		if elem.CpuOptions != nil {
+			f6 := &svcapitypes.CPUOptionsRequest{}
+			if elem.CpuOptions.CoreCount != nil {
+				f6.CoreCount = elem.CpuOptions.CoreCount
+			}
+			if elem.CpuOptions.ThreadsPerCore != nil {
+				f6.ThreadsPerCore = elem.CpuOptions.ThreadsPerCore
+			}
+			ko.Spec.CPUOptions = f6
+		} else {
+			ko.Spec.CPUOptions = nil
+		}
+		if elem.EbsOptimized != nil {
+			ko.Spec.EBSOptimized = elem.EbsOptimized
+		} else {
+			ko.Spec.EBSOptimized = nil
+		}
+		if elem.ElasticGpuAssociations != nil {
+			f8 := []*svcapitypes.ElasticGPUAssociation{}
+			for _, f8iter := range elem.ElasticGpuAssociations {
+				f8elem := &svcapitypes.ElasticGPUAssociation{}
+				if f8iter.ElasticGpuAssociationId != nil {
+					f8elem.ElasticGPUAssociationID = f8iter.ElasticGpuAssociationId
+				}
+				if f8iter.ElasticGpuAssociationState != nil {
+					f8elem.ElasticGPUAssociationState = f8iter.ElasticGpuAssociationState
+				}
+				if f8iter.ElasticGpuAssociationTime != nil {
+					f8elem.ElasticGPUAssociationTime = f8iter.ElasticGpuAssociationTime
+				}
+				if f8iter.ElasticGpuId != nil {
+					f8elem.ElasticGPUID = f8iter.ElasticGpuId
+				}
+				f8 = append(f8, f8elem)
+			}
+			ko.Status.ElasticGPUAssociations = f8
+		} else {
+			ko.Status.ElasticGPUAssociations = nil
+		}
+		if elem.ElasticInferenceAcceleratorAssociations != nil {
+			f9 := []*svcapitypes.ElasticInferenceAcceleratorAssociation{}
+			for _, f9iter := range elem.ElasticInferenceAcceleratorAssociations {
+				f9elem := &svcapitypes.ElasticInferenceAcceleratorAssociation{}
+				if f9iter.ElasticInferenceAcceleratorArn != nil {
+					f9elem.ElasticInferenceAcceleratorARN = f9iter.ElasticInferenceAcceleratorArn
+				}
+				if f9iter.ElasticInferenceAcceleratorAssociationId != nil {
+					f9elem.ElasticInferenceAcceleratorAssociationID = f9iter.ElasticInferenceAcceleratorAssociationId
+				}
+				if f9iter.ElasticInferenceAcceleratorAssociationState != nil {
+					f9elem.ElasticInferenceAcceleratorAssociationState = f9iter.ElasticInferenceAcceleratorAssociationState
+				}
+				if f9iter.ElasticInferenceAcceleratorAssociationTime != nil {
+					f9elem.ElasticInferenceAcceleratorAssociationTime = &metav1.Time{*f9iter.ElasticInferenceAcceleratorAssociationTime}
+				}
+				f9 = append(f9, f9elem)
+			}
+			ko.Status.ElasticInferenceAcceleratorAssociations = f9
+		} else {
+			ko.Status.ElasticInferenceAcceleratorAssociations = nil
+		}
+		if elem.EnaSupport != nil {
+			ko.Status.ENASupport = elem.EnaSupport
+		} else {
+			ko.Status.ENASupport = nil
+		}
+		if elem.EnclaveOptions != nil {
+			f11 := &svcapitypes.EnclaveOptionsRequest{}
+			if elem.EnclaveOptions.Enabled != nil {
+				f11.Enabled = elem.EnclaveOptions.Enabled
+			}
+			ko.Spec.EnclaveOptions = f11
+		} else {
+			ko.Spec.EnclaveOptions = nil
+		}
+		if elem.HibernationOptions != nil {
+			f12 := &svcapitypes.HibernationOptionsRequest{}
+			if elem.HibernationOptions.Configured != nil {
+				f12.Configured = elem.HibernationOptions.Configured
+			}
+			ko.Spec.HibernationOptions = f12
+		} else {
+			ko.Spec.HibernationOptions = nil
+		}
+		if elem.Hypervisor != nil {
+			ko.Status.Hypervisor = elem.Hypervisor
+		} else {
+			ko.Status.Hypervisor = nil
+		}
+		if elem.IamInstanceProfile != nil {
+			f14 := &svcapitypes.IAMInstanceProfileSpecification{}
+			if elem.IamInstanceProfile.Arn != nil {
+				f14.ARN = elem.IamInstanceProfile.Arn
+			}
+			ko.Spec.IAMInstanceProfile = f14
+		} else {
+			ko.Spec.IAMInstanceProfile = nil
+		}
+		if elem.ImageId != nil {
+			ko.Spec.ImageID = elem.ImageId
+		} else {
+			ko.Spec.ImageID = nil
+		}
+		if elem.InstanceId != nil {
+			ko.Status.InstanceID = elem.InstanceId
+		} else {
+			ko.Status.InstanceID = nil
+		}
+		if elem.InstanceLifecycle != nil {
+			ko.Status.InstanceLifecycle = elem.InstanceLifecycle
+		} else {
+			ko.Status.InstanceLifecycle = nil
+		}
+		if elem.InstanceType != nil {
+			ko.Spec.InstanceType = elem.InstanceType
+		} else {
+			ko.Spec.InstanceType = nil
+		}
+		if elem.KernelId != nil {
+			ko.Spec.KernelID = elem.KernelId
+		} else {
+			ko.Spec.KernelID = nil
+		}
+		if elem.KeyName != nil {
+			ko.Spec.KeyName = elem.KeyName
+		} else {
+			ko.Spec.KeyName = nil
+		}
+		if elem.LaunchTime != nil {
+			ko.Status.LaunchTime = &metav1.Time{*elem.LaunchTime}
+		} else {
+			ko.Status.LaunchTime = nil
+		}
+		if elem.Licenses != nil {
+			f22 := []*svcapitypes.LicenseConfiguration{}
+			for _, f22iter := range elem.Licenses {
+				f22elem := &svcapitypes.LicenseConfiguration{}
+				if f22iter.LicenseConfigurationArn != nil {
+					f22elem.LicenseConfigurationARN = f22iter.LicenseConfigurationArn
+				}
+				f22 = append(f22, f22elem)
+			}
+			ko.Status.Licenses = f22
+		} else {
+			ko.Status.Licenses = nil
+		}
+		if elem.MetadataOptions != nil {
+			f23 := &svcapitypes.InstanceMetadataOptionsRequest{}
+			if elem.MetadataOptions.HttpEndpoint != nil {
+				f23.HTTPEndpoint = elem.MetadataOptions.HttpEndpoint
+			}
+			if elem.MetadataOptions.HttpProtocolIpv6 != nil {
+				f23.HTTPProtocolIPv6 = elem.MetadataOptions.HttpProtocolIpv6
+			}
+			if elem.MetadataOptions.HttpPutResponseHopLimit != nil {
+				f23.HTTPPutResponseHopLimit = elem.MetadataOptions.HttpPutResponseHopLimit
+			}
+			if elem.MetadataOptions.HttpTokens != nil {
+				f23.HTTPTokens = elem.MetadataOptions.HttpTokens
+			}
+			ko.Spec.MetadataOptions = f23
+		} else {
+			ko.Spec.MetadataOptions = nil
+		}
+		if elem.Monitoring != nil {
+			f24 := &svcapitypes.RunInstancesMonitoringEnabled{}
+			ko.Spec.Monitoring = f24
+		} else {
+			ko.Spec.Monitoring = nil
+		}
+		if elem.NetworkInterfaces != nil {
+			f25 := []*svcapitypes.InstanceNetworkInterfaceSpecification{}
+			for _, f25iter := range elem.NetworkInterfaces {
+				f25elem := &svcapitypes.InstanceNetworkInterfaceSpecification{}
+				if f25iter.Description != nil {
+					f25elem.Description = f25iter.Description
+				}
+				if f25iter.InterfaceType != nil {
+					f25elem.InterfaceType = f25iter.InterfaceType
+				}
+				if f25iter.Ipv4Prefixes != nil {
+					f25elemf5 := []*svcapitypes.IPv4PrefixSpecificationRequest{}
+					for _, f25elemf5iter := range f25iter.Ipv4Prefixes {
+						f25elemf5elem := &svcapitypes.IPv4PrefixSpecificationRequest{}
+						if f25elemf5iter.Ipv4Prefix != nil {
+							f25elemf5elem.IPv4Prefix = f25elemf5iter.Ipv4Prefix
+						}
+						f25elemf5 = append(f25elemf5, f25elemf5elem)
+					}
+					f25elem.IPv4Prefixes = f25elemf5
+				}
+				if f25iter.Ipv6Addresses != nil {
+					f25elemf6 := []*svcapitypes.InstanceIPv6Address{}
+					for _, f25elemf6iter := range f25iter.Ipv6Addresses {
+						f25elemf6elem := &svcapitypes.InstanceIPv6Address{}
+						if f25elemf6iter.Ipv6Address != nil {
+							f25elemf6elem.IPv6Address = f25elemf6iter.Ipv6Address
+						}
+						f25elemf6 = append(f25elemf6, f25elemf6elem)
+					}
+					f25elem.IPv6Addresses = f25elemf6
+				}
+				if f25iter.Ipv6Prefixes != nil {
+					f25elemf7 := []*svcapitypes.IPv6PrefixSpecificationRequest{}
+					for _, f25elemf7iter := range f25iter.Ipv6Prefixes {
+						f25elemf7elem := &svcapitypes.IPv6PrefixSpecificationRequest{}
+						if f25elemf7iter.Ipv6Prefix != nil {
+							f25elemf7elem.IPv6Prefix = f25elemf7iter.Ipv6Prefix
+						}
+						f25elemf7 = append(f25elemf7, f25elemf7elem)
+					}
+					f25elem.IPv6Prefixes = f25elemf7
+				}
+				if f25iter.NetworkInterfaceId != nil {
+					f25elem.NetworkInterfaceID = f25iter.NetworkInterfaceId
+				}
+				if f25iter.PrivateIpAddress != nil {
+					f25elem.PrivateIPAddress = f25iter.PrivateIpAddress
+				}
+				if f25iter.PrivateIpAddresses != nil {
+					f25elemf13 := []*svcapitypes.PrivateIPAddressSpecification{}
+					for _, f25elemf13iter := range f25iter.PrivateIpAddresses {
+						f25elemf13elem := &svcapitypes.PrivateIPAddressSpecification{}
+						if f25elemf13iter.Primary != nil {
+							f25elemf13elem.Primary = f25elemf13iter.Primary
+						}
+						if f25elemf13iter.PrivateIpAddress != nil {
+							f25elemf13elem.PrivateIPAddress = f25elemf13iter.PrivateIpAddress
+						}
+						f25elemf13 = append(f25elemf13, f25elemf13elem)
+					}
+					f25elem.PrivateIPAddresses = f25elemf13
+				}
+				if f25iter.SubnetId != nil {
+					f25elem.SubnetID = f25iter.SubnetId
+				}
+				f25 = append(f25, f25elem)
+			}
+			ko.Spec.NetworkInterfaces = f25
+		} else {
+			ko.Spec.NetworkInterfaces = nil
+		}
+		if elem.OutpostArn != nil {
+			ko.Status.OutpostARN = elem.OutpostArn
+		} else {
+			ko.Status.OutpostARN = nil
+		}
+		if elem.Placement != nil {
+			f27 := &svcapitypes.Placement{}
+			if elem.Placement.Affinity != nil {
+				f27.Affinity = elem.Placement.Affinity
+			}
+			if elem.Placement.AvailabilityZone != nil {
+				f27.AvailabilityZone = elem.Placement.AvailabilityZone
+			}
+			if elem.Placement.GroupName != nil {
+				f27.GroupName = elem.Placement.GroupName
+			}
+			if elem.Placement.HostId != nil {
+				f27.HostID = elem.Placement.HostId
+			}
+			if elem.Placement.HostResourceGroupArn != nil {
+				f27.HostResourceGroupARN = elem.Placement.HostResourceGroupArn
+			}
+			if elem.Placement.PartitionNumber != nil {
+				f27.PartitionNumber = elem.Placement.PartitionNumber
+			}
+			if elem.Placement.SpreadDomain != nil {
+				f27.SpreadDomain = elem.Placement.SpreadDomain
+			}
+			if elem.Placement.Tenancy != nil {
+				f27.Tenancy = elem.Placement.Tenancy
+			}
+			ko.Spec.Placement = f27
+		} else {
+			ko.Spec.Placement = nil
+		}
+		if elem.Platform != nil {
+			ko.Status.Platform = elem.Platform
+		} else {
+			ko.Status.Platform = nil
+		}
+		if elem.PlatformDetails != nil {
+			ko.Status.PlatformDetails = elem.PlatformDetails
+		} else {
+			ko.Status.PlatformDetails = nil
+		}
+		if elem.PrivateDnsName != nil {
+			ko.Status.PrivateDNSName = elem.PrivateDnsName
+		} else {
+			ko.Status.PrivateDNSName = nil
+		}
+		if elem.PrivateIpAddress != nil {
+			ko.Spec.PrivateIPAddress = elem.PrivateIpAddress
+		} else {
+			ko.Spec.PrivateIPAddress = nil
+		}
+		if elem.ProductCodes != nil {
+			f32 := []*svcapitypes.ProductCode{}
+			for _, f32iter := range elem.ProductCodes {
+				f32elem := &svcapitypes.ProductCode{}
+				if f32iter.ProductCodeId != nil {
+					f32elem.ProductCodeID = f32iter.ProductCodeId
+				}
+				if f32iter.ProductCodeType != nil {
+					f32elem.ProductCodeType = f32iter.ProductCodeType
+				}
+				f32 = append(f32, f32elem)
+			}
+			ko.Status.ProductCodes = f32
+		} else {
+			ko.Status.ProductCodes = nil
+		}
+		if elem.PublicDnsName != nil {
+			ko.Status.PublicDNSName = elem.PublicDnsName
+		} else {
+			ko.Status.PublicDNSName = nil
+		}
+		if elem.PublicIpAddress != nil {
+			ko.Status.PublicIPAddress = elem.PublicIpAddress
+		} else {
+			ko.Status.PublicIPAddress = nil
+		}
+		if elem.RamdiskId != nil {
+			ko.Spec.RAMDiskID = elem.RamdiskId
+		} else {
+			ko.Spec.RAMDiskID = nil
+		}
+		if elem.RootDeviceName != nil {
+			ko.Status.RootDeviceName = elem.RootDeviceName
+		} else {
+			ko.Status.RootDeviceName = nil
+		}
+		if elem.RootDeviceType != nil {
+			ko.Status.RootDeviceType = elem.RootDeviceType
+		} else {
+			ko.Status.RootDeviceType = nil
+		}
+		if elem.SecurityGroups != nil {
+			f38 := []*string{}
+			for _, f38iter := range elem.SecurityGroups {
+				var f38elem string
+				f38elem = *f38iter.GroupName
+				f38 = append(f38, &f38elem)
+			}
+			ko.Spec.SecurityGroups = f38
+		} else {
+			ko.Spec.SecurityGroups = nil
+		}
+		if elem.SourceDestCheck != nil {
+			ko.Status.SourceDestCheck = elem.SourceDestCheck
+		} else {
+			ko.Status.SourceDestCheck = nil
+		}
+		if elem.SpotInstanceRequestId != nil {
+			ko.Status.SpotInstanceRequestID = elem.SpotInstanceRequestId
+		} else {
+			ko.Status.SpotInstanceRequestID = nil
+		}
+		if elem.SriovNetSupport != nil {
+			ko.Status.SRIOVNetSupport = elem.SriovNetSupport
+		} else {
+			ko.Status.SRIOVNetSupport = nil
+		}
+		if elem.State != nil {
+			f42 := &svcapitypes.InstanceState{}
+			if elem.State.Code != nil {
+				f42.Code = elem.State.Code
+			}
+			if elem.State.Name != nil {
+				f42.Name = elem.State.Name
+			}
+			ko.Status.State = f42
+		} else {
+			ko.Status.State = nil
+		}
+		if elem.StateReason != nil {
+			f43 := &svcapitypes.StateReason{}
+			if elem.StateReason.Code != nil {
+				f43.Code = elem.StateReason.Code
+			}
+			if elem.StateReason.Message != nil {
+				f43.Message = elem.StateReason.Message
+			}
+			ko.Status.StateReason = f43
+		} else {
+			ko.Status.StateReason = nil
+		}
+		if elem.StateTransitionReason != nil {
+			ko.Status.StateTransitionReason = elem.StateTransitionReason
+		} else {
+			ko.Status.StateTransitionReason = nil
+		}
+		if elem.SubnetId != nil {
+			ko.Spec.SubnetID = elem.SubnetId
+		} else {
+			ko.Spec.SubnetID = nil
+		}
+		if elem.Tags != nil {
+			f46 := []*svcapitypes.Tag{}
+			for _, f46iter := range elem.Tags {
+				f46elem := &svcapitypes.Tag{}
+				if f46iter.Key != nil {
+					f46elem.Key = f46iter.Key
+				}
+				if f46iter.Value != nil {
+					f46elem.Value = f46iter.Value
+				}
+				f46 = append(f46, f46elem)
+			}
+			ko.Status.Tags = f46
+		} else {
+			ko.Status.Tags = nil
+		}
+		if elem.UsageOperation != nil {
+			ko.Status.UsageOperation = elem.UsageOperation
+		} else {
+			ko.Status.UsageOperation = nil
+		}
+		if elem.UsageOperationUpdateTime != nil {
+			ko.Status.UsageOperationUpdateTime = &metav1.Time{*elem.UsageOperationUpdateTime}
+		} else {
+			ko.Status.UsageOperationUpdateTime = nil
+		}
+		if elem.VirtualizationType != nil {
+			ko.Status.VirtualizationType = elem.VirtualizationType
+		} else {
+			ko.Status.VirtualizationType = nil
+		}
+		if elem.VpcId != nil {
+			ko.Status.VPCID = elem.VpcId
+		} else {
+			ko.Status.VPCID = nil
+		}
+		found = true
+		break
+	}
+	if !found {
+		return nil, ackerr.NotFound
+	}
+`
+	assert.Equal(
+		expected,
+		code.SetResource(crd.Config(), crd, op, "resp", "ko", 1),
+	)
+}
+
+func TestSetResource_EC2_Instance_ReadMany(t *testing.T) {
+	// DescribeInstances returns a list of Reservations
+	// containing a list of Instances. The first Instance
+	// in the first Reservation list should be used to populate CR.
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "ec2")
+	op := model.OpTypeList
+
+	crd := testutil.GetCRDByName(t, g, "Instance")
+	require.NotNil(crd)
+
+	expected := `
+	found := false
+	for _, iter0 := range resp.Reservations {
+		for _, elem := range iter0.Instances {
+			if elem.AmiLaunchIndex != nil {
+				ko.Status.AMILaunchIndex = elem.AmiLaunchIndex
+			} else {
+				ko.Status.AMILaunchIndex = nil
+			}
+			if elem.Architecture != nil {
+				ko.Status.Architecture = elem.Architecture
+			} else {
+				ko.Status.Architecture = nil
+			}
+			if elem.BlockDeviceMappings != nil {
+				f2 := []*svcapitypes.BlockDeviceMapping{}
+				for _, f2iter := range elem.BlockDeviceMappings {
+					f2elem := &svcapitypes.BlockDeviceMapping{}
+					if f2iter.DeviceName != nil {
+						f2elem.DeviceName = f2iter.DeviceName
+					}
+					if f2iter.Ebs != nil {
+						f2elemf1 := &svcapitypes.EBSBlockDevice{}
+						if f2iter.Ebs.DeleteOnTermination != nil {
+							f2elemf1.DeleteOnTermination = f2iter.Ebs.DeleteOnTermination
+						}
+						f2elem.EBS = f2elemf1
+					}
+					f2 = append(f2, f2elem)
+				}
+				ko.Spec.BlockDeviceMappings = f2
+			} else {
+				ko.Spec.BlockDeviceMappings = nil
+			}
+			if elem.BootMode != nil {
+				ko.Status.BootMode = elem.BootMode
+			} else {
+				ko.Status.BootMode = nil
+			}
+			if elem.CapacityReservationId != nil {
+				ko.Status.CapacityReservationID = elem.CapacityReservationId
+			} else {
+				ko.Status.CapacityReservationID = nil
+			}
+			if elem.CapacityReservationSpecification != nil {
+				f5 := &svcapitypes.CapacityReservationSpecification{}
+				if elem.CapacityReservationSpecification.CapacityReservationPreference != nil {
+					f5.CapacityReservationPreference = elem.CapacityReservationSpecification.CapacityReservationPreference
+				}
+				if elem.CapacityReservationSpecification.CapacityReservationTarget != nil {
+					f5f1 := &svcapitypes.CapacityReservationTarget{}
+					if elem.CapacityReservationSpecification.CapacityReservationTarget.CapacityReservationId != nil {
+						f5f1.CapacityReservationID = elem.CapacityReservationSpecification.CapacityReservationTarget.CapacityReservationId
+					}
+					if elem.CapacityReservationSpecification.CapacityReservationTarget.CapacityReservationResourceGroupArn != nil {
+						f5f1.CapacityReservationResourceGroupARN = elem.CapacityReservationSpecification.CapacityReservationTarget.CapacityReservationResourceGroupArn
+					}
+					f5.CapacityReservationTarget = f5f1
+				}
+				ko.Spec.CapacityReservationSpecification = f5
+			} else {
+				ko.Spec.CapacityReservationSpecification = nil
+			}
+			if elem.CpuOptions != nil {
+				f6 := &svcapitypes.CPUOptionsRequest{}
+				if elem.CpuOptions.CoreCount != nil {
+					f6.CoreCount = elem.CpuOptions.CoreCount
+				}
+				if elem.CpuOptions.ThreadsPerCore != nil {
+					f6.ThreadsPerCore = elem.CpuOptions.ThreadsPerCore
+				}
+				ko.Spec.CPUOptions = f6
+			} else {
+				ko.Spec.CPUOptions = nil
+			}
+			if elem.EbsOptimized != nil {
+				ko.Spec.EBSOptimized = elem.EbsOptimized
+			} else {
+				ko.Spec.EBSOptimized = nil
+			}
+			if elem.ElasticGpuAssociations != nil {
+				f8 := []*svcapitypes.ElasticGPUAssociation{}
+				for _, f8iter := range elem.ElasticGpuAssociations {
+					f8elem := &svcapitypes.ElasticGPUAssociation{}
+					if f8iter.ElasticGpuAssociationId != nil {
+						f8elem.ElasticGPUAssociationID = f8iter.ElasticGpuAssociationId
+					}
+					if f8iter.ElasticGpuAssociationState != nil {
+						f8elem.ElasticGPUAssociationState = f8iter.ElasticGpuAssociationState
+					}
+					if f8iter.ElasticGpuAssociationTime != nil {
+						f8elem.ElasticGPUAssociationTime = f8iter.ElasticGpuAssociationTime
+					}
+					if f8iter.ElasticGpuId != nil {
+						f8elem.ElasticGPUID = f8iter.ElasticGpuId
+					}
+					f8 = append(f8, f8elem)
+				}
+				ko.Status.ElasticGPUAssociations = f8
+			} else {
+				ko.Status.ElasticGPUAssociations = nil
+			}
+			if elem.ElasticInferenceAcceleratorAssociations != nil {
+				f9 := []*svcapitypes.ElasticInferenceAcceleratorAssociation{}
+				for _, f9iter := range elem.ElasticInferenceAcceleratorAssociations {
+					f9elem := &svcapitypes.ElasticInferenceAcceleratorAssociation{}
+					if f9iter.ElasticInferenceAcceleratorArn != nil {
+						f9elem.ElasticInferenceAcceleratorARN = f9iter.ElasticInferenceAcceleratorArn
+					}
+					if f9iter.ElasticInferenceAcceleratorAssociationId != nil {
+						f9elem.ElasticInferenceAcceleratorAssociationID = f9iter.ElasticInferenceAcceleratorAssociationId
+					}
+					if f9iter.ElasticInferenceAcceleratorAssociationState != nil {
+						f9elem.ElasticInferenceAcceleratorAssociationState = f9iter.ElasticInferenceAcceleratorAssociationState
+					}
+					if f9iter.ElasticInferenceAcceleratorAssociationTime != nil {
+						f9elem.ElasticInferenceAcceleratorAssociationTime = &metav1.Time{*f9iter.ElasticInferenceAcceleratorAssociationTime}
+					}
+					f9 = append(f9, f9elem)
+				}
+				ko.Status.ElasticInferenceAcceleratorAssociations = f9
+			} else {
+				ko.Status.ElasticInferenceAcceleratorAssociations = nil
+			}
+			if elem.EnaSupport != nil {
+				ko.Status.ENASupport = elem.EnaSupport
+			} else {
+				ko.Status.ENASupport = nil
+			}
+			if elem.EnclaveOptions != nil {
+				f11 := &svcapitypes.EnclaveOptionsRequest{}
+				if elem.EnclaveOptions.Enabled != nil {
+					f11.Enabled = elem.EnclaveOptions.Enabled
+				}
+				ko.Spec.EnclaveOptions = f11
+			} else {
+				ko.Spec.EnclaveOptions = nil
+			}
+			if elem.HibernationOptions != nil {
+				f12 := &svcapitypes.HibernationOptionsRequest{}
+				if elem.HibernationOptions.Configured != nil {
+					f12.Configured = elem.HibernationOptions.Configured
+				}
+				ko.Spec.HibernationOptions = f12
+			} else {
+				ko.Spec.HibernationOptions = nil
+			}
+			if elem.Hypervisor != nil {
+				ko.Status.Hypervisor = elem.Hypervisor
+			} else {
+				ko.Status.Hypervisor = nil
+			}
+			if elem.IamInstanceProfile != nil {
+				f14 := &svcapitypes.IAMInstanceProfileSpecification{}
+				if elem.IamInstanceProfile.Arn != nil {
+					f14.ARN = elem.IamInstanceProfile.Arn
+				}
+				ko.Spec.IAMInstanceProfile = f14
+			} else {
+				ko.Spec.IAMInstanceProfile = nil
+			}
+			if elem.ImageId != nil {
+				ko.Spec.ImageID = elem.ImageId
+			} else {
+				ko.Spec.ImageID = nil
+			}
+			if elem.InstanceId != nil {
+				ko.Status.InstanceID = elem.InstanceId
+			} else {
+				ko.Status.InstanceID = nil
+			}
+			if elem.InstanceLifecycle != nil {
+				ko.Status.InstanceLifecycle = elem.InstanceLifecycle
+			} else {
+				ko.Status.InstanceLifecycle = nil
+			}
+			if elem.InstanceType != nil {
+				ko.Spec.InstanceType = elem.InstanceType
+			} else {
+				ko.Spec.InstanceType = nil
+			}
+			if elem.KernelId != nil {
+				ko.Spec.KernelID = elem.KernelId
+			} else {
+				ko.Spec.KernelID = nil
+			}
+			if elem.KeyName != nil {
+				ko.Spec.KeyName = elem.KeyName
+			} else {
+				ko.Spec.KeyName = nil
+			}
+			if elem.LaunchTime != nil {
+				ko.Status.LaunchTime = &metav1.Time{*elem.LaunchTime}
+			} else {
+				ko.Status.LaunchTime = nil
+			}
+			if elem.Licenses != nil {
+				f22 := []*svcapitypes.LicenseConfiguration{}
+				for _, f22iter := range elem.Licenses {
+					f22elem := &svcapitypes.LicenseConfiguration{}
+					if f22iter.LicenseConfigurationArn != nil {
+						f22elem.LicenseConfigurationARN = f22iter.LicenseConfigurationArn
+					}
+					f22 = append(f22, f22elem)
+				}
+				ko.Status.Licenses = f22
+			} else {
+				ko.Status.Licenses = nil
+			}
+			if elem.MetadataOptions != nil {
+				f23 := &svcapitypes.InstanceMetadataOptionsRequest{}
+				if elem.MetadataOptions.HttpEndpoint != nil {
+					f23.HTTPEndpoint = elem.MetadataOptions.HttpEndpoint
+				}
+				if elem.MetadataOptions.HttpProtocolIpv6 != nil {
+					f23.HTTPProtocolIPv6 = elem.MetadataOptions.HttpProtocolIpv6
+				}
+				if elem.MetadataOptions.HttpPutResponseHopLimit != nil {
+					f23.HTTPPutResponseHopLimit = elem.MetadataOptions.HttpPutResponseHopLimit
+				}
+				if elem.MetadataOptions.HttpTokens != nil {
+					f23.HTTPTokens = elem.MetadataOptions.HttpTokens
+				}
+				ko.Spec.MetadataOptions = f23
+			} else {
+				ko.Spec.MetadataOptions = nil
+			}
+			if elem.Monitoring != nil {
+				f24 := &svcapitypes.RunInstancesMonitoringEnabled{}
+				ko.Spec.Monitoring = f24
+			} else {
+				ko.Spec.Monitoring = nil
+			}
+			if elem.NetworkInterfaces != nil {
+				f25 := []*svcapitypes.InstanceNetworkInterfaceSpecification{}
+				for _, f25iter := range elem.NetworkInterfaces {
+					f25elem := &svcapitypes.InstanceNetworkInterfaceSpecification{}
+					if f25iter.Description != nil {
+						f25elem.Description = f25iter.Description
+					}
+					if f25iter.InterfaceType != nil {
+						f25elem.InterfaceType = f25iter.InterfaceType
+					}
+					if f25iter.Ipv4Prefixes != nil {
+						f25elemf5 := []*svcapitypes.IPv4PrefixSpecificationRequest{}
+						for _, f25elemf5iter := range f25iter.Ipv4Prefixes {
+							f25elemf5elem := &svcapitypes.IPv4PrefixSpecificationRequest{}
+							if f25elemf5iter.Ipv4Prefix != nil {
+								f25elemf5elem.IPv4Prefix = f25elemf5iter.Ipv4Prefix
+							}
+							f25elemf5 = append(f25elemf5, f25elemf5elem)
+						}
+						f25elem.IPv4Prefixes = f25elemf5
+					}
+					if f25iter.Ipv6Addresses != nil {
+						f25elemf6 := []*svcapitypes.InstanceIPv6Address{}
+						for _, f25elemf6iter := range f25iter.Ipv6Addresses {
+							f25elemf6elem := &svcapitypes.InstanceIPv6Address{}
+							if f25elemf6iter.Ipv6Address != nil {
+								f25elemf6elem.IPv6Address = f25elemf6iter.Ipv6Address
+							}
+							f25elemf6 = append(f25elemf6, f25elemf6elem)
+						}
+						f25elem.IPv6Addresses = f25elemf6
+					}
+					if f25iter.Ipv6Prefixes != nil {
+						f25elemf7 := []*svcapitypes.IPv6PrefixSpecificationRequest{}
+						for _, f25elemf7iter := range f25iter.Ipv6Prefixes {
+							f25elemf7elem := &svcapitypes.IPv6PrefixSpecificationRequest{}
+							if f25elemf7iter.Ipv6Prefix != nil {
+								f25elemf7elem.IPv6Prefix = f25elemf7iter.Ipv6Prefix
+							}
+							f25elemf7 = append(f25elemf7, f25elemf7elem)
+						}
+						f25elem.IPv6Prefixes = f25elemf7
+					}
+					if f25iter.NetworkInterfaceId != nil {
+						f25elem.NetworkInterfaceID = f25iter.NetworkInterfaceId
+					}
+					if f25iter.PrivateIpAddress != nil {
+						f25elem.PrivateIPAddress = f25iter.PrivateIpAddress
+					}
+					if f25iter.PrivateIpAddresses != nil {
+						f25elemf13 := []*svcapitypes.PrivateIPAddressSpecification{}
+						for _, f25elemf13iter := range f25iter.PrivateIpAddresses {
+							f25elemf13elem := &svcapitypes.PrivateIPAddressSpecification{}
+							if f25elemf13iter.Primary != nil {
+								f25elemf13elem.Primary = f25elemf13iter.Primary
+							}
+							if f25elemf13iter.PrivateIpAddress != nil {
+								f25elemf13elem.PrivateIPAddress = f25elemf13iter.PrivateIpAddress
+							}
+							f25elemf13 = append(f25elemf13, f25elemf13elem)
+						}
+						f25elem.PrivateIPAddresses = f25elemf13
+					}
+					if f25iter.SubnetId != nil {
+						f25elem.SubnetID = f25iter.SubnetId
+					}
+					f25 = append(f25, f25elem)
+				}
+				ko.Spec.NetworkInterfaces = f25
+			} else {
+				ko.Spec.NetworkInterfaces = nil
+			}
+			if elem.OutpostArn != nil {
+				ko.Status.OutpostARN = elem.OutpostArn
+			} else {
+				ko.Status.OutpostARN = nil
+			}
+			if elem.Placement != nil {
+				f27 := &svcapitypes.Placement{}
+				if elem.Placement.Affinity != nil {
+					f27.Affinity = elem.Placement.Affinity
+				}
+				if elem.Placement.AvailabilityZone != nil {
+					f27.AvailabilityZone = elem.Placement.AvailabilityZone
+				}
+				if elem.Placement.GroupName != nil {
+					f27.GroupName = elem.Placement.GroupName
+				}
+				if elem.Placement.HostId != nil {
+					f27.HostID = elem.Placement.HostId
+				}
+				if elem.Placement.HostResourceGroupArn != nil {
+					f27.HostResourceGroupARN = elem.Placement.HostResourceGroupArn
+				}
+				if elem.Placement.PartitionNumber != nil {
+					f27.PartitionNumber = elem.Placement.PartitionNumber
+				}
+				if elem.Placement.SpreadDomain != nil {
+					f27.SpreadDomain = elem.Placement.SpreadDomain
+				}
+				if elem.Placement.Tenancy != nil {
+					f27.Tenancy = elem.Placement.Tenancy
+				}
+				ko.Spec.Placement = f27
+			} else {
+				ko.Spec.Placement = nil
+			}
+			if elem.Platform != nil {
+				ko.Status.Platform = elem.Platform
+			} else {
+				ko.Status.Platform = nil
+			}
+			if elem.PlatformDetails != nil {
+				ko.Status.PlatformDetails = elem.PlatformDetails
+			} else {
+				ko.Status.PlatformDetails = nil
+			}
+			if elem.PrivateDnsName != nil {
+				ko.Status.PrivateDNSName = elem.PrivateDnsName
+			} else {
+				ko.Status.PrivateDNSName = nil
+			}
+			if elem.PrivateIpAddress != nil {
+				ko.Spec.PrivateIPAddress = elem.PrivateIpAddress
+			} else {
+				ko.Spec.PrivateIPAddress = nil
+			}
+			if elem.ProductCodes != nil {
+				f32 := []*svcapitypes.ProductCode{}
+				for _, f32iter := range elem.ProductCodes {
+					f32elem := &svcapitypes.ProductCode{}
+					if f32iter.ProductCodeId != nil {
+						f32elem.ProductCodeID = f32iter.ProductCodeId
+					}
+					if f32iter.ProductCodeType != nil {
+						f32elem.ProductCodeType = f32iter.ProductCodeType
+					}
+					f32 = append(f32, f32elem)
+				}
+				ko.Status.ProductCodes = f32
+			} else {
+				ko.Status.ProductCodes = nil
+			}
+			if elem.PublicDnsName != nil {
+				ko.Status.PublicDNSName = elem.PublicDnsName
+			} else {
+				ko.Status.PublicDNSName = nil
+			}
+			if elem.PublicIpAddress != nil {
+				ko.Status.PublicIPAddress = elem.PublicIpAddress
+			} else {
+				ko.Status.PublicIPAddress = nil
+			}
+			if elem.RamdiskId != nil {
+				ko.Spec.RAMDiskID = elem.RamdiskId
+			} else {
+				ko.Spec.RAMDiskID = nil
+			}
+			if elem.RootDeviceName != nil {
+				ko.Status.RootDeviceName = elem.RootDeviceName
+			} else {
+				ko.Status.RootDeviceName = nil
+			}
+			if elem.RootDeviceType != nil {
+				ko.Status.RootDeviceType = elem.RootDeviceType
+			} else {
+				ko.Status.RootDeviceType = nil
+			}
+			if elem.SecurityGroups != nil {
+				f38 := []*string{}
+				for _, f38iter := range elem.SecurityGroups {
+					var f38elem string
+					f38elem = *f38iter.GroupName
+					f38 = append(f38, &f38elem)
+				}
+				ko.Spec.SecurityGroups = f38
+			} else {
+				ko.Spec.SecurityGroups = nil
+			}
+			if elem.SourceDestCheck != nil {
+				ko.Status.SourceDestCheck = elem.SourceDestCheck
+			} else {
+				ko.Status.SourceDestCheck = nil
+			}
+			if elem.SpotInstanceRequestId != nil {
+				ko.Status.SpotInstanceRequestID = elem.SpotInstanceRequestId
+			} else {
+				ko.Status.SpotInstanceRequestID = nil
+			}
+			if elem.SriovNetSupport != nil {
+				ko.Status.SRIOVNetSupport = elem.SriovNetSupport
+			} else {
+				ko.Status.SRIOVNetSupport = nil
+			}
+			if elem.State != nil {
+				f42 := &svcapitypes.InstanceState{}
+				if elem.State.Code != nil {
+					f42.Code = elem.State.Code
+				}
+				if elem.State.Name != nil {
+					f42.Name = elem.State.Name
+				}
+				ko.Status.State = f42
+			} else {
+				ko.Status.State = nil
+			}
+			if elem.StateReason != nil {
+				f43 := &svcapitypes.StateReason{}
+				if elem.StateReason.Code != nil {
+					f43.Code = elem.StateReason.Code
+				}
+				if elem.StateReason.Message != nil {
+					f43.Message = elem.StateReason.Message
+				}
+				ko.Status.StateReason = f43
+			} else {
+				ko.Status.StateReason = nil
+			}
+			if elem.StateTransitionReason != nil {
+				ko.Status.StateTransitionReason = elem.StateTransitionReason
+			} else {
+				ko.Status.StateTransitionReason = nil
+			}
+			if elem.SubnetId != nil {
+				ko.Spec.SubnetID = elem.SubnetId
+			} else {
+				ko.Spec.SubnetID = nil
+			}
+			if elem.Tags != nil {
+				f46 := []*svcapitypes.Tag{}
+				for _, f46iter := range elem.Tags {
+					f46elem := &svcapitypes.Tag{}
+					if f46iter.Key != nil {
+						f46elem.Key = f46iter.Key
+					}
+					if f46iter.Value != nil {
+						f46elem.Value = f46iter.Value
+					}
+					f46 = append(f46, f46elem)
+				}
+				ko.Status.Tags = f46
+			} else {
+				ko.Status.Tags = nil
+			}
+			if elem.UsageOperation != nil {
+				ko.Status.UsageOperation = elem.UsageOperation
+			} else {
+				ko.Status.UsageOperation = nil
+			}
+			if elem.UsageOperationUpdateTime != nil {
+				ko.Status.UsageOperationUpdateTime = &metav1.Time{*elem.UsageOperationUpdateTime}
+			} else {
+				ko.Status.UsageOperationUpdateTime = nil
+			}
+			if elem.VirtualizationType != nil {
+				ko.Status.VirtualizationType = elem.VirtualizationType
+			} else {
+				ko.Status.VirtualizationType = nil
+			}
+			if elem.VpcId != nil {
+				ko.Status.VPCID = elem.VpcId
+			} else {
+				ko.Status.VPCID = nil
+			}
+			found = true
+			break
+		}
+		break
+	}
+	if !found {
+		return nil, ackerr.NotFound
+	}
+`
+	assert.Equal(
+		expected,
+		code.SetResource(crd.Config(), crd, op, "resp", "ko", 1),
+	)
+}
