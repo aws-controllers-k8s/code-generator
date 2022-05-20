@@ -97,10 +97,7 @@ func SetResource(
 	case model.OpTypeGet:
 		op = r.Ops.ReadOne
 	case model.OpTypeList:
-		return setResourceReadMany(
-			cfg, r,
-			r.Ops.ReadMany, sourceVarName, targetVarName, indentLevel,
-		)
+		op = r.Ops.ReadMany
 	case model.OpTypeUpdate:
 		op = r.Ops.Update
 	case model.OpTypeDelete:
@@ -116,9 +113,28 @@ func SetResource(
 		return ""
 	}
 
-	// Use the wrapper field path if it's given in the ack-generate config file.
+	// If the output shape has a list containing the resource,
+	// then call setResourceReadMany to generate for-range loops.
+	// Output shape will be a list for ReadMany operations or if
+	// designated via output wrapper config.
 	wrapperFieldPath := r.GetOutputWrapperFieldPath(op)
-	if wrapperFieldPath != nil {
+	if op == r.Ops.ReadMany {
+		return setResourceReadMany(
+			cfg, r,
+			op, sourceVarName, targetVarName, indentLevel,
+		)
+	} else if wrapperFieldPath != nil {
+		// fieldpath api requires fully-qualified path
+		qwfp := fieldpath.FromString(op.OutputRef.ShapeName + "." + *wrapperFieldPath)
+		for _, sref := range qwfp.IterShapeRefs(&op.OutputRef) {
+			// if there's at least 1 list to unpack, call setResourceReadMany
+			if sref.Shape.Type == "list" {
+				return setResourceReadMany(
+					cfg, r,
+					op, sourceVarName, targetVarName, indentLevel,
+				)
+			}
+		}
 		sourceVarName += "." + *wrapperFieldPath
 	} else {
 		// If the wrapper field path is not specified in the config file and if
@@ -133,6 +149,7 @@ func SetResource(
 			}
 		}
 	}
+
 	out := "\n"
 	indent := strings.Repeat("\t", indentLevel)
 
@@ -457,11 +474,13 @@ func setResourceReadMany(
 	// If listShape can't be found using wrapperFieldPath,
 	// then fall back to looking for the first field with a list type;
 	// this heuristic seems to work for most list operations in aws-sdk-go.
-	for memberName, memberShapeRef := range outputShape.MemberRefs {
-		if memberShapeRef.Shape.Type == "list" {
-			listShapeName = memberName
-			sourceElemShape = memberShapeRef.Shape.MemberRef.Shape
-			break
+	if listShapeName == "" {
+		for memberName, memberShapeRef := range outputShape.MemberRefs {
+			if memberShapeRef.Shape.Type == "list" {
+				listShapeName = memberName
+				sourceElemShape = memberShapeRef.Shape.MemberRef.Shape
+				break
+			}
 		}
 	}
 
