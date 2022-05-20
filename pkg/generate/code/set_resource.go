@@ -472,47 +472,48 @@ func setResourceReadMany(
 
 	// found := false
 	out += fmt.Sprintf("%sfound := false\n", indent)
+	elemVarName := "elem"
+	pathToShape := listShapeName
 	// for _, elem := range resp.CacheClusters {
-	out += fmt.Sprintf(
-		"%sfor _, elem := range %s.%s {\n",
-		indent, sourceVarName, listShapeName,
-	)
+	opening, closing, flIndentLvl := generateForRangeLoops(&op.OutputRef, pathToShape, sourceVarName, elemVarName, indentLevel)
+	innerForIndent := strings.Repeat("\t", flIndentLvl)
+	out += opening
 	for memberIndex, memberName := range sourceElemShape.MemberNames() {
 		sourceMemberShapeRef := sourceElemShape.MemberRefs[memberName]
 		sourceMemberShape := sourceMemberShapeRef.Shape
-		sourceAdaptedVarName := "elem." + memberName
+		sourceAdaptedVarName := elemVarName + "." + memberName
 		if r.IsPrimaryARNField(memberName) {
 			out += fmt.Sprintf(
-				"%s\tif %s != nil {\n", indent, sourceAdaptedVarName,
+				"%sif %s != nil {\n", innerForIndent, sourceAdaptedVarName,
 			)
 			//     if ko.Status.ACKResourceMetadata == nil {
 			//  	   ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
 			//     }
 			out += fmt.Sprintf(
-				"%s\t\tif %s.Status.ACKResourceMetadata == nil {\n",
-				indent, targetVarName,
+				"%s\tif %s.Status.ACKResourceMetadata == nil {\n",
+				innerForIndent, targetVarName,
 			)
 			out += fmt.Sprintf(
-				"%s\t\t\t%s.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}\n",
-				indent, targetVarName,
+				"%s\t\t%s.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}\n",
+				innerForIndent, targetVarName,
 			)
 			out += fmt.Sprintf(
-				"\t\t%s}\n", indent,
+				"\t%s}\n", innerForIndent,
 			)
 			//          tmpARN := ackv1alpha1.AWSResourceName(*elemARN)
 			//  		ko.Status.ACKResourceMetadata.ARN = &tmpARN
 			out += fmt.Sprintf(
-				"%s\t\ttmpARN := ackv1alpha1.AWSResourceName(*%s)\n",
-				indent,
+				"%s\ttmpARN := ackv1alpha1.AWSResourceName(*%s)\n",
+				innerForIndent,
 				sourceAdaptedVarName,
 			)
 			out += fmt.Sprintf(
-				"%s\t\t%s.Status.ACKResourceMetadata.ARN = &tmpARN\n",
-				indent,
+				"%s\t%s.Status.ACKResourceMetadata.ARN = &tmpARN\n",
+				innerForIndent,
 				targetVarName,
 			)
 			out += fmt.Sprintf(
-				"\t%s}\n", indent,
+				"%s}\n", innerForIndent,
 			)
 			continue
 		}
@@ -550,7 +551,7 @@ func setResourceReadMany(
 
 		targetMemberShapeRef = f.ShapeRef
 		out += fmt.Sprintf(
-			"%s\tif %s != nil {\n", indent, sourceAdaptedVarName,
+			"%sif %s != nil {\n", innerForIndent, sourceAdaptedVarName,
 		)
 
 		//ex: r.ko.Spec.CacheClusterID
@@ -565,7 +566,7 @@ func setResourceReadMany(
 					cfg, r,
 					memberVarName,
 					targetMemberShapeRef.Shape,
-					indentLevel+2,
+					flIndentLvl+1,
 				)
 				out += setResourceForContainer(
 					cfg, r,
@@ -577,13 +578,13 @@ func setResourceReadMany(
 					sourceMemberShapeRef,
 					f.Names.Camel,
 					model.OpTypeList,
-					indentLevel+2,
+					flIndentLvl+1,
 				)
 				out += setResourceForScalar(
 					qualifiedTargetVar,
 					memberVarName,
 					sourceMemberShapeRef,
-					indentLevel+2,
+					flIndentLvl+1,
 				)
 			}
 		default:
@@ -594,26 +595,26 @@ func setResourceReadMany(
 			//          }
 			if util.InStrings(fieldName, matchFieldNames) {
 				out += fmt.Sprintf(
-					"%s\t\tif %s.%s != nil {\n",
-					indent,
+					"%s\tif %s.%s != nil {\n",
+					innerForIndent,
 					targetAdaptedVarName,
 					f.Names.Camel,
 				)
 				out += fmt.Sprintf(
-					"%s\t\t\tif *%s != *%s.%s {\n",
-					indent,
+					"%s\t\tif *%s != *%s.%s {\n",
+					innerForIndent,
 					sourceAdaptedVarName,
 					targetAdaptedVarName,
 					f.Names.Camel,
 				)
 				out += fmt.Sprintf(
-					"%s\t\t\t\tcontinue\n", indent,
+					"%s\t\t\tcontinue\n", innerForIndent,
 				)
 				out += fmt.Sprintf(
-					"%s\t\t\t}\n", indent,
+					"%s\t\t}\n", innerForIndent,
 				)
 				out += fmt.Sprintf(
-					"%s\t\t}\n", indent,
+					"%s\t}\n", innerForIndent,
 				)
 			}
 			//          r.ko.Spec.CacheClusterID = elem.CacheClusterId
@@ -621,18 +622,18 @@ func setResourceReadMany(
 				qualifiedTargetVar,
 				sourceAdaptedVarName,
 				sourceMemberShapeRef,
-				indentLevel+2,
+				flIndentLvl+1,
 			)
 		}
 		out += fmt.Sprintf(
-			"%s%s} else {\n", indent, indent,
+			"%s} else {\n", innerForIndent,
 		)
 		out += fmt.Sprintf(
-			"%s%s%s%s.%s = nil\n", indent, indent, indent,
+			"%s\t%s.%s = nil\n", innerForIndent,
 			targetAdaptedVarName, f.Names.Camel,
 		)
 		out += fmt.Sprintf(
-			"%s%s}\n", indent, indent,
+			"%s}\n", innerForIndent,
 		)
 	}
 	// When we don't have custom matching/filtering logic for the list
@@ -642,12 +643,12 @@ func setResourceReadMany(
 	// match. Thus, we will break here only when getting a record where
 	// all match fields have matched.
 	out += fmt.Sprintf(
-		"%s\tfound = true\n", indent,
+		"%sfound = true\n", innerForIndent,
 	)
-	out += fmt.Sprintf(
-		"%s\tbreak\n", indent,
-	)
-	out += fmt.Sprintf("%s}\n", indent)
+
+	// End of for-range loops
+	out += closing
+
 	//  if !found {
 	//      return nil, ackerr.NotFound
 	//  }
