@@ -479,7 +479,10 @@ func (r *CRD) getWrapperOutputShape(
 			wrapperField, shape.ShapeName)
 	}
 
-	// wrapper field must be structure; otherwise cannot unpack
+	// wrapper field must be list or structure; otherwise cannot unpack
+	if memberRef.Shape.Type == "list" {
+		memberRef = &memberRef.Shape.MemberRef
+	}
 	if memberRef.Shape.Type != "structure" {
 		return nil, fmt.Errorf(
 			"output wrapper overrides can only contain fields of type"+

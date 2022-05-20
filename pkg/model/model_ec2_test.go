@@ -184,3 +184,154 @@ func TestEC2_NestedReference(t *testing.T) {
 	assert.Equal("GatewayRef", gatewayRefAttr.Names.Camel)
 	assert.Equal("*ackv1alpha1.AWSResourceReferenceWrapper", gatewayRefAttr.GoType)
 }
+
+func TestEC2_VPCEndpoint_WrapperOutput(t *testing.T) {
+	// CreateVpcEndpointOutput has a VpcEndpoint struct
+	// containing the VPCEndpoint data; therefore,
+	// unwrap the struct using config:
+	// output_wrapper_field_path: VpcEndpoint
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "ec2")
+
+	crds, err := g.GetCRDs()
+	require.Nil(err)
+
+	crd := getCRDByName("VpcEndpoint", crds)
+	require.NotNil(crd)
+
+	assert.Equal("VPCEndpoint", crd.Names.Camel)
+	assert.Equal("vpcEndpoint", crd.Names.CamelLower)
+	assert.Equal("vpc_endpoint", crd.Names.Snake)
+
+	specFields := crd.SpecFields
+	statusFields := crd.StatusFields
+
+	expSpecFieldCamel := []string{
+		"ClientToken",
+		"PolicyDocument",
+		"PrivateDNSEnabled",
+		"RouteTableIDs",
+		"SecurityGroupIDs",
+		"ServiceName",
+		"SubnetIDs",
+		"TagSpecifications",
+		"VPCEndpointType",
+		"VPCID",
+	}
+	assert.Equal(expSpecFieldCamel, attrCamelNames(specFields))
+
+	expStatusFieldCamel := []string{
+		"CreationTimestamp",
+		"DNSEntries",
+		"Groups",
+		"LastError",
+		"NetworkInterfaceIDs",
+		"OwnerID",
+		"RequesterManaged",
+		"State",
+		"Tags",
+		"VPCEndpointID",
+	}
+	assert.Equal(expStatusFieldCamel, attrCamelNames(statusFields))
+}
+
+func TestEC2_Instance_WrapperOutput(t *testing.T) {
+	// Reservation (RunInstances output shape) has a list
+	// of Instances. This list needs to be "unwrapped" to
+	// extract Instance data out of the FIRST entry; therefore,
+	// unwrap the list using config:
+	// output_wrapper_field_path: Instances
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "ec2")
+
+	crds, err := g.GetCRDs()
+	require.Nil(err)
+
+	crd := getCRDByName("Instance", crds)
+	require.NotNil(crd)
+
+	assert.Equal("Instance", crd.Names.Camel)
+	assert.Equal("instance", crd.Names.CamelLower)
+	assert.Equal("instance", crd.Names.Snake)
+
+	specFields := crd.SpecFields
+	statusFields := crd.StatusFields
+
+	expSpecFieldCamel := []string{
+		"BlockDeviceMappings",
+		"CPUOptions",
+		"CapacityReservationSpecification",
+		"CreditSpecification",
+		"DisableAPITermination",
+		"EBSOptimized",
+		"ElasticGPUSpecification",
+		"ElasticInferenceAccelerators",
+		"EnclaveOptions",
+		"HibernationOptions",
+		"IAMInstanceProfile",
+		"IPv6AddressCount",
+		"IPv6Addresses",
+		"ImageID",
+		"InstanceInitiatedShutdownBehavior",
+		"InstanceMarketOptions",
+		"InstanceType",
+		"KernelID",
+		"KeyName",
+		"LaunchTemplate",
+		"LicenseSpecifications",
+		"MaxCount",
+		"MetadataOptions",
+		"MinCount",
+		"Monitoring",
+		"NetworkInterfaces",
+		"Placement",
+		"PrivateIPAddress",
+		"RAMDiskID",
+		"SecurityGroupIDs",
+		"SecurityGroups",
+		"SubnetID",
+		"TagSpecifications",
+		"UserData",
+	}
+	assert.Equal(expSpecFieldCamel, attrCamelNames(specFields))
+
+	expStatusFieldCamel := []string{
+		"AMILaunchIndex",
+		"Architecture",
+		"BootMode",
+		"CapacityReservationID",
+		"ENASupport",
+		"ElasticGPUAssociations",
+		"ElasticInferenceAcceleratorAssociations",
+		"Hypervisor",
+		"InstanceID",
+		"InstanceLifecycle",
+		"LaunchTime",
+		"Licenses",
+		"OutpostARN",
+		"Platform",
+		"PlatformDetails",
+		"PrivateDNSName",
+		"ProductCodes",
+		"PublicDNSName",
+		"PublicIPAddress",
+		"RootDeviceName",
+		"RootDeviceType",
+		"SRIOVNetSupport",
+		"SourceDestCheck",
+		"SpotInstanceRequestID",
+		"State",
+		"StateReason",
+		"StateTransitionReason",
+		"Tags",
+		"UsageOperation",
+		"UsageOperationUpdateTime",
+		"VPCID",
+		"VirtualizationType",
+	}
+	assert.Equal(expStatusFieldCamel, attrCamelNames(statusFields))
+}

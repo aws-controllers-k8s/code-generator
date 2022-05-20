@@ -1,7 +1,12 @@
 ignore:
   field_paths:
-    - CreateVpcInput.DryRun
     - CreateDhcpOptionsInput.DryRun
+    - CreateVpcInput.DryRun
+    - CreateVpcEndpointInput.DryRun
+    - Instance.ClientToken
+    - RunInstancesInput.AdditionalInfo
+    - RunInstancesInput.ClientToken
+    - RunInstancesInput.DryRun
   resource_names:
     - AccountAttribute
     - CapacityReservation
@@ -16,7 +21,7 @@ ignore:
     - Fleet
     - FpgaImage
     - Image
-    - Instance
+    #- Instance
     - InstanceExportTask
     - InternetGateway
     - KeyPair
@@ -68,6 +73,12 @@ operations:
     output_wrapper_field_path: LaunchTemplate
   CreateVpcEndpoint:
     output_wrapper_field_path: VpcEndpoint
+  RunInstances:
+    #ouput shape: Reservation
+    output_wrapper_field_path: Instances
+    operation_type:
+      - Create
+    resource_name: Instance
 
 resources:
   DhcpOptions:
