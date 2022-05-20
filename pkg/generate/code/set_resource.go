@@ -1566,3 +1566,88 @@ func setResourceForScalar(
 	out += fmt.Sprintf("%s%s = %s\n", indent, targetVar, setTo)
 	return out
 }
+
+// generateForRangeLoops returns strings of Go code and an int
+// representing indentLevel of the inner-most for loop + 1.
+// This function unpacks a collection from a shapeRef
+// using path and builds the opening and closing
+// pieces of a for-range loop written in Go in order
+// to access the element contained within the collection.
+// The name of this element value is designated with outputVarName:
+// ex: 'for _, <outputVarName> := ...'
+// Limitations: path supports lists and structs only and
+// the 'break' is coupled with for-range loop to only take
+// first element of a list.
+//
+// Sample Input:
+// - shapeRef: DescribeInstancesOutputShape
+// - path: Reservations.Instances
+// - sourceVarName: resp
+// - outputVarName: elem
+// - indentLevel: 1
+//
+// Sample Output (omit formatting for readability):
+// - opening: "for _, iter0 := range resp.Reservations {
+//	for _, elem := range iter0.Instances {"
+// - closing: "break } break }"
+// - updatedIndentLevel: 3
+func generateForRangeLoops(
+	// shapeRef of the shape containing element
+	shapeRef *awssdkmodel.ShapeRef,
+	// path is the path to the element relative to shapeRef
+	path string,
+	// sourceVarName is the name of struct or field used to access source value
+	sourceVarName string,
+	// outputVarName is the desired name of the element, once unwrapped
+	outputVarName string,
+	indentLevel int,
+) (string, string, int) {
+	opening, closing := "", ""
+	updatedIndentLevel := indentLevel
+
+	fp := fieldpath.FromString(path)
+	unwrapCount := 0
+	iterVarName := fmt.Sprintf("iter%d", unwrapCount)
+	collectionVarName := sourceVarName
+	unpackShape := shapeRef.Shape
+
+	for fp.Size() > 0 {
+		pathPart := fp.PopFront()
+		partShapeRef, _ := unpackShape.MemberRefs[pathPart]
+		unpackShape = partShapeRef.Shape
+		indent := strings.Repeat("\t", updatedIndentLevel)
+		iterVarName = fmt.Sprintf("iter%d", unwrapCount)
+		collectionVarName += "." + pathPart
+
+		// Using the fieldpath as a guide, unwrap the shapeRef
+		// to generate for-range loops. If pathPart points
+		// to a struct member, then simply append struct name
+		// to collectionVarName and move on to unwrap the next pathPart/shape.
+		// If pathPart points to a list member, then generate for-range loop
+		// code and update collectionVarName, unpackShape, and updatedIndentLevel
+		// for processing the next loop, if applicable.
+		if partShapeRef.Shape.Type == "list" {
+			// ex: for _, iter0 := range resp.Reservations {
+			opening += fmt.Sprintf("%sfor _, %s := range %s {\n", indent, iterVarName, collectionVarName)
+			// ex:
+			//        break
+			//    }
+			closeLoop := fmt.Sprintf("%s\tbreak\n%s}\n", indent, indent)
+			if closing != "" {
+				// nested loops need to output inner most closing braces first
+				closeLoop += closing
+				closing = closeLoop
+			} else {
+				closing += closeLoop
+			}
+			// reference iterVarName in subsequent for-loop, if any
+			collectionVarName = iterVarName
+			unpackShape = partShapeRef.Shape.MemberRef.Shape
+			updatedIndentLevel += 1
+		}
+		unwrapCount += 1
+	}
+	// replace inner-most range loop value's name with desired outputVarName
+	opening = strings.Replace(opening, iterVarName, outputVarName, 1)
+	return opening, closing, updatedIndentLevel
+}
