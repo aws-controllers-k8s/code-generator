@@ -97,10 +97,7 @@ func SetResource(
 	case model.OpTypeGet:
 		op = r.Ops.ReadOne
 	case model.OpTypeList:
-		return setResourceReadMany(
-			cfg, r,
-			r.Ops.ReadMany, sourceVarName, targetVarName, indentLevel,
-		)
+		op = r.Ops.ReadMany
 	case model.OpTypeUpdate:
 		op = r.Ops.Update
 	case model.OpTypeDelete:
@@ -116,9 +113,28 @@ func SetResource(
 		return ""
 	}
 
-	// Use the wrapper field path if it's given in the ack-generate config file.
+	// If the output shape has a list containing the resource,
+	// then call setResourceReadMany to generate for-range loops.
+	// Output shape will be a list for ReadMany operations or if
+	// designated via output wrapper config.
 	wrapperFieldPath := r.GetOutputWrapperFieldPath(op)
-	if wrapperFieldPath != nil {
+	if op == r.Ops.ReadMany {
+		return setResourceReadMany(
+			cfg, r,
+			op, sourceVarName, targetVarName, indentLevel,
+		)
+	} else if wrapperFieldPath != nil {
+		// fieldpath api requires fully-qualified path
+		qwfp := fieldpath.FromString(op.OutputRef.ShapeName + "." + *wrapperFieldPath)
+		for _, sref := range qwfp.IterShapeRefs(&op.OutputRef) {
+			// if there's at least 1 list to unpack, call setResourceReadMany
+			if sref.Shape.Type == "list" {
+				return setResourceReadMany(
+					cfg, r,
+					op, sourceVarName, targetVarName, indentLevel,
+				)
+			}
+		}
 		sourceVarName += "." + *wrapperFieldPath
 	} else {
 		// If the wrapper field path is not specified in the config file and if
@@ -133,6 +149,7 @@ func SetResource(
 			}
 		}
 	}
+
 	out := "\n"
 	indent := strings.Repeat("\t", indentLevel)
 
@@ -440,14 +457,30 @@ func setResourceReadMany(
 	var sourceElemShape *awssdkmodel.Shape
 
 	// Find the element in the output shape that contains the list of
-	// resources. This heuristic is simplistic (just look for the field with a
-	// list type) but seems to be followed consistently by the aws-sdk-go for
-	// List operations.
-	for memberName, memberShapeRef := range outputShape.MemberRefs {
-		if memberShapeRef.Shape.Type == "list" {
-			listShapeName = memberName
-			sourceElemShape = memberShapeRef.Shape.MemberRef.Shape
-			break
+	// resources:
+	// Check if there's a wrapperFieldPath, which will
+	// point directly to the shape.
+	wrapperFieldPath := r.GetOutputWrapperFieldPath(op)
+	if wrapperFieldPath != nil {
+		// fieldpath API needs fully qualified name
+		wfp := fieldpath.FromString(outputShape.ShapeName + "." + *wrapperFieldPath)
+		wfpShapeRef := wfp.ShapeRef(&op.OutputRef)
+		if wfpShapeRef != nil {
+			listShapeName = wfpShapeRef.ShapeName
+			sourceElemShape = wfpShapeRef.Shape.MemberRef.Shape
+		}
+	}
+
+	// If listShape can't be found using wrapperFieldPath,
+	// then fall back to looking for the first field with a list type;
+	// this heuristic seems to work for most list operations in aws-sdk-go.
+	if listShapeName == "" {
+		for memberName, memberShapeRef := range outputShape.MemberRefs {
+			if memberShapeRef.Shape.Type == "list" {
+				listShapeName = memberName
+				sourceElemShape = memberShapeRef.Shape.MemberRef.Shape
+				break
+			}
 		}
 	}
 
@@ -472,47 +505,53 @@ func setResourceReadMany(
 
 	// found := false
 	out += fmt.Sprintf("%sfound := false\n", indent)
+	elemVarName := "elem"
+	pathToShape := listShapeName
+	if wrapperFieldPath != nil {
+		pathToShape = *wrapperFieldPath
+	}
+
 	// for _, elem := range resp.CacheClusters {
-	out += fmt.Sprintf(
-		"%sfor _, elem := range %s.%s {\n",
-		indent, sourceVarName, listShapeName,
-	)
+	opening, closing, flIndentLvl := generateForRangeLoops(&op.OutputRef, pathToShape, sourceVarName, elemVarName, indentLevel)
+	innerForIndent := strings.Repeat("\t", flIndentLvl)
+	out += opening
+
 	for memberIndex, memberName := range sourceElemShape.MemberNames() {
 		sourceMemberShapeRef := sourceElemShape.MemberRefs[memberName]
 		sourceMemberShape := sourceMemberShapeRef.Shape
-		sourceAdaptedVarName := "elem." + memberName
+		sourceAdaptedVarName := elemVarName + "." + memberName
 		if r.IsPrimaryARNField(memberName) {
 			out += fmt.Sprintf(
-				"%s\tif %s != nil {\n", indent, sourceAdaptedVarName,
+				"%sif %s != nil {\n", innerForIndent, sourceAdaptedVarName,
 			)
 			//     if ko.Status.ACKResourceMetadata == nil {
 			//  	   ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
 			//     }
 			out += fmt.Sprintf(
-				"%s\t\tif %s.Status.ACKResourceMetadata == nil {\n",
-				indent, targetVarName,
+				"%s\tif %s.Status.ACKResourceMetadata == nil {\n",
+				innerForIndent, targetVarName,
 			)
 			out += fmt.Sprintf(
-				"%s\t\t\t%s.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}\n",
-				indent, targetVarName,
+				"%s\t\t%s.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}\n",
+				innerForIndent, targetVarName,
 			)
 			out += fmt.Sprintf(
-				"\t\t%s}\n", indent,
+				"\t%s}\n", innerForIndent,
 			)
 			//          tmpARN := ackv1alpha1.AWSResourceName(*elemARN)
 			//  		ko.Status.ACKResourceMetadata.ARN = &tmpARN
 			out += fmt.Sprintf(
-				"%s\t\ttmpARN := ackv1alpha1.AWSResourceName(*%s)\n",
-				indent,
+				"%s\ttmpARN := ackv1alpha1.AWSResourceName(*%s)\n",
+				innerForIndent,
 				sourceAdaptedVarName,
 			)
 			out += fmt.Sprintf(
-				"%s\t\t%s.Status.ACKResourceMetadata.ARN = &tmpARN\n",
-				indent,
+				"%s\t%s.Status.ACKResourceMetadata.ARN = &tmpARN\n",
+				innerForIndent,
 				targetVarName,
 			)
 			out += fmt.Sprintf(
-				"\t%s}\n", indent,
+				"%s}\n", innerForIndent,
 			)
 			continue
 		}
@@ -550,7 +589,7 @@ func setResourceReadMany(
 
 		targetMemberShapeRef = f.ShapeRef
 		out += fmt.Sprintf(
-			"%s\tif %s != nil {\n", indent, sourceAdaptedVarName,
+			"%sif %s != nil {\n", innerForIndent, sourceAdaptedVarName,
 		)
 
 		//ex: r.ko.Spec.CacheClusterID
@@ -565,7 +604,7 @@ func setResourceReadMany(
 					cfg, r,
 					memberVarName,
 					targetMemberShapeRef.Shape,
-					indentLevel+2,
+					flIndentLvl+1,
 				)
 				out += setResourceForContainer(
 					cfg, r,
@@ -577,13 +616,13 @@ func setResourceReadMany(
 					sourceMemberShapeRef,
 					f.Names.Camel,
 					model.OpTypeList,
-					indentLevel+2,
+					flIndentLvl+1,
 				)
 				out += setResourceForScalar(
 					qualifiedTargetVar,
 					memberVarName,
 					sourceMemberShapeRef,
-					indentLevel+2,
+					flIndentLvl+1,
 				)
 			}
 		default:
@@ -594,26 +633,26 @@ func setResourceReadMany(
 			//          }
 			if util.InStrings(fieldName, matchFieldNames) {
 				out += fmt.Sprintf(
-					"%s\t\tif %s.%s != nil {\n",
-					indent,
+					"%s\tif %s.%s != nil {\n",
+					innerForIndent,
 					targetAdaptedVarName,
 					f.Names.Camel,
 				)
 				out += fmt.Sprintf(
-					"%s\t\t\tif *%s != *%s.%s {\n",
-					indent,
+					"%s\t\tif *%s != *%s.%s {\n",
+					innerForIndent,
 					sourceAdaptedVarName,
 					targetAdaptedVarName,
 					f.Names.Camel,
 				)
 				out += fmt.Sprintf(
-					"%s\t\t\t\tcontinue\n", indent,
+					"%s\t\t\tcontinue\n", innerForIndent,
 				)
 				out += fmt.Sprintf(
-					"%s\t\t\t}\n", indent,
+					"%s\t\t}\n", innerForIndent,
 				)
 				out += fmt.Sprintf(
-					"%s\t\t}\n", indent,
+					"%s\t}\n", innerForIndent,
 				)
 			}
 			//          r.ko.Spec.CacheClusterID = elem.CacheClusterId
@@ -621,18 +660,18 @@ func setResourceReadMany(
 				qualifiedTargetVar,
 				sourceAdaptedVarName,
 				sourceMemberShapeRef,
-				indentLevel+2,
+				flIndentLvl+1,
 			)
 		}
 		out += fmt.Sprintf(
-			"%s%s} else {\n", indent, indent,
+			"%s} else {\n", innerForIndent,
 		)
 		out += fmt.Sprintf(
-			"%s%s%s%s.%s = nil\n", indent, indent, indent,
+			"%s\t%s.%s = nil\n", innerForIndent,
 			targetAdaptedVarName, f.Names.Camel,
 		)
 		out += fmt.Sprintf(
-			"%s%s}\n", indent, indent,
+			"%s}\n", innerForIndent,
 		)
 	}
 	// When we don't have custom matching/filtering logic for the list
@@ -642,12 +681,12 @@ func setResourceReadMany(
 	// match. Thus, we will break here only when getting a record where
 	// all match fields have matched.
 	out += fmt.Sprintf(
-		"%s\tfound = true\n", indent,
+		"%sfound = true\n", innerForIndent,
 	)
-	out += fmt.Sprintf(
-		"%s\tbreak\n", indent,
-	)
-	out += fmt.Sprintf("%s}\n", indent)
+
+	// End of for-range loops
+	out += closing
+
 	//  if !found {
 	//      return nil, ackerr.NotFound
 	//  }
@@ -1565,4 +1604,89 @@ func setResourceForScalar(
 	}
 	out += fmt.Sprintf("%s%s = %s\n", indent, targetVar, setTo)
 	return out
+}
+
+// generateForRangeLoops returns strings of Go code and an int
+// representing indentLevel of the inner-most for loop + 1.
+// This function unpacks a collection from a shapeRef
+// using path and builds the opening and closing
+// pieces of a for-range loop written in Go in order
+// to access the element contained within the collection.
+// The name of this element value is designated with outputVarName:
+// ex: 'for _, <outputVarName> := ...'
+// Limitations: path supports lists and structs only and
+// the 'break' is coupled with for-range loop to only take
+// first element of a list.
+//
+// Sample Input:
+// - shapeRef: DescribeInstancesOutputShape
+// - path: Reservations.Instances
+// - sourceVarName: resp
+// - outputVarName: elem
+// - indentLevel: 1
+//
+// Sample Output (omit formatting for readability):
+// - opening: "for _, iter0 := range resp.Reservations {
+//	for _, elem := range iter0.Instances {"
+// - closing: "break } break }"
+// - updatedIndentLevel: 3
+func generateForRangeLoops(
+	// shapeRef of the shape containing element
+	shapeRef *awssdkmodel.ShapeRef,
+	// path is the path to the element relative to shapeRef
+	path string,
+	// sourceVarName is the name of struct or field used to access source value
+	sourceVarName string,
+	// outputVarName is the desired name of the element, once unwrapped
+	outputVarName string,
+	indentLevel int,
+) (string, string, int) {
+	opening, closing := "", ""
+	updatedIndentLevel := indentLevel
+
+	fp := fieldpath.FromString(path)
+	unwrapCount := 0
+	iterVarName := fmt.Sprintf("iter%d", unwrapCount)
+	collectionVarName := sourceVarName
+	unpackShape := shapeRef.Shape
+
+	for fp.Size() > 0 {
+		pathPart := fp.PopFront()
+		partShapeRef, _ := unpackShape.MemberRefs[pathPart]
+		unpackShape = partShapeRef.Shape
+		indent := strings.Repeat("\t", updatedIndentLevel)
+		iterVarName = fmt.Sprintf("iter%d", unwrapCount)
+		collectionVarName += "." + pathPart
+
+		// Using the fieldpath as a guide, unwrap the shapeRef
+		// to generate for-range loops. If pathPart points
+		// to a struct member, then simply append struct name
+		// to collectionVarName and move on to unwrap the next pathPart/shape.
+		// If pathPart points to a list member, then generate for-range loop
+		// code and update collectionVarName, unpackShape, and updatedIndentLevel
+		// for processing the next loop, if applicable.
+		if partShapeRef.Shape.Type == "list" {
+			// ex: for _, iter0 := range resp.Reservations {
+			opening += fmt.Sprintf("%sfor _, %s := range %s {\n", indent, iterVarName, collectionVarName)
+			// ex:
+			//        break
+			//    }
+			closeLoop := fmt.Sprintf("%s\tbreak\n%s}\n", indent, indent)
+			if closing != "" {
+				// nested loops need to output inner most closing braces first
+				closeLoop += closing
+				closing = closeLoop
+			} else {
+				closing += closeLoop
+			}
+			// reference iterVarName in subsequent for-loop, if any
+			collectionVarName = iterVarName
+			unpackShape = partShapeRef.Shape.MemberRef.Shape
+			updatedIndentLevel += 1
+		}
+		unwrapCount += 1
+	}
+	// replace inner-most range loop value's name with desired outputVarName
+	opening = strings.Replace(opening, iterVarName, outputVarName, 1)
+	return opening, closing, updatedIndentLevel
 }

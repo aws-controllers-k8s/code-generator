@@ -23,6 +23,7 @@ import (
 	"github.com/gertd/go-pluralize"
 
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/config"
+	"github.com/aws-controllers-k8s/code-generator/pkg/fieldpath"
 	"github.com/aws-controllers-k8s/code-generator/pkg/names"
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
 )
@@ -468,8 +469,8 @@ func (r *CRD) getWrapperOutputShape(
 	if fieldPath == "" {
 		return shape, nil
 	}
-	fieldPathParts := strings.Split(fieldPath, ".")
-	wrapperField := fieldPathParts[0]
+	fp := fieldpath.FromString(fieldPath)
+	wrapperField := fp.PopFront()
 
 	memberRef, ok := shape.MemberRefs[wrapperField]
 	if !ok {
@@ -478,15 +479,17 @@ func (r *CRD) getWrapperOutputShape(
 			wrapperField, shape.ShapeName)
 	}
 
-	// wrapper field must be structure; otherwise cannot unpack
+	// wrapper field must be list or structure; otherwise cannot unpack
+	if memberRef.Shape.Type == "list" {
+		memberRef = &memberRef.Shape.MemberRef
+	}
 	if memberRef.Shape.Type != "structure" {
 		return nil, fmt.Errorf(
 			"output wrapper overrides can only contain fields of type"+
 				" 'structure'. Found wrapper override field %s of type '%s'",
 			wrapperField, memberRef.Shape.Type)
 	}
-	remainPath := strings.Join(fieldPathParts[1:], ".")
-	return r.getWrapperOutputShape(memberRef.Shape, remainPath)
+	return r.getWrapperOutputShape(memberRef.Shape, fp.String())
 }
 
 // GetCustomImplementation returns custom implementation method name for the

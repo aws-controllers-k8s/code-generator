@@ -1,7 +1,13 @@
 ignore:
   field_paths:
-    - CreateVpcInput.DryRun
     - CreateDhcpOptionsInput.DryRun
+    - CreateVpcInput.DryRun
+    - CreateVpcEndpointInput.DryRun
+    - Instance.ClientToken
+    - InstanceNetworkInterfaceSpecification.Groups
+    - RunInstancesInput.AdditionalInfo
+    - RunInstancesInput.ClientToken
+    - RunInstancesInput.DryRun
   resource_names:
     - AccountAttribute
     - CapacityReservation
@@ -16,7 +22,7 @@ ignore:
     - Fleet
     - FpgaImage
     - Image
-    - Instance
+    #- Instance
     - InstanceExportTask
     - InternetGateway
     - KeyPair
@@ -68,13 +74,33 @@ operations:
     output_wrapper_field_path: LaunchTemplate
   CreateVpcEndpoint:
     output_wrapper_field_path: VpcEndpoint
-
+  RunInstances:
+    #ouput shape: Reservation
+    output_wrapper_field_path: Instances
+    operation_type:
+      - Create
+    resource_name: Instance
+  DescribeInstances:
+    #output shape: DescribeInstancesOutput
+    output_wrapper_field_path: Reservations.Instances
+    operation_type:
+      - List
+    resource_name: Instance
+  TerminateInstances:
+    operation_type:
+      - Delete
+    resource_name: Instance
 resources:
   DhcpOptions:
     fields:
       DHCPConfigurations.Values:
         set:
           - from: AttributeValue.Value
+  Instance:
+    fields:
+      SecurityGroups:
+        set:
+          - from: GroupName
   SecurityGroup:
     renames:
       operations:
