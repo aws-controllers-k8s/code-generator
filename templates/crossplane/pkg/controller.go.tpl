@@ -20,8 +20,8 @@ import (
 	cpresource "github.com/crossplane/crossplane-runtime/pkg/resource"
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 
-	svcapitypes "github.com/crossplane/provider-aws/apis/{{ .ServicePackageName }}/{{ .APIVersion}}"
-	awsclient "github.com/crossplane/provider-aws/pkg/clients"
+	svcapitypes "github.com/crossplane-contrib/provider-aws/apis/{{ .ServicePackageName }}/{{ .APIVersion}}"
+	awsclient "github.com/crossplane-contrib/provider-aws/pkg/clients"
 )
 
 const (
