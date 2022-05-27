@@ -8,5 +8,5 @@ go run -tags codegen cmd/ack-generate/main.go crossplane <resource name> \
     --output <directory for provider>
 ```
 
-See [Contributing New Resource Using ACK](https://github.com/crossplane/provider-aws/blob/master/CODE_GENERATION.md)
+See [Contributing New Resource Using ACK](https://github.com/crossplane-contrib/provider-aws/blob/master/CODE_GENERATION.md)
 for details.
