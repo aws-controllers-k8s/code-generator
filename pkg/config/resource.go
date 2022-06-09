@@ -96,6 +96,28 @@ type ResourceConfig struct {
 	// IsARNPrimaryKey determines whether the CRD uses the ARN as the primary
 	// identifier in the ReadOne operations.
 	IsARNPrimaryKey bool `json:"is_arn_primary_key"`
+	// TagConfig contains instructions for the code generator to generate
+	// custom code for ensuring tags
+	TagConfig *TagConfig `json:"tags,omitempty"`
+}
+
+// TagConfig instructs the code  generator on how to generate functions that
+// ensure that controller tags are added to the AWS Resource
+type TagConfig struct {
+	// Ignore is a boolean that indicates whether ensuring controller tags
+	// should be ignored for a resource. For AWS resources which do not
+	// support tagging, this should be set to True
+	Ignore bool `json:"ignore,omitempty"`
+	// Path represents the field path for the member which contains the tags
+	Path *string `json:"path,omitempty"`
+	// KeyMemberName is the name of field which represents AWS tag key inside tag
+	// struct. This is only used for tag fields with shape as list of struct,
+	// where the struct represents a single tag.
+	KeyMemberName *string `json:"key_name,omitempty"`
+	// ValueMemberName is the name of field which represents AWS tag value inside
+	// tag struct. This is only used for tag fields with shape as list of struct,
+	// where the struct represents a single tag.
+	ValueMemberName *string `json:"value_name,omitempty"`
 }
 
 // SyncedConfig instructs the code generator on how to generate functions that checks
