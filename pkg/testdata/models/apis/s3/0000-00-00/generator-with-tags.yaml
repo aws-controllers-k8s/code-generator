@@ -1,0 +1,38 @@
+ignore:
+  resource_names:
+    - Object
+    - MultipartUpload
+  shape_names:
+    # These shapes are structs with no members...
+    - SSES3
+resources:
+  Bucket:
+    tags:
+      path: Tagging.TagSet
+    renames:
+      operations:
+        CreateBucket:
+          input_fields:
+            Bucket: Name
+        DeleteBucket:
+          input_fields:
+            Bucket: Name
+    list_operation:
+      match_fields:
+        - Name
+    fields:
+      Tagging:
+        from:
+          operation: PutBucketTagging
+          path: Tagging
+#      Tagging.TagSet:
+#        has_tags: true
+      ACL:
+        # This is to test the ackcompare field ignore functionality. This
+        # should NOT be in a production generator.yaml...
+        compare:
+          is_ignored: true
+      Logging:
+        from:
+          operation: PutBucketLogging
+          path: BucketLoggingStatus
