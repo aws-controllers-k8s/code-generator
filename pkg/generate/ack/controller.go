@@ -169,6 +169,9 @@ var (
 		"CheckNilReferencesPath": func(f *ackmodel.Field, sourceVarName string) string {
 			return code.CheckNilReferencesPath(f, sourceVarName)
 		},
+                "MakeSlice": func (args ...interface{}) []interface{} {
+                        return args
+                },
 	}
 )
 
