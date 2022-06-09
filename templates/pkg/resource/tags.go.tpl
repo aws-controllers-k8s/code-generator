@@ -15,16 +15,16 @@ var (
 
 {{- if $hookCode := Hook .CRD "convert_tags" }}
 {{ $hookCode }}
-{{ else }}
-{{ $tagField := .CRD.GetTagField }}
-{{ if $tagField }}
-{{ $tagFieldShapeType := $tagField.ShapeRef.Shape.Type }}
-{{ $tagFieldGoType := $tagField.GoType }}
-{{ $keyMemberName := .CRD.GetTagKeyMemberName }}
-{{ $valueMemberName := .CRD.GetTagValueMemberName }}
-{{ if eq "list" $tagFieldShapeType }}
-{{ $tagFieldGoType = (print "[]*svcapitypes." $tagField.GoTypeElem) }}
-{{ end }}
+{{ else -}}
+{{- $tagField := .CRD.GetTagField }}
+{{- if $tagField }}
+{{- $tagFieldShapeType := $tagField.ShapeRef.Shape.Type }}
+{{- $tagFieldGoType := $tagField.GoType }}
+{{- $keyMemberName := .CRD.GetTagKeyMemberName }}
+{{- $valueMemberName := .CRD.GetTagValueMemberName }}
+{{- if eq "list" $tagFieldShapeType }}
+{{- $tagFieldGoType = (print "[]*svcapitypes." $tagField.GoTypeElem) }}
+{{- end }}
 // ToACKTags converts the tags parameter into 'acktags.Tags' shape.
 // This method helps in creating the hub(acktags.Tags) for merging
 // default controller tags with existing resource tags.
