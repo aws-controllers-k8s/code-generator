@@ -134,7 +134,11 @@ func (frm *fakeRM) IsSynced(context.Context, acktypes.AWSResource) (bool, error)
 	return true, nil
 }
 
-func (frm *fakeRM) EnsureTags(context.Context, acktypes.AWSResource, acktypes.ServiceControllerMetadata) error {
+func (frm *fakeRM) EnsureTags(
+	context.Context,
+	acktypes.AWSResource,
+	acktypes.ServiceControllerMetadata,
+) error {
 	return nil
 }
 
