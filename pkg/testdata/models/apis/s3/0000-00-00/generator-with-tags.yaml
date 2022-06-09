@@ -25,8 +25,6 @@ resources:
         from:
           operation: PutBucketTagging
           path: Tagging
-#      Tagging.TagSet:
-#        has_tags: true
       ACL:
         # This is to test the ackcompare field ignore functionality. This
         # should NOT be in a production generator.yaml...
