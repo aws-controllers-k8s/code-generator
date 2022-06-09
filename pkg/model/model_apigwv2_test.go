@@ -54,7 +54,7 @@ func TestAPIGatewayV2_Api(t *testing.T) {
 	crd := getCRDByName("Api", crds)
 	require.NotNil(crd)
 
-	assert.False(crd.GetIgnoreTagging())
+	assert.False(crd.Config().TagsAreIgnored(crd.Names.Original))
 	tfName, err := crd.GetTagFieldName()
 	assert.Nil(err)
 	assert.Equal("Tags", tfName)
@@ -94,7 +94,7 @@ func TestAPIGatewayV2_Route(t *testing.T) {
 	crd := getCRDByName("Route", crds)
 	require.NotNil(crd)
 
-	assert.True(crd.GetIgnoreTagging())
+	assert.True(crd.Config().TagsAreIgnored(crd.Names.Original))
 	tfName, err := crd.GetTagFieldName()
 	assert.NotNil(err)
 	assert.Empty(tfName)

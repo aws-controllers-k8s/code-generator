@@ -231,7 +231,7 @@ func Controller(
 	for _, crd := range crds {
 		for _, target := range targets {
 			// skip adding "tags.go.tpl" file if tagging is ignored for a crd
-			if target == "tags.go.tpl" && crd.GetIgnoreTagging() {
+			if target == "tags.go.tpl" && crd.Config().TagsAreIgnored(crd.Names.Original) {
 				continue
 			}
 			outPath := filepath.Join("pkg/resource", crd.Names.Snake, strings.TrimSuffix(target, ".tpl"))

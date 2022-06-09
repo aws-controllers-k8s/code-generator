@@ -647,3 +647,14 @@ func (c *Config) GetListOpMatchFieldNames(
 	}
 	return rConfig.ListOperation.MatchFields
 }
+
+// TagsAreIgnored returns whether ensuring controller tags should be ignored
+// for a resource or not.
+func (c *Config) TagsAreIgnored(resName string) bool {
+	if rConfig, found := c.Resources[resName]; found {
+		if tagConfig := rConfig.TagConfig; tagConfig != nil {
+			return tagConfig.Ignore
+		}
+	}
+	return false
+}

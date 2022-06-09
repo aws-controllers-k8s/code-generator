@@ -718,17 +718,6 @@ func (r *CRD) SortedFieldNames() []string {
 	return fieldNames
 }
 
-// GetIgnoreTagging returns whether ensuring controller tags should be ignored
-// for a resource or not.
-func (r *CRD) GetIgnoreTagging() bool {
-	if resConfig := r.cfg.GetResourceConfig(r.Names.Original); resConfig != nil {
-		if tagConfig := resConfig.TagConfig; tagConfig != nil {
-			return tagConfig.Ignore
-		}
-	}
-	return false
-}
-
 // GetTagFieldName returns the name of field containing AWS tags. The default
 // name is "Tags". If no tag field is found inside the CRD, an error is returned
 func (r *CRD) GetTagFieldName() (string, error) {
@@ -757,7 +746,7 @@ func (r *CRD) GetTagFieldName() (string, error) {
 // GetTagField return the model.Field representing the Tag field for CRD. If no
 // such field is found an error is returned.
 func (r *CRD) GetTagField() (*Field, error) {
-	if r.GetIgnoreTagging() {
+	if r.cfg.TagsAreIgnored(r.Names.Original) {
 		return nil, nil
 	}
 	tagFieldName, err := r.GetTagFieldName()

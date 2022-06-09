@@ -34,7 +34,7 @@ func TestECRRepository(t *testing.T) {
 	crd := getCRDByName("Repository", crds)
 	require.NotNil(crd)
 
-	assert.False(crd.GetIgnoreTagging())
+	assert.False(crd.Config().TagsAreIgnored(crd.Names.Original))
 	tfName, err := crd.GetTagFieldName()
 	assert.Nil(err)
 	assert.Equal("Tags", tfName)
