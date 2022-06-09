@@ -283,23 +283,22 @@ func (rm *resourceManager) EnsureTags(
 	r := rm.concreteResource(res)
 	if r.ko == nil {
 		// Should never happen... if it does, it's buggy code.
-		panic("resource manager's AddAckTags method received resource with nil CR object")
+		panic("resource manager's EnsureTags method received resource with nil CR object")
 	}
 	defaultTags := ackrt.GetDefaultTags(&rm.cfg, r.ko, md)
 	var existingTags {{ $tagFieldGoType }}
-{{ $sourceVar := (print "r.ko" .CRD.Config.PrefixConfig.SpecField) -}}
-{{ $nilCheck := CheckNilFieldPath $tagField $sourceVar -}}
+{{ $nilCheck := CheckNilFieldPath $tagField "r.ko.Spec" -}}
 {{ if not (eq $nilCheck "") -}}
     if {{ $nilCheck }} {
         existingTags = nil
     } else {
-        existingTags = {{ $sourceVar }}.{{ $tagField.Path }}
+        existingTags = r.ko.Spec.{{ $tagField.Path }}
     }
 {{ end -}}
 	resourceTags := ToACKTags(existingTags)
 	tags := acktags.Merge(resourceTags, defaultTags)
-{{ GoCodeInitializeNestedStructField .CRD $sourceVar $tagField "svcapitypes" 1 -}}
-	{{ $sourceVar }}.{{ $tagField.Path }} = FromACKTags(tags)
+{{ GoCodeInitializeNestedStructField .CRD "r.ko" $tagField "svcapitypes" 1 -}}
+	r.ko.Spec.{{ $tagField.Path }} = FromACKTags(tags)
 {{- end }}
     return nil
 {{- end }}

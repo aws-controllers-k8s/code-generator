@@ -25,6 +25,9 @@ var (
 {{ if eq "list" $tagFieldShapeType }}
 {{ $tagFieldGoType = (print "[]*svcapitypes." $tagField.GoTypeElem) }}
 {{ end }}
+// ToACKTags converts the tags parameter into 'acktags.Tags' shape.
+// This method helps in creating the hub(acktags.Tags) for merging
+// default controller tags with existing resource tags.
 func ToACKTags(tags {{ $tagFieldGoType }}) acktags.Tags {
     result := acktags.NewTags()
 {{- if $hookCode := Hook .CRD "pre_convert_to_ack_tags" }}
@@ -34,7 +37,7 @@ func ToACKTags(tags {{ $tagFieldGoType }}) acktags.Tags {
         return result
     }
 {{ if eq "map" $tagFieldShapeType }}
-    for k,v := range tags {
+    for k, v := range tags {
         if v == nil {
             result[k] = ""
         } else {
@@ -42,7 +45,7 @@ func ToACKTags(tags {{ $tagFieldGoType }}) acktags.Tags {
         }
     }
 {{ else if eq "list" $tagFieldShapeType }}
-    for _,t := range tags {
+    for _, t := range tags {
         if t.{{ $valueMemberName }} == nil {
             result[*t.{{ $keyMemberName}}] = ""
         } else {
@@ -56,12 +59,15 @@ func ToACKTags(tags {{ $tagFieldGoType }}) acktags.Tags {
     return result
 }
 
+// FromACKTags converts the tags parameter into {{ $tagFieldGoType }} shape.
+// This method helps in setting the tags back inside AWSResource after merging
+// default controller tags with existing resource tags.
 func FromACKTags(tags acktags.Tags) {{ $tagFieldGoType }} {
     result := {{ $tagFieldGoType }}{}
 {{- if $hookCode := Hook .CRD "pre_convert_from_ack_tags" }}
 {{ $hookCode }}
 {{ end }}
-    for k,v := range tags {
+    for k, v := range tags {
 {{- if eq "map" $tagFieldShapeType }}
         vCopy := v
         result[k] = &vCopy

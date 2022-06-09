@@ -23,8 +23,8 @@ func TestInitializeNestedStructField(t *testing.T) {
 	s := code.InitializeNestedStructField(crd, "r.ko", f,
 		"svcapitypes", 1)
 	expected :=
-		`	r.ko.BucketLoggingStatus = &svcapitypes.BucketLoggingStatus{}
-	r.ko.BucketLoggingStatus.LoggingEnabled = &svcapitypes.LoggingEnabled{}
+		`	r.ko.Spec.Logging = &svcapitypes.BucketLoggingStatus{}
+	r.ko.Spec.Logging.LoggingEnabled = &svcapitypes.LoggingEnabled{}
 `
 	assert.Equal(expected, s)
 }

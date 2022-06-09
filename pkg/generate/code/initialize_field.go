@@ -34,18 +34,17 @@ import (
 // inside "s3" "bucket" crd looks like:
 //
 //  ```
-// 	r.ko.BucketLoggingStatus = &svcapitypes.BucketLoggingStatus{}
-//	r.ko.BucketLoggingStatus.LoggingEnabled = &svcapitypes.LoggingEnabled{}
+// 	r.ko.Spec.Logging = &svcapitypes.BucketLoggingStatus{}
+//	r.ko.Spec.Logging.LoggingEnabled = &svcapitypes.LoggingEnabled{}
 //  ```
-
 func InitializeNestedStructField(
 	r *model.CRD,
 	sourceVarName string,
 	field *model.Field,
-	// apiPkgImportName contains the imported package name where the type definition
+	// apiPkgAlias contains the imported package alias where the type definition
 	// for nested structs is present.
 	// ex: svcapitypes "github.com/aws-controllers-k8s/s3-controller/apis/v1alpha1"
-	apiPkgImportName string,
+	apiPkgAlias string,
 	// Number of levels of indentation to use
 	indentLevel int,
 ) string {
@@ -70,15 +69,25 @@ func InitializeNestedStructField(
 				frontField.ShapeRef.ShapeName, 1)
 			fsp := fieldpath.FromString(fieldShapePath)
 			var index int
+			// Build the prefix to access elements in field path.
+			// Use the front of fieldpath to determine whether the field is
+			// a spec field or status field.
 			elemAccessPrefix := sourceVarName
+			if _, found := r.SpecFields[front]; found {
+				elemAccessPrefix = fmt.Sprintf("%s%s", elemAccessPrefix,
+					r.Config().PrefixConfig.SpecField)
+			} else {
+				elemAccessPrefix = fmt.Sprintf("%s%s", elemAccessPrefix,
+					r.Config().PrefixConfig.StatusField)
+			}
 			var importPath string
-			if apiPkgImportName != "" {
-				importPath = fmt.Sprintf("%s.", apiPkgImportName)
+			if apiPkgAlias != "" {
+				importPath = fmt.Sprintf("%s.", apiPkgAlias)
 			}
 			// traverse over the fieldShapePath and initialize every element
 			// except the last.
 			for index < fsp.Size()-1 {
-				elemName := fsp.At(index)
+				elemName := fp.At(index)
 				elemShapeRef := fsp.ShapeRefAt(frontField.ShapeRef, index)
 				if elemShapeRef.Shape.Type != "structure" {
 					panic(fmt.Sprintf("only nested structures are supported."+
