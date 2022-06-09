@@ -64,7 +64,7 @@ installScope: cluster
 resourceTags:
   # Configures the ACK service controller to always set key/value pairs tags on
   # resources that it manages.
-  - services.k8s.aws/controller-version=%CONTROLLER_VERSION%
+  - services.k8s.aws/controller-version=%CONTROLLER_SERVICE%-%CONTROLLER_VERSION%
   - services.k8s.aws/namespace=%K8S_NAMESPACE%
 
 serviceAccount:
