@@ -34,6 +34,20 @@ func TestECRRepository(t *testing.T) {
 	crd := getCRDByName("Repository", crds)
 	require.NotNil(crd)
 
+	assert.False(crd.GetIgnoreTagging())
+	tfName, err := crd.GetTagFieldName()
+	assert.Nil(err)
+	assert.Equal("Tags", tfName)
+
+	tf, err := crd.GetTagField()
+	assert.NotNil(tf)
+	assert.Nil(err)
+	assert.Equal("Tags", tf.Names.Original)
+
+	tagKeyMemberName := crd.GetTagKeyMemberName()
+	tagValueMemberName := crd.GetTagValueMemberName()
+	assert.Equal("Key", tagKeyMemberName)
+	assert.Equal("Value", tagValueMemberName)
 	// The ECR Repository API has just the C and R of the normal CRUD
 	// operations:
 	//

@@ -19,6 +19,9 @@ resources:
         is_required: false
     update_operation:
       custom_method_name: customUpdateApi
+  Route:
+    tags:
+      ignore: True
 operations:
   CreateApi:
     custom_implementation: customCreateApi
