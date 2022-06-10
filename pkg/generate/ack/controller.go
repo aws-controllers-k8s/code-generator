@@ -169,6 +169,9 @@ var (
 		"CheckNilReferencesPath": func(f *ackmodel.Field, sourceVarName string) string {
 			return code.CheckNilReferencesPath(f, sourceVarName)
 		},
+                "Each": func (args ...interface{}) []interface{} {
+                        return args
+                },
 		"GoCodeInitializeNestedStructField": func(r *ackmodel.CRD,
 			sourceVarName string, f *ackmodel.Field, apiPkgImportName string,
 			indentLevel int) string {
