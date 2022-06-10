@@ -63,6 +63,12 @@ code paths:
 * late_initialize_post_read_one
 * references_pre_resolve
 * references_post_resolve
+* ensure_tags
+* convert_tags
+* convert_tags_pre_to_ack_tags
+* convert_tags_post_to_ack_tags
+* convert_tags_pre_from_ack_tags
+* convert_tags_post_from_ack_tags
 
 The "pre_build_request" hooks are called BEFORE the call to construct
 the Input shape that is used in the API operation and therefore BEFORE
@@ -119,6 +125,24 @@ method
 The "references_post_resolve" hooks are called AFTER resolving the
 references for all Reference fields inside AWSResourceManager.ResolveReferences()
 method
+
+The "ensure_tags" hooks provide the complete custom implementation for
+AWSResourceManager.EnsureTags() method
+
+The "convert_tags" hooks provide the complete custom implementation for
+"ToACKTags" and "FromACKTags" methods.
+
+The "convert_tags_pre_to_ack_tags" are called before converting the K8s
+resource tags into ACK tags
+
+The "convert_tags_post_to_ack_tags" are called after converting the K8s
+resource tags into ACK tags
+
+The "convert_tags_pre_from_ack_tags" are called before converting the ACK
+tags into K8s resource tags
+
+The "convert_tags_post_from_ack_tags" are called after converting the ACK
+tags into K8s resource tags
 */
 
 // ResourceHookCode returns a string with custom callback code for a resource

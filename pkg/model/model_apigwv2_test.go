@@ -54,6 +54,16 @@ func TestAPIGatewayV2_Api(t *testing.T) {
 	crd := getCRDByName("Api", crds)
 	require.NotNil(crd)
 
+	assert.False(crd.Config().TagsAreIgnored(crd.Names.Original))
+	tfName, err := crd.GetTagFieldName()
+	assert.Nil(err)
+	assert.Equal("Tags", tfName)
+
+	tf, err := crd.GetTagField()
+	assert.NotNil(tf)
+	assert.Nil(err)
+	assert.Equal("Tags", tf.Names.Original)
+
 	assert.Equal("API", crd.Names.Camel)
 	assert.Equal("api", crd.Names.CamelLower)
 	assert.Equal("api", crd.Names.Snake)
@@ -83,6 +93,17 @@ func TestAPIGatewayV2_Route(t *testing.T) {
 
 	crd := getCRDByName("Route", crds)
 	require.NotNil(crd)
+
+	assert.True(crd.Config().TagsAreIgnored(crd.Names.Original))
+	tfName, err := crd.GetTagFieldName()
+	assert.NotNil(err)
+	assert.Empty(tfName)
+
+	tf, err := crd.GetTagField()
+	assert.Nil(tf)
+
+	assert.Empty(crd.GetTagKeyMemberName())
+	assert.Empty(crd.GetTagValueMemberName())
 
 	assert.Equal("Route", crd.Names.Camel)
 	assert.Equal("route", crd.Names.CamelLower)

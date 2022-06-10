@@ -14,19 +14,25 @@ import (
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackmetrics "github.com/aws-controllers-k8s/runtime/pkg/metrics"
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
+	ackrt "github.com/aws-controllers-k8s/runtime/pkg/runtime"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
+	acktags "github.com/aws-controllers-k8s/runtime/pkg/tags"
 	acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
 	ackutil "github.com/aws-controllers-k8s/runtime/pkg/util"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
-
 	svcsdk "github.com/aws/aws-sdk-go/service/{{ .ServicePackageName }}"
 	svcsdkapi "github.com/aws/aws-sdk-go/service/{{ .ServicePackageName }}/{{ .ServicePackageName }}iface"
+
+	svcapitypes "github.com/aws-controllers-k8s/{{ .ServicePackageName }}-controller/apis/{{ .APIVersion }}"
 )
 
 var (
 	_ = ackutil.InStrings
+	_ = acktags.NewTags()
+	_ = ackrt.MissingImageTagValue
+	_ = svcapitypes.{{ .CRD.Kind }}{}
 )
 
 // +kubebuilder:rbac:groups={{ .APIGroup }},resources={{ ToLower .CRD.Plural }},verbs=get;list;watch;create;update;patch;delete
@@ -250,6 +256,52 @@ func (rm *resourceManager) IsSynced(ctx context.Context, res acktypes.AWSResourc
 	}
 {{ GoCodeIsSynced .CRD "r.ko" 1}}
 	return true, nil
+}
+
+// EnsureTags ensures that tags are present inside the AWSResource.
+// If the AWSResource does not have any existing resource tags, the 'tags'
+// field is initialized and the controller tags are added.
+// If the AWSResource has existing resource tags, then controller tags are
+// added to the existing resource tags without overriding them.
+// If the AWSResource does not support tags, only then the controller tags
+// will not be added to the AWSResource.
+func (rm *resourceManager) EnsureTags(
+    ctx context.Context,
+    res acktypes.AWSResource,
+    md acktypes.ServiceControllerMetadata,
+) error {
+{{- if $hookCode := Hook .CRD "ensure_tags" }}
+{{ $hookCode }}
+{{ else }}
+{{ $tagField := .CRD.GetTagField -}}
+{{ if $tagField -}}
+{{ $tagFieldShapeType := $tagField.ShapeRef.Shape.Type -}}
+{{ $tagFieldGoType := $tagField.GoType -}}
+{{ if eq "list" $tagFieldShapeType -}}
+{{ $tagFieldGoType = (print "[]*svcapitypes." $tagField.GoTypeElem) -}}
+{{ end -}}
+	r := rm.concreteResource(res)
+	if r.ko == nil {
+		// Should never happen... if it does, it's buggy code.
+		panic("resource manager's EnsureTags method received resource with nil CR object")
+	}
+	defaultTags := ackrt.GetDefaultTags(&rm.cfg, r.ko, md)
+	var existingTags {{ $tagFieldGoType }}
+{{ $nilCheck := CheckNilFieldPath $tagField "r.ko.Spec" -}}
+{{ if not (eq $nilCheck "") -}}
+    if {{ $nilCheck }} {
+        existingTags = nil
+    } else {
+        existingTags = r.ko.Spec.{{ $tagField.Path }}
+    }
+{{ end -}}
+	resourceTags := ToACKTags(existingTags)
+	tags := acktags.Merge(resourceTags, defaultTags)
+{{ GoCodeInitializeNestedStructField .CRD "r.ko" $tagField "svcapitypes" 1 -}}
+	r.ko.Spec.{{ $tagField.Path }} = FromACKTags(tags)
+{{- end }}
+    return nil
+{{- end }}
 }
 
 // newResourceManager returns a new struct implementing

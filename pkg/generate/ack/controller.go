@@ -169,9 +169,15 @@ var (
 		"CheckNilReferencesPath": func(f *ackmodel.Field, sourceVarName string) string {
 			return code.CheckNilReferencesPath(f, sourceVarName)
 		},
-                "Each": func (args ...interface{}) []interface{} {
-                        return args
-                },
+    "Each": func (args ...interface{}) []interface{} {
+      return args
+    },
+		"GoCodeInitializeNestedStructField": func(r *ackmodel.CRD,
+			sourceVarName string, f *ackmodel.Field, apiPkgImportName string,
+			indentLevel int) string {
+			return code.InitializeNestedStructField(r, sourceVarName, f,
+				apiPkgImportName, indentLevel)
+		},
 	}
 )
 
@@ -223,9 +229,14 @@ func Controller(
 		"references.go.tpl",
 		"resource.go.tpl",
 		"sdk.go.tpl",
+		"tags.go.tpl",
 	}
 	for _, crd := range crds {
 		for _, target := range targets {
+			// skip adding "tags.go.tpl" file if tagging is ignored for a crd
+			if target == "tags.go.tpl" && crd.Config().TagsAreIgnored(crd.Names.Original) {
+				continue
+			}
 			outPath := filepath.Join("pkg/resource", crd.Names.Snake, strings.TrimSuffix(target, ".tpl"))
 			tplPath := filepath.Join("pkg/resource", target)
 			crdVars := &templateCRDVars{
