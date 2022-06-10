@@ -294,6 +294,8 @@ func (rm *resourceManager) EnsureTags(
     } else {
         existingTags = r.ko.Spec.{{ $tagField.Path }}
     }
+{{ else -}}
+    existingTags = r.ko.Spec.{{ $tagField.Path }}
 {{ end -}}
 	resourceTags := ToACKTags(existingTags)
 	tags := acktags.Merge(resourceTags, defaultTags)
