@@ -5,7 +5,9 @@ func (rm *resourceManager) sdkFind(
 ) (latest *resource, err error) {
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.sdkFind")
-	defer exit(err)
+	defer func() {
+		exit(err)
+	}()
 
 {{- if $hookCode := Hook .CRD "sdk_read_many_pre_build_request" }}
 {{ $hookCode }}
