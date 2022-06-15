@@ -54,7 +54,9 @@ func (rm *resourceManager) sdkCreate(
 ) (created *resource, err error) {
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.sdkCreate")
-	defer exit(err)
+	defer func() {
+		exit(err)
+	}()
 
 {{- if $hookCode := Hook .CRD "sdk_create_pre_build_request" }}
 {{ $hookCode }}
@@ -133,7 +135,9 @@ func (rm *resourceManager) sdkDelete(
 ) (latest *resource, err error) {
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.sdkDelete")
-	defer exit(err)
+	defer func() {
+		exit(err)
+	}()
 
 {{- if .CRD.Ops.Delete }}
 {{- if $hookCode := Hook .CRD "sdk_delete_pre_build_request" }}

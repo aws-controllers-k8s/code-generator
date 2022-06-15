@@ -7,7 +7,9 @@ func (rm *resourceManager) sdkUpdate(
 ) (updated *resource, err error) {
 	rlog := ackrtlog.FromContext(ctx)
 	exit := rlog.Trace("rm.sdkUpdate")
-	defer exit(err)
+	defer func() {
+		exit(err)
+	}()
 
 {{- if $hookCode := Hook .CRD "sdk_update_pre_build_request" }}
 {{ $hookCode }}
