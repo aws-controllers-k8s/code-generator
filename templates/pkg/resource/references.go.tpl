@@ -72,6 +72,11 @@ func (rm *resourceManager) ResolveReferences(
 {{- if $hookCode := Hook .CRD "references_post_resolve" }}
 {{ $hookCode }}
 {{- end }}
+	// If there was an error while resolving any reference, reset all the
+	// resolved values so that they do not get persisted inside etcd
+	if err != nil {
+		ko = rm.concreteResource(res).ko.DeepCopy()
+	}
 	if hasNonNilReferences(ko) {
 		return ackcondition.WithReferencesResolvedCondition(&resource{ko}, err)
 	}
