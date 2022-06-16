@@ -113,6 +113,9 @@ func (rm *resourceManager) Create(
 	}
 	created, err := rm.sdkCreate(ctx, r)
 	if err != nil {
+	    if created != nil {
+	        return rm.onError(created, err)
+	    }
 		return rm.onError(r, err)
 	}
 	return rm.onSuccess(created)
@@ -140,6 +143,9 @@ func (rm *resourceManager) Update(
 	}
 	updated, err := rm.sdkUpdate(ctx, desired, latest, delta)
 	if err != nil {
+	    if updated != nil {
+	        return rm.onError(updated, err)
+	    }
 		return rm.onError(latest, err)
 	}
 	return rm.onSuccess(updated)
