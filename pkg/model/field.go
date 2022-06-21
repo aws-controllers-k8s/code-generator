@@ -230,6 +230,24 @@ func NewField(
 	shapeRef *awssdkmodel.ShapeRef,
 	cfg *ackgenconfig.FieldConfig,
 ) *Field {
+	return newFieldRecurse(crd, path, make(map[string]*Field, 0), fieldNames, shapeRef, cfg)
+}
+
+// newFieldRecurse recursively calls itself with protection against infinite
+// cycles
+func newFieldRecurse(
+	crd *CRD,
+	path string,
+	// A map of shape name to Fields. Keeps track of every shape that has been
+	// recursively discovered so that we can detect cycles. For example, the
+	// emrcontainers `Configuration` object contains a property of type
+	// `Configuration`.
+	parentFields map[string]*Field,
+	fieldNames names.Names,
+	shapeRef *awssdkmodel.ShapeRef,
+	cfg *ackgenconfig.FieldConfig,
+) *Field {
+	var field *Field
 	memberFields := map[string]*Field{}
 	var gte, gt, gtwp string
 	var shape *awssdkmodel.Shape
@@ -269,33 +287,55 @@ func NewField(
 			}
 			break
 		}
+
+		field = &Field{
+			CRD:               crd,
+			Names:             fieldNames,
+			Path:              path,
+			ShapeRef:          shapeRef,
+			GoType:            gt,
+			GoTypeElem:        gte,
+			GoTypeWithPkgName: gtwp,
+			FieldConfig:       cfg,
+			MemberFields:      nil,
+		}
+		// Copy the parent fields map so that we can use it recursively without
+		// modifying it for other call stacks
+		nestedParentFields := make(map[string]*Field, len(parentFields))
+		for k, v := range parentFields {
+			nestedParentFields[k] = v
+		}
+		nestedParentFields[shapeRef.ShapeName] = field
+
 		if containerShape.Type == "structure" {
 			// "unpack" the member fields composing this struct field...
 			for _, memberName := range containerShape.MemberNames() {
 				cleanMemberNames := names.New(memberName)
 				memberPath := path + "." + cleanMemberNames.Camel
 				memberShape := containerShape.MemberRefs[memberName]
+
+				// Check to see if we have seen this shape before in the stack
+				// and panic. Cyclic references are not supported
+				if _, ok := nestedParentFields[memberShape.ShapeName]; ok {
+					panic(fmt.Sprintf("Detected a cyclic type reference in %s"+
+						". Add the corresponding path to `ignore.field_paths`"+
+						" in the generator config to continue.",
+						containerShape.ShapeName))
+				}
+
 				fConfigs := crd.cfg.GetFieldConfigs(crd.Names.Original)
-				memberField := NewField(
-					crd, memberPath, cleanMemberNames, memberShape, fConfigs[memberPath],
+				memberField := newFieldRecurse(
+					crd, memberPath, nestedParentFields, cleanMemberNames, memberShape, fConfigs[memberPath],
 				)
+
 				memberFields[cleanMemberNames.Camel] = memberField
 			}
+			field.MemberFields = memberFields
 		}
 	} else {
 		gte = "string"
 		gt = "*string"
 		gtwp = "*string"
 	}
-	return &Field{
-		CRD:               crd,
-		Names:             fieldNames,
-		Path:              path,
-		ShapeRef:          shapeRef,
-		GoType:            gt,
-		GoTypeElem:        gte,
-		GoTypeWithPkgName: gtwp,
-		FieldConfig:       cfg,
-		MemberFields:      memberFields,
-	}
+	return field
 }
