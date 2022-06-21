@@ -1,0 +1,21 @@
+ignore:
+  field_paths:
+    # We would need to ignore the following line to ensure there are no cycles
+    # in the property graph.
+    # - Configuration.Configurations
+  operations: null
+  resource_names:
+  - VirtualCluster
+  # - JobRun
+  - ManagedEndpoint
+  shape_names: null
+model_name: emr-containers
+operations:
+  StartJobRun:
+    operation_type: Create
+    resource_name: JobRun
+  CancelJobRun:
+    operation_type: Delete
+    resource_name: JobRun
+  DescribeJobRun:
+    output_wrapper_field_path: JobRun
