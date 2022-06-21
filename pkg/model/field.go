@@ -230,7 +230,7 @@ func NewField(
 	shapeRef *awssdkmodel.ShapeRef,
 	cfg *ackgenconfig.FieldConfig,
 ) *Field {
-	return newFieldRecurse(crd, path, make(map[string]*Field, 0), fieldNames, shapeRef, cfg)
+	return newFieldRecurse(crd, path, make(map[string]*struct{}, 0), fieldNames, shapeRef, cfg)
 }
 
 // newFieldRecurse recursively calls itself with protection against infinite
@@ -242,12 +242,11 @@ func newFieldRecurse(
 	// recursively discovered so that we can detect cycles. For example, the
 	// emrcontainers `Configuration` object contains a property of type
 	// `Configuration`.
-	parentFields map[string]*Field,
+	parentFields map[string]*struct{},
 	fieldNames names.Names,
 	shapeRef *awssdkmodel.ShapeRef,
 	cfg *ackgenconfig.FieldConfig,
 ) *Field {
-	var field *Field
 	memberFields := map[string]*Field{}
 	var gte, gt, gtwp string
 	var shape *awssdkmodel.Shape
@@ -288,24 +287,13 @@ func newFieldRecurse(
 			break
 		}
 
-		field = &Field{
-			CRD:               crd,
-			Names:             fieldNames,
-			Path:              path,
-			ShapeRef:          shapeRef,
-			GoType:            gt,
-			GoTypeElem:        gte,
-			GoTypeWithPkgName: gtwp,
-			FieldConfig:       cfg,
-			MemberFields:      nil,
-		}
 		// Copy the parent fields map so that we can use it recursively without
 		// modifying it for other call stacks
-		nestedParentFields := make(map[string]*Field, len(parentFields))
+		nestedParentFields := make(map[string]*struct{}, len(parentFields))
 		for k, v := range parentFields {
 			nestedParentFields[k] = v
 		}
-		nestedParentFields[shapeRef.ShapeName] = field
+		nestedParentFields[shapeRef.ShapeName] = &struct{}{}
 
 		if containerShape.Type == "structure" {
 			// "unpack" the member fields composing this struct field...
@@ -330,12 +318,22 @@ func newFieldRecurse(
 
 				memberFields[cleanMemberNames.Camel] = memberField
 			}
-			field.MemberFields = memberFields
 		}
 	} else {
 		gte = "string"
 		gt = "*string"
 		gtwp = "*string"
 	}
-	return field
+
+	return &Field{
+		CRD:               crd,
+		Names:             fieldNames,
+		Path:              path,
+		ShapeRef:          shapeRef,
+		GoType:            gt,
+		GoTypeElem:        gte,
+		GoTypeWithPkgName: gtwp,
+		FieldConfig:       cfg,
+		MemberFields:      memberFields,
+	}
 }
