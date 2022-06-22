@@ -230,7 +230,7 @@ func NewField(
 	shapeRef *awssdkmodel.ShapeRef,
 	cfg *ackgenconfig.FieldConfig,
 ) *Field {
-	return newFieldRecurse(crd, path, make(map[string]*struct{}, 0), fieldNames, shapeRef, cfg)
+	return newFieldRecurse(crd, path, make(map[string]struct{}, 0), fieldNames, shapeRef, cfg)
 }
 
 // newFieldRecurse recursively calls itself with protection against infinite
@@ -242,7 +242,7 @@ func newFieldRecurse(
 	// recursively discovered so that we can detect cycles. For example, the
 	// emrcontainers `Configuration` object contains a property of type
 	// `Configuration`.
-	parentFields map[string]*struct{},
+	parentFields map[string]struct{},
 	fieldNames names.Names,
 	shapeRef *awssdkmodel.ShapeRef,
 	cfg *ackgenconfig.FieldConfig,
@@ -289,11 +289,11 @@ func newFieldRecurse(
 
 		// Copy the parent fields map so that we can use it recursively without
 		// modifying it for other call stacks
-		nestedParentFields := make(map[string]*struct{}, len(parentFields))
+		nestedParentFields := make(map[string]struct{}, len(parentFields))
 		for k, v := range parentFields {
 			nestedParentFields[k] = v
 		}
-		nestedParentFields[shapeRef.ShapeName] = &struct{}{}
+		nestedParentFields[shapeRef.ShapeName] = struct{}{}
 
 		if containerShape.Type == "structure" {
 			// "unpack" the member fields composing this struct field...
