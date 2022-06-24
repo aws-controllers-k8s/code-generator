@@ -24,6 +24,7 @@ import (
 	"github.com/spf13/cobra"
 
 	olmgenerate "github.com/aws-controllers-k8s/code-generator/pkg/generate/olm"
+	ackmetadata "github.com/aws-controllers-k8s/code-generator/pkg/metadata"
 )
 
 const (
@@ -87,7 +88,11 @@ func generateOLMAssets(cmd *cobra.Command, args []string) error {
 	if err := ensureSDKRepo(ctx, optCacheDir, optRefreshCache); err != nil {
 		return err
 	}
-	m, err := loadModelWithLatestAPIVersion(svcAlias)
+	metadata, err := ackmetadata.NewServiceMetadata(optMetadataConfigPath)
+	if err != nil {
+		return err
+	}
+	m, err := loadModelWithLatestAPIVersion(svcAlias, metadata)
 	if err != nil {
 		return err
 	}

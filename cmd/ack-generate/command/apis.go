@@ -96,7 +96,11 @@ func generateAPIs(cmd *cobra.Command, args []string) error {
 	if err := ensureSDKRepo(ctx, optCacheDir, optRefreshCache); err != nil {
 		return err
 	}
-	m, err := loadModelWithLatestAPIVersion(svcAlias)
+	metadata, err := ackmetadata.NewServiceMetadata(optMetadataConfigPath)
+	if err != nil {
+		return err
+	}
+	m, err := loadModelWithLatestAPIVersion(svcAlias, metadata)
 	if err != nil {
 		return err
 	}
