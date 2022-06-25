@@ -26,13 +26,14 @@ import (
 	"time"
 
 	"golang.org/x/mod/modfile"
+	k8sversion "k8s.io/apimachinery/pkg/version"
 
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/config"
 	ackgenerate "github.com/aws-controllers-k8s/code-generator/pkg/generate/ack"
+	ackmetadata "github.com/aws-controllers-k8s/code-generator/pkg/metadata"
 	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
 	acksdk "github.com/aws-controllers-k8s/code-generator/pkg/sdk"
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
-	k8sversion "k8s.io/apimachinery/pkg/version"
 )
 
 const (
@@ -216,8 +217,8 @@ func getSDKVersionFromGoMod(goModPath string) (string, error) {
 
 // loadModelWithLatestAPIVersion finds the AWS SDK for a given service alias and
 // creates a new model with the latest API version.
-func loadModelWithLatestAPIVersion(svcAlias string) (*ackmodel.Model, error) {
-	latestAPIVersion, err := getLatestAPIVersion()
+func loadModelWithLatestAPIVersion(svcAlias string, metadata *ackmetadata.ServiceMetadata) (*ackmodel.Model, error) {
+	latestAPIVersion, err := getLatestAPIVersion(metadata.APIVersions)
 	if err != nil {
 		return nil, err
 	}
@@ -227,7 +228,6 @@ func loadModelWithLatestAPIVersion(svcAlias string) (*ackmodel.Model, error) {
 // loadModel finds the AWS SDK for a given service alias and creates a new model
 // with the given API version.
 func loadModel(svcAlias string, apiVersion string, apiGroup string, defaultCfg ackgenconfig.Config) (*ackmodel.Model, error) {
-
 	cfg, err := ackgenconfig.New(optGeneratorConfigPath, defaultCfg)
 	if err != nil {
 		return nil, err
@@ -265,19 +265,14 @@ func loadModel(svcAlias string, apiVersion string, apiGroup string, defaultCfg a
 	return m, nil
 }
 
-// getLatestAPIVersion looks in a target output directory to determine what the
-// latest Kubernetes API version for CRDs exposed by the generated service
+// getLatestAPIVersion looks in the controller metadata file to determine what
+// the latest Kubernetes API version for CRDs exposed by the generated service
 // controller.
-func getLatestAPIVersion() (string, error) {
-	apisPath := filepath.Join(optOutputPath, "apis")
+func getLatestAPIVersion(apiVersions []ackmetadata.ServiceVersion) (string, error) {
 	versions := []string{}
-	subdirs, err := ioutil.ReadDir(apisPath)
-	if err != nil {
-		return "", err
-	}
 
-	for _, subdir := range subdirs {
-		versions = append(versions, subdir.Name())
+	for _, version := range apiVersions {
+		versions = append(versions, version.APIVersion)
 	}
 	sort.Slice(versions, func(i, j int) bool {
 		return k8sversion.CompareKubeAwareVersionStrings(versions[i], versions[j]) < 0

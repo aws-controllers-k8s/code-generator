@@ -26,6 +26,7 @@ import (
 	"github.com/spf13/cobra"
 
 	ackgenerate "github.com/aws-controllers-k8s/code-generator/pkg/generate/ack"
+	ackmetadata "github.com/aws-controllers-k8s/code-generator/pkg/metadata"
 )
 
 var (
@@ -59,7 +60,11 @@ func generateController(cmd *cobra.Command, args []string) error {
 	if err := ensureSDKRepo(ctx, optCacheDir, optRefreshCache); err != nil {
 		return err
 	}
-	m, err := loadModelWithLatestAPIVersion(svcAlias)
+	metadata, err := ackmetadata.NewServiceMetadata(optMetadataConfigPath)
+	if err != nil {
+		return err
+	}
+	m, err := loadModelWithLatestAPIVersion(svcAlias, metadata)
 	if err != nil {
 		return err
 	}
