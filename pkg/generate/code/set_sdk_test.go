@@ -970,7 +970,7 @@ func TestSetSDK_Elasticache_ReplicationGroup_Create(t *testing.T) {
 	if r.ko.Spec.AuthToken != nil {
 		tmpSecret, err := rm.rr.SecretValueFromReference(ctx, r.ko.Spec.AuthToken)
 		if err != nil {
-			return nil, err
+			return nil, ackrequeue.Needed(err)
 		}
 		if tmpSecret != "" {
 			res.SetAuthToken(tmpSecret)
@@ -1225,7 +1225,7 @@ func TestSetSDK_Elasticache_ReplicationGroup_Update_Override_Values(t *testing.T
 	if r.ko.Spec.AuthToken != nil {
 		tmpSecret, err := rm.rr.SecretValueFromReference(ctx, r.ko.Spec.AuthToken)
 		if err != nil {
-			return nil, err
+			return nil, ackrequeue.Needed(err)
 		}
 		if tmpSecret != "" {
 			res.SetAuthToken(tmpSecret)
@@ -1347,7 +1347,7 @@ func TestSetSDK_Elasticache_User_Create_Override_Values(t *testing.T) {
 			if f3iter != nil {
 				tmpSecret, err := rm.rr.SecretValueFromReference(ctx, f3iter)
 				if err != nil {
-					return nil, err
+					return nil, ackrequeue.Needed(err)
 				}
 				if tmpSecret != "" {
 					f3elem = tmpSecret
@@ -1974,7 +1974,7 @@ func TestSetSDK_MQ_Broker_Create(t *testing.T) {
 			if f18iter.Password != nil {
 				tmpSecret, err := rm.rr.SecretValueFromReference(ctx, f18iter.Password)
 				if err != nil {
-					return nil, err
+					return nil, ackrequeue.Needed(err)
 				}
 				if tmpSecret != "" {
 					f18elem.SetPassword(tmpSecret)
