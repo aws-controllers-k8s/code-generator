@@ -948,7 +948,7 @@ func setSDKForContainer(
 //
 //     tmpSecret, err := rm.rr.SecretValueFromReference(ctx, ko.Spec.MasterUserPassword)
 //     if err != nil {
-//         return nil, err
+//         return nil, ackrequeue.Needed(err)
 //     }
 //     if tmpSecret != "" {
 //         res.SetMasterUserPassword(tmpSecret)
@@ -958,7 +958,7 @@ func setSDKForContainer(
 //
 //     tmpSecret, err := rm.rr.SecretValueFromReference(ctx, f3iter)
 //     if err != nil {
-//         return nil, err
+//         return nil, ackrequeue.Needed(err)
 //     }
 //     if tmpSecret != "" {
 //         f3elem = tmpSecret
@@ -989,10 +989,10 @@ func setSDKForSecret(
 		indent, secVar, sourceVarName,
 	)
 	//     if err != nil {
-	//         return nil, err
+	//         return nil, ackrequeue.Needed(err)
 	//     }
 	out += fmt.Sprintf("%s\tif err != nil {\n", indent)
-	out += fmt.Sprintf("%s\t\treturn nil, err\n", indent)
+	out += fmt.Sprintf("%s\t\treturn nil, ackrequeue.Needed(err)\n", indent)
 	out += fmt.Sprintf("%s\t}\n", indent)
 	//     if tmpSecret != "" {
 	//         res.SetMasterUserPassword(tmpSecret)

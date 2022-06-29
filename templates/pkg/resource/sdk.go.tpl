@@ -13,6 +13,7 @@ import (
 	ackcondition "github.com/aws-controllers-k8s/runtime/pkg/condition"
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
+	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	"github.com/aws/aws-sdk-go/aws"
 	svcsdk "github.com/aws/aws-sdk-go/service/{{ .ServicePackageName }}"
@@ -34,6 +35,7 @@ var (
 	_ = &ackcondition.NotManagedMessage
 	_ = &reflect.Value{}
 	_ = fmt.Sprintf("")
+	_ = &ackrequeue.NoRequeue{}
 )
 
 // sdkFind returns SDK-specific information about a supplied resource
