@@ -5,6 +5,7 @@ package {{ .CRD.Names.Snake }}
 import (
 	"context"
 	"errors"
+	"fmt"
 	"reflect"
 	"strings"
 
@@ -32,6 +33,7 @@ var (
 	_ = &ackerr.NotFound
 	_ = &ackcondition.NotManagedMessage
 	_ = &reflect.Value{}
+	_ = fmt.Sprintf("")
 )
 
 // sdkFind returns SDK-specific information about a supplied resource
@@ -326,57 +328,15 @@ func (rm *resourceManager) getImmutableFieldChanges(
 	delta *ackcompare.Delta,
 ) []string {
 	var fields []string;
-
+{{- $prefixConfig := .CRD.Config.PrefixConfig }}
 	{{- range $immutableField := .CRD.GetImmutableFieldPaths }}
-		if delta.DifferentAt("{{$immutableField}}") {
+{{- $specPrefix := $prefixConfig.SpecField }}
+		if delta.DifferentAt("{{ TrimPrefix $specPrefix "." }}.{{$immutableField}}") {
 			fields = append(fields,"{{$immutableField}}")
 		}
 	{{- end }}
 
 	return fields
-}
-
-// handleImmutableFieldsChangedCondition validates the immutable fields and set appropriate condition
-func (rm *resourceManager) handleImmutableFieldsChangedCondition(
-	r *resource,
-	delta *ackcompare.Delta,
-) *resource {
-
-	fields := rm.getImmutableFieldChanges(delta)
-	ko := r.ko.DeepCopy()
-	var advisoryCondition *ackv1alpha1.Condition = nil
-	for _, condition := range ko.Status.Conditions {
-		if condition.Type == ackv1alpha1.ConditionTypeAdvisory {
-			advisoryCondition = condition
-			break
-		}
-	}
-
-	// Remove the advisory condition if issue is no longer present
-	if len(fields) == 0 && advisoryCondition != nil{
-		var newConditions []*ackv1alpha1.Condition
-		for _, condition := range ko.Status.Conditions {
-			if condition.Type != ackv1alpha1.ConditionTypeAdvisory {
-				newConditions = append(newConditions,condition)
-			}
-		}
-		ko.Status.Conditions = newConditions
-	}
-
-	if len(fields) > 0 {
-		if advisoryCondition == nil {
-			advisoryCondition = &ackv1alpha1.Condition{
-				Type: ackv1alpha1.ConditionTypeAdvisory,
-			}
-			ko.Status.Conditions = append(ko.Status.Conditions, advisoryCondition)
-		}
-
-		advisoryCondition.Status = corev1.ConditionTrue
-		message := "Immutable Spec fields have been modified : " + strings.Join(fields, ",")
-		advisoryCondition.Message = &message
-	}
-
-	return &resource{ko}
 }
 {{- end }}
 {{- if $hookCode := Hook .CRD "sdk_file_end" }}

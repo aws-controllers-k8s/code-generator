@@ -38,7 +38,10 @@ func (rm *resourceManager) sdkUpdate(
 		return nil, err
 	}
 {{- if .CRD.HasImmutableFieldChanges }}
-	desired = rm.handleImmutableFieldsChangedCondition(desired, delta)
+    if immutableFieldChanges := rm.getImmutableFieldChanges(delta); len(immutableFieldChanges) > 0 {
+        msg := fmt.Sprintf("Immutable Spec fields have been modified: %s", strings.Join(immutableFieldChanges, ","))
+        return nil, ackerr.NewTerminalError(fmt.Errorf(msg))
+    }
 {{- end }}
 	// Merge in the information we read from the API call above to the copy of
 	// the original Kubernetes object we passed to the function
