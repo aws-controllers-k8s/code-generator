@@ -56,6 +56,9 @@ var (
 	controllerCopyPaths = []string{}
 	controllerFuncMap   = ttpl.FuncMap{
 		"ToLower": strings.ToLower,
+		"TrimPrefix": func(s string, prefix string) string {
+			return strings.TrimPrefix(s, prefix)
+		},
 		"Dereference": func(s *string) string {
 			return *s
 		},
@@ -169,9 +172,9 @@ var (
 		"CheckNilReferencesPath": func(f *ackmodel.Field, sourceVarName string) string {
 			return code.CheckNilReferencesPath(f, sourceVarName)
 		},
-                "Each": func (args ...interface{}) []interface{} {
-                        return args
-                },
+		"Each": func(args ...interface{}) []interface{} {
+			return args
+		},
 		"GoCodeInitializeNestedStructField": func(r *ackmodel.CRD,
 			sourceVarName string, f *ackmodel.Field, apiPkgImportName string,
 			indentLevel int) string {
