@@ -10,7 +10,12 @@ func (rm *resourceManager) sdkUpdate(
 	defer func() {
 		exit(err)
 	}()
-
+{{- if .CRD.HasImmutableFieldChanges }}
+    if immutableFieldChanges := rm.getImmutableFieldChanges(delta); len(immutableFieldChanges) > 0 {
+        msg := fmt.Sprintf("Immutable Spec fields have been modified: %s", strings.Join(immutableFieldChanges, ","))
+        return nil, ackerr.NewTerminalError(fmt.Errorf(msg))
+    }
+{{- end }}
 {{- if $hookCode := Hook .CRD "sdk_update_pre_build_request" }}
 {{ $hookCode }}
 {{- end }}
@@ -37,12 +42,6 @@ func (rm *resourceManager) sdkUpdate(
 	if err != nil {
 		return nil, err
 	}
-{{- if .CRD.HasImmutableFieldChanges }}
-    if immutableFieldChanges := rm.getImmutableFieldChanges(delta); len(immutableFieldChanges) > 0 {
-        msg := fmt.Sprintf("Immutable Spec fields have been modified: %s", strings.Join(immutableFieldChanges, ","))
-        return nil, ackerr.NewTerminalError(fmt.Errorf(msg))
-    }
-{{- end }}
 	// Merge in the information we read from the API call above to the copy of
 	// the original Kubernetes object we passed to the function
 	ko := desired.ko.DeepCopy()
