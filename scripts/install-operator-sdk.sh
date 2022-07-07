@@ -26,8 +26,9 @@ if [ "x${__operator_sdk_version}" == "x" ]; then
 fi
 if ! is_installed ${OPERATOR_SDK_BIN_PATH}/operator-sdk; then
     __platform=$(uname | tr '[:upper:]' '[:lower:]')
+    __arch=$(uname -m | tr '[:upper:]' '[:lower:]')
     __tmp_install_dir=$(mktemp -d -t install-operator-sdk-XXX)
-    __operator_sdk_url="https://github.com/operator-framework/operator-sdk/releases/download/v${__operator_sdk_version}/operator-sdk_${__platform}_amd64"
+    __operator_sdk_url="https://github.com/operator-framework/operator-sdk/releases/download/v${__operator_sdk_version}/operator-sdk_${__platform}_${__arch}"
 
     __install_dir=${OPERATOR_SDK_BIN_PATH}
     # If __install_dir does not exist, create it
@@ -35,8 +36,8 @@ if ! is_installed ${OPERATOR_SDK_BIN_PATH}/operator-sdk; then
     __install_path="$__install_dir/operator-sdk"
 
     echo -n "installing operator-sdk from ${__operator_sdk_url} ... "
-    curl -sq -L ${__operator_sdk_url} --output ${__tmp_install_dir}/operator-sdk_${__platform}_amd64
-    chmod +x ${__tmp_install_dir}/operator-sdk_${__platform}_amd64
-    sudo mv "${__tmp_install_dir}/operator-sdk_${__platform}_amd64" "$__install_path"
+    curl -sq -L ${__operator_sdk_url} --output ${__tmp_install_dir}/operator-sdk_${__platform}_${__arch}
+    chmod +x ${__tmp_install_dir}/operator-sdk_${__platform}_${__arch}
+    sudo mv "${__tmp_install_dir}/operator-sdk_${__platform}_${__arch}" "$__install_path"
     echo "ok."
 fi
