@@ -14,4 +14,4 @@ spec:
               optional: false
           - secretRef:
               name: ack-{{.ServicePackageName}}-user-secrets
-              optional: false
+              optional: true
