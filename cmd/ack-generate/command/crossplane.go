@@ -25,6 +25,7 @@ import (
 	"github.com/spf13/cobra"
 
 	cpgenerate "github.com/aws-controllers-k8s/code-generator/pkg/generate/crossplane"
+	"github.com/aws-controllers-k8s/code-generator/pkg/sdk"
 )
 
 // crossplaneCmd is the command that generates Crossplane API types
@@ -43,11 +44,13 @@ func generateCrossplane(_ *cobra.Command, args []string) error {
 		return fmt.Errorf("please specify the service alias for the AWS service API to generate")
 	}
 
-	ctx, cancel := contextWithSigterm(context.Background())
+	ctx, cancel := sdk.ContextWithSigterm(context.Background())
 	defer cancel()
-	if err := ensureSDKRepo(ctx, optCacheDir, optRefreshCache); err != nil {
+	sdkDirPath, err := sdk.EnsureRepo(ctx, optCacheDir, optRefreshCache, optAWSSDKGoVersion, optOutputPath)
+	if err != nil {
 		return err
 	}
+	sdkDir = sdkDirPath
 	svcAlias := strings.ToLower(args[0])
 	if optGeneratorConfigPath == "" {
 		// default generator configuration file path is now: apis/<service>/<generator-config.yaml>
@@ -77,7 +80,7 @@ func generateCrossplane(_ *cobra.Command, args []string) error {
 		}
 		outPath := filepath.Join(optOutputPath, path)
 		outDir := filepath.Dir(outPath)
-		if _, err := ensureDir(outDir); err != nil {
+		if _, err := sdk.EnsureDir(outDir); err != nil {
 			return err
 		}
 		if err = ioutil.WriteFile(outPath, contents.Bytes(), 0666); err != nil {

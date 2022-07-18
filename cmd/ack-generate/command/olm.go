@@ -25,6 +25,7 @@ import (
 
 	olmgenerate "github.com/aws-controllers-k8s/code-generator/pkg/generate/olm"
 	ackmetadata "github.com/aws-controllers-k8s/code-generator/pkg/metadata"
+	"github.com/aws-controllers-k8s/code-generator/pkg/sdk"
 )
 
 const (
@@ -83,11 +84,13 @@ func generateOLMAssets(cmd *cobra.Command, args []string) error {
 	version := args[1]
 
 	// get the generator inputs
-	ctx, cancel := contextWithSigterm(context.Background())
+	ctx, cancel := sdk.ContextWithSigterm(context.Background())
 	defer cancel()
-	if err := ensureSDKRepo(ctx, optCacheDir, optRefreshCache); err != nil {
+	sdkDirPath, err := sdk.EnsureRepo(ctx, optCacheDir, optRefreshCache, optAWSSDKGoVersion, optOutputPath)
+	if err != nil {
 		return err
 	}
+	sdkDir = sdkDirPath
 	metadata, err := ackmetadata.NewServiceMetadata(optMetadataConfigPath)
 	if err != nil {
 		return err
@@ -144,7 +147,7 @@ func generateOLMAssets(cmd *cobra.Command, args []string) error {
 		}
 		outPath := filepath.Join(optOutputPath, path)
 		outDir := filepath.Dir(outPath)
-		if _, err := ensureDir(outDir); err != nil {
+		if _, err := sdk.EnsureDir(outDir); err != nil {
 			return err
 		}
 		if err = ioutil.WriteFile(outPath, contents.Bytes(), 0666); err != nil {
