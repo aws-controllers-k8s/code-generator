@@ -171,7 +171,6 @@ func getSDKVersion(
 	awsSDKGoVersion string,
 	lastGenerationVersion string,
 	controllerRepoPath string,
-	// param: controllerRepoPath for optOutputPath
 ) (string, error) {
 	// First try to get the version from --aws-sdk-go-version flag
 	if awsSDKGoVersion != "" {
