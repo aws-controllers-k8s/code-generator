@@ -24,6 +24,7 @@ import (
 
 	ackgenerate "github.com/aws-controllers-k8s/code-generator/pkg/generate/ack"
 	ackmetadata "github.com/aws-controllers-k8s/code-generator/pkg/metadata"
+	"github.com/aws-controllers-k8s/code-generator/pkg/sdk"
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
 )
 
@@ -91,11 +92,13 @@ func generateAPIs(cmd *cobra.Command, args []string) error {
 	if optOutputPath == "" {
 		optOutputPath = filepath.Join(optServicesDir, svcAlias)
 	}
-	ctx, cancel := contextWithSigterm(context.Background())
+	ctx, cancel := sdk.ContextWithSigterm(context.Background())
 	defer cancel()
-	if err := ensureSDKRepo(ctx, optCacheDir, optRefreshCache); err != nil {
+	sdkDirPath, err := sdk.EnsureRepo(ctx, optCacheDir, optRefreshCache, optAWSSDKGoVersion, optOutputPath)
+	if err != nil {
 		return err
 	}
+	sdkDir = sdkDirPath
 	metadata, err := ackmetadata.NewServiceMetadata(optMetadataConfigPath)
 	if err != nil {
 		return err
@@ -122,7 +125,7 @@ func generateAPIs(cmd *cobra.Command, args []string) error {
 		}
 		outPath := filepath.Join(apisVersionPath, path)
 		outDir := filepath.Dir(outPath)
-		if _, err := ensureDir(outDir); err != nil {
+		if _, err := sdk.EnsureDir(outDir); err != nil {
 			return err
 		}
 		if err = ioutil.WriteFile(outPath, contents.Bytes(), 0666); err != nil {
