@@ -12,6 +12,20 @@ LOCAL_MODULES=${LOCAL_MODULES:-"false"}
 BUILD_DATE=$(date +%Y-%m-%dT%H:%M)
 QUIET=${QUIET:-"false"}
 
+HARDWARE_PLATFORM=$(uname -i)
+GOARCH=${GOARCH:-"null"}
+if [ "$HARDWARE_PLATFORM" = "amd64" ]; then
+  GOARCH="amd64"
+fi
+if [ "$HARDWARE_PLATFORM" = "aarch64" ]; then
+  GOARCH="arm64"
+fi
+if [ "$GOARCH" = "null" ]; then
+  uname -a
+  echo "HARDWARE_PLATFORM is not supported"
+  exit
+fi
+
 export DOCKER_BUILDKIT=${DOCKER_BUILDKIT:-1}
 
 source $SCRIPTS_DIR/lib/common.sh
