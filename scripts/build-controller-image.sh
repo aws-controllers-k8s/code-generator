@@ -14,7 +14,7 @@ QUIET=${QUIET:-"false"}
 
 HARDWARE_PLATFORM=$(uname -i)
 GOARCH=${GOARCH:-"null"}
-if [ "$HARDWARE_PLATFORM" = "amd64" ]; then
+if [ "$HARDWARE_PLATFORM" = "x86_64" ]; then
   GOARCH="amd64"
 fi
 if [ "$HARDWARE_PLATFORM" = "aarch64" ]; then
