@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 CONTROLLER_TOOLS_VERSION="v0.7.0"
+HELM_VERSION="v3.9"
 
 # setting the -x option if debugging is true
 if [[ "${DEBUG:-"false"}" = "true" ]]; then
@@ -91,23 +92,39 @@ debug_msg() {
     echo "$__debug_prefix$__indent$__msg"
 }
 
-# controller_gen_version_equals accepts a string version and returns 0 if the
+# k8s_controller_gen_version_equals accepts a string version and returns 0 if the
 # installed version of controller-gen matches the supplied version, otherwise
 # returns 1
 #
 # Usage:
 #
-#   if controller_gen_version_equals "v0.4.0"; then
+#   if k8s_controller_gen_version_equals "v0.4.0"; then
 #       echo "controller-gen is at version 0.4.0"
 #   fi
 k8s_controller_gen_version_equals() {
-    currentver="$(controller-gen --version | cut -d' ' -f2 | tr -d '\n')";
-    requiredver="$1";
+    local currentver="$(controller-gen --version | cut -d' ' -f2 | tr -d '\n')";
+    local requiredver="$1";
     if [ "$currentver" = "$requiredver" ]; then
         return 0
     else
         return 1
     fi;
+}
+
+# helm_version_equals_or_greater accepts a string version and returns 0 if the
+# installed version of helm matches or greater than the supplied version, 
+# otherwise returns 1
+#
+# Usage:
+#
+#   if helm_version_equals_or_greater "v3.9.0"; then
+#       echo "Installed helm version is greater than or equal to version v3.9.0"
+#   fi
+helm_version_equals_or_greater() {
+    local currentver="$(helm version --template='Version: {{.Version}}'| cut -d' ' -f2 | tr -d '\n')"
+    local requiredver="$1"
+    printf '%s\n%s\n' $requiredver $currentver | sort -C -V
+    return $?
 }
 
 # is_public_ecr_logged_in returns 0 if the Docker client is authenticated
