@@ -31,7 +31,6 @@ if ! helm_version_equals_or_greater "$HELM_VERSION"; then
     exit 1
 fi
 
-
 ACK_GENERATE_CACHE_DIR=${ACK_GENERATE_CACHE_DIR:-"$HOME/.cache/aws-controllers-k8s"}
 # The ack-generate code generator is in a separate source code repository,
 # typically at $GOPATH/src/github.com/aws-controllers-k8s/code-generator
