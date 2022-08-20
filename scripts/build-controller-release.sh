@@ -25,6 +25,12 @@ if ! k8s_controller_gen_version_equals "$CONTROLLER_TOOLS_VERSION"; then
     exit 1
 fi
 
+if ! helm_version_equals_or_greater "$HELM_VERSION"; then
+    echo "FATAL: Existing version of helm "`helm version --template='Version: {{.Version}}'`", required version is $HELM_VERSION."
+    echo "FATAL: Please update helm, or uninstall helm and install the required version with scripts/install-helm.sh."
+    exit 1
+fi
+
 ACK_GENERATE_CACHE_DIR=${ACK_GENERATE_CACHE_DIR:-"$HOME/.cache/aws-controllers-k8s"}
 # The ack-generate code generator is in a separate source code repository,
 # typically at $GOPATH/src/github.com/aws-controllers-k8s/code-generator
