@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-CONTROLLER_TOOLS_VERSION="v0.7.0"
+CONTROLLER_TOOLS_VERSION="v0.9.2"
 HELM_VERSION="v3.7"
 
 # setting the -x option if debugging is true
