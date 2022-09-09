@@ -234,7 +234,7 @@ controller-gen rbac:roleName=$K8S_RBAC_ROLE_NAME paths=./... output:rbac:artifac
 # for the user to specify if they want the role to be ClusterRole or Role by specifying installation scope
 # in the helm values.yaml. We do this by having a custom helm template named _controller-role-kind-patch.yaml 
 # which utilizes the template langauge and adding the auto generated rules to that template. 
-tail -n +8  $helm_output_dir/templates/role.yaml >> $helm_output_dir/templates/_controller-role-kind-patch.yaml
+tail -n +7  $helm_output_dir/templates/role.yaml >> $helm_output_dir/templates/_controller-role-kind-patch.yaml
 
 # We have some other standard Role files for a reader and writer role, so here we rename 
 # the `_controller-role-kind-patch.yaml ` file to `cluster-role-controller.yaml` 
