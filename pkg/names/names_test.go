@@ -56,6 +56,7 @@ func TestNames(t *testing.T) {
 		{"IoPerformance", "IOPerformance", "ioPerformance", "io_performance"},
 		{"Iops", "IOPS", "iops", "iops"},
 		{"Ip", "IP", "ip", "ip"},
+		{"Ipam", "IPAM", "ipam", "ipam"},
 		{"Frame", "Frame", "frame", "frame"},
 		{"KeyId", "KeyID", "keyID", "key_id"},
 		{"KeyID", "KeyID", "keyID", "key_id"},
@@ -78,6 +79,7 @@ func TestNames(t *testing.T) {
 		{"Sqs", "SQS", "sqs", "sqs"},
 		{"SriovNetSupport", "SRIOVNetSupport", "sriovNetSupport", "sriov_net_support"},
 		{"SSEKMSKeyID", "SSEKMSKeyID", "sseKMSKeyID", "sse_kms_key_id"},
+		{"Tpm", "TPM", "tpm", "tpm"},
 		{"UUID", "UUID", "uuid", "uuid"},
 		{"Vlan", "VLAN", "vlan", "vlan"},
 	}
