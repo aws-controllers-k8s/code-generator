@@ -2,7 +2,7 @@
 ARG base_image=public.ecr.aws/eks-distro-build-tooling/eks-distro-minimal-base-nonroot:2021-12-01-1638322424
 # Build the manager binary
 # TODO(vijtrip2) move this builder image to public.ecr.aws/eks-distro-build-tooling/builder-base, when builder-base
-# supports golang 1.19
+# supports golang 1.18
 FROM public.ecr.aws/docker/library/golang:1.18.0 as builder
 
 ARG service_alias
