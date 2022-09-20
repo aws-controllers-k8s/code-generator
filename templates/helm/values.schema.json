@@ -65,6 +65,14 @@
       ],
       "type": "object"
     },
+    "clusterRole": {
+      "description": "ClusterRole settings",
+      "properties": {
+        "labels": {
+	  "type": "object"
+	}
+      }
+    },
     "metrics": {
       "description": "Metrics settings",
       "properties": {

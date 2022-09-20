@@ -28,6 +28,9 @@ deployment:
   # Which priorityClassName to set?
   # See: https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/#pod-priority
   priorityClassName: ""
+
+clusterRole:
+ labels: {}
   
 metrics:
   service:
