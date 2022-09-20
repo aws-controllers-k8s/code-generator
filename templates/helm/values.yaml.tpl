@@ -29,7 +29,8 @@ deployment:
   # See: https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/#pod-priority
   priorityClassName: ""
 
-clusterRole:
+# If "installScope: cluster" then these labels will be applied to ClusterRole
+role:
  labels: {}
   
 metrics:

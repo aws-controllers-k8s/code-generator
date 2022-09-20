@@ -65,8 +65,8 @@
       ],
       "type": "object"
     },
-    "clusterRole": {
-      "description": "ClusterRole settings",
+    "role": {
+      "description": "Role settings",
       "properties": {
         "labels": {
 	  "type": "object"
