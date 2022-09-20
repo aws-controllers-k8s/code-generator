@@ -25,6 +25,12 @@ if ! k8s_controller_gen_version_equals "$CONTROLLER_TOOLS_VERSION"; then
     exit 1
 fi
 
+if ! helm_version_equals_or_greater "$HELM_VERSION"; then
+    echo "FATAL: Existing version of helm "`helm version --template='Version: {{.Version}}'`", required version is $HELM_VERSION."
+    echo "FATAL: Please update helm, or uninstall helm and install the required version with scripts/install-helm.sh."
+    exit 1
+fi
+
 ACK_GENERATE_CACHE_DIR=${ACK_GENERATE_CACHE_DIR:-"$HOME/.cache/aws-controllers-k8s"}
 # The ack-generate code generator is in a separate source code repository,
 # typically at $GOPATH/src/github.com/aws-controllers-k8s/code-generator
@@ -228,7 +234,7 @@ controller-gen rbac:roleName=$K8S_RBAC_ROLE_NAME paths=./... output:rbac:artifac
 # for the user to specify if they want the role to be ClusterRole or Role by specifying installation scope
 # in the helm values.yaml. We do this by having a custom helm template named _controller-role-kind-patch.yaml 
 # which utilizes the template langauge and adding the auto generated rules to that template. 
-tail -n +8  $helm_output_dir/templates/role.yaml >> $helm_output_dir/templates/_controller-role-kind-patch.yaml
+tail -n +7  $helm_output_dir/templates/role.yaml >> $helm_output_dir/templates/_controller-role-kind-patch.yaml
 
 # We have some other standard Role files for a reader and writer role, so here we rename 
 # the `_controller-role-kind-patch.yaml ` file to `cluster-role-controller.yaml` 

@@ -4,10 +4,18 @@ kind: ClusterRole
 metadata:
   creationTimestamp: null
   name: ack-{{ .ServicePackageName }}-controller
+  labels:
+  {{ "{{- range $key, $value := .Values.role.labels }}" }}
+    {{ "{{ $key }}: {{ $value | quote }}" }}
+  {{ "{{- end }}" }}
 {{ "{{ else }}" }}
 kind: Role
 metadata:
   creationTimestamp: null
   name: ack-{{ .ServicePackageName }}-controller
+  labels:
+  {{ "{{- range $key, $value := .Values.role.labels }}" }}
+    {{ "{{ $key }}: {{ $value | quote }}" }}
+  {{ "{{- end }}" }}
   namespace: {{ "{{ .Release.Namespace }}" }}
 {{ "{{ end }}" }}
