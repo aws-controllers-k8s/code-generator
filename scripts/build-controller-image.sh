@@ -12,7 +12,7 @@ LOCAL_MODULES=${LOCAL_MODULES:-"false"}
 BUILD_DATE=$(date +%Y-%m-%dT%H:%M)
 QUIET=${QUIET:-"false"}
 
-HARDWARE_PLATFORM=$(uname -i)
+HARDWARE_PLATFORM=${HARDWARE_PLATFORM:-$(uname -i)}
 GOARCH=${GOARCH:-"null"}
 if [ "$HARDWARE_PLATFORM" = "x86_64" ]; then
   GOARCH="amd64"
