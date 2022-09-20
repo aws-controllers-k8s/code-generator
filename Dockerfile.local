@@ -3,7 +3,7 @@ ARG base_image=public.ecr.aws/eks-distro-build-tooling/eks-distro-minimal-base-n
 # Build the manager binary
 # TODO(vijtrip2) move this builder image to public.ecr.aws/eks-distro-build-tooling/builder-base, when builder-base
 # supports golang 1.17
-FROM public.ecr.aws/bitnami/golang:1.17 as builder
+FROM public.ecr.aws/bitnami/golang:1.18 as builder
 
 ARG service_alias
 # The tuple of controller image version information
