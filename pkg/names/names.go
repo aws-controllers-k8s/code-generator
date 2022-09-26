@@ -116,6 +116,7 @@ var (
 		{"Jwt", "JWT", "jwt", nil},
 		{"Kms", "KMS", "kms", nil},
 		{"Ldap", "LDAP", "ldap", nil},
+		{"Lni", "LNI", "lni", nil},
 		{"Mfa", "MFA", "mfa", nil},
 		// Prevent "Native" from becoming "NATive"
 		{"Nat", "NAT", "nat", regexp.MustCompile("Nat(?!i)", regexp.None)},

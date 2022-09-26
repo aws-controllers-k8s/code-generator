@@ -62,6 +62,7 @@ func TestNames(t *testing.T) {
 		{"KeyID", "KeyID", "keyID", "key_id"},
 		{"KeyIdentifier", "KeyIdentifier", "keyIdentifier", "key_identifier"},
 		{"LdapServerMetadata", "LDAPServerMetadata", "ldapServerMetadata", "ldap_server_metadata"},
+		{"Lni", "LNI", "lni", "lni"},
 		{"MaxIdleConnectionsPercent", "MaxIdleConnectionsPercent", "maxIdleConnectionsPercent", "max_idle_connections_percent"},
 		{"MultipartUpload", "MultipartUpload", "multipartUpload", "multipart_upload"},
 		{"Nat", "NAT", "nat", "nat"},
