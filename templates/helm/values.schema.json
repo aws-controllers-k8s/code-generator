@@ -159,6 +159,12 @@
         "region": {
           "type": "string"
         },
+        "accountId": {
+          "type": "string"
+        },
+        "oidcProvider": {
+          "type": "string"
+        },
         "endpoint": {
           "type": "string"
         },

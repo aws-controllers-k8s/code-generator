@@ -53,6 +53,8 @@ resources:
 aws:
   # If specified, use the AWS region for AWS API calls
   region: ""
+  oidcProvider: ""
+  endpoint_url: ""
   endpoint_url: ""
   credentials:
     # If specified, Secret with shared credentials file to use.
