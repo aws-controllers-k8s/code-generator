@@ -112,7 +112,13 @@ func CompareResource(
 		secondResAdaptedVarName += "." + specField.Names.Camel
 
 		var compareConfig *ackgenconfig.CompareFieldConfig
-		fieldConfig := fieldConfigs[fieldName]
+
+		// TODO(amine,john): This is fragile. We actually need to have a way of
+		// normalizing names in a lossless fashion...
+		//
+		// We chose to normalize names as camel case.
+		fieldNameCamel := names.New(fieldName).Camel
+		fieldConfig := fieldConfigs[fieldNameCamel]
 		if fieldConfig != nil {
 			compareConfig = fieldConfig.Compare
 		}
