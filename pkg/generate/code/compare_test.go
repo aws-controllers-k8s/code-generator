@@ -476,6 +476,35 @@ func TestCompareResource_APIGatewayv2_Route(t *testing.T) {
 	)
 }
 
+func TestCompareResource_IAM_OIDC_URL(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "iam", &testutil.TestingModelOptions{
+		GeneratorConfigFile: "generator-oidc-url.yaml",
+	})
+
+	crd := testutil.GetCRDByName(t, g, "OpenIDConnectProvider")
+	require.NotNil(crd)
+	expected := `
+	if !ackcompare.SliceStringPEqual(a.ko.Spec.ClientIDList, b.ko.Spec.ClientIDList) {
+		delta.Add("Spec.ClientIDList", a.ko.Spec.ClientIDList, b.ko.Spec.ClientIDList)
+	}
+	if !reflect.DeepEqual(a.ko.Spec.Tags, b.ko.Spec.Tags) {
+		delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
+	}
+	if !ackcompare.SliceStringPEqual(a.ko.Spec.ThumbprintList, b.ko.Spec.ThumbprintList) {
+		delta.Add("Spec.ThumbprintList", a.ko.Spec.ThumbprintList, b.ko.Spec.ThumbprintList)
+	}
+`
+	assert.Equal(
+		expected,
+		code.CompareResource(
+			crd.Config(), crd, "delta", "a.ko", "b.ko", 1,
+		),
+	)
+}
+
 func TestCompareResource_MemoryDB_User(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
