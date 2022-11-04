@@ -143,6 +143,16 @@ func resolveReferenceFor{{ $field.FieldPathWithUnderscore }}(
 	}
 	return nil
 }
+{{ else if not $isList -}}
+    if ko.Spec.{{ $field.ReferenceFieldPath }} != nil &&
+        ko.Spec.{{ $field.ReferenceFieldPath }}.From != nil  {
+        arr := ko.Spec.{{ $field.ReferenceFieldPath }}.From
+{{ template "read_referenced_resource_and_validate" $field }}
+            referencedValue := string(*obj.{{ $field.FieldConfig.References.Path }})
+            ko.Spec.{{ $field.Path }} = &referencedValue
+    }
+    return nil
+}
 {{ else }}
 {{ $parentField := index .CRD.Fields $fp.String }}
 {{ if eq $parentField.ShapeRef.Shape.Type "list" -}}
