@@ -26,7 +26,7 @@ if [ "x${__operator_sdk_version}" == "x" ]; then
 fi
 if ! is_installed ${OPERATOR_SDK_BIN_PATH}/operator-sdk; then
     __platform=$(uname | tr '[:upper:]' '[:lower:]')
-    __arch=$(uname -m | tr '[:upper:]' '[:lower:]')
+    __arch=$(go env GOARCH | tr '[:upper:]' '[:lower:]')
     __tmp_install_dir=$(mktemp -d -t install-operator-sdk-XXX)
     __operator_sdk_url="https://github.com/operator-framework/operator-sdk/releases/download/v${__operator_sdk_version}/operator-sdk_${__platform}_${__arch}"
 
