@@ -46,10 +46,12 @@ func ToACKTags(tags {{ $tagFieldGoType }}) acktags.Tags {
     }
 {{ else if eq "list" $tagFieldShapeType }}
     for _, t := range tags {
-        if t.{{ $valueMemberName }} == nil {
-            result[*t.{{ $keyMemberName}}] = ""
-        } else {
-            result[*t.{{ $keyMemberName }}] = *t.{{ $valueMemberName }}
+        if t.{{ $keyMemberName}} != nil {
+            if t.{{ $valueMemberName }} == nil {
+                    result[*t.{{ $keyMemberName}}] = ""
+                } else {
+                    result[*t.{{ $keyMemberName }}] = *t.{{ $valueMemberName }}
+                }
         }
     }
 {{ end }}
