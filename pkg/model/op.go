@@ -150,32 +150,32 @@ func GetOpTypeAndResourceNameFromOpID(
 }
 
 func OpTypeFromString(s string) OpType {
-	switch s {
-	case "Create":
+	switch strings.ToLower(s) {
+	case "create":
 		return OpTypeCreate
-	case "CreateBatch":
+	case "createbatch":
 		return OpTypeCreateBatch
-	case "Delete":
+	case "delete":
 		return OpTypeDelete
-	case "Replace":
+	case "replace":
 		return OpTypeReplace
-	case "Update":
+	case "update":
 		return OpTypeUpdate
-	case "AddChild":
+	case "addchild":
 		return OpTypeAddChild
-	case "AddChildren":
+	case "addchildren":
 		return OpTypeAddChildren
-	case "RemoveChild":
+	case "removechild":
 		return OpTypeRemoveChild
-	case "RemoveChildren":
+	case "removechildren":
 		return OpTypeRemoveChildren
-	case "Get":
+	case "get", "readone", "read_one":
 		return OpTypeGet
-	case "List":
+	case "list", "readmany", "read_many":
 		return OpTypeList
-	case "GetAttributes":
+	case "getattributes":
 		return OpTypeGetAttributes
-	case "SetAttributes":
+	case "setattributes":
 		return OpTypeSetAttributes
 	}
 

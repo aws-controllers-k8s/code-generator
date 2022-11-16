@@ -86,6 +86,30 @@ func (a *SDKAPI) GetOperationMap(cfg *ackgenconfig.Config) *OperationMap {
 			opMap[opType][resName] = op
 		}
 	}
+
+	// We need to do a second pass over the operation overrides because some
+	// APIs have multiple operations of a particular OpType and we need to
+	// always be sure that the overridden operation is the one that we use
+	// during inference.
+	//
+	// An example of this is the Kinesis API which has two OpTypeGet
+	// Operations: DescribeStream and DescribeStreamSummary. We want the latter
+	// only and list that in our `operations:` configuration value.
+	//
+	// see: https://github.com/aws-controllers-k8s/community/issues/1555
+	for opID, opCfg := range cfg.Operations {
+		if opCfg.ResourceName == "" {
+			continue
+		}
+		op, found := a.API.Operations[opID]
+		if !found {
+			panic("operation " + opID + " in generator.yaml 'operations:' object does not exist.")
+		}
+		for _, ot := range opCfg.OperationType {
+			opType := OpTypeFromString(ot)
+			opMap[opType][opCfg.ResourceName] = op
+		}
+	}
 	a.opMap = &opMap
 	return &opMap
 }
