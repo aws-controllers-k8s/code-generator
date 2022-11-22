@@ -53,8 +53,6 @@ resources:
 aws:
   # If specified, use the AWS region for AWS API calls
   region: ""
-  oidcProvider: ""
-  endpoint_url: ""
   endpoint_url: ""
   credentials:
     # If specified, Secret with shared credentials file to use.
@@ -62,7 +60,11 @@ aws:
     # Secret stringData key that contains the credentials
     secretKey: "credentials"
     # Profile used for AWS credentials
-    profile: "default"  
+    profile: "default"
+  # If provided, setup the IRSA for the controller
+  irsa:
+    oidcProvider: ""
+    accountID: ""
 
 # log level for the controller
 log:

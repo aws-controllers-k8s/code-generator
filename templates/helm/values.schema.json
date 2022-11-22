@@ -159,12 +159,6 @@
         "region": {
           "type": "string"
         },
-        "accountId": {
-          "type": "string"
-        },
-        "oidcProvider": {
-          "type": "string"
-        },
         "endpoint": {
           "type": "string"
         },
@@ -182,6 +176,17 @@
             }
           },
           "type": "object"
+        },
+        "irsa": {
+          "description": "Information needed to setup the IRSA for the controller",
+          "properties": {
+            "accountId": {
+              "type": "string"
+            },
+            "oidcProvider": {
+              "type": "string"
+            }
+          }
         }
       },
       "type": "object"

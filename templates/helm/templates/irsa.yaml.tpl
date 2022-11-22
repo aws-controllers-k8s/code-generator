@@ -1,4 +1,4 @@
-{{- if and .Values.aws.accountId .Values.aws.oidcProvider }}
+{{- if and .Values.aws.irsa.accountID .Values.aws.irsa.oidcProvider }}
 apiVersion: iam.services.k8s.aws/v1alpha1
 kind: Role
 metadata:
@@ -16,12 +16,12 @@ spec:
         {
           "Effect": "Allow",
           "Principal": {
-            "Federated": "arn:aws:iam::{{ .Values.aws.accountId }}:oidc-provider/{{ .Values.aws.oidcProvider }}"
+            "Federated": "arn:aws:iam::{{ .Values.aws.irsa.accountID }}:oidc-provider/{{ .Values.aws.irsa.oidcProvider }}"
           },
           "Action": "sts:AssumeRoleWithWebIdentity",
           "Condition": {
             "StringEquals": {
-              "{{ .Values.aws.oidcProvider }}:sub": "system:serviceaccount:{{ .Release.Namespace }}:{{ .Values.serviceAccount.name }}"
+              "{{ .Values.aws.irsa.oidcProvider }}:sub": "system:serviceaccount:{{ .Release.Namespace }}:{{ .Values.serviceAccount.name }}"
             }
           }
         }
