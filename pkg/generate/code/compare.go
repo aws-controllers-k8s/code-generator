@@ -94,7 +94,7 @@ func CompareResource(
 ) string {
 	out := "\n"
 
-	fieldConfigs := cfg.GetFieldConfigs(r.Names.Original)
+	resConfig := cfg.GetResourceConfig(r.Names.Camel)
 
 	// We need a deterministic order to traverse our top-level fields...
 	specFieldNames := []string{}
@@ -111,18 +111,21 @@ func CompareResource(
 		secondResAdaptedVarName := secondResVarName + cfg.PrefixConfig.SpecField
 		secondResAdaptedVarName += "." + specField.Names.Camel
 
+		var fieldConfig *ackgenconfig.FieldConfig
 		var compareConfig *ackgenconfig.CompareFieldConfig
 
-		// TODO(amine,john): This is fragile. We actually need to have a way of
-		// normalizing names in a lossless fashion...
-		//
-		// We chose to normalize names as camel case.
-		fieldNameCamel := names.New(fieldName).Camel
-		fieldConfig := fieldConfigs[fieldNameCamel]
+		if resConfig != nil {
+			fieldConfig = resConfig.GetFieldConfig(fieldName)
+		}
 		if fieldConfig != nil {
 			compareConfig = fieldConfig.Compare
 		}
 
+		if fieldConfig != nil && fieldConfig.IsAttribute {
+			// NOTE(jaypipes): We compare the Attributes collection
+			// specially...
+			continue
+		}
 		if compareConfig != nil && compareConfig.IsIgnored {
 			continue
 		}

@@ -173,9 +173,9 @@ func OpTypeFromString(s string) OpType {
 		return OpTypeGet
 	case "list", "readmany", "read_many":
 		return OpTypeList
-	case "getattributes":
+	case "getattributes", "get_attributes":
 		return OpTypeGetAttributes
-	case "setattributes":
+	case "setattributes", "set_attributes":
 		return OpTypeSetAttributes
 	}
 
