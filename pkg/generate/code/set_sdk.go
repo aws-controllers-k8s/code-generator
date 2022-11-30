@@ -406,8 +406,8 @@ func SetSDKGetAttributes(
 	indent := strings.Repeat("\t", indentLevel)
 
 	inputFieldOverrides := map[string][]string{}
-	rConfig, ok := cfg.Resources[r.Names.Original]
-	if !ok {
+	rConfig := cfg.GetResourceConfig(r.Names.Original)
+	if rConfig == nil {
 		// This is a bug in the code generation if this occurs...
 		msg := fmt.Sprintf(
 			"called SetSDKGetAttributes for a resource '%s' that doesn't have a ResourceConfig",
@@ -421,7 +421,6 @@ func SetSDKGetAttributes(
 			inputFieldOverrides[memberName] = override.Values
 		}
 	}
-
 	for _, memberName := range inputShape.MemberNames() {
 		if r.IsPrimaryARNField(memberName) {
 			// if ko.Status.ACKResourceMetadata != nil && ko.Status.ACKResourceMetadata.ARN != nil {

@@ -14,6 +14,8 @@
 package config
 
 import (
+	"strings"
+
 	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
 
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
@@ -387,8 +389,8 @@ func (c *Config) ResourceContainsAttributesMap(resourceName string) bool {
 	if c == nil {
 		return false
 	}
-	resGenConfig, found := c.Resources[resourceName]
-	if found {
+	resGenConfig := c.GetResourceConfig(resourceName)
+	if resGenConfig != nil {
 		if resGenConfig.UnpackAttributesMapConfig != nil {
 			return true
 		}
@@ -450,13 +452,19 @@ func (c *Config) ResourceSetsSingleAttribute(resourceName string) bool {
 	return resGenConfig.UnpackAttributesMapConfig.SetAttributesSingleAttribute
 }
 
-// GetResourceConfig returns the ResourceConfig for a given resource name
+// GetResourceConfig returns the ResourceConfig for a given resource name,
+// searching case-insensitively.
 func (c *Config) GetResourceConfig(resourceName string) *ResourceConfig {
 	if c == nil {
 		return nil
 	}
-	rc, _ := c.Resources[resourceName]
-	return &rc
+
+	for resName, resCfg := range c.Resources {
+		if strings.EqualFold(resName, resourceName) {
+			return &resCfg
+		}
+	}
+	return nil
 }
 
 // GetCompareIgnoredFieldPaths returns the list of field paths to ignore when
@@ -657,4 +665,19 @@ func (c *Config) TagsAreIgnored(resName string) bool {
 		}
 	}
 	return false
+}
+
+// GetFieldConfig accepts a string name of a field and returns the FieldConfig
+// object inside the ResourceConfig matching (case-insensitively) the supplied
+// field name, or nil if that field has no FieldConfig.
+func (rc *ResourceConfig) GetFieldConfig(subject string) *FieldConfig {
+	if rc == nil {
+		return nil
+	}
+	for fieldName, fieldCfg := range rc.Fields {
+		if strings.EqualFold(fieldName, subject) {
+			return fieldCfg
+		}
+	}
+	return nil
 }
