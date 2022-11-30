@@ -12,7 +12,9 @@ ACK_GENERATE_OLM=${ACK_GENERATE_OLM:-"false"}
 
 source "$SCRIPTS_DIR/lib/common.sh"
 
-check_is_installed controller-gen "You can install controller-gen with the helper scripts/install-controller-gen.sh"
+check_is_installed controller-gen "You can install controller-gen with the helper scripts/install-controller-gen.sh
+Make sure to add the value of `go env GOBIN` to the PATH variable"
+
 check_is_installed helm "You can install Helm with the helper scripts/install-helm.sh"
 
 if [[ $ACK_GENERATE_OLM == "true" ]]; then
