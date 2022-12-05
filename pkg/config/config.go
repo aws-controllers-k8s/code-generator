@@ -74,6 +74,19 @@ type PrefixConfig struct {
 	StatusField string `json:"status_field,omitempty"`
 }
 
+// GetAdditionalColumns extracts AdditionalColumns defined for a given Resource
+func (c *Config) GetAdditionalColumns(resourceName string) []AdditionalColumnConfig {
+	if c == nil {
+		return []AdditionalColumnConfig{}
+	}
+
+	resourceConfig, ok := c.Resources[resourceName]
+	if !ok || resourceConfig.Print == nil || resourceConfig.Print.AdditionalColumns == nil {
+		return []AdditionalColumnConfig{}
+	}
+	return resourceConfig.Print.AdditionalColumns
+}
+
 // GetCustomListFieldMembers finds all of the custom list fields that need to
 // be generated as defined in the generator config.
 func (c *Config) GetCustomListFieldMembers() []string {

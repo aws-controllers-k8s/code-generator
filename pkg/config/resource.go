@@ -317,6 +317,12 @@ type UpdateOperationConfig struct {
 	CustomMethodName string `json:"custom_method_name"`
 }
 
+type AdditionalColumnConfig struct {
+	Name string `json:"name"`
+	JSONPath string `json:"json_path"`
+	Type string `json:"type"`
+}
+
 // PrintConfig informs instruct the code generator on how to sort kubebuilder
 // printcolumn marker coments.
 type PrintConfig struct {
@@ -334,6 +340,10 @@ type PrintConfig struct {
 	AddSyncedColumn *bool `json:"add_synced_column"`
 	// OrderBy is the field used to sort the list of PrinterColumn options.
 	OrderBy string `json:"order_by"`
+
+	// AdditionalColumns can be used to add arbitrary extra columns to a Resource's output
+	// if present, should be a list of objects, each containing: name, json_path, and type
+	AdditionalColumns []AdditionalColumnConfig `json:"additional_columns,omitempty"`
 }
 
 // ReconcileConfig describes options for controlling the reconciliation
