@@ -317,10 +317,20 @@ type UpdateOperationConfig struct {
 	CustomMethodName string `json:"custom_method_name"`
 }
 
+// AdditionalConfig can be used to specify additional printer columns to be included
+// in a Resource's output from kubectl
 type AdditionalColumnConfig struct {
+	// the name to display in the column's output
 	Name string `json:"name"`
+	// the JSONPath definining the source of the output
 	JSONPath string `json:"json_path"`
+	// the OpenAPI type of the output
+	// c.f., https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md#data-types
 	Type string `json:"type"`
+	// the priority of the column in the resource's output
+	Priority int `json:"priority,omitempty"`
+	// the zero-based index of the position at which to display the column in output
+	Index int `json:"index,omitempty"`
 }
 
 // PrintConfig informs instruct the code generator on how to sort kubebuilder
@@ -343,7 +353,7 @@ type PrintConfig struct {
 
 	// AdditionalColumns can be used to add arbitrary extra columns to a Resource's output
 	// if present, should be a list of objects, each containing: name, json_path, and type
-	AdditionalColumns []AdditionalColumnConfig `json:"additional_columns,omitempty"`
+	AdditionalColumns []*AdditionalColumnConfig `json:"additional_columns,omitempty"`
 }
 
 // ReconcileConfig describes options for controlling the reconciliation
