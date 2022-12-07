@@ -286,7 +286,7 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 
 		// Now add the additional printer columns that have been defined explicitly
 		// in additional_columns
-		crd.setAdditionalPrinterColumns(m.cfg.GetAdditionalColumns(crdName))
+		crd.addAdditionalPrinterColumns(m.cfg.GetAdditionalColumns(crdName))
 
 		crds = append(crds, crd)
 	}

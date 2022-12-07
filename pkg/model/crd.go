@@ -566,9 +566,7 @@ func (r *CRD) PrintSyncedColumn() bool {
 	return r.cfg.ResourceDisplaysSyncedColumn(r.Names.Camel)
 }
 
-func (r *CRD) setAdditionalPrinterColumns(additionalColumns []*ackgenconfig.AdditionalColumnConfig) {
-	r.additionalPrinterColumns = []*PrinterColumn{}
-
+func (r *CRD) addAdditionalPrinterColumns(additionalColumns []*ackgenconfig.AdditionalColumnConfig) {
 	for _, additionalColumn := range additionalColumns {
 		printerColumn := &PrinterColumn{}
 		printerColumn.Name = additionalColumn.Name

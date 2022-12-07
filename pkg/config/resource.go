@@ -318,18 +318,18 @@ type UpdateOperationConfig struct {
 }
 
 // AdditionalConfig can be used to specify additional printer columns to be included
-// in a Resource's output from kubectl
+// in a Resource's output from kubectl.
 type AdditionalColumnConfig struct {
-	// the name to display in the column's output
+	// Name is the thing to display in the column's output.
 	Name string `json:"name"`
-	// the JSONPath definining the source of the output
+	// JSONPath defines the source of the output.
 	JSONPath string `json:"json_path"`
-	// the OpenAPI type of the output
+	// Type is the OpenAPI type of the output.
 	// c.f., https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md#data-types
 	Type string `json:"type"`
-	// the priority of the column in the resource's output
+	// Priority of the column in the resource's output.
 	Priority int `json:"priority,omitempty"`
-	// the zero-based index of the position at which to display the column in output
+	// Index is the zero-based index of the position at which to display the column in output.
 	Index int `json:"index,omitempty"`
 }
 
