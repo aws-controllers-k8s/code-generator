@@ -284,6 +284,10 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 			crd.AddStatusField(memberNames, memberShapeRef)
 		}
 
+		// Now add the additional printer columns that have been defined explicitly
+		// in additional_columns
+		crd.addAdditionalPrinterColumns(m.cfg.GetAdditionalColumns(crdName))
+
 		crds = append(crds, crd)
 	}
 	sort.Slice(crds, func(i, j int) bool {

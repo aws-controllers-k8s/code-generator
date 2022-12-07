@@ -566,6 +566,18 @@ func (r *CRD) PrintSyncedColumn() bool {
 	return r.cfg.ResourceDisplaysSyncedColumn(r.Names.Camel)
 }
 
+func (r *CRD) addAdditionalPrinterColumns(additionalColumns []*ackgenconfig.AdditionalColumnConfig) {
+	for _, additionalColumn := range additionalColumns {
+		printerColumn := &PrinterColumn{}
+		printerColumn.Name = additionalColumn.Name
+		printerColumn.JSONPath = additionalColumn.JSONPath
+		printerColumn.Type = additionalColumn.Type
+		printerColumn.Priority = additionalColumn.Priority
+		printerColumn.Index = additionalColumn.Index
+		r.additionalPrinterColumns = append(r.additionalPrinterColumns, printerColumn)
+	}
+}
+
 // ReconcileRequeuOnSuccessSeconds returns the duration after which to requeue
 // the custom resource as int
 func (r *CRD) ReconcileRequeuOnSuccessSeconds() int {
