@@ -77,12 +77,12 @@ type PrefixConfig struct {
 // GetAdditionalColumns extracts AdditionalColumns defined for a given Resource
 func (c *Config) GetAdditionalColumns(resourceName string) []*AdditionalColumnConfig {
 	if c == nil {
-		return []*AdditionalColumnConfig{}
+        return nil
 	}
 
 	resourceConfig, ok := c.Resources[resourceName]
 	if !ok || resourceConfig.Print == nil || len(resourceConfig.Print.AdditionalColumns) == 0 {
-		return []*AdditionalColumnConfig{}
+		return nil
 	}
 	return resourceConfig.Print.AdditionalColumns
 }
