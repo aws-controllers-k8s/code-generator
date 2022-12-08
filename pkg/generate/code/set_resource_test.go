@@ -2712,12 +2712,16 @@ func TestSetResource_SNS_Topic_GetAttributes(t *testing.T) {
 	// (and thus in the Spec fields). Two of them are the tesource's ARN and
 	// AWS Owner account ID, both of which are handled specially.
 	expected := `
+	ko.Spec.DeliveryPolicy = resp.Attributes["DeliveryPolicy"]
+	ko.Spec.DisplayName = resp.Attributes["DisplayName"]
 	ko.Status.EffectiveDeliveryPolicy = resp.Attributes["EffectiveDeliveryPolicy"]
+	ko.Spec.KMSMasterKeyID = resp.Attributes["KmsMasterKeyId"]
 	if ko.Status.ACKResourceMetadata == nil {
 		ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
 	}
 	tmpOwnerID := ackv1alpha1.AWSAccountID(*resp.Attributes["Owner"])
 	ko.Status.ACKResourceMetadata.OwnerAccountID = &tmpOwnerID
+	ko.Spec.Policy = resp.Attributes["Policy"]
 	tmpARN := ackv1alpha1.AWSResourceName(*resp.Attributes["TopicArn"])
 	ko.Status.ACKResourceMetadata.ARN = &tmpARN
 `
@@ -2766,13 +2770,24 @@ func TestSetResource_SQS_Queue_GetAttributes(t *testing.T) {
 	// (and thus in the Spec fields). One of them is the resource's ARN which
 	// is handled specially.
 	expected := `
+	ko.Spec.ContentBasedDeduplication = resp.Attributes["ContentBasedDeduplication"]
 	ko.Status.CreatedTimestamp = resp.Attributes["CreatedTimestamp"]
+	ko.Spec.DelaySeconds = resp.Attributes["DelaySeconds"]
+	ko.Spec.FifoQueue = resp.Attributes["FifoQueue"]
+	ko.Spec.KMSDataKeyReusePeriodSeconds = resp.Attributes["KmsDataKeyReusePeriodSeconds"]
+	ko.Spec.KMSMasterKeyID = resp.Attributes["KmsMasterKeyId"]
 	ko.Status.LastModifiedTimestamp = resp.Attributes["LastModifiedTimestamp"]
+	ko.Spec.MaximumMessageSize = resp.Attributes["MaximumMessageSize"]
+	ko.Spec.MessageRetentionPeriod = resp.Attributes["MessageRetentionPeriod"]
+	ko.Spec.Policy = resp.Attributes["Policy"]
 	if ko.Status.ACKResourceMetadata == nil {
 		ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
 	}
 	tmpARN := ackv1alpha1.AWSResourceName(*resp.Attributes["QueueArn"])
 	ko.Status.ACKResourceMetadata.ARN = &tmpARN
+	ko.Spec.ReceiveMessageWaitTimeSeconds = resp.Attributes["ReceiveMessageWaitTimeSeconds"]
+	ko.Spec.RedrivePolicy = resp.Attributes["RedrivePolicy"]
+	ko.Spec.VisibilityTimeout = resp.Attributes["VisibilityTimeout"]
 `
 	assert.Equal(
 		expected,

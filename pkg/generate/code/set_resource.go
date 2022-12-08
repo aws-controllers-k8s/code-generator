@@ -793,7 +793,6 @@ func SetResourceGetAttributes(
 
 	out := "\n"
 	indent := strings.Repeat("\t", indentLevel)
-	adaptiveTargetVarName := targetVarName + cfg.PrefixConfig.StatusField
 
 	// did we output an ACKResourceMetadata guard and constructor snippet?
 	mdGuardOut := false
@@ -806,6 +805,7 @@ func SetResourceGetAttributes(
 	}
 	sort.Strings(sortedAttrFieldNames)
 	for _, fieldName := range sortedAttrFieldNames {
+		adaptiveTargetVarName := targetVarName + cfg.PrefixConfig.StatusField
 		if r.IsPrimaryARNField(fieldName) {
 			if !mdGuardOut {
 				out += ackResourceMetadataGuardConstructor(
@@ -850,16 +850,17 @@ func SetResourceGetAttributes(
 		}
 
 		fieldNames := names.New(fieldName)
-		if fieldConfig.IsReadOnly {
-			out += fmt.Sprintf(
-				"%s%s.%s = %s.Attributes[\"%s\"]\n",
-				indent,
-				adaptiveTargetVarName,
-				fieldNames.Camel,
-				sourceVarName,
-				fieldName,
-			)
+		if !fieldConfig.IsReadOnly {
+			adaptiveTargetVarName = targetVarName + cfg.PrefixConfig.SpecField
 		}
+		out += fmt.Sprintf(
+			"%s%s.%s = %s.Attributes[\"%s\"]\n",
+			indent,
+			adaptiveTargetVarName,
+			fieldNames.Camel,
+			sourceVarName,
+			fieldName,
+		)
 	}
 	return out
 }
