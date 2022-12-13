@@ -89,7 +89,7 @@ spec:
           - name: {{ .Values.aws.credentials.secretName }}
             mountPath: {{ include "aws.credentials.secret_mount_path" . }}
             readOnly: true
-        {{- end }}          
+        {{- end }}
         securityContext:
           allowPrivilegeEscalation: false
           privileged: false
