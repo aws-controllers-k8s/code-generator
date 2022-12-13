@@ -25,6 +25,14 @@ import (
 	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
 )
 
+// simpleStringShapeRef is used for attribute fields and fields where there was
+// no found ShapeRef
+var simpleStringShapeRef *awssdkmodel.ShapeRef = &awssdkmodel.ShapeRef{
+	Shape: &awssdkmodel.Shape{
+		Type: "string",
+	},
+}
+
 // Field represents a single field in the CRD's Spec or Status objects. The
 // field may be a direct field of the Spec or Status object or may be a field
 // of a list or struct-type field of the Spec or Status object. We call these
@@ -323,6 +331,7 @@ func newFieldRecurse(
 		gte = "string"
 		gt = "*string"
 		gtwp = "*string"
+		shapeRef = simpleStringShapeRef
 	}
 
 	return &Field{

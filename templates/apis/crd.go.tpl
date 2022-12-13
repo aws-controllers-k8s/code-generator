@@ -15,13 +15,14 @@ import (
 
 {{ .CRD.Documentation }}
 type {{ .CRD.Kind }}Spec struct {
-	{{- range $fieldName, $field := .CRD.SpecFields }}
-	{{- if $field.ShapeRef }}
-	{{ $field.ShapeRef.Documentation }}
-	{{- end }}
-	{{ if and ($field.IsRequired) (not $field.HasReference) }} // +kubebuilder:validation:Required
-	{{ $field.Names.Camel }} {{ $field.GoType }} `json:"{{ $field.Names.CamelLower }}"`
-	{{- else }} {{ $field.Names.Camel }} {{ $field.GoType }} `json:"{{ $field.Names.CamelLower }},omitempty"` {{ end }}
+{{ range $fieldName, $field := .CRD.SpecFields }}
+{{ if $field.ShapeRef.Documentation -}}
+    {{ $field.ShapeRef.Documentation }}
+{{ end -}}
+{{- if and ($field.IsRequired) (not $field.HasReference) -}}
+    // +kubebuilder:validation:Required
+{{ end -}}
+    {{ $field.Names.Camel }} {{ $field.GoType }} `json:"{{ $field.Names.CamelLower }}{{- if or (not $field.IsRequired) ($field.HasReference) }},omitempty{{- end -}}"`
 {{- end }}
 }
 
@@ -39,7 +40,7 @@ type {{ .CRD.Kind }}Status struct {
 	// +kubebuilder:validation:Optional
 	Conditions []*ackv1alpha1.Condition `json:"conditions"`
 	{{- range $fieldName, $field := .CRD.StatusFields }}
-	{{- if $field.ShapeRef }}
+	{{- if $field.ShapeRef.Documentation }}
 	{{ $field.ShapeRef.Documentation }}
 	{{- end }}
 	// +kubebuilder:validation:Optional
