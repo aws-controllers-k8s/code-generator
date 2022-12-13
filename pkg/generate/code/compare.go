@@ -121,11 +121,6 @@ func CompareResource(
 			compareConfig = fieldConfig.Compare
 		}
 
-		if fieldConfig != nil && fieldConfig.IsAttribute {
-			// NOTE(jaypipes): We compare the Attributes collection
-			// specially...
-			continue
-		}
 		if compareConfig != nil && compareConfig.IsIgnored {
 			continue
 		}
