@@ -16,7 +16,7 @@ import (
 {{ .CRD.Documentation }}
 type {{ .CRD.Kind }}Spec struct {
 {{ range $fieldName, $field := .CRD.SpecFields }}
-{{ if $field.ShapeRef.Documentation -}}
+{{ if $field.ShapeRef -}}
     {{ $field.ShapeRef.Documentation }}
 {{ end -}}
 {{- if and ($field.IsRequired) (not $field.HasReference) -}}
