@@ -78,6 +78,11 @@ resourceTags:
   - services.k8s.aws/controller-version=%CONTROLLER_SERVICE%-%CONTROLLER_VERSION%
   - services.k8s.aws/namespace=%K8S_NAMESPACE%
 
+# Set to "retain" to keep all AWS resources intact even after the K8s resources
+# have been deleted. By default, the ACK controller will delete the AWS resource
+# before the K8s resource is removed.
+deletionPolicy: delete
+
 serviceAccount:
   # Specifies whether a service account should be created
   create: true
