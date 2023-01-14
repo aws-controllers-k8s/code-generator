@@ -16,11 +16,13 @@ spec:
   selector:
     matchLabels:
       control-plane: controller
+      name: ack-{{ .ServicePackageName }}-controller
   replicas: 1
   template:
     metadata:
       labels:
         control-plane: controller
+        name: ack-{{ .ServicePackageName }}-controller
     spec:
       containers:
       - command:

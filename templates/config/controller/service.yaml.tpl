@@ -6,6 +6,7 @@ metadata:
 spec:
   selector:
     control-plane: controller
+    name: ack-{{ .ServicePackageName }}-controller
   ports:
     - name: metricsport
       port: 8080
