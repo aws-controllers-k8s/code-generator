@@ -12,6 +12,7 @@ metadata:
   namespace: ack-system
   labels:
     control-plane: controller
+    name: ack-{{ .ServicePackageName }}-controller
 spec:
   selector:
     matchLabels:
