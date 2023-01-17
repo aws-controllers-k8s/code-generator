@@ -3,7 +3,6 @@ kind: Namespace
 metadata:
   labels:
     control-plane: controller
-    app.kubernetes.io/name: ack-system 
   name: ack-system
 ---
 apiVersion: apps/v1
