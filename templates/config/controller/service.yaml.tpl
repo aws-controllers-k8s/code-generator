@@ -5,7 +5,6 @@ metadata:
   namespace: ack-system
 spec:
   selector:
-    control-plane: controller
     app.kubernetes.io/name: ack-{{ .ServicePackageName }}-controller
   ports:
     - name: metricsport

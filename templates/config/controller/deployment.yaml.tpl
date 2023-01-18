@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Namespace
 metadata:
   labels:
-    control-plane: controller
+    app.kubernetes.io/name: ack-system
   name: ack-system
 ---
 apiVersion: apps/v1
@@ -11,19 +11,16 @@ metadata:
   name: ack-{{ .ServicePackageName }}-controller
   namespace: ack-system
   labels:
-    control-plane: controller
     app.kubernetes.io/name: ack-{{ .ServicePackageName }}-controller
     app.kubernetes.io/part-of: ack-system
 spec:
   selector:
     matchLabels:
-      control-plane: controller
       app.kubernetes.io/name: ack-{{ .ServicePackageName }}-controller
   replicas: 1
   template:
     metadata:
       labels:
-        control-plane: controller
         app.kubernetes.io/name: ack-{{ .ServicePackageName }}-controller
     spec:
       containers:
