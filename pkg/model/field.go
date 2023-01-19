@@ -17,12 +17,12 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/aws-controllers-k8s/pkg/names"
+	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
 	"github.com/gertd/go-pluralize"
 
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/config"
-	"github.com/aws-controllers-k8s/code-generator/pkg/names"
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
-	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
 )
 
 // simpleStringShapeRef is used for attribute fields and fields where there was
@@ -75,7 +75,7 @@ func (f *Field) IsRequired() bool {
 	if f.FieldConfig != nil && f.FieldConfig.IsRequired != nil {
 		return *f.FieldConfig.IsRequired
 	}
-	return util.InStrings(f.Names.ModelOriginal, f.CRD.Ops.Create.InputRef.Shape.Required)
+	return util.InStrings(f.Names.Original, f.CRD.Ops.Create.InputRef.Shape.Required)
 }
 
 // GetSetterConfig returns the SetFieldConfig object associated with this field
