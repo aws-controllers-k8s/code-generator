@@ -93,6 +93,9 @@ if ! is_public_ecr_logged_in; then
   aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
 fi
 
+# Get the golang version from the code-generator
+GOLANG_VERSION=${GOLANG_VERSION:-"$(go list -f {{.GoVersion}} -m)"}
+
 # if local build
 # then use Dockerfile which allows references to local modules from service controller
 DOCKER_BUILD_CONTEXT="$ACK_DIR"
@@ -104,10 +107,12 @@ docker build \
   --quiet=${QUIET} \
   -t "${AWS_SERVICE_DOCKER_IMG}" \
   -f "${DOCKERFILE}" \
-  --build-arg service_alias=${AWS_SERVICE} \
+  --build-arg service_alias="${AWS_SERVICE}" \
   --build-arg service_controller_git_version="$SERVICE_CONTROLLER_GIT_VERSION" \
   --build-arg service_controller_git_commit="$SERVICE_CONTROLLER_GIT_COMMIT" \
   --build-arg build_date="$BUILD_DATE" \
+  --build-arg golang_version="${GOLANG_VERSION}" \
+  --build-arg go_arch="$GO_ARCH" \
   "${DOCKER_BUILD_CONTEXT}"
 
 if [ $? -ne 0 ]; then
