@@ -74,10 +74,8 @@ if [[ ! -d $SERVICE_CONTROLLER_SOURCE_PATH ]]; then
 fi
 
 pushd $SERVICE_CONTROLLER_SOURCE_PATH 1>/dev/null
-
-SERVICE_CONTROLLER_GIT_VERSION=`git describe --tags --always --dirty || echo "unknown"`
-SERVICE_CONTROLLER_GIT_COMMIT=`git rev-parse HEAD`
-
+  SERVICE_CONTROLLER_GIT_VERSION=`git describe --tags --always --dirty || echo "unknown"`
+  SERVICE_CONTROLLER_GIT_COMMIT=`git rev-parse HEAD`
 popd 1>/dev/null
 
 DEFAULT_AWS_SERVICE_DOCKER_IMG="aws-controllers-k8s:$AWS_SERVICE-$SERVICE_CONTROLLER_GIT_VERSION"
@@ -93,8 +91,10 @@ if ! is_public_ecr_logged_in; then
   aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
 fi
 
-# Get the golang version from the code-generator
-GOLANG_VERSION=${GOLANG_VERSION:-"$(go list -f {{.GoVersion}} -m)"}
+pushd $ROOT_DIR 1>/dev/null
+  # Get the golang version from the code-generator
+  GOLANG_VERSION=${GOLANG_VERSION:-"$(go list -f {{.GoVersion}} -m)"}
+popd 1>/dev/null
 
 # if local build
 # then use Dockerfile which allows references to local modules from service controller
