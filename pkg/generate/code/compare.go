@@ -18,11 +18,11 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/aws-controllers-k8s/pkg/names"
 	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
 
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
-	"github.com/aws-controllers-k8s/code-generator/pkg/names"
 )
 
 // CompareResource returns the Go code that traverses a set of two Resources,

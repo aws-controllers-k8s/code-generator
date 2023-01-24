@@ -16,9 +16,8 @@ package model
 import (
 	"strings"
 
+	"github.com/aws-controllers-k8s/pkg/names"
 	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
-
-	"github.com/aws-controllers-k8s/code-generator/pkg/names"
 )
 
 // TypeDef is a Go type definition for structs that are member fields of the
