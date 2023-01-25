@@ -3273,6 +3273,336 @@ func TestSetResource_EC2_DHCPOptions_NestedSetConfig(t *testing.T) {
 	)
 }
 
+func TestSetResource_EventBridge_Rule_SetResourceForStruct(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "eventbridge")
+
+	crd := testutil.GetCRDByName(t, g, "Rule")
+	require.NotNil(crd)
+
+	// Getting CRD Target shape
+	field, ok := crd.SpecFields["Targets"]
+	require.True(ok)
+	koShape := &field.ShapeRef.Shape.MemberRef
+
+	// Getting SDK Target shape
+	putTargetsOP, ok := g.SDKAPI.API.Operations["PutTargets"]
+	require.True(ok)
+	targetsShape, ok := putTargetsOP.InputRef.Shape.MemberRefs["Targets"]
+	require.True(ok)
+	targetShape := &targetsShape.Shape.MemberRef
+
+	expected := `	if resp.Arn != nil {
+		fx.ARN = resp.Arn
+	}
+	if resp.BatchParameters != nil {
+		fxf1 := &svcapitypes.BatchParameters{}
+		if resp.BatchParameters.ArrayProperties != nil {
+			fxf1f0 := &svcapitypes.BatchArrayProperties{}
+			if resp.BatchParameters.ArrayProperties.Size != nil {
+				fxf1f0.Size = resp.BatchParameters.ArrayProperties.Size
+			}
+			fxf1.ArrayProperties = fxf1f0
+		}
+		if resp.BatchParameters.JobDefinition != nil {
+			fxf1.JobDefinition = resp.BatchParameters.JobDefinition
+		}
+		if resp.BatchParameters.JobName != nil {
+			fxf1.JobName = resp.BatchParameters.JobName
+		}
+		if resp.BatchParameters.RetryStrategy != nil {
+			fxf1f3 := &svcapitypes.BatchRetryStrategy{}
+			if resp.BatchParameters.RetryStrategy.Attempts != nil {
+				fxf1f3.Attempts = resp.BatchParameters.RetryStrategy.Attempts
+			}
+			fxf1.RetryStrategy = fxf1f3
+		}
+		fx.BatchParameters = fxf1
+	}
+	if resp.DeadLetterConfig != nil {
+		fxf2 := &svcapitypes.DeadLetterConfig{}
+		if resp.DeadLetterConfig.Arn != nil {
+			fxf2.ARN = resp.DeadLetterConfig.Arn
+		}
+		fx.DeadLetterConfig = fxf2
+	}
+	if resp.EcsParameters != nil {
+		fxf3 := &svcapitypes.EcsParameters{}
+		if resp.EcsParameters.CapacityProviderStrategy != nil {
+			fxf3f0 := []*svcapitypes.CapacityProviderStrategyItem{}
+			for _, fxf3f0iter := range resp.EcsParameters.CapacityProviderStrategy {
+				fxf3f0elem := &svcapitypes.CapacityProviderStrategyItem{}
+				if fxf3f0iter.Base != nil {
+					fxf3f0elem.Base = fxf3f0iter.Base
+				}
+				if fxf3f0iter.CapacityProvider != nil {
+					fxf3f0elem.CapacityProvider = fxf3f0iter.CapacityProvider
+				}
+				if fxf3f0iter.Weight != nil {
+					fxf3f0elem.Weight = fxf3f0iter.Weight
+				}
+				fxf3f0 = append(fxf3f0, fxf3f0elem)
+			}
+			fxf3.CapacityProviderStrategy = fxf3f0
+		}
+		if resp.EcsParameters.EnableECSManagedTags != nil {
+			fxf3.EnableECSManagedTags = resp.EcsParameters.EnableECSManagedTags
+		}
+		if resp.EcsParameters.EnableExecuteCommand != nil {
+			fxf3.EnableExecuteCommand = resp.EcsParameters.EnableExecuteCommand
+		}
+		if resp.EcsParameters.Group != nil {
+			fxf3.Group = resp.EcsParameters.Group
+		}
+		if resp.EcsParameters.LaunchType != nil {
+			fxf3.LaunchType = resp.EcsParameters.LaunchType
+		}
+		if resp.EcsParameters.NetworkConfiguration != nil {
+			fxf3f5 := &svcapitypes.NetworkConfiguration{}
+			if resp.EcsParameters.NetworkConfiguration.AwsvpcConfiguration != nil {
+				fxf3f5f0 := &svcapitypes.AWSVPCConfiguration{}
+				if resp.EcsParameters.NetworkConfiguration.AwsvpcConfiguration.AssignPublicIp != nil {
+					fxf3f5f0.AssignPublicIP = resp.EcsParameters.NetworkConfiguration.AwsvpcConfiguration.AssignPublicIp
+				}
+				if resp.EcsParameters.NetworkConfiguration.AwsvpcConfiguration.SecurityGroups != nil {
+					fxf3f5f0f1 := []*string{}
+					for _, fxf3f5f0f1iter := range resp.EcsParameters.NetworkConfiguration.AwsvpcConfiguration.SecurityGroups {
+						var fxf3f5f0f1elem string
+						fxf3f5f0f1elem = *fxf3f5f0f1iter
+						fxf3f5f0f1 = append(fxf3f5f0f1, &fxf3f5f0f1elem)
+					}
+					fxf3f5f0.SecurityGroups = fxf3f5f0f1
+				}
+				if resp.EcsParameters.NetworkConfiguration.AwsvpcConfiguration.Subnets != nil {
+					fxf3f5f0f2 := []*string{}
+					for _, fxf3f5f0f2iter := range resp.EcsParameters.NetworkConfiguration.AwsvpcConfiguration.Subnets {
+						var fxf3f5f0f2elem string
+						fxf3f5f0f2elem = *fxf3f5f0f2iter
+						fxf3f5f0f2 = append(fxf3f5f0f2, &fxf3f5f0f2elem)
+					}
+					fxf3f5f0.Subnets = fxf3f5f0f2
+				}
+				fxf3f5.AWSvpcConfiguration = fxf3f5f0
+			}
+			fxf3.NetworkConfiguration = fxf3f5
+		}
+		if resp.EcsParameters.PlacementConstraints != nil {
+			fxf3f6 := []*svcapitypes.PlacementConstraint{}
+			for _, fxf3f6iter := range resp.EcsParameters.PlacementConstraints {
+				fxf3f6elem := &svcapitypes.PlacementConstraint{}
+				if fxf3f6iter.Expression != nil {
+					fxf3f6elem.Expression = fxf3f6iter.Expression
+				}
+				if fxf3f6iter.Type != nil {
+					fxf3f6elem.Type = fxf3f6iter.Type
+				}
+				fxf3f6 = append(fxf3f6, fxf3f6elem)
+			}
+			fxf3.PlacementConstraints = fxf3f6
+		}
+		if resp.EcsParameters.PlacementStrategy != nil {
+			fxf3f7 := []*svcapitypes.PlacementStrategy{}
+			for _, fxf3f7iter := range resp.EcsParameters.PlacementStrategy {
+				fxf3f7elem := &svcapitypes.PlacementStrategy{}
+				if fxf3f7iter.Field != nil {
+					fxf3f7elem.Field = fxf3f7iter.Field
+				}
+				if fxf3f7iter.Type != nil {
+					fxf3f7elem.Type = fxf3f7iter.Type
+				}
+				fxf3f7 = append(fxf3f7, fxf3f7elem)
+			}
+			fxf3.PlacementStrategy = fxf3f7
+		}
+		if resp.EcsParameters.PlatformVersion != nil {
+			fxf3.PlatformVersion = resp.EcsParameters.PlatformVersion
+		}
+		if resp.EcsParameters.PropagateTags != nil {
+			fxf3.PropagateTags = resp.EcsParameters.PropagateTags
+		}
+		if resp.EcsParameters.ReferenceId != nil {
+			fxf3.ReferenceID = resp.EcsParameters.ReferenceId
+		}
+		if resp.EcsParameters.Tags != nil {
+			fxf3f11 := []*svcapitypes.Tag{}
+			for _, fxf3f11iter := range resp.EcsParameters.Tags {
+				fxf3f11elem := &svcapitypes.Tag{}
+				if fxf3f11iter.Key != nil {
+					fxf3f11elem.Key = fxf3f11iter.Key
+				}
+				if fxf3f11iter.Value != nil {
+					fxf3f11elem.Value = fxf3f11iter.Value
+				}
+				fxf3f11 = append(fxf3f11, fxf3f11elem)
+			}
+			fxf3.Tags = fxf3f11
+		}
+		if resp.EcsParameters.TaskCount != nil {
+			fxf3.TaskCount = resp.EcsParameters.TaskCount
+		}
+		if resp.EcsParameters.TaskDefinitionArn != nil {
+			fxf3.TaskDefinitionARN = resp.EcsParameters.TaskDefinitionArn
+		}
+		fx.EcsParameters = fxf3
+	}
+	if resp.HttpParameters != nil {
+		fxf4 := &svcapitypes.HTTPParameters{}
+		if resp.HttpParameters.HeaderParameters != nil {
+			fxf4f0 := map[string]*string{}
+			for fxf4f0key, fxf4f0valiter := range resp.HttpParameters.HeaderParameters {
+				var fxf4f0val string
+				fxf4f0val = *fxf4f0valiter
+				fxf4f0[fxf4f0key] = &fxf4f0val
+			}
+			fxf4.HeaderParameters = fxf4f0
+		}
+		if resp.HttpParameters.PathParameterValues != nil {
+			fxf4f1 := []*string{}
+			for _, fxf4f1iter := range resp.HttpParameters.PathParameterValues {
+				var fxf4f1elem string
+				fxf4f1elem = *fxf4f1iter
+				fxf4f1 = append(fxf4f1, &fxf4f1elem)
+			}
+			fxf4.PathParameterValues = fxf4f1
+		}
+		if resp.HttpParameters.QueryStringParameters != nil {
+			fxf4f2 := map[string]*string{}
+			for fxf4f2key, fxf4f2valiter := range resp.HttpParameters.QueryStringParameters {
+				var fxf4f2val string
+				fxf4f2val = *fxf4f2valiter
+				fxf4f2[fxf4f2key] = &fxf4f2val
+			}
+			fxf4.QueryStringParameters = fxf4f2
+		}
+		fx.HTTPParameters = fxf4
+	}
+	if resp.Id != nil {
+		fx.ID = resp.Id
+	}
+	if resp.Input != nil {
+		fx.Input = resp.Input
+	}
+	if resp.InputPath != nil {
+		fx.InputPath = resp.InputPath
+	}
+	if resp.InputTransformer != nil {
+		fxf8 := &svcapitypes.InputTransformer{}
+		if resp.InputTransformer.InputPathsMap != nil {
+			fxf8f0 := map[string]*string{}
+			for fxf8f0key, fxf8f0valiter := range resp.InputTransformer.InputPathsMap {
+				var fxf8f0val string
+				fxf8f0val = *fxf8f0valiter
+				fxf8f0[fxf8f0key] = &fxf8f0val
+			}
+			fxf8.InputPathsMap = fxf8f0
+		}
+		if resp.InputTransformer.InputTemplate != nil {
+			fxf8.InputTemplate = resp.InputTransformer.InputTemplate
+		}
+		fx.InputTransformer = fxf8
+	}
+	if resp.KinesisParameters != nil {
+		fxf9 := &svcapitypes.KinesisParameters{}
+		if resp.KinesisParameters.PartitionKeyPath != nil {
+			fxf9.PartitionKeyPath = resp.KinesisParameters.PartitionKeyPath
+		}
+		fx.KinesisParameters = fxf9
+	}
+	if resp.RedshiftDataParameters != nil {
+		fxf10 := &svcapitypes.RedshiftDataParameters{}
+		if resp.RedshiftDataParameters.Database != nil {
+			fxf10.Database = resp.RedshiftDataParameters.Database
+		}
+		if resp.RedshiftDataParameters.DbUser != nil {
+			fxf10.DBUser = resp.RedshiftDataParameters.DbUser
+		}
+		if resp.RedshiftDataParameters.SecretManagerArn != nil {
+			fxf10.SecretManagerARN = resp.RedshiftDataParameters.SecretManagerArn
+		}
+		if resp.RedshiftDataParameters.Sql != nil {
+			fxf10.Sql = resp.RedshiftDataParameters.Sql
+		}
+		if resp.RedshiftDataParameters.StatementName != nil {
+			fxf10.StatementName = resp.RedshiftDataParameters.StatementName
+		}
+		if resp.RedshiftDataParameters.WithEvent != nil {
+			fxf10.WithEvent = resp.RedshiftDataParameters.WithEvent
+		}
+		fx.RedshiftDataParameters = fxf10
+	}
+	if resp.RetryPolicy != nil {
+		fxf11 := &svcapitypes.RetryPolicy{}
+		if resp.RetryPolicy.MaximumEventAgeInSeconds != nil {
+			fxf11.MaximumEventAgeInSeconds = resp.RetryPolicy.MaximumEventAgeInSeconds
+		}
+		if resp.RetryPolicy.MaximumRetryAttempts != nil {
+			fxf11.MaximumRetryAttempts = resp.RetryPolicy.MaximumRetryAttempts
+		}
+		fx.RetryPolicy = fxf11
+	}
+	if resp.RoleArn != nil {
+		fx.RoleARN = resp.RoleArn
+	}
+	if resp.RunCommandParameters != nil {
+		fxf13 := &svcapitypes.RunCommandParameters{}
+		if resp.RunCommandParameters.RunCommandTargets != nil {
+			fxf13f0 := []*svcapitypes.RunCommandTarget{}
+			for _, fxf13f0iter := range resp.RunCommandParameters.RunCommandTargets {
+				fxf13f0elem := &svcapitypes.RunCommandTarget{}
+				if fxf13f0iter.Key != nil {
+					fxf13f0elem.Key = fxf13f0iter.Key
+				}
+				if fxf13f0iter.Values != nil {
+					fxf13f0elemf1 := []*string{}
+					for _, fxf13f0elemf1iter := range fxf13f0iter.Values {
+						var fxf13f0elemf1elem string
+						fxf13f0elemf1elem = *fxf13f0elemf1iter
+						fxf13f0elemf1 = append(fxf13f0elemf1, &fxf13f0elemf1elem)
+					}
+					fxf13f0elem.Values = fxf13f0elemf1
+				}
+				fxf13f0 = append(fxf13f0, fxf13f0elem)
+			}
+			fxf13.RunCommandTargets = fxf13f0
+		}
+		fx.RunCommandParameters = fxf13
+	}
+	if resp.SageMakerPipelineParameters != nil {
+		fxf14 := &svcapitypes.SageMakerPipelineParameters{}
+		if resp.SageMakerPipelineParameters.PipelineParameterList != nil {
+			fxf14f0 := []*svcapitypes.SageMakerPipelineParameter{}
+			for _, fxf14f0iter := range resp.SageMakerPipelineParameters.PipelineParameterList {
+				fxf14f0elem := &svcapitypes.SageMakerPipelineParameter{}
+				if fxf14f0iter.Name != nil {
+					fxf14f0elem.Name = fxf14f0iter.Name
+				}
+				if fxf14f0iter.Value != nil {
+					fxf14f0elem.Value = fxf14f0iter.Value
+				}
+				fxf14f0 = append(fxf14f0, fxf14f0elem)
+			}
+			fxf14.PipelineParameterList = fxf14f0
+		}
+		fx.SageMakerPipelineParameters = fxf14
+	}
+	if resp.SqsParameters != nil {
+		fxf15 := &svcapitypes.SQSParameters{}
+		if resp.SqsParameters.MessageGroupId != nil {
+			fxf15.MessageGroupID = resp.SqsParameters.MessageGroupId
+		}
+		fx.SQSParameters = fxf15
+	}
+`
+	assert.Equal(
+		expected,
+		code.SetResourceForStruct(
+			crd.Config(), crd, "fx", koShape, nil, "resp", targetShape, "", model.OpTypeList, 1,
+		),
+	)
+}
+
 func TestSetResource_EC2_Instance_Create(t *testing.T) {
 	// Check that the RunInstances output (Reservation)
 	// uses the first element of the returned list of Instances
