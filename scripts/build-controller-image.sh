@@ -13,17 +13,14 @@ BUILD_DATE=$(date +%Y-%m-%dT%H:%M)
 QUIET=${QUIET:-"false"}
 
 HARDWARE_PLATFORM=${HARDWARE_PLATFORM:-$(uname -i)}
-GOARCH=${GOARCH:-"null"}
-if [ "$HARDWARE_PLATFORM" = "x86_64" ]; then
-  GOARCH="amd64"
-fi
+GOARCH=${GOARCH:-""}
 if [ "$HARDWARE_PLATFORM" = "aarch64" ]; then
   GOARCH="arm64"
-fi
-if [ "$GOARCH" = "null" ]; then
-  uname -a
-  >&2 echo "HARDWARE_PLATFORM is not supported: $HARDWARE_PLATFORM"
-  exit 1
+else if [ "$HARDWARE_PLATFORM" = "x86_64" ]; then
+  GOARCH="amd64"
+else
+  echo "HARDWARE_PLATFORM is not supported: $HARDWARE_PLATFORM. Defaulting to amd64"
+  GOARCH="amd64"
 fi
 
 export DOCKER_BUILDKIT=${DOCKER_BUILDKIT:-1}
