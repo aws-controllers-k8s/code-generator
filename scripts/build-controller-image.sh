@@ -16,7 +16,7 @@ HARDWARE_PLATFORM=${HARDWARE_PLATFORM:-$(uname -i)}
 GOARCH=${GOARCH:-""}
 if [ "$HARDWARE_PLATFORM" = "aarch64" ]; then
   GOARCH="arm64"
-else if [ "$HARDWARE_PLATFORM" = "x86_64" ]; then
+elif [ "$HARDWARE_PLATFORM" = "x86_64" ]; then
   GOARCH="amd64"
 else
   echo "HARDWARE_PLATFORM is not supported: $HARDWARE_PLATFORM. Defaulting to amd64"
@@ -70,9 +70,9 @@ if [[ ! -d $SERVICE_CONTROLLER_SOURCE_PATH ]]; then
     exit 1
 fi
 
-pushd $SERVICE_CONTROLLER_SOURCE_PATH 1>/dev/null
-  SERVICE_CONTROLLER_GIT_VERSION=`git describe --tags --always --dirty || echo "unknown"`
-  SERVICE_CONTROLLER_GIT_COMMIT=`git rev-parse HEAD`
+pushd "$SERVICE_CONTROLLER_SOURCE_PATH" 1>/dev/null
+  SERVICE_CONTROLLER_GIT_VERSION=$(git describe --tags --always --dirty || echo "unknown")
+  SERVICE_CONTROLLER_GIT_COMMIT=$(git rev-parse HEAD)
 popd 1>/dev/null
 
 DEFAULT_AWS_SERVICE_DOCKER_IMG="aws-controllers-k8s:$AWS_SERVICE-$SERVICE_CONTROLLER_GIT_VERSION"
@@ -88,7 +88,7 @@ if ! is_public_ecr_logged_in; then
   aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
 fi
 
-pushd $ROOT_DIR 1>/dev/null
+pushd "$ROOT_DIR" 1>/dev/null
   # Get the golang version from the code-generator
   GOLANG_VERSION=${GOLANG_VERSION:-"$(go list -f {{.GoVersion}} -m)"}
 popd 1>/dev/null
@@ -109,7 +109,7 @@ docker build \
   --build-arg service_controller_git_commit="$SERVICE_CONTROLLER_GIT_COMMIT" \
   --build-arg build_date="$BUILD_DATE" \
   --build-arg golang_version="${GOLANG_VERSION}" \
-  --build-arg go_arch="$GO_ARCH" \
+  --build-arg go_arch="$GOARCH" \
   "${DOCKER_BUILD_CONTEXT}"
 
 if [ $? -ne 0 ]; then
