@@ -22,8 +22,8 @@ if [ "$HARDWARE_PLATFORM" = "aarch64" ]; then
 fi
 if [ "$GOARCH" = "null" ]; then
   uname -a
-  echo "HARDWARE_PLATFORM is not supported"
-  exit
+  >&2 echo "HARDWARE_PLATFORM is not supported: $HARDWARE_PLATFORM"
+  exit 1
 fi
 
 export DOCKER_BUILDKIT=${DOCKER_BUILDKIT:-1}
