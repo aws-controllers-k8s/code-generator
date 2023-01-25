@@ -1,8 +1,6 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  labels:
-    app.kubernetes.io/name: ack-system
   name: ack-system
 ---
 apiVersion: apps/v1
