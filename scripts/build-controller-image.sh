@@ -104,7 +104,6 @@ if [[ "$LOCAL_MODULES" = "true" ]]; then
 fi
 
 docker build \
-  --quiet=${QUIET} \
   -t "${AWS_SERVICE_DOCKER_IMG}" \
   -f "${DOCKERFILE}" \
   --build-arg service_alias="${AWS_SERVICE}" \
