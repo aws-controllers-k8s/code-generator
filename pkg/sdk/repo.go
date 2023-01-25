@@ -15,6 +15,7 @@ package sdk
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -24,8 +25,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/aws-controllers-k8s/code-generator/pkg/util"
 	"golang.org/x/mod/modfile"
+
+	"github.com/aws-controllers-k8s/code-generator/pkg/util"
 )
 
 const (
@@ -110,15 +112,19 @@ func EnsureRepo(
 		return "", err
 	}
 
-	// Clone repository if it doen't exist
+	// Clone repository if it doesn't exist
 	sdkDir := filepath.Join(srcPath, "aws-sdk-go")
 	if _, err = os.Stat(sdkDir); os.IsNotExist(err) {
 
 		ctx, cancel := context.WithTimeout(ctx, defaultGitCloneTimeout)
 		defer cancel()
 		err = util.CloneRepository(ctx, sdkDir, sdkRepoURL)
+		fmt.Println("sdkDir: ", sdkDir)
 		if err != nil {
-			return "", fmt.Errorf("canot clone repository: %v", err)
+			if errors.Is(err, context.DeadlineExceeded) {
+				err = fmt.Errorf("take too long to clone aws sdk repo, please consider 'git clone %s' into cache dir %s", sdkRepoURL, sdkDir)
+			}
+			return "", fmt.Errorf("cannot clone repository: %v", err)
 		}
 	}
 
