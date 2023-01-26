@@ -7,7 +7,7 @@ SCRIPTS_DIR=$DIR
 DEFAULT_DOCKER_REPOSITORY="amazon/aws-controllers-k8s"
 DOCKER_REPOSITORY=${DOCKER_REPOSITORY:-$DEFAULT_DOCKER_REPOSITORY}
 
-source $SCRIPTS_DIR/lib/common.sh
+source "$SCRIPTS_DIR/lib/common.sh"
 
 check_is_installed docker
 
@@ -17,7 +17,7 @@ Usage:
 
 Publishes the Docker image for an ACK service OLM bundle. By default, the
 repository will be $DEFAULT_DOCKER_REPOSITORY and the image tag for the
-specific ACK service controller will be ":\$SERVICE-bundle-\$VERSION".
+specific ACK service controller will be \":\$SERVICE-bundle-\$VERSION\".
 
 <AWS_SERVICE> AWS Service name (ecr, sns, sqs)
 <BUNDLE_VERSION> OLM bundle version in SemVer (0.0.1, 1.0.0)
@@ -51,12 +51,10 @@ BUNDLE_DOCKER_IMG_TAG=${BUNDLE_DOCKER_IMG_TAG:-$DEFAULT_BUNDLE_DOCKER_IMG_TAG}
 BUNDLE_DOCKER_IMG=${BUNDLE_DOCKER_IMAGE:-$DOCKER_REPOSITORY:$BUNDLE_DOCKER_IMG_TAG}
 
 export BUNDLE_DOCKER_IMG
-${SCRIPTS_DIR}/olm-build-bundle-image.sh ${AWS_SERVICE} ${BUNDLE_VERSION}
+"${SCRIPTS_DIR}"/olm-build-bundle-image.sh "${AWS_SERVICE}" "${BUNDLE_VERSION}"
 
 echo "Pushing '$AWS_SERVICE' operator lifecycle manager bundle image with tag: ${BUNDLE_DOCKER_IMG_TAG}"
 
-docker push ${BUNDLE_DOCKER_IMG}
-
-if [ $? -ne 0 ]; then
+if ! docker push "${BUNDLE_DOCKER_IMG}"; then
   exit 2
 fi

@@ -21,7 +21,7 @@ GO_CMD_LOCAL_FLAGS=-modfile=go.local.mod $(GO_CMD_FLAGS)
 
 .PHONY: all local-build-ack-generate build-ack-generate local-build-controller \
 	build-controller test local-test build-controller-image \
-	local-build-controller-image
+	local-build-controller-image lint
 
 all: test
 
@@ -57,6 +57,9 @@ test: 				## Run code tests
 
 local-test:			## Run code tests using the local go.mod
 	go test ${GO_CMD_LOCAL_FLAGS} ./...
+
+lint-shell:	## Run linters against all of the bash scripts
+	@find . -type f -name "*.sh" | xargs shellcheck -e SC1091
 
 help:           	## Show this help.
 	@grep -F -h "##" $(MAKEFILE_LIST) | grep -F -v grep | sed -e 's/\\$$//' \

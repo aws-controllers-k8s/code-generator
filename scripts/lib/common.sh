@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 
 CONTROLLER_TOOLS_VERSION="v0.9.2"
+export CONTROLLER_TOOLS_VERSION
 HELM_VERSION="v3.7"
+export HELM_VERSION
 
 # setting the -x option if debugging is true
 if [[ "${DEBUG:-"false"}" = "true" ]]; then
@@ -36,7 +38,7 @@ check_is_installed() {
 
 is_installed() {
     local __name="$1"
-    if $(which $__name >/dev/null 2>&1); then
+    if which "$__name" >/dev/null 2>&1; then
         return 0
     else
         return 1
@@ -66,7 +68,8 @@ should_execute() {
 # extension
 filenoext() {
     local __name="$1"
-    local __filename=$( basename "$__name" )
+    local __filename
+    __filename="$( basename "$__name" )"
     # How much do I despise Bash?!
     echo "${__filename%.*}"
 }
@@ -82,12 +85,12 @@ debug_msg() {
     local __indent_level=${2:-}
     local __debug="${DEBUG:-""}"
     local __debug_prefix="${DEBUG_PREFIX:-$DEFAULT_DEBUG_PREFIX}"
-    if [ ! -n "$__debug" ]; then
+    if [ -z "$__debug" ]; then
         return 0
     fi
     __indent=""
     if [ -n "$__indent_level" ]; then
-        __indent="$( for each in $( seq 0 $__indent_level ); do printf " "; done )"
+        __indent="$( for _ in $( seq 0 "$__indent_level" ); do printf " "; done )"
     fi
     echo "$__debug_prefix$__indent$__msg"
 }
@@ -102,7 +105,8 @@ debug_msg() {
 #       echo "controller-gen is at version 0.4.0"
 #   fi
 k8s_controller_gen_version_equals() {
-    local currentver="$(controller-gen --version | cut -d' ' -f2 | tr -d '\n')";
+    local currentver
+    currentver="$(controller-gen --version | cut -d' ' -f2 | tr -d '\n')";
     local requiredver="$1";
     if [ "$currentver" = "$requiredver" ]; then
         return 0
@@ -121,9 +125,10 @@ k8s_controller_gen_version_equals() {
 #       echo "Installed helm version is greater than or equal to version v3.9.0"
 #   fi
 helm_version_equals_or_greater() {
-    local currentver="$(helm version --template='Version: {{.Version}}'| cut -d' ' -f2 | tr -d '\n')"
+    local currentver
+    currentver="$(helm version --template='Version: {{.Version}}'| cut -d' ' -f2 | tr -d '\n')"
     local requiredver="$1"
-    printf '%s\n%s\n' $requiredver $currentver | sort -C -V
+    printf '%s\n%s\n' "$requiredver" "$currentver" | sort -C -V
     return $?
 }
 
@@ -145,12 +150,14 @@ is_public_ecr_logged_in() {
     # Parse it as <Username>:<B64 Payload>, and take only the payload
     # Base64 decode it
     # Read the "expiration" value
-    local expiration_time=$(jq -r --arg url $public_ecr_url '.auths[$url].auth' ~/.docker/config.json | base64 -d | cut -d":" -f2 | base64 -d | jq -r ".expiration")
+    local expiration_time
+    expiration_time=$(jq -r --arg url $public_ecr_url '.auths[$url].auth' ~/.docker/config.json | base64 -d | cut -d":" -f2 | base64 -d | jq -r ".expiration")
 
     # If any part of this doesn't exist, the user isn't logged in
     [ -z "$expiration_time" ] && return 1
 
-    local current_time=$(date +%s)
+    local current_time
+    current_time=$(date +%s)
 
     # If the credentials have expired, the user isn't logged in
     [ "$expiration_time" -lt "$current_time" ] && return 1

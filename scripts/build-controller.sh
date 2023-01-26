@@ -6,14 +6,13 @@ set -eo pipefail
 
 SCRIPTS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 ROOT_DIR="$SCRIPTS_DIR/.."
-BIN_DIR="$ROOT_DIR/bin"
 
 source "$SCRIPTS_DIR/lib/common.sh"
 
 check_is_installed controller-gen "You can install controller-gen with the helper scripts/install-controller-gen.sh"
 
 if ! k8s_controller_gen_version_equals "$CONTROLLER_TOOLS_VERSION"; then
-    echo "FATAL: Existing version of controller-gen "`controller-gen --version`", required version is $CONTROLLER_TOOLS_VERSION."
+    echo "FATAL: Existing version of controller-gen \"$(controller-gen --version)\", required version is $CONTROLLER_TOOLS_VERSION."
     echo "FATAL: Please uninstall controller-gen and install the required version with scripts/install-controller-gen.sh."
     exit 1
 fi
@@ -63,8 +62,9 @@ Environment variables:
   AWS_SDK_GO_VERSION:                   Overrides the version of github.com/aws/aws-sdk-go used
                                         by 'ack-generate' to fetch the service API Specifications.
                                         Default: Version of aws/aws-sdk-go in service go.mod
-  TEMPLATES_DIR:                        Overrides the directory containg ack-generate templates
-                                        Default: $TEMPLATES_DIR
+  TEMPLATE_DIRS:                        Overrides the list of directories containg ack-generate
+                                        templates.
+                                        Default: $TEMPLATE_DIRS
   K8S_RBAC_ROLE_NAME:                   Name of the Kubernetes Role to use when generating
                                         the RBAC manifests for the custom resource
                                         definitions.
@@ -77,7 +77,7 @@ if [ $# -ne 1 ]; then
     exit 1
 fi
 
-if [ ! -f $ACK_GENERATE_BIN_PATH ]; then
+if [ ! -f "$ACK_GENERATE_BIN_PATH" ]; then
     if is_installed "ack-generate"; then
         ACK_GENERATE_BIN_PATH=$(which "ack-generate")
     else
@@ -130,11 +130,11 @@ TEMPLATE_DIRS=${TEMPLATE_DIRS:-$DEFAULT_TEMPLATE_DIRS}
 config_output_dir="$SERVICE_CONTROLLER_SOURCE_PATH/config/"
 
 echo "Copying common custom resource definitions into $SERVICE"
-mkdir -p $config_output_dir/crd/common
-cp -r $RUNTIME_CRD_DIR/crd/* $config_output_dir/crd/common/
+mkdir -p "$config_output_dir/crd/common"
+cp -r "$RUNTIME_CRD_DIR"/crd/* "$config_output_dir/crd/common/"
 
 if [ -z "$AWS_SDK_GO_VERSION" ]; then
-    AWS_SDK_GO_VERSION=$(go list -m -f '{{ .Version }}' -modfile $SERVICE_CONTROLLER_SOURCE_PATH/go.mod github.com/aws/aws-sdk-go)
+    AWS_SDK_GO_VERSION=$(go list -m -f '{{ .Version }}' -modfile "$SERVICE_CONTROLLER_SOURCE_PATH/go.mod" github.com/aws/aws-sdk-go)
 fi
 
 # If there's a generator.yaml in the service's directory and the caller hasn't
@@ -153,75 +153,73 @@ if [ -z "$ACK_METADATA_CONFIG_PATH" ]; then
     fi
 fi
 
-ag_args="$SERVICE -o $SERVICE_CONTROLLER_SOURCE_PATH --template-dirs $TEMPLATE_DIRS"
+ag_args=("$SERVICE" -o "$SERVICE_CONTROLLER_SOURCE_PATH" --template-dirs "$TEMPLATE_DIRS")
 if [ -n "$ACK_GENERATE_CACHE_DIR" ]; then
-    ag_args="$ag_args --cache-dir $ACK_GENERATE_CACHE_DIR"
+    ag_args=("${ag_args[@]}" --cache-dir "$ACK_GENERATE_CACHE_DIR")
 fi
 
-apis_args="apis $ag_args"
+apis_args=(apis "${ag_args[@]}")
 if [ -n "$ACK_GENERATE_API_VERSION" ]; then
-    apis_args="$apis_args --version $ACK_GENERATE_API_VERSION"
+    apis_args=("${apis_args[@]}" --version "$ACK_GENERATE_API_VERSION")
 fi
 
 if [ -n "$ACK_GENERATE_CONFIG_PATH" ]; then
-    ag_args="$ag_args --generator-config-path $ACK_GENERATE_CONFIG_PATH"
-    apis_args="$apis_args --generator-config-path $ACK_GENERATE_CONFIG_PATH"
+    ag_args=("${ag_args[@]}" --generator-config-path "$ACK_GENERATE_CONFIG_PATH")
+    apis_args=("${apis_args[@]}" --generator-config-path "$ACK_GENERATE_CONFIG_PATH")
 fi
 
 if [ -n "$ACK_METADATA_CONFIG_PATH" ]; then
-    ag_args="$ag_args --metadata-config-path $ACK_METADATA_CONFIG_PATH"
-    apis_args="$apis_args --metadata-config-path $ACK_METADATA_CONFIG_PATH"
+    ag_args=("${ag_args[@]}" --metadata-config-path "$ACK_METADATA_CONFIG_PATH")
+    apis_args=("${apis_args[@]}" --metadata-config-path "$ACK_METADATA_CONFIG_PATH")
 fi
 
 if [ -n "$AWS_SDK_GO_VERSION" ]; then
-    ag_args="$ag_args --aws-sdk-go-version $AWS_SDK_GO_VERSION"
-    apis_args="$apis_args --aws-sdk-go-version $AWS_SDK_GO_VERSION"
+    ag_args=("${ag_args[@]}" --aws-sdk-go-version "$AWS_SDK_GO_VERSION")
+    apis_args=("${apis_args[@]}" --aws-sdk-go-version "$AWS_SDK_GO_VERSION")
 fi
 
 if [ -n "$ACK_GENERATE_SERVICE_ACCOUNT_NAME" ]; then
-    ag_args="$ag_args --service-account-name $ACK_GENERATE_SERVICE_ACCOUNT_NAME"
+    ag_args=("${ag_args[@]}" --service-account-name "$ACK_GENERATE_SERVICE_ACCOUNT_NAME")
 fi
 
 echo "Building Kubernetes API objects for $SERVICE"
-$ACK_GENERATE_BIN_PATH $apis_args
-if [ $? -ne 0 ]; then
+if ! $ACK_GENERATE_BIN_PATH "${apis_args[@]}"; then
     exit 2
 fi
 
-pushd $SERVICE_CONTROLLER_SOURCE_PATH/apis/$ACK_GENERATE_API_VERSION 1>/dev/null
+pushd "$SERVICE_CONTROLLER_SOURCE_PATH/apis/$ACK_GENERATE_API_VERSION" 1>/dev/null
 
 echo "Generating deepcopy code for $SERVICE"
-controller-gen object:headerFile=$BOILERPLATE_TXT_PATH paths=./...
+controller-gen object:headerFile="$BOILERPLATE_TXT_PATH" paths=./...
 
 echo "Generating custom resource definitions for $SERVICE"
 # Latest version of controller-gen (master) is required for following two reasons
 # a) support for pointer values in map https://github.com/kubernetes-sigs/controller-tools/pull/317
 # b) support for float type (allowDangerousTypes) https://github.com/kubernetes-sigs/controller-tools/pull/449
-controller-gen crd:allowDangerousTypes=true paths=./... output:crd:artifacts:config=$config_output_dir/crd/bases
+controller-gen crd:allowDangerousTypes=true paths=./... output:crd:artifacts:config="$config_output_dir/crd/bases"
 
 popd 1>/dev/null
 
 echo "Building service controller for $SERVICE"
-controller_args="controller $ag_args"
-$ACK_GENERATE_BIN_PATH $controller_args
-if [ $? -ne 0 ]; then
+controller_args=(controller "${ag_args[@]}")
+if ! $ACK_GENERATE_BIN_PATH "${controller_args[@]}"; then
     exit 2
 fi
 
-pushd $SERVICE_CONTROLLER_SOURCE_PATH/pkg/resource 1>/dev/null
+pushd "$SERVICE_CONTROLLER_SOURCE_PATH/pkg/resource" 1>/dev/null
 
 echo "Generating RBAC manifests for $SERVICE"
-controller-gen rbac:roleName=$K8S_RBAC_ROLE_NAME paths=./... output:rbac:artifacts:config=$config_output_dir/rbac
+controller-gen rbac:roleName="$K8S_RBAC_ROLE_NAME" paths=./... output:rbac:artifacts:config="$config_output_dir/rbac"
 # controller-gen rbac outputs a ClusterRole definition in a
 # $config_output_dir/rbac/role.yaml file. We have some other standard Role
 # files for a reader and writer role, so here we rename the `role.yaml` file to
 # `cluster-role-controller.yaml` to better reflect what is in that file.
-mv $config_output_dir/rbac/role.yaml $config_output_dir/rbac/cluster-role-controller.yaml
+mv "$config_output_dir/rbac/role.yaml" "$config_output_dir/rbac/cluster-role-controller.yaml"
 # Copy definitions for json patches which allow the user to patch the controller
 # with Role/Rolebinding and be purely namespaced scoped instead of using Cluster/ClusterRoleBinding
 # using kustomize
-mkdir -p $config_output_dir/overlays/namespaced
-cp -r $ROOT_DIR/templates/config/overlays/namespaced/*.json $config_output_dir/overlays/namespaced
+mkdir -p "$config_output_dir/overlays/namespaced"
+cp -r "$ROOT_DIR"/templates/config/overlays/namespaced/*.json "$config_output_dir/overlays/namespaced"
 
 popd 1>/dev/null
 

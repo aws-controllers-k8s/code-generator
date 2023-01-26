@@ -21,10 +21,10 @@ DEFAULT_OPERATOR_SDK_VERSION="1.19.1"
 source "${SCRIPTS_DIR}/lib/common.sh"
 
 __operator_sdk_version="${1}"
-if [ "x${__operator_sdk_version}" == "x" ]; then
+if [ "${__operator_sdk_version}" == "" ]; then
     __operator_sdk_version=${OPERATOR_SDK_VERSION:-$DEFAULT_OPERATOR_SDK_VERSION}
 fi
-if ! is_installed ${OPERATOR_SDK_BIN_PATH}/operator-sdk; then
+if ! is_installed "${OPERATOR_SDK_BIN_PATH}/operator-sdk"; then
     __platform=$(uname | tr '[:upper:]' '[:lower:]')
     __arch=$(go env GOARCH | tr '[:upper:]' '[:lower:]')
     __tmp_install_dir=$(mktemp -d -t install-operator-sdk-XXX)
@@ -36,8 +36,8 @@ if ! is_installed ${OPERATOR_SDK_BIN_PATH}/operator-sdk; then
     __install_path="$__install_dir/operator-sdk"
 
     echo -n "installing operator-sdk from ${__operator_sdk_url} ... "
-    curl -sq -L ${__operator_sdk_url} --output ${__tmp_install_dir}/operator-sdk_${__platform}_${__arch}
-    chmod +x ${__tmp_install_dir}/operator-sdk_${__platform}_${__arch}
+    curl -sq -L "${__operator_sdk_url}" --output "${__tmp_install_dir}/operator-sdk_${__platform}_${__arch}"
+    chmod +x "${__tmp_install_dir}/operator-sdk_${__platform}_${__arch}"
     sudo mv "${__tmp_install_dir}/operator-sdk_${__platform}_${__arch}" "$__install_path"
     echo "ok."
 fi
