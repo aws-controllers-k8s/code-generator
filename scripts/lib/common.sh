@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
 
-CONTROLLER_TOOLS_VERSION="v0.9.2"
-export CONTROLLER_TOOLS_VERSION
-HELM_VERSION="v3.7"
-export HELM_VERSION
+export CONTROLLER_TOOLS_VERSION="v0.9.2"
+export HELM_VERSION="v3.7"
 
 # setting the -x option if debugging is true
 if [[ "${DEBUG:-"false"}" = "true" ]]; then

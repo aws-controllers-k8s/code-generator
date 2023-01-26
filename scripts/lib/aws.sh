@@ -21,7 +21,10 @@ DEFAULT_AWS_CLI_VERSION="2.0.52"
 # To use a specific version of the AWS CLI, set the ACK_AWS_CLI_IMAGE_VERSION
 # environment variable, otherwise the value of DEFAULT_AWS_CLI_VERSION is used.
 daws() {
-    aws_cli_profile_env=$([ -n "$AWS_PROFILE" ] && echo "--env AWS_PROFILE=$AWS_PROFILE")
+    aws_cli_profile_env=()
+    if [ -n "$AWS_PROFILE" ]; then
+        aws_cli_profile_env=("--env AWS_PROFILE=$AWS_PROFILE")
+    fi
     aws_cli_img_version=${ACK_AWS_CLI_IMAGE_VERSION:-$DEFAULT_AWS_CLI_VERSION}
     aws_cli_img="amazon/aws-cli:$aws_cli_img_version"
     docker run --rm -v ~/.aws:/root/.aws:z "${aws_cli_profile_env[@]}" -v "$(pwd)":/aws "$aws_cli_img" "$@"

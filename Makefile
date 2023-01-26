@@ -21,7 +21,7 @@ GO_CMD_LOCAL_FLAGS=-modfile=go.local.mod $(GO_CMD_FLAGS)
 
 .PHONY: all local-build-ack-generate build-ack-generate local-build-controller \
 	build-controller test local-test build-controller-image \
-	local-build-controller-image lint
+	local-build-controller-image lint-shell
 
 all: test
 
