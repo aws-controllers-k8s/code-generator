@@ -14,6 +14,51 @@ import (
 	"github.com/aws-controllers-k8s/code-generator/pkg/testutil"
 )
 
+func TestFieldDocumentation(t *testing.T) {
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "ec2",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-doc-overrides.yaml",
+		},
+	)
+
+	crds, err := g.GetCRDs()
+	require.Nil(err)
+
+	crd := getCRDByName("LaunchTemplate", crds)
+	require.NotNil(crd)
+
+	specFields := crd.SpecFields
+
+	// We have not altered the docstring for LaunchTemplateData from the
+	// docstring that comes in the doc-2.json file...
+	ltdField := specFields["LaunchTemplateData"]
+	require.NotNil(ltdField)
+	require.NotNil(ltdField.ShapeRef)
+
+	require.Equal(
+		"// The information for the launch template.",
+		ltdField.GetDocumentation(),
+	)
+
+	// We have added an additional docstring for
+	// LaunchTemplateData.HibernationOptions.Configured to the docstring that
+	// comes in the doc-2.json file...
+	hoField := ltdField.MemberFields["HibernationOptions"]
+	require.NotNil(hoField)
+	require.NotNil(hoField.ShapeRef)
+	hocField := hoField.MemberFields["Configured"]
+	require.NotNil(hocField)
+	require.NotNil(hocField.ShapeRef)
+
+	require.Equal(
+		"// If you set this parameter to true, the instance is enabled for hibernation.\n// \n// Default: false\n//\n// XXX extended docs XXX",
+		hocField.GetDocumentation(),
+	)
+
+}
+
 func TestMemberFields(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)

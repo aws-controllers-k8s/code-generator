@@ -16,8 +16,8 @@ import (
 {{ .CRD.Documentation }}
 type {{ .CRD.Kind }}Spec struct {
 {{ range $fieldName, $field := .CRD.SpecFields }}
-{{ if and ($field.ShapeRef) ($field.ShapeRef.Documentation) -}}
-    {{ $field.ShapeRef.Documentation }}
+{{ if $field.GetDocumentation -}}
+    {{ $field.GetDocumentation }}
 {{ end -}}
 {{- if and ($field.IsRequired) (not $field.HasReference) -}}
     // +kubebuilder:validation:Required
@@ -40,8 +40,8 @@ type {{ .CRD.Kind }}Status struct {
 	// +kubebuilder:validation:Optional
 	Conditions []*ackv1alpha1.Condition `json:"conditions"`
 	{{- range $fieldName, $field := .CRD.StatusFields }}
-	{{- if and ($field.ShapeRef) ($field.ShapeRef.Documentation) }}
-	{{ $field.ShapeRef.Documentation }}
+	{{- if $field.GetDocumentation }}
+	{{ $field.GetDocumentation }}
 	{{- end }}
 	// +kubebuilder:validation:Optional
 	{{ $field.Names.Camel }} {{ $field.GoType }} `json:"{{ $field.Names.CamelLower }},omitempty"`
