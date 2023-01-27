@@ -75,7 +75,17 @@ func (f *Field) IsRequired() bool {
 	if f.FieldConfig != nil && f.FieldConfig.IsRequired != nil {
 		return *f.FieldConfig.IsRequired
 	}
-	return util.InStrings(f.Names.Original, f.CRD.Ops.Create.InputRef.Shape.Required)
+	// We need to look up the original member name in the input struct
+	// otherwise renamed fields will not be discovered as required.
+	originalMember := f.CRD.Config().GetOriginalMemberName(
+		f.CRD.Names.Original,
+		f.CRD.Ops.Create.Name,
+		f.Names.Original,
+	)
+	return util.InStrings(
+		originalMember,
+		f.CRD.Ops.Create.InputRef.Shape.Required,
+	)
 }
 
 // GetSetterConfig returns the SetFieldConfig object associated with this field
@@ -100,11 +110,13 @@ func (f *Field) GetSetterConfig(opType OpType) *ackgenconfig.SetFieldConfig {
 // Ex:
 // ```
 // Integration:
-//    fields:
-//      ApiId:
-//        references:
-//          resource: API
-//          path: Status.APIID
+//
+//	fields:
+//	  ApiId:
+//	    references:
+//	      resource: API
+//	      path: Status.APIID
+//
 // ```
 // For the above configuration, 'HasReference' for 'ApiId'(Original name) field
 // will return true because a corresponding 'APIRef' field will be generated
