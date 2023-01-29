@@ -25,9 +25,8 @@ import (
 	"syscall"
 	"time"
 
-	"golang.org/x/mod/modfile"
-
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
+	"golang.org/x/mod/modfile"
 )
 
 const (
@@ -119,10 +118,10 @@ func EnsureRepo(
 		ctx, cancel := context.WithTimeout(ctx, defaultGitCloneTimeout)
 		defer cancel()
 		err = util.CloneRepository(ctx, sdkDir, sdkRepoURL)
-		fmt.Println("sdkDir: ", sdkDir)
 		if err != nil {
 			if errors.Is(err, context.DeadlineExceeded) {
-				err = fmt.Errorf("take too long to clone aws sdk repo, please consider 'git clone %s' into cache dir %s", sdkRepoURL, sdkDir)
+				err = fmt.Errorf("%w: take too long to clone aws sdk repo, "+
+					"please consider manually 'git clone %s' to cache dir %s", err, sdkRepoURL, sdkDir)
 			}
 			return "", fmt.Errorf("cannot clone repository: %v", err)
 		}
