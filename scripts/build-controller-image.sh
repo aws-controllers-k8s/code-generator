@@ -14,7 +14,7 @@ QUIET=${QUIET:-"false"}
 
 export DOCKER_BUILDKIT=${DOCKER_BUILDKIT:-1}
 
-source $SCRIPTS_DIR/lib/common.sh
+source "$SCRIPTS_DIR/lib/common.sh"
 
 check_is_installed docker
 
@@ -59,10 +59,10 @@ if [[ ! -d $SERVICE_CONTROLLER_SOURCE_PATH ]]; then
     exit 1
 fi
 
-pushd $SERVICE_CONTROLLER_SOURCE_PATH 1>/dev/null
+pushd "$SERVICE_CONTROLLER_SOURCE_PATH" 1>/dev/null
 
-SERVICE_CONTROLLER_GIT_VERSION=`git describe --tags --always --dirty || echo "unknown"`
-SERVICE_CONTROLLER_GIT_COMMIT=`git rev-parse HEAD`
+SERVICE_CONTROLLER_GIT_VERSION=$(git describe --tags --always --dirty || echo "unknown")
+SERVICE_CONTROLLER_GIT_COMMIT=$(git rev-parse HEAD)
 
 popd 1>/dev/null
 
@@ -86,16 +86,14 @@ if [[ "$LOCAL_MODULES" = "true" ]]; then
   DOCKERFILE="${ROOT_DIR}"/Dockerfile.local
 fi
 
-docker build \
-  --quiet=${QUIET} \
+if ! docker build \
+  --quiet="${QUIET}" \
   -t "${AWS_SERVICE_DOCKER_IMG}" \
   -f "${DOCKERFILE}" \
-  --build-arg service_alias=${AWS_SERVICE} \
+  --build-arg service_alias="${AWS_SERVICE}" \
   --build-arg service_controller_git_version="$SERVICE_CONTROLLER_GIT_VERSION" \
   --build-arg service_controller_git_commit="$SERVICE_CONTROLLER_GIT_COMMIT" \
   --build-arg build_date="$BUILD_DATE" \
-  "${DOCKER_BUILD_CONTEXT}"
-
-if [ $? -ne 0 ]; then
+  "${DOCKER_BUILD_CONTEXT}"; then
   exit 2
 fi

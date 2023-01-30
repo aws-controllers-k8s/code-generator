@@ -12,7 +12,7 @@ DOCKER_REPOSITORY=${DOCKER_REPOSITORY:-$DEFAULT_DOCKER_REPOSITORY}
 
 export DOCKER_BUILDKIT=${DOCKER_BUILDKIT:-1}
 
-source $SCRIPTS_DIR/lib/common.sh
+source "$SCRIPTS_DIR/lib/common.sh"
 
 check_is_installed docker
 
@@ -101,7 +101,7 @@ BUNDLE_DOCKERFILE_DIR=${BUNDLE_DOCKERFILE_DIR:-$DEFAULT_BUNDLE_DOCKERFILE_DIR}
 BUNDLE_DOCKERFILE="$BUNDLE_DOCKERFILE_DIR/bundle.Dockerfile"
 
 # stop if the dockerfile was not found
-if [ ! -f $BUNDLE_DOCKERFILE ]; then
+if [ ! -f "$BUNDLE_DOCKERFILE" ]; then
   echo "The bundle.Dockerfile was not found at expected path $BUNDLE_DOCKERFILE."
   exit 1
 fi
@@ -110,22 +110,19 @@ DEFAULT_BUNDLE_DOCKER_IMG_TAG="$AWS_SERVICE-bundle-$BUNDLE_VERSION"
 BUNDLE_DOCKER_IMG_TAG=${BUNDLE_DOCKER_IMG_TAG:-$DEFAULT_BUNDLE_DOCKER_IMG_TAG}
 BUNDLE_DOCKER_IMG=${BUNDLE_DOCKER_IMAGE:-$DOCKER_REPOSITORY:$BUNDLE_DOCKER_IMG_TAG}
 
-build_args="--quiet=${QUIET} -t ${BUNDLE_DOCKER_IMG} -f ${BUNDLE_DOCKERFILE} --build-arg build_date=\"$BUILD_DATE\""
+build_args=("--quiet=${QUIET}" -t "${BUNDLE_DOCKER_IMG}" -f "${BUNDLE_DOCKERFILE}" --build-arg build_date=\""$BUILD_DATE"\")
 
 if [[ $ADD_RH_CERTIFICATION_LABELS = "true" ]]; then 
   # add additional labels with values for certification purposes.
-  build_args="$build_args --label=$cert_label_openshift_supported_version=$SUPPORTED_OPENSHIFT_VERSIONS --label=$cert_label_deliver_backport=$RED_HAT_DELIVER_BACKPORT --label=$cert_label_operator_bundle_delivery=$RED_HAT_DELIVERY_BUNDLE"
+  build_args=("${build_args[@]}" "--label=$cert_label_openshift_supported_version=$SUPPORTED_OPENSHIFT_VERSIONS" "--label=$cert_label_deliver_backport=$RED_HAT_DELIVER_BACKPORT" "--label=$cert_label_operator_bundle_delivery=$RED_HAT_DELIVERY_BUNDLE")
 fi
 
 if [[ $QUIET = "false" ]]; then
     echo "building '$AWS_SERVICE' OLM bundle container image with tag: ${BUNDLE_DOCKER_IMG}"
 fi
 
-pushd $BUNDLE_DOCKERFILE_DIR 1>/dev/null
-docker build $build_args .
-
-if [ $? -ne 0 ]; then
+pushd "$BUNDLE_DOCKERFILE_DIR" 1>/dev/null
+if ! docker build "${build_args[@]}" .; then
   exit 2
 fi
-
 popd 1>/dev/null
