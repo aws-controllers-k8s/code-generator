@@ -94,6 +94,8 @@ github.com/aws-controllers-k8s/pkg v0.0.0-20230111194700-e8a36ef99b23 h1:jdA3TgF
 github.com/aws-controllers-k8s/pkg v0.0.0-20230111194700-e8a36ef99b23/go.mod h1:LC/9DlYrXu8FWNwLquZLq1WhcyRo7qXb7upRLAEosQk=
 github.com/aws-controllers-k8s/runtime v0.22.1 h1:V5AKMBjGmq3sblGYrVYvi+6utW4CiIVotWA60Ym9T84=
 github.com/aws-controllers-k8s/runtime v0.22.1/go.mod h1:k7z4qlf6aK1Kzd4ff49wzcyhDKHjWaUpqxrwgl4uS1o=
+github.com/aws-controllers-k8s/runtime v0.23.0 h1:xM/zKyFzqbSr4gN9/cMRyjUUEEezHB0inpcsSV5clkg=
+github.com/aws-controllers-k8s/runtime v0.23.0/go.mod h1:vBsKxMSP7Ya2Mv5KPGadu6OuIESTX+YIZB/2dOV7gXo=
 github.com/aws/aws-sdk-go v1.44.93 h1:hAgd9fuaptBatSft27/5eBMdcA8+cIMqo96/tZ6rKl8=
 github.com/aws/aws-sdk-go v1.44.93/go.mod h1:y4AeaBuwd2Lk+GepC1E9v0qOiTws0MIWAX4oIKwKHZo=
 github.com/benbjohnson/clock v1.0.3/go.mod h1:bGMdMPoPVvcYyt1gHDf4J2KE153Yf9BuiUKYMaxlTDM=
