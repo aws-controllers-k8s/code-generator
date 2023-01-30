@@ -145,10 +145,11 @@ type SyncedCondition struct {
 // Example usage from the AmazonMQ generator config:
 //
 // resources:
-//   Broker:
-//     hooks:
-//       sdk_update_pre_build_request:
-//        code: if err := rm.requeueIfNotRunning(latest); err != nil { return nil, err }
+//
+//	Broker:
+//	  hooks:
+//	    sdk_update_pre_build_request:
+//	     code: if err := rm.requeueIfNotRunning(latest); err != nil { return nil, err }
 //
 // Note that the implementor of the AmazonMQ service controller for ACK should
 // ensure that there is a `requeueIfNotRunning()` method implementation in
@@ -159,10 +160,11 @@ type SyncedCondition struct {
 // `template_path` field:
 //
 // resources:
-//   Broker:
-//     hooks:
-//       sdk_update_pre_build_update_request:
-//        template_path: templates/sdk_update_pre_build_request.go.tpl
+//
+//	Broker:
+//	  hooks:
+//	    sdk_update_pre_build_update_request:
+//	     template_path: templates/sdk_update_pre_build_request.go.tpl
 type HooksConfig struct {
 	// Code is the Go code to be injected at the hook point
 	Code *string `json:"code,omitempty"`
@@ -187,27 +189,27 @@ type CompareConfig struct {
 // API accepts a parameter called "Attributes" that can contain one of four
 // keys:
 //
-// * DeliveryPolicy – The policy that defines how Amazon SNS retries failed
-//   deliveries to HTTP/S endpoints.
-// * DisplayName – The display name to use for a topic with SMS subscriptions
-// * Policy – The policy that defines who can access your topic.
-// * KmsMasterKeyId - The ID of an AWS-managed customer master key (CMK) for
-//   Amazon SNS or a custom CMK.
+//   - DeliveryPolicy – The policy that defines how Amazon SNS retries failed
+//     deliveries to HTTP/S endpoints.
+//   - DisplayName – The display name to use for a topic with SMS subscriptions
+//   - Policy – The policy that defines who can access your topic.
+//   - KmsMasterKeyId - The ID of an AWS-managed customer master key (CMK) for
+//     Amazon SNS or a custom CMK.
 //
 // The `CreateTopic` API call **returns** only a single field: the TopicARN.
 // But there is a separate `GetTopicAttributes` call that needs to be made that
 // returns the above attributes (that are ReadWrite) along with a set of
 // key/values that are ReadOnly:
 //
-// * Owner – The AWS account ID of the topic's owner.
-// * SubscriptionsConfirmed – The number of confirmed subscriptions for the
-//   topic.
-// * SubscriptionsDeleted – The number of deleted subscriptions for the topic.
-// * SubscriptionsPending – The number of subscriptions pending confirmation
-//   for the topic.
-// * TopicArn – The topic's ARN.
-// * EffectiveDeliveryPolicy – The JSON serialization of the effective delivery
-//   policy, taking system defaults into account.
+//   - Owner – The AWS account ID of the topic's owner.
+//   - SubscriptionsConfirmed – The number of confirmed subscriptions for the
+//     topic.
+//   - SubscriptionsDeleted – The number of deleted subscriptions for the topic.
+//   - SubscriptionsPending – The number of subscriptions pending confirmation
+//     for the topic.
+//   - TopicArn – The topic's ARN.
+//   - EffectiveDeliveryPolicy – The JSON serialization of the effective delivery
+//     policy, taking system defaults into account.
 //
 // This structure instructs the code generator about the above real, schema'd
 // fields that are masquerading as raw key/value pairs.
@@ -532,6 +534,42 @@ func (c *Config) GetResourceFieldName(
 		}
 	}
 	return renamed
+}
+
+// GetOriginalMemberName returns the original struct member name within an
+// Input or Output shape given a resource and field name. This accounts for any
+// renames that may have occurred. It is the reverse of the
+// Config.GetResourceFieldName method.
+func (c *Config) GetOriginalMemberName(
+	resourceName string,
+	opID string,
+	fieldName string,
+) string {
+	if c == nil {
+		return fieldName
+	}
+	rConfig, ok := c.Resources[resourceName]
+	if !ok {
+		return fieldName
+	}
+	if rConfig.Renames == nil {
+		return fieldName
+	}
+	oRenames, ok := rConfig.Renames.Operations[opID]
+	if !ok {
+		return fieldName
+	}
+	for from, to := range oRenames.InputFields {
+		if to == fieldName {
+			return from
+		}
+	}
+	for from, to := range oRenames.OutputFields {
+		if to == fieldName {
+			return from
+		}
+	}
+	return fieldName
 }
 
 // GetResourceShortNames returns the CRD list of aliases

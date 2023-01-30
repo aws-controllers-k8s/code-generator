@@ -25,7 +25,7 @@ fi
 
 export DOCKER_BUILDKIT=${DOCKER_BUILDKIT:-1}
 
-source $SCRIPTS_DIR/lib/common.sh
+source "$SCRIPTS_DIR/lib/common.sh"
 
 check_is_installed docker
 
@@ -100,8 +100,8 @@ if [[ "$LOCAL_MODULES" = "true" ]]; then
   DOCKERFILE="${ROOT_DIR}"/Dockerfile.local
 fi
 
-docker build \
-  --quiet=${QUIET} \
+if ! docker build \
+  --quiet="${QUIET}" \
   -t "${AWS_SERVICE_DOCKER_IMG}" \
   -f "${DOCKERFILE}" \
   --build-arg service_alias="${AWS_SERVICE}" \
@@ -110,8 +110,6 @@ docker build \
   --build-arg build_date="$BUILD_DATE" \
   --build-arg golang_version="${GOLANG_VERSION}" \
   --build-arg go_arch="$GOARCH" \
-  "${DOCKER_BUILD_CONTEXT}"
-
-if [ $? -ne 0 ]; then
+  "${DOCKER_BUILD_CONTEXT}"; then
   exit 2
 fi

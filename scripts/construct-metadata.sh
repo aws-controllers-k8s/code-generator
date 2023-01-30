@@ -6,7 +6,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 SCRIPTS_DIR=$DIR
 ROOT_DIR=$DIR/..
 
-source $SCRIPTS_DIR/lib/metadata.sh
+source "$SCRIPTS_DIR/lib/metadata.sh"
 
 USAGE="
 Usage:
@@ -52,17 +52,17 @@ echo "🧙 Welcome to the service metadata setup wizard"
 echo "⚠️ WARNING: This script will overwrite the metadata.yaml file in your service controller path"
 
 echo -n "Enter the service's full name [e.g. Amazon Elastic Kubernetes Service]: "
-read full_name
+read -r full_name
 
 echo -n "Enter the service's acronym [e.g. EKS, S3, EC2]: "
-read short_name
+read -r short_name
 
 echo -n "Enter the URL for the service homepage [e.g. https://aws.amazon.com/eks/]: "
-read link
+read -r link
 
 echo -n "Enter the URL for the service's documentation [e.g. https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html]: "
-read documentation
+read -r documentation
 
 echo -n "Generating metadata ... "
-write_new_metadata $METADATA_TEMPLATE_PATH $METADATA_OUTPUT_PATH "$full_name" "$short_name" "$link" "$documentation"
+write_new_metadata "$METADATA_TEMPLATE_PATH" "$METADATA_OUTPUT_PATH" "$full_name" "$short_name" "$link" "$documentation"
 echo "Success!"

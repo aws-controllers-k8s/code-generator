@@ -33,8 +33,8 @@ get_service_short_name() {
 
   local __service_name="$1"
 
-  metadata="$(get_service_metadata $__service_name)"
-  yq eval '.service.short_name' $metadata
+  metadata="$(get_service_metadata "$__service_name")"
+  yq eval '.service.short_name' "$metadata"
 }
 
 # get_service_full_name returns the full name for a given service
@@ -48,8 +48,8 @@ get_service_full_name() {
 
   local __service_name="$1"
 
-  metadata="$(get_service_metadata $__service_name)"
-  yq eval '.service.full_name' $metadata
+  metadata="$(get_service_metadata "$__service_name")"
+  yq eval '.service.full_name' "$metadata"
 }
 
 # get_service_versions returns the list of api versions supported by the given
@@ -64,8 +64,8 @@ get_service_versions() {
 
   local __service_name="$1"
 
-  metadata="$(get_service_metadata $__service_name)"
-  yq eval '.versions[].api_version' $metadata
+  metadata="$(get_service_metadata "$__service_name")"
+  yq eval '.versions[].api_version' "$metadata"
 }
 
 # get_latest_version returns the latest api version supported by the given
@@ -80,8 +80,8 @@ get_latest_version() {
 
   local __service_name="$1"
 
-  metadata="$(get_service_metadata $__service_name)"
-  yq eval '[.versions[].api_version] | .[-1]' $metadata
+  metadata="$(get_service_metadata "$__service_name")"
+  yq eval '[.versions[].api_version] | .[-1]' "$metadata"
 }
 
 # write_new_metadata will write all fields of a new metadata to file 
@@ -107,8 +107,8 @@ write_new_metadata() {
 
   cp "$__template_path" "$__output_path"
 
-  yq e '.service.full_name=env(__full_name)' -i $__output_path
-  yq e '.service.short_name=env(__short_name)' -i $__output_path
-  yq e '.service.link=env(__link)' -i $__output_path
-  yq e '.service.documentation=env(__documentation)' -i $__output_path
+  yq e '.service.full_name=env(__full_name)' -i "$__output_path"
+  yq e '.service.short_name=env(__short_name)' -i "$__output_path"
+  yq e '.service.link=env(__link)' -i "$__output_path"
+  yq e '.service.documentation=env(__documentation)' -i "$__output_path"
 }

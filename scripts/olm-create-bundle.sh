@@ -19,7 +19,7 @@ source "$SCRIPTS_DIR/lib/common.sh"
 
 check_is_installed uuidgen
 check_is_installed kustomize "You can install kustomize with the helper scripts/install-kustomize.sh"
-check_is_installed ${OPERATOR_SDK_BIN_PATH}/operator-sdk "You can install Operator SDK with the helper scripts/install-operator-sdk.sh"
+check_is_installed "${OPERATOR_SDK_BIN_PATH}/operator-sdk" "You can install Operator SDK with the helper scripts/install-operator-sdk.sh"
 
 function clean_up {
     if [[ "$PRESERVE" == false ]]; then
@@ -79,7 +79,7 @@ fi
 SERVICE=$(echo "$1" | tr '[:upper:]' '[:lower:]')
 VERSION=$2
 BUNDLE_VERSION=${BUNDLE_VERSION:-$VERSION}
-BUNDLE_VERSION=$(echo $BUNDLE_VERSION | tr -d "v")
+BUNDLE_VERSION=$(echo "$BUNDLE_VERSION" | tr -d "v")
 
 DEFAULT_SERVICE_CONTROLLER_SOURCE_PATH="$ROOT_DIR/../$SERVICE-controller"
 SERVICE_CONTROLLER_SOURCE_PATH=${SERVICE_CONTROLLER_SOURCE_PATH:-$DEFAULT_SERVICE_CONTROLLER_SOURCE_PATH}
@@ -104,23 +104,23 @@ fi
 trap "clean_up" EXIT
 
 # prepare the temporary config dir
-mkdir -p $TMP_DIR
-cp -a $SERVICE_CONTROLLER_SOURCE_PATH/config $TMP_DIR
+mkdir -p "$TMP_DIR"
+cp -a "$SERVICE_CONTROLLER_SOURCE_PATH/config" "$TMP_DIR"
 
 # remove crd/common from bases to prevent inclusion of AdoptedResource CRD from being generated in the bundle directory
-sed -i.orig '/^bases:$/d' $tmp_kustomize_config_dir/crd/kustomization.yaml
-sed -i.orig '/- common$/d' $tmp_kustomize_config_dir/crd/kustomization.yaml
+sed -i.orig '/^bases:$/d' "$tmp_kustomize_config_dir/crd/kustomization.yaml"
+sed -i.orig '/- common$/d' "$tmp_kustomize_config_dir/crd/kustomization.yaml"
 
 # prepare bundle generate arguments
-opsdk_gen_bundle_args="--version $BUNDLE_VERSION --package ack-$SERVICE-controller --kustomize-dir $SERVICE_CONTROLLER_SOURCE_PATH/config/manifests --overwrite "
+opsdk_gen_bundle_args=(--version "$BUNDLE_VERSION" --package "ack-$SERVICE-controller" --kustomize-dir "$SERVICE_CONTROLLER_SOURCE_PATH/config/manifests" --overwrite)
 
 # specify default channel and all channels if not specified by user
 BUNDLE_DEFAULT_CHANNEL=${BUNDLE_DEFAULT_CHANNEL:-$DEFAULT_BUNDLE_CHANNEL}
 BUNDLE_CHANNELS=${BUNDLE_CHANNELS:-$DEFAULT_BUNDLE_CHANNEL}
 
-opsdk_gen_bundle_args="$opsdk_gen_bundle_args --default-channel $DEFAULT_BUNDLE_CHANNEL --channels $BUNDLE_CHANNELS"
+opsdk_gen_bundle_args=("${opsdk_gen_bundle_args[@]}" --default-channel "$DEFAULT_BUNDLE_CHANNEL" --channels "$BUNDLE_CHANNELS")
 if [ -n "$BUNDLE_GENERATE_EXTRA_ARGS" ]; then
-    opsdk_gen_bundle_args="$opsdk_gen_bundle_args $BUNDLE_GENERATE_EXTRA_ARGS"
+    opsdk_gen_bundle_args=("${opsdk_gen_bundle_args[@]}" "$BUNDLE_GENERATE_EXTRA_ARGS")
 fi
 
 # operator-sdk generate bundle creates a bundle.Dockerfile relative
@@ -129,9 +129,9 @@ fi
 # bundle assets.
 # TODO(): determine if it makes sense to keep the bundle.Dockerfiles
 # in the controller-specific repositories.
-mkdir -p $BUNDLE_OUTPUT_PATH
-pushd $BUNDLE_OUTPUT_PATH 1> /dev/null
-kustomize build $tmp_kustomize_config_dir/manifests | ${OPERATOR_SDK_BIN_PATH}/operator-sdk generate bundle $opsdk_gen_bundle_args
+mkdir -p "$BUNDLE_OUTPUT_PATH"
+pushd "$BUNDLE_OUTPUT_PATH" 1> /dev/null
+kustomize build "$tmp_kustomize_config_dir/manifests" | "${OPERATOR_SDK_BIN_PATH}/operator-sdk" generate bundle "${opsdk_gen_bundle_args[@]}"
 popd 1> /dev/null
 
-${OPERATOR_SDK_BIN_PATH}/operator-sdk bundle validate $BUNDLE_OUTPUT_PATH/bundle
+"${OPERATOR_SDK_BIN_PATH}/operator-sdk" bundle validate "$BUNDLE_OUTPUT_PATH/bundle"

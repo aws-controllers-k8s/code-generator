@@ -7,7 +7,6 @@ set -eo pipefail
 
 SCRIPTS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 ROOT_DIR="$SCRIPTS_DIR/.."
-BIN_DIR="$ROOT_DIR/bin"
 ACK_GENERATE_OLM=${ACK_GENERATE_OLM:-"false"}
 
 source "$SCRIPTS_DIR/lib/common.sh"
@@ -20,13 +19,13 @@ if [[ $ACK_GENERATE_OLM == "true" ]]; then
 fi
 
 if ! k8s_controller_gen_version_equals "$CONTROLLER_TOOLS_VERSION"; then
-    echo "FATAL: Existing version of controller-gen "`controller-gen --version`", required version is $CONTROLLER_TOOLS_VERSION."
+    echo "FATAL: Existing version of controller-gen \"$(controller-gen --version)\", required version is $CONTROLLER_TOOLS_VERSION."
     echo "FATAL: Please uninstall controller-gen and install the required version with scripts/install-controller-gen.sh."
     exit 1
 fi
 
 if ! helm_version_equals_or_greater "$HELM_VERSION"; then
-    echo "FATAL: Existing version of helm "`helm version --template='Version: {{.Version}}'`", required version is $HELM_VERSION."
+    echo "FATAL: Existing version of helm \"$(helm version --template='Version: {{.Version}}')\", required version is $HELM_VERSION."
     echo "FATAL: Please update helm, or uninstall helm and install the required version with scripts/install-helm.sh."
     exit 1
 fi
@@ -103,7 +102,7 @@ if [ $# -ne 1 ]; then
     exit 1
 fi
 
-if [ ! -f $ACK_GENERATE_BIN_PATH ]; then
+if [ ! -f "$ACK_GENERATE_BIN_PATH" ]; then
     if is_installed "ack-generate"; then
         ACK_GENERATE_BIN_PATH=$(which "ack-generate")
     else
@@ -153,11 +152,11 @@ fi
 # default non-release value also helps AWS service teams to develop the
 # controller without worrying about the version until actual controller
 # release.
-pushd $SERVICE_CONTROLLER_SOURCE_PATH 1>/dev/null
-    RELEASE_VERSION=${RELEASE_VERSION:-`git describe --tags --abbrev=0 2>/dev/null || echo $NON_RELEASE_VERSION`}
+pushd "$SERVICE_CONTROLLER_SOURCE_PATH" 1>/dev/null
+    RELEASE_VERSION=${RELEASE_VERSION:-$(git describe --tags --abbrev=0 2>/dev/null || echo $NON_RELEASE_VERSION)}
 popd 1>/dev/null
 
-if [[ $RELEASE_VERSION != $NON_RELEASE_VERSION ]]; then
+if [[ $RELEASE_VERSION != "$NON_RELEASE_VERSION" ]]; then
   # validate that release version is in the format vx.y.z , where x,y,z are
   # positive real numbers
   if ! (echo "$RELEASE_VERSION" | grep -Eq "^v[0-9]+\.[0-9]+\.[0-9]+$"); then
@@ -167,7 +166,7 @@ if [[ $RELEASE_VERSION != $NON_RELEASE_VERSION ]]; then
 fi
 
 if [ -z "$AWS_SDK_GO_VERSION" ]; then
-    AWS_SDK_GO_VERSION=$(go list -m -f '{{ .Version }}' -modfile $SERVICE_CONTROLLER_SOURCE_PATH/go.mod github.com/aws/aws-sdk-go)
+    AWS_SDK_GO_VERSION=$(go list -m -f '{{ .Version }}' -modfile "$SERVICE_CONTROLLER_SOURCE_PATH/go.mod" github.com/aws/aws-sdk-go)
 fi
 
 # If there's a generator.yaml in the service's directory and the caller hasn't
@@ -187,60 +186,60 @@ if [ -z "$ACK_METADATA_CONFIG_PATH" ]; then
 fi
 
 helm_output_dir="$SERVICE_CONTROLLER_SOURCE_PATH/helm"
-ag_args="$SERVICE $RELEASE_VERSION -o $SERVICE_CONTROLLER_SOURCE_PATH --template-dirs $TEMPLATES_DIR --aws-sdk-go-version $AWS_SDK_GO_VERSION"
+ag_args=("$SERVICE" "$RELEASE_VERSION" -o "$SERVICE_CONTROLLER_SOURCE_PATH" --template-dirs "$TEMPLATES_DIR" --aws-sdk-go-version "$AWS_SDK_GO_VERSION")
 if [ -n "$ACK_GENERATE_CACHE_DIR" ]; then
-    ag_args="$ag_args --cache-dir $ACK_GENERATE_CACHE_DIR"
+    ag_args=("${ag_args[@]}" --cache-dir "$ACK_GENERATE_CACHE_DIR")
 fi
 if [ -n "$ACK_GENERATE_OUTPUT_PATH" ]; then
-    ag_args="$ag_args --output $ACK_GENERATE_OUTPUT_PATH"
+    ag_args=("${ag_args[@]}" --output "$ACK_GENERATE_OUTPUT_PATH")
     helm_output_dir="$ACK_GENERATE_OUTPUT_PATH/helm"
 fi
 if [ -n "$ACK_GENERATE_CONFIG_PATH" ]; then
-    ag_args="$ag_args --generator-config-path $ACK_GENERATE_CONFIG_PATH"
+    ag_args=("${ag_args[@]}" --generator-config-path "$ACK_GENERATE_CONFIG_PATH")
 fi
 if [ -n "$ACK_METADATA_CONFIG_PATH" ]; then
-    ag_args="$ag_args --metadata-config-path $ACK_METADATA_CONFIG_PATH"
+    ag_args=("${ag_args[@]}" --metadata-config-path "$ACK_METADATA_CONFIG_PATH")
 fi
 if [ -n "$ACK_GENERATE_IMAGE_REPOSITORY" ]; then
-    ag_args="$ag_args --image-repository $ACK_GENERATE_IMAGE_REPOSITORY"
+    ag_args=("${ag_args[@]}" --image-repository "$ACK_GENERATE_IMAGE_REPOSITORY")
 fi
 if [ -n "$ACK_GENERATE_SERVICE_ACCOUNT_NAME" ]; then
-    ag_args="$ag_args --service-account-name $ACK_GENERATE_SERVICE_ACCOUNT_NAME"
+    ag_args=("${ag_args[@]}" --service-account-name "$ACK_GENERATE_SERVICE_ACCOUNT_NAME")
 fi
 
 echo "Building release artifacts for $SERVICE-$RELEASE_VERSION"
-$ACK_GENERATE_BIN_PATH release $ag_args
+$ACK_GENERATE_BIN_PATH release "${ag_args[@]}"
 
-pushd $RUNTIME_DIR/apis/core/$RUNTIME_API_VERSION 1>/dev/null
+pushd "$RUNTIME_DIR/apis/core/$RUNTIME_API_VERSION" 1>/dev/null
 
 echo "Generating common custom resource definitions"
-controller-gen crd:allowDangerousTypes=true paths=./... output:crd:artifacts:config=$helm_output_dir/crds
+controller-gen crd:allowDangerousTypes=true paths=./... output:crd:artifacts:config="$helm_output_dir/crds"
 
 popd 1>/dev/null
 
-pushd $SERVICE_CONTROLLER_SOURCE_PATH/apis/$ACK_GENERATE_API_VERSION 1>/dev/null
+pushd "$SERVICE_CONTROLLER_SOURCE_PATH/apis/$ACK_GENERATE_API_VERSION" 1>/dev/null
 
 echo "Generating custom resource definitions for $SERVICE"
-controller-gen crd:allowDangerousTypes=true paths=./... output:crd:artifacts:config=$helm_output_dir/crds
+controller-gen crd:allowDangerousTypes=true paths=./... output:crd:artifacts:config="$helm_output_dir/crds"
 
 popd 1>/dev/null
 
-pushd $SERVICE_CONTROLLER_SOURCE_PATH/pkg/resource 1>/dev/null
+pushd "$SERVICE_CONTROLLER_SOURCE_PATH/pkg/resource" 1>/dev/null
 
 echo "Generating RBAC manifests for $SERVICE"
-controller-gen rbac:roleName=$K8S_RBAC_ROLE_NAME paths=./... output:rbac:artifacts:config=$helm_output_dir/templates
+controller-gen rbac:roleName="$K8S_RBAC_ROLE_NAME" paths=./... output:rbac:artifacts:config="$helm_output_dir/templates"
 # controller-gen rbac outputs a ClusterRole definition in a
 # $config_output_dir/rbac/role.yaml file. We additionally add the ability by 
 # for the user to specify if they want the role to be ClusterRole or Role by specifying installation scope
 # in the helm values.yaml. We do this by having a custom helm template named _controller-role-kind-patch.yaml 
 # which utilizes the template langauge and adding the auto generated rules to that template. 
-tail -n +7  $helm_output_dir/templates/role.yaml >> $helm_output_dir/templates/_controller-role-kind-patch.yaml
+tail -n +7  "$helm_output_dir/templates/role.yaml" >> "$helm_output_dir/templates/_controller-role-kind-patch.yaml"
 
 # We have some other standard Role files for a reader and writer role, so here we rename 
 # the `_controller-role-kind-patch.yaml ` file to `cluster-role-controller.yaml` 
 # to better reflect what is in that file. 
-mv $helm_output_dir/templates/_controller-role-kind-patch.yaml  $helm_output_dir/templates/cluster-role-controller.yaml
-rm $helm_output_dir/templates/role.yaml
+mv "$helm_output_dir/templates/_controller-role-kind-patch.yaml"  "$helm_output_dir/templates/cluster-role-controller.yaml"
+rm "$helm_output_dir/templates/role.yaml"
 
 popd 1>/dev/null
 
@@ -250,19 +249,18 @@ if [[ $ACK_GENERATE_OLM == "true" ]]; then
     DEFAULT_ACK_GENERATE_OLMCONFIG_PATH="$SERVICE_CONTROLLER_SOURCE_PATH/olm/olmconfig.yaml"
     ACK_GENERATE_OLMCONFIG_PATH=${ACK_GENERATE_OLMCONFIG_PATH:-$DEFAULT_ACK_GENERATE_OLMCONFIG_PATH}
 
-    ag_olm_args="$SERVICE $RELEASE_VERSION -o $SERVICE_CONTROLLER_SOURCE_PATH --template-dirs $TEMPLATES_DIR --olm-config $ACK_GENERATE_OLMCONFIG_PATH --aws-sdk-go-version $AWS_SDK_GO_VERSION"
+    ag_olm_args=("$SERVICE" "$RELEASE_VERSION" -o "$SERVICE_CONTROLLER_SOURCE_PATH" --template-dirs "$TEMPLATES_DIR" --olm-config "$ACK_GENERATE_OLMCONFIG_PATH" --aws-sdk-go-version "$AWS_SDK_GO_VERSION")
 
     if [ -n "$ACK_GENERATE_CONFIG_PATH" ]; then
-        ag_olm_args="$ag_olm_args --generator-config-path $ACK_GENERATE_CONFIG_PATH"
+        ag_olm_args=("${ag_olm_args[@]}" --generator-config-path "$ACK_GENERATE_CONFIG_PATH")
     fi
     if [ -n "$ACK_GENERATE_IMAGE_REPOSITORY" ]; then
-        ag_olm_args="$ag_olm_args --image-repository $ACK_GENERATE_IMAGE_REPOSITORY"
+        ag_olm_args=("${ag_olm_args[@]}" --image-repository "$ACK_GENERATE_IMAGE_REPOSITORY")
     fi
     if [ -n "$ACK_METADATA_CONFIG_PATH" ]; then
-        ag_olm_args="$ag_olm_args --metadata-config-path $ACK_METADATA_CONFIG_PATH"
+        ag_olm_args=("${ag_olm_args[@]}" --metadata-config-path "$ACK_METADATA_CONFIG_PATH")
     fi
 
-    $ACK_GENERATE_BIN_PATH olm $ag_olm_args
-    $SCRIPTS_DIR/olm-create-bundle.sh "$SERVICE" "$RELEASE_VERSION"
-
+    $ACK_GENERATE_BIN_PATH olm "${ag_olm_args[@]}"
+    "$SCRIPTS_DIR"/olm-create-bundle.sh "$SERVICE" "$RELEASE_VERSION"
 fi

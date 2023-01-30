@@ -18,12 +18,12 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/aws-controllers-k8s/pkg/names"
 	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
 
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/fieldpath"
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
-	"github.com/aws-controllers-k8s/code-generator/pkg/names"
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
 )
 
@@ -1204,7 +1204,6 @@ func setResourceForContainer(
 	case "structure":
 		return SetResourceForStruct(
 			cfg, r,
-			targetFieldName,
 			targetVarName,
 			targetShapeRef,
 			targetSetCfg,
@@ -1255,8 +1254,6 @@ func setResourceForContainer(
 func SetResourceForStruct(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,
-	// The name of the CR field we're outputting for
-	targetFieldName string,
 	// The variable name that we want to set a value to
 	targetVarName string,
 	// Shape Ref of the target struct field

@@ -19,12 +19,13 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/aws-controllers-k8s/pkg/names"
+	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
+
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/config"
 	ackfp "github.com/aws-controllers-k8s/code-generator/pkg/fieldpath"
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate/templateset"
-	"github.com/aws-controllers-k8s/code-generator/pkg/names"
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
-	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
 )
 
 var (
@@ -126,7 +127,6 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 				memberName,
 			)
 			memberNames := names.New(fieldName)
-			memberNames.ModelOriginal = memberName
 			if memberName == "Attributes" && m.cfg.ResourceContainsAttributesMap(crdName) {
 				crd.UnpackAttributes()
 				continue

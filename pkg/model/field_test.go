@@ -4,8 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/aws-controllers-k8s/code-generator/pkg/names"
-
+	"github.com/aws-controllers-k8s/pkg/names"
 	"github.com/aws/aws-sdk-go/private/model/api"
 
 	"github.com/stretchr/testify/assert"

@@ -1,0 +1,12 @@
+operations:
+  PutRule:
+    operation_type:
+      - Create
+      - Update
+    resource_name: Rule
+resources:
+  Rule:
+    fields:
+      Targets:
+        custom_field:
+          list_of: Target

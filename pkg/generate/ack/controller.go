@@ -111,18 +111,20 @@ var (
 			return code.SetSDKForStruct(r.Config(), r, targetFieldName, targetVarName, targetShapeRef, sourceFieldPath, sourceVarName, indentLevel)
 		},
 		"GoCodeSetResourceForStruct": func(r *ackmodel.CRD, targetFieldName string, targetVarName string, targetShapeRef *awssdkmodel.ShapeRef, sourceVarName string, sourceShapeRef *awssdkmodel.ShapeRef, indentLevel int) string {
-			f, ok := r.Fields[targetFieldName]
-			if !ok {
-				return ""
-			}
+			var setCfg *ackgenconfig.SetFieldConfig = nil
 			// We may have some special instructions for how to handle setting the
 			// field value...
-			setCfg := f.GetSetterConfig(model.OpTypeList)
-
+			//
+			// We do not want to return an empty string if the setConfig is not provided,
+			// so that we can allow non top-level fields to be used with this function.
+			f, ok := r.Fields[targetFieldName]
+			if ok {
+				setCfg = f.GetSetterConfig(ackmodel.OpTypeList)
+			}
 			if setCfg != nil && setCfg.Ignore {
 				return ""
 			}
-			return code.SetResourceForStruct(r.Config(), r, targetFieldName, targetVarName, targetShapeRef, setCfg, sourceVarName, sourceShapeRef, "", model.OpTypeList, indentLevel)
+			return code.SetResourceForStruct(r.Config(), r, targetVarName, targetShapeRef, setCfg, sourceVarName, sourceShapeRef, "", model.OpTypeList, indentLevel)
 		},
 		"GoCodeCompare": func(r *ackmodel.CRD, deltaVarName string, sourceVarName string, targetVarName string, indentLevel int) string {
 			return code.CompareResource(r.Config(), r, deltaVarName, sourceVarName, targetVarName, indentLevel)
