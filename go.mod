@@ -1,6 +1,6 @@
 module github.com/aws-controllers-k8s/code-generator
 
-go 1.17
+go 1.19
 
 require (
 	github.com/aws-controllers-k8s/pkg v0.0.0-20230111194700-e8a36ef99b23

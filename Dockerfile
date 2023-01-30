@@ -1,22 +1,28 @@
-# Base image to use for the final stage
+# Base image to use at runtime
 ARG base_image=public.ecr.aws/eks-distro-build-tooling/eks-distro-minimal-base-nonroot:2021-12-01-1638322424
+
+# Golang image to use for compiling the manager
+ARG builder_image=public.ecr.aws/docker/library/golang
+
+# Version of Golang 
+ARG golang_version
+
 # Build the manager binary
-# TODO(vijtrip2) move this builder image to public.ecr.aws/eks-distro-build-tooling/builder-base, when builder-base
-# supports golang 1.17
-FROM public.ecr.aws/bitnami/golang:1.17 as builder
+FROM $builder_image:$golang_version as builder
 
 ARG service_alias
 # The tuple of controller image version information
 ARG service_controller_git_version
 ARG service_controller_git_commit
 ARG build_date
+ARG go_arch=amd64
 # The directory within the builder container into which we will copy our
 # service controller code.
 ARG work_dir=/github.com/aws-controllers-k8s/$service_alias-controller
 WORKDIR $work_dir
 ENV GOPROXY=https://proxy.golang.org|direct
 ENV GO111MODULE=on
-ENV GOARCH=amd64
+ENV GOARCH=$go_arch
 ENV GOOS=linux
 ENV CGO_ENABLED=0
 ENV VERSION_PKG=github.com/aws-controllers-k8s/$service_alias-controller/pkg/version
