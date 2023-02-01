@@ -12,15 +12,15 @@ LOCAL_MODULES=${LOCAL_MODULES:-"false"}
 BUILD_DATE=$(date +%Y-%m-%dT%H:%M)
 QUIET=${QUIET:-"false"}
 
-HARDWARE_PLATFORM=${HARDWARE_PLATFORM:-$(uname -i)}
-GOARCH=${GOARCH:-""}
-if [ "$HARDWARE_PLATFORM" = "aarch64" ]; then
-  GOARCH="arm64"
-elif [ "$HARDWARE_PLATFORM" = "x86_64" ]; then
-  GOARCH="amd64"
-else
+GOARCH=${GOARCH:-"$(go env GOARCH)"}
+
+if [ "$GOARCH" != "arm64" ] && [ "$GOARCH" != "amd64" ]; then
   echo "HARDWARE_PLATFORM is not supported: $HARDWARE_PLATFORM. Defaulting to amd64"
   GOARCH="amd64"
+fi
+
+if [[ $QUIET = "false" ]]; then
+  echo "Using $GOARCH platform."
 fi
 
 export DOCKER_BUILDKIT=${DOCKER_BUILDKIT:-1}
