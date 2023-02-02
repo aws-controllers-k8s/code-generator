@@ -25,3 +25,6 @@ resources:
           in:
             - 1
             - 2
+  CodeSigningConfig:
+    tags:
+      ignore: true

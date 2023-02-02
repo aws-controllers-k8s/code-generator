@@ -120,6 +120,13 @@ func TestCompareResource_S3_Bucket(t *testing.T) {
 			delta.Add("Spec.ObjectLockEnabledForBucket", a.ko.Spec.ObjectLockEnabledForBucket, b.ko.Spec.ObjectLockEnabledForBucket)
 		}
 	}
+	if ackcompare.HasNilDifference(a.ko.Spec.Tagging, b.ko.Spec.Tagging) {
+		delta.Add("Spec.Tagging", a.ko.Spec.Tagging, b.ko.Spec.Tagging)
+	} else if a.ko.Spec.Tagging != nil && b.ko.Spec.Tagging != nil {
+		if !ackcompare.MapStringStringEqual(ToACKTags(a.ko.Spec.Tagging.TagSet), ToACKTags(b.ko.Spec.Tagging.TagSet)) {
+			delta.Add("Spec.Tagging", a.ko.Spec.Tagging.TagSet, b.ko.Spec.Tagging.TagSet)
+		}
+	}
 `
 	assert.Equal(
 		expected,
@@ -333,12 +340,8 @@ func TestCompareResource_Lambda_Function(t *testing.T) {
 			delta.Add("Spec.Runtime", a.ko.Spec.Runtime, b.ko.Spec.Runtime)
 		}
 	}
-	if ackcompare.HasNilDifference(a.ko.Spec.Tags, b.ko.Spec.Tags) {
+	if !ackcompare.MapStringStringEqual(ToACKTags(a.ko.Spec.Tags), ToACKTags(b.ko.Spec.Tags)) {
 		delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
-	} else if a.ko.Spec.Tags != nil && b.ko.Spec.Tags != nil {
-		if !ackcompare.MapStringStringPEqual(a.ko.Spec.Tags, b.ko.Spec.Tags) {
-			delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
-		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.Timeout, b.ko.Spec.Timeout) {
 		delta.Add("Spec.Timeout", a.ko.Spec.Timeout, b.ko.Spec.Timeout)
@@ -490,7 +493,7 @@ func TestCompareResource_IAM_OIDC_URL(t *testing.T) {
 	if !ackcompare.SliceStringPEqual(a.ko.Spec.ClientIDList, b.ko.Spec.ClientIDList) {
 		delta.Add("Spec.ClientIDList", a.ko.Spec.ClientIDList, b.ko.Spec.ClientIDList)
 	}
-	if !reflect.DeepEqual(a.ko.Spec.Tags, b.ko.Spec.Tags) {
+	if !ackcompare.MapStringStringEqual(ToACKTags(a.ko.Spec.Tags), ToACKTags(b.ko.Spec.Tags)) {
 		delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
 	}
 	if !ackcompare.SliceStringPEqual(a.ko.Spec.ThumbprintList, b.ko.Spec.ThumbprintList) {
@@ -539,7 +542,7 @@ func TestCompareResource_MemoryDB_User(t *testing.T) {
 			delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
 		}
 	}
-	if !reflect.DeepEqual(a.ko.Spec.Tags, b.ko.Spec.Tags) {
+	if !ackcompare.MapStringStringEqual(ToACKTags(a.ko.Spec.Tags), ToACKTags(b.ko.Spec.Tags)) {
 		delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
 	}
 `

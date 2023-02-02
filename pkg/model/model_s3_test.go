@@ -82,6 +82,7 @@ func TestS3_Bucket(t *testing.T) {
 		// ListBuckets API call...
 		"Name",
 		"ObjectLockEnabledForBucket",
+		"Tagging",
 	}
 	assert.Equal(expSpecFieldCamel, attrCamelNames(specFields))
 
