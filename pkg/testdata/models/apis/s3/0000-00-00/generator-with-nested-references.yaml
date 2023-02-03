@@ -1,0 +1,33 @@
+ignore:
+  resource_names:
+    - Object
+    - MultipartUpload
+  shape_names:
+    # These shapes are structs with no members...
+    - SSES3
+  field_paths:
+    # We cannot support MFA, so if it is set we cannot unset
+    - "VersioningConfiguration.MFADelete"
+    # This subfield struct has no members...
+    - "NotificationConfiguration.EventBridgeConfiguration"
+resources:
+  Bucket:
+    renames:
+      operations:
+        CreateBucket:
+          input_fields:
+            Bucket: Name
+        DeleteBucket:
+          input_fields:
+            Bucket: Name
+    list_operation:
+      match_fields:
+        - Name
+    fields:
+      Analytics:
+        custom_field:
+          list_of: AnalyticsConfiguration
+      Analytics.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Bucket:
+        references:
+          resource: Bucket
+          path: Spec.Name

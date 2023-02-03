@@ -198,3 +198,268 @@ if ko.Spec.Routes != nil {
 return false || (ko.Spec.VPCRef != nil)`
 	assert.Equal(expected, code.ReferenceFieldsPresent(crd, "ko"))
 }
+
+func Test_ReferenceForField_SingleReference(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "apigatewayv2",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-reference.yaml",
+		})
+
+	crd := testutil.GetCRDByName(t, g, "Integration")
+	require.NotNil(crd)
+	expected :=
+		`	if ko.Spec.APIRef != nil && ko.Spec.APIRef.From != nil {
+		arr := ko.Spec.APIRef.From
+		if arr == nil || arr.Name == nil || *arr.Name == "" {
+			return fmt.Errorf("provided resource reference is nil or empty")
+		}
+		namespacedName := types.NamespacedName{
+			Namespace: namespace,
+			Name: *arr.Name,
+		}
+		obj := svcapitypes.API{}
+		err := apiReader.Get(ctx, namespacedName, &obj)
+		if err != nil {
+			return err
+		}
+		var refResourceSynced, refResourceTerminal bool
+		for _, cond := range obj.Status.Conditions {
+			if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
+				cond.Status == corev1.ConditionTrue {
+				refResourceSynced = true
+			}
+			if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
+				cond.Status == corev1.ConditionTrue {
+				refResourceTerminal = true
+			}
+		}
+		if refResourceTerminal {
+			return ackerr.ResourceReferenceTerminalFor(
+				"API",
+				namespace, *arr.Name)
+		}
+		if !refResourceSynced {
+			return ackerr.ResourceReferenceNotSyncedFor(
+				"API",
+				namespace, *arr.Name)
+		}
+		if obj.Status.APIID == nil {
+			return ackerr.ResourceReferenceMissingTargetFieldFor(
+				"API",
+				namespace, *arr.Name,
+				"Status.APIID")
+		}
+		referencedValue := string(*obj.Status.APIID)
+		ko.Spec.APIID = &referencedValue
+	}
+	return nil`
+
+	field := crd.Fields["APIID"]
+	assert.Equal(expected, code.ResolveReferencesForField(crd, field, 1))
+}
+
+func Test_ReferenceForField_SliceOfReferences(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "apigatewayv2",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-reference.yaml",
+		})
+
+	crd := testutil.GetCRDByName(t, g, "VpcLink")
+	require.NotNil(crd)
+	expected :=
+		`	if ko.Spec.SecurityGroupRefs != nil &&
+		len(ko.Spec.SecurityGroupRefs) > 0 {
+		resolvedReferences := []*string{}
+		for _, arrw := range ko.Spec.SecurityGroupRefs {
+			arr := arrw.From
+			if arr == nil || arr.Name == nil || *arr.Name == "" {
+				return fmt.Errorf("provided resource reference is nil or empty")
+			}
+			namespacedName := types.NamespacedName{
+				Namespace: namespace,
+				Name: *arr.Name,
+			}
+			obj := ec2apitypes.SecurityGroup{}
+			err := apiReader.Get(ctx, namespacedName, &obj)
+			if err != nil {
+				return err
+			}
+			var refResourceSynced, refResourceTerminal bool
+			for _, cond := range obj.Status.Conditions {
+				if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
+					cond.Status == corev1.ConditionTrue {
+					refResourceSynced = true
+				}
+				if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
+					cond.Status == corev1.ConditionTrue {
+					refResourceTerminal = true
+				}
+			}
+			if refResourceTerminal {
+				return ackerr.ResourceReferenceTerminalFor(
+					"SecurityGroup",
+					namespace, *arr.Name)
+			}
+			if !refResourceSynced {
+				return ackerr.ResourceReferenceNotSyncedFor(
+					"SecurityGroup",
+					namespace, *arr.Name)
+			}
+			if obj.Status.ID == nil {
+				return ackerr.ResourceReferenceMissingTargetFieldFor(
+					"SecurityGroup",
+					namespace, *arr.Name,
+					"Status.ID")
+			}
+			referencedValue := string(*obj.Status.ID)
+			resolvedReferences = append(resolvedReferences, &referencedValue)
+		}
+		ko.Spec.SecurityGroupIDs = resolvedReferences
+	}
+	return nil`
+
+	field := crd.Fields["SecurityGroupIDs"]
+	assert.Equal(expected, code.ResolveReferencesForField(crd, field, 1))
+}
+
+func Test_ReferenceForField_NestedSingleReference(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "apigatewayv2",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-nested-reference.yaml",
+		})
+
+	crd := testutil.GetCRDByName(t, g, "Authorizer")
+	require.NotNil(crd)
+	expected :=
+		`	if ko.Spec.JWTConfiguration.IssuerRef != nil &&
+		len(ko.Spec.JWTConfiguration.IssuerRef) > 0 {
+		resolvedReferences := []*string{}
+		for _, arrw := range ko.Spec.JWTConfiguration.IssuerRef {
+			arr := arrw.From
+			if arr == nil || arr.Name == nil || *arr.Name == "" {
+				return fmt.Errorf("provided resource reference is nil or empty")
+			}
+			namespacedName := types.NamespacedName{
+				Namespace: namespace,
+				Name: *arr.Name,
+			}
+			obj := svcapitypes.API{}
+			err := apiReader.Get(ctx, namespacedName, &obj)
+			if err != nil {
+				return err
+			}
+			var refResourceSynced, refResourceTerminal bool
+			for _, cond := range obj.Status.Conditions {
+				if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
+					cond.Status == corev1.ConditionTrue {
+					refResourceSynced = true
+				}
+				if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
+					cond.Status == corev1.ConditionTrue {
+					refResourceTerminal = true
+				}
+			}
+			if refResourceTerminal {
+				return ackerr.ResourceReferenceTerminalFor(
+					"API",
+					namespace, *arr.Name)
+			}
+			if !refResourceSynced {
+				return ackerr.ResourceReferenceNotSyncedFor(
+					"API",
+					namespace, *arr.Name)
+			}
+			if obj.Status.APIID == nil {
+				return ackerr.ResourceReferenceMissingTargetFieldFor(
+					"API",
+					namespace, *arr.Name,
+					"Status.APIID")
+			}
+			referencedValue := string(*obj.Status.APIID)
+			resolvedReferences = append(resolvedReferences, &referencedValue)
+		}
+		ko.Spec.JWTConfiguration.Issuer = resolvedReferences
+	}
+	return nil`
+
+	field := crd.Fields["JWTConfiguration.Issuer"]
+	assert.Equal(expected, code.ResolveReferencesForField(crd, field, 1))
+}
+
+func Test_ReferenceForField_SingleReference_DeeplyNested(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "s3",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-nested-references.yaml",
+		})
+
+	crd := testutil.GetCRDByName(t, g, "Bucket")
+	require.NotNil(crd)
+
+	// the Go template has the appropriate nil checks to ensure the parent path exists
+	expected :=
+		`	if ko.Spec.Analytics.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.BucketRef != nil &&
+		len(ko.Spec.Analytics.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.BucketRef) > 0 {
+		resolvedReferences := []*string{}
+		for _, arrw := range ko.Spec.Analytics.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.BucketRef {
+			arr := arrw.From
+			if arr == nil || arr.Name == nil || *arr.Name == "" {
+				return fmt.Errorf("provided resource reference is nil or empty")
+			}
+			namespacedName := types.NamespacedName{
+				Namespace: namespace,
+				Name: *arr.Name,
+			}
+			obj := svcapitypes.Bucket{}
+			err := apiReader.Get(ctx, namespacedName, &obj)
+			if err != nil {
+				return err
+			}
+			var refResourceSynced, refResourceTerminal bool
+			for _, cond := range obj.Status.Conditions {
+				if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
+					cond.Status == corev1.ConditionTrue {
+					refResourceSynced = true
+				}
+				if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
+					cond.Status == corev1.ConditionTrue {
+					refResourceTerminal = true
+				}
+			}
+			if refResourceTerminal {
+				return ackerr.ResourceReferenceTerminalFor(
+					"Bucket",
+					namespace, *arr.Name)
+			}
+			if !refResourceSynced {
+				return ackerr.ResourceReferenceNotSyncedFor(
+					"Bucket",
+					namespace, *arr.Name)
+			}
+			if obj.Spec.Name == nil {
+				return ackerr.ResourceReferenceMissingTargetFieldFor(
+					"Bucket",
+					namespace, *arr.Name,
+					"Spec.Name")
+			}
+			referencedValue := string(*obj.Spec.Name)
+			resolvedReferences = append(resolvedReferences, &referencedValue)
+		}
+		ko.Spec.Analytics.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Bucket = resolvedReferences
+	}
+	return nil`
+
+	field := crd.Fields["Analytics.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Bucket"]
+	assert.Equal(expected, code.ResolveReferencesForField(crd, field, 1))
+}
