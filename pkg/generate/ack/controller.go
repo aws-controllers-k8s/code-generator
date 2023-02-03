@@ -183,6 +183,9 @@ var (
 			return code.InitializeNestedStructField(r, sourceVarName, f,
 				apiPkgImportName, indentLevel)
 		},
+		"GoCodeReferenceForField": func(r *ackmodel.CRD, f *ackmodel.Field, indentLevel int) string {
+			return code.ResolveReferencesForField(r, f, indentLevel)
+		},
 	}
 )
 
