@@ -37,6 +37,10 @@ spec:
         - "$(ACK_RESOURCE_TAGS)"
         - --watch-namespace
         - "$(ACK_WATCH_NAMESPACE)"
+        - --reconcile-default-resync-seconds
+        - "$(RECONCILE_DEFAULT_RESYNC_SECONDS)"
+        - --reconcile-resource-resync-seconds
+        - "$(RECONCILE_RESOUCRE_RESYNC_SECONDS)"
         image: controller:latest
         name: controller
         ports:
@@ -66,6 +70,10 @@ spec:
           value: "info"
         - name: ACK_RESOURCE_TAGS
           value: "services.k8s.aws/controller-version=%CONTROLLER_SERVICE%-%CONTROLLER_VERSION%,services.k8s.aws/namespace=%K8S_NAMESPACE%"
+        - name: RECONCILE_DEFAULT_RESYNC_SECONDS
+          value: "0"
+        - name: RECONCILE_RESOUCRE_RESYNC_SECONDS
+          value: ""
         securityContext:
           allowPrivilegeEscalation: false
           privileged: false

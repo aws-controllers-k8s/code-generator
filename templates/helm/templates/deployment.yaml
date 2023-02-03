@@ -56,6 +56,14 @@ spec:
         - "$(ACK_WATCH_NAMESPACE)"
         - --deletion-policy
         - "$(DELETION_POLICY)"
+{{- if gt .Values.reconcile.defaultResyncPeriod 0.0 }}
+        - --reconcile-default-resync-seconds
+        - "$(RECONCILE_DEFAULT_RESYNC_SECONDS)"
+{{- end }}
+{{- range $key, $value := .Values.reconcile.resourceResyncPeriod }}
+        - --reconcile-resource-resync-seconds
+        - "$(RECONCILE_RESOURCE_RESYNC_SECONDS_{{ $key | upper }})"
+{{- end }}
         image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         name: controller
@@ -88,6 +96,14 @@ spec:
           value: {{ include "aws.credentials.path" . }}
         - name: AWS_PROFILE
           value: {{ .Values.aws.credentials.profile }}
+{{- if gt .Values.reconcile.defaultResyncPeriod 0.0 }}
+        - name: RECONCILE_DEFAULT_RESYNC_SECONDS
+          value: {{ .Values.reconcile.defaultResyncPeriod }}
+{{- end }}
+{{- range $key, $value := .Values.reconcile.resourceResyncPeriod }}
+        - name: RECONCILE_RESOURCE_RESYNC_SECONDS_{{ $key | upper }}
+          value: {{ $key }}={{ $value }}
+{{- end }}
         volumeMounts:
           - name: {{ .Values.aws.credentials.secretName }}
             mountPath: {{ include "aws.credentials.secret_mount_path" . }}
