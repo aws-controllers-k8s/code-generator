@@ -3329,7 +3329,7 @@ func TestSetResource_EventBridge_Rule_SetResourceForStruct(t *testing.T) {
 		fx.DeadLetterConfig = fxf2
 	}
 	if resp.EcsParameters != nil {
-		fxf3 := &svcapitypes.EcsParameters{}
+		fxf3 := &svcapitypes.ECSParameters{}
 		if resp.EcsParameters.CapacityProviderStrategy != nil {
 			fxf3f0 := []*svcapitypes.CapacityProviderStrategyItem{}
 			for _, fxf3f0iter := range resp.EcsParameters.CapacityProviderStrategy {
@@ -3445,7 +3445,7 @@ func TestSetResource_EventBridge_Rule_SetResourceForStruct(t *testing.T) {
 		if resp.EcsParameters.TaskDefinitionArn != nil {
 			fxf3.TaskDefinitionARN = resp.EcsParameters.TaskDefinitionArn
 		}
-		fx.EcsParameters = fxf3
+		fx.ECSParameters = fxf3
 	}
 	if resp.HttpParameters != nil {
 		fxf4 := &svcapitypes.HTTPParameters{}

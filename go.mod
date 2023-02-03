@@ -3,7 +3,7 @@ module github.com/aws-controllers-k8s/code-generator
 go 1.19
 
 require (
-	github.com/aws-controllers-k8s/pkg v0.0.0-20230111194700-e8a36ef99b23
+	github.com/aws-controllers-k8s/pkg v0.0.0-20230202214221-5eee726e51c7
 	github.com/aws-controllers-k8s/runtime v0.23.0
 	github.com/aws/aws-sdk-go v1.44.93
 	github.com/dlclark/regexp2 v1.4.0 // indirect
