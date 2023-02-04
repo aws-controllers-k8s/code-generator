@@ -24,10 +24,11 @@ resources:
       match_fields:
         - Name
     fields:
-      Analytics:
-        custom_field:
-          list_of: AnalyticsConfiguration
-      Analytics.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Bucket:
+      Logging:
+        from:
+          operation: PutBucketLogging
+          path: BucketLoggingStatus
+      Logging.LoggingEnabled.TargetBucket:
         references:
           resource: Bucket
           path: Spec.Name

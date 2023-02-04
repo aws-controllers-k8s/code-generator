@@ -211,8 +211,8 @@ func Test_ReferenceForField_SingleReference(t *testing.T) {
 	crd := testutil.GetCRDByName(t, g, "Integration")
 	require.NotNil(crd)
 	expected :=
-		`	if ko.Spec.APIRef != nil && ko.Spec.APIRef.From != nil {
-		arr := ko.Spec.APIRef.From
+		`	if ko.Spec.APIID != nil && ko.Spec.APIID.From != nil {
+		arr := ko.Spec.APIID.From
 		if arr == nil || arr.Name == nil || *arr.Name == "" {
 			return fmt.Errorf("provided resource reference is nil or empty")
 		}
@@ -252,13 +252,13 @@ func Test_ReferenceForField_SingleReference(t *testing.T) {
 				namespace, *arr.Name,
 				"Status.APIID")
 		}
-		referencedValue := string(*obj.Status.APIID)
-		ko.Spec.APIID = &referencedValue
+		refVal := string(*obj.Status.APIID)
 	}
-	return nil`
+	ko.Spec.APIID = &refVal
+`
 
 	field := crd.Fields["APIID"]
-	assert.Equal(expected, code.ResolveReferencesForField(crd, field, 1))
+	assert.Equal(expected, code.ResolveReferencesForField(crd, field, "ko", 1))
 }
 
 func Test_ReferenceForField_SliceOfReferences(t *testing.T) {
@@ -273,11 +273,10 @@ func Test_ReferenceForField_SliceOfReferences(t *testing.T) {
 	crd := testutil.GetCRDByName(t, g, "VpcLink")
 	require.NotNil(crd)
 	expected :=
-		`	if ko.Spec.SecurityGroupRefs != nil &&
-		len(ko.Spec.SecurityGroupRefs) > 0 {
-		resolvedReferences := []*string{}
-		for _, arrw := range ko.Spec.SecurityGroupRefs {
-			arr := arrw.From
+		`	refVals := []*string{}
+	for _, iter0 := range ko.Spec.SecurityGroupIDs {
+		if iter0 != nil && iter0.From != nil {
+			arr := iter0.From
 			if arr == nil || arr.Name == nil || *arr.Name == "" {
 				return fmt.Errorf("provided resource reference is nil or empty")
 			}
@@ -317,15 +316,14 @@ func Test_ReferenceForField_SliceOfReferences(t *testing.T) {
 					namespace, *arr.Name,
 					"Status.ID")
 			}
-			referencedValue := string(*obj.Status.ID)
-			resolvedReferences = append(resolvedReferences, &referencedValue)
+			refVals = append(refVals, string(*obj.Status.ID))
 		}
-		ko.Spec.SecurityGroupIDs = resolvedReferences
 	}
-	return nil`
+	ko.Spec.SecurityGroupIDs = refVals
+`
 
 	field := crd.Fields["SecurityGroupIDs"]
-	assert.Equal(expected, code.ResolveReferencesForField(crd, field, 1))
+	assert.Equal(expected, code.ResolveReferencesForField(crd, field, "ko", 1))
 }
 
 func Test_ReferenceForField_NestedSingleReference(t *testing.T) {
@@ -340,11 +338,9 @@ func Test_ReferenceForField_NestedSingleReference(t *testing.T) {
 	crd := testutil.GetCRDByName(t, g, "Authorizer")
 	require.NotNil(crd)
 	expected :=
-		`	if ko.Spec.JWTConfiguration.IssuerRef != nil &&
-		len(ko.Spec.JWTConfiguration.IssuerRef) > 0 {
-		resolvedReferences := []*string{}
-		for _, arrw := range ko.Spec.JWTConfiguration.IssuerRef {
-			arr := arrw.From
+		`	if ko.Spec.JWTConfiguration != nil {
+		if ko.Spec.JWTConfiguration.Issuer != nil && ko.Spec.JWTConfiguration.Issuer.From != nil {
+			arr := ko.Spec.JWTConfiguration.Issuer.From
 			if arr == nil || arr.Name == nil || *arr.Name == "" {
 				return fmt.Errorf("provided resource reference is nil or empty")
 			}
@@ -384,15 +380,14 @@ func Test_ReferenceForField_NestedSingleReference(t *testing.T) {
 					namespace, *arr.Name,
 					"Status.APIID")
 			}
-			referencedValue := string(*obj.Status.APIID)
-			resolvedReferences = append(resolvedReferences, &referencedValue)
+			refVal := string(*obj.Status.APIID)
 		}
-		ko.Spec.JWTConfiguration.Issuer = resolvedReferences
+		ko.Spec.JWTConfiguration.Issuer = &refVal
 	}
-	return nil`
+`
 
 	field := crd.Fields["JWTConfiguration.Issuer"]
-	assert.Equal(expected, code.ResolveReferencesForField(crd, field, 1))
+	assert.Equal(expected, code.ResolveReferencesForField(crd, field, "ko", 1))
 }
 
 func Test_ReferenceForField_SingleReference_DeeplyNested(t *testing.T) {
@@ -409,57 +404,56 @@ func Test_ReferenceForField_SingleReference_DeeplyNested(t *testing.T) {
 
 	// the Go template has the appropriate nil checks to ensure the parent path exists
 	expected :=
-		`	if ko.Spec.Analytics.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.BucketRef != nil &&
-		len(ko.Spec.Analytics.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.BucketRef) > 0 {
-		resolvedReferences := []*string{}
-		for _, arrw := range ko.Spec.Analytics.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.BucketRef {
-			arr := arrw.From
-			if arr == nil || arr.Name == nil || *arr.Name == "" {
-				return fmt.Errorf("provided resource reference is nil or empty")
-			}
-			namespacedName := types.NamespacedName{
-				Namespace: namespace,
-				Name: *arr.Name,
-			}
-			obj := svcapitypes.Bucket{}
-			err := apiReader.Get(ctx, namespacedName, &obj)
-			if err != nil {
-				return err
-			}
-			var refResourceSynced, refResourceTerminal bool
-			for _, cond := range obj.Status.Conditions {
-				if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
-					cond.Status == corev1.ConditionTrue {
-					refResourceSynced = true
+		`	if ko.Spec.Logging != nil {
+		if ko.Spec.Logging.LoggingEnabled != nil {
+			if ko.Spec.Logging.LoggingEnabled.TargetBucket != nil && ko.Spec.Logging.LoggingEnabled.TargetBucket.From != nil {
+				arr := ko.Spec.Logging.LoggingEnabled.TargetBucket.From
+				if arr == nil || arr.Name == nil || *arr.Name == "" {
+					return fmt.Errorf("provided resource reference is nil or empty")
 				}
-				if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
-					cond.Status == corev1.ConditionTrue {
-					refResourceTerminal = true
+				namespacedName := types.NamespacedName{
+					Namespace: namespace,
+					Name: *arr.Name,
 				}
+				obj := svcapitypes.Bucket{}
+				err := apiReader.Get(ctx, namespacedName, &obj)
+				if err != nil {
+					return err
+				}
+				var refResourceSynced, refResourceTerminal bool
+				for _, cond := range obj.Status.Conditions {
+					if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
+						cond.Status == corev1.ConditionTrue {
+						refResourceSynced = true
+					}
+					if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
+						cond.Status == corev1.ConditionTrue {
+						refResourceTerminal = true
+					}
+				}
+				if refResourceTerminal {
+					return ackerr.ResourceReferenceTerminalFor(
+						"Bucket",
+						namespace, *arr.Name)
+				}
+				if !refResourceSynced {
+					return ackerr.ResourceReferenceNotSyncedFor(
+						"Bucket",
+						namespace, *arr.Name)
+				}
+				if obj.Spec.Name == nil {
+					return ackerr.ResourceReferenceMissingTargetFieldFor(
+						"Bucket",
+						namespace, *arr.Name,
+						"Spec.Name")
+				}
+				refVal := string(*obj.Spec.Name)
 			}
-			if refResourceTerminal {
-				return ackerr.ResourceReferenceTerminalFor(
-					"Bucket",
-					namespace, *arr.Name)
-			}
-			if !refResourceSynced {
-				return ackerr.ResourceReferenceNotSyncedFor(
-					"Bucket",
-					namespace, *arr.Name)
-			}
-			if obj.Spec.Name == nil {
-				return ackerr.ResourceReferenceMissingTargetFieldFor(
-					"Bucket",
-					namespace, *arr.Name,
-					"Spec.Name")
-			}
-			referencedValue := string(*obj.Spec.Name)
-			resolvedReferences = append(resolvedReferences, &referencedValue)
+			ko.Spec.Logging.LoggingEnabled.TargetBucket = &refVal
 		}
-		ko.Spec.Analytics.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Bucket = resolvedReferences
 	}
-	return nil`
+`
 
-	field := crd.Fields["Analytics.StorageClassAnalysis.DataExport.Destination.S3BucketDestination.Bucket"]
-	assert.Equal(expected, code.ResolveReferencesForField(crd, field, 1))
+	field := crd.Fields["Logging.LoggingEnabled.TargetBucket"]
+	assert.Equal(expected, code.ResolveReferencesForField(crd, field, "ko", 1))
 }
