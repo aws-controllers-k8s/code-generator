@@ -127,8 +127,6 @@ func resolveReferenceFor{{ $field.FieldPathWithUnderscore }}(
             referencedValue := string(*obj.{{ $field.FieldConfig.References.Path }})
             ko.Spec.{{ $field.Path }} = &referencedValue
 	}
-	return nil
-}
 {{ else if not $isNested -}}
 	if ko.Spec.{{ $field.ReferenceFieldPath }} != nil &&
 	   len(ko.Spec.{{ $field.ReferenceFieldPath }}) > 0 {
@@ -141,8 +139,7 @@ func resolveReferenceFor{{ $field.FieldPathWithUnderscore }}(
 		}
 		ko.Spec.{{ $field.Path }} = resolvedReferences
 	}
-	return nil
-}
+	
 {{ else }}
 {{ $parentField := index .CRD.Fields $fp.String }}
 {{ if eq $parentField.ShapeRef.Shape.Type "list" -}}
@@ -164,8 +161,6 @@ func resolveReferenceFor{{ $field.FieldPathWithUnderscore }}(
 			elem.{{ $field.Names.Camel }} = &referencedValue
 		}
 	}
-	return nil
-}
 {{ else -}}
 	if ko.Spec.{{ $field.ReferenceFieldPath }} != nil &&
 	   len(ko.Spec.{{ $field.ReferenceFieldPath }}) > 0 {
@@ -178,9 +173,9 @@ func resolveReferenceFor{{ $field.FieldPathWithUnderscore }}(
 		}
 		ko.Spec.{{ $field.Path }} = resolvedReferences
 	}
+{{ end -}}
 	return nil
 }
-{{ end -}}
 {{ end -}}
 {{ end -}}
 {{ end -}}

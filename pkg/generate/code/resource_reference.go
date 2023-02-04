@@ -185,185 +185,184 @@ func ReferenceFieldsPresent(
 	return iteratorsOut + returnOut
 }
 
-func ResolveReferencesForField(r *model.CRD, field *model.Field, indentLevel int) string {
-	out := ""
-
+// ResolveReferencesForField produces Go code for accessing all references that
+// are related to the given concrete field, determining whether its in a valid
+// condition and updating the concrete field with the referenced value.
+// Sample code:
+//
+//	if ko.Spec.SecurityGroupRefs != nil &&
+//		len(ko.Spec.SecurityGroupRefs) > 0 {
+//		resolvedReferences := []*string{}
+//		for _, arrw := range ko.Spec.SecurityGroupRefs {
+//			arr := arrw.From
+//			if arr == nil || arr.Name == nil || *arr.Name == "" {
+//				return fmt.Errorf("provided resource reference is nil or empty")
+//			}
+//			namespacedName := types.NamespacedName{
+//				Namespace: namespace,
+//				Name: *arr.Name,
+//			}
+//			obj := ec2apitypes.SecurityGroup{}
+//			err := apiReader.Get(ctx, namespacedName, &obj)
+//			if err != nil {
+//				return err
+//			}
+//			var refResourceSynced, refResourceTerminal bool
+//			for _, cond := range obj.Status.Conditions {
+//				if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
+//					cond.Status == corev1.ConditionTrue {
+//					refResourceSynced = true
+//				}
+//				if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
+//					cond.Status == corev1.ConditionTrue {
+//					refResourceTerminal = true
+//				}
+//			}
+//			if refResourceTerminal {
+//				return ackerr.ResourceReferenceTerminalFor(
+//					"SecurityGroup",
+//					namespace, *arr.Name)
+//			}
+//			if !refResourceSynced {
+//				return ackerr.ResourceReferenceNotSyncedFor(
+//					"SecurityGroup",
+//					namespace, *arr.Name)
+//			}
+//			if obj.Status.ID == nil {
+//				return ackerr.ResourceReferenceMissingTargetFieldFor(
+//					"SecurityGroup",
+//					namespace, *arr.Name,
+//					"Status.ID")
+//			}
+//			referencedValue := string(*obj.Status.ID)
+//			resolvedReferences = append(resolvedReferences, &referencedValue)
+//		}
+//		ko.Spec.SecurityGroupIDs = resolvedReferences
+//	}
+func ResolveReferencesForField(r *model.CRD, field *model.Field, sourceVarName string, indentLevel int) string {
 	fp := fieldpath.FromString(field.Path)
-	fp.Pop()
 
-	isNested := fp.Size() > 0
-	isList := field.ShapeRef.Shape.Type == "list"
+	outPrefix := ""
+	outSuffix := ""
 
-	if !isList && !isNested {
-		return resolveSingleReference(r, field, indentLevel)
-	} else if !isNested {
-		return resolveSliceOfReferences(r, field, indentLevel)
-	} else {
-		parentField, ok := r.Fields[fp.String()]
+	fieldAccessPrefix := fmt.Sprintf("%s%s", sourceVarName, r.Config().PrefixConfig.SpecField)
+	targetVarName := fmt.Sprintf("%s%s.%s", sourceVarName, r.Config().PrefixConfig.SpecField, field.Path)
+
+	hasSeenList := false
+	for idx := 0; idx < fp.Size(); idx++ {
+		curFP := fp.CopyAt(idx).String()
+		cur, ok := r.Fields[curFP]
 		if !ok {
-			panic(fmt.Sprintf("unable to find parent field with path %s", fp.String()))
+			panic(fmt.Sprintf("unable to find field with path %s", curFP))
 		}
 
-		if parentField.ShapeRef.Shape.Type == "list" {
-			return resolveNestedSliceOfReferences(r, field, indentLevel)
+		ref := cur.ShapeRef
+
+		indent := strings.Repeat("\t", indentLevel+idx)
+		fieldAccessPrefix = fmt.Sprintf("%s.%s", fieldAccessPrefix, fp.At(idx))
+
+		if ref.Shape.Type == "structure" {
+			if hasSeenList {
+				// TODO(nithomso): add support for structs nested within lists
+				// The logic for structs nested within lists needs to not only
+				// be added here, but also in a custom patching solution since
+				// it isn't supported by `StrategicMergePatch`
+				// see community#1291 for more details
+				panic("references within structs inside lists aren't supported")
+			}
+
+			outPrefix += fmt.Sprintf("%sif %s != nil {\n", indent, fieldAccessPrefix)
+			outSuffix = fmt.Sprintf("%s}\n%s", indent, outSuffix)
+		} else if ref.Shape.Type == "list" {
+			if hasSeenList {
+				panic("references within lists inside lists aren't supported")
+			}
+
+			hasSeenList = true
+			iterVarName := fmt.Sprintf("iter%d", idx)
+			refsTarget := "refVals"
+
+			// base case for references in a list
+			outPrefix += fmt.Sprintf("%s%s := []*string{}\n", indent, refsTarget)
+			outPrefix += fmt.Sprintf("%sfor _, %s := range %s {\n", indent, iterVarName, fieldAccessPrefix)
+
+			fieldAccessPrefix = iterVarName
+			outPrefix += resolveSingleReference(field, fieldAccessPrefix, refsTarget, true, indentLevel+idx+1)
+			outSuffix = fmt.Sprintf("%s%s = %s\n%s", indent, targetVarName, refsTarget, outSuffix)
+			outSuffix = fmt.Sprintf("%s}\n%s", indent, outSuffix)
+		} else if ref.Shape.Type == "map" {
+			panic("references cannot be within a map")
 		} else {
-			return resolveNestedSingleReference(r, field, indentLevel)
+			// base case for single references
+			refTarget := "refVal"
+			outPrefix += resolveSingleReference(field, fieldAccessPrefix, refTarget, false, indentLevel+idx)
+			outPrefix += fmt.Sprintf("%s%s = &%s\n", indent, targetVarName, refTarget)
 		}
 	}
 
-	return out
+	return outPrefix + outSuffix
 }
 
-func resolveSingleReference(r *model.CRD, field *model.Field, indentLevel int) string {
+func resolveSingleReference(field *model.Field, sourceVarName string, targetVarName string, shouldAppendTarget bool, indentLevel int) string {
 	out := ""
 	indent := strings.Repeat("\t", indentLevel)
 
-	rfp := field.ReferenceFieldPath()
-
-	out += fmt.Sprintf("%sif ko.Spec.%s != nil && ko.Spec.%s.From != nil {\n", indent, rfp, rfp)
-	out += fmt.Sprintf("%s\tarr := ko.Spec.%s.From\n", indent, rfp)
-	out += readReferenceAndValidate(field, indentLevel+1)
-	out += fmt.Sprintf("%s\treferencedValue := string(*obj.%s)\n", indent, field.FieldConfig.References.Path)
-	out += fmt.Sprintf("%s\tko.Spec.%s = &referencedValue\n", indent, field.Path)
-	out += fmt.Sprintf("%s}\n", indent)
-	out += fmt.Sprintf("%sreturn nil", indent)
-
-	return out
-}
-
-func resolveSliceOfReferences(r *model.CRD, field *model.Field, indentLevel int) string {
-	out := ""
-	indent := strings.Repeat("\t", indentLevel)
-
-	rfp := field.ReferenceFieldPath()
-
-	out += fmt.Sprintf("%sif ko.Spec.%s != nil &&\n", indent, rfp)
-	out += fmt.Sprintf("%s\tlen(ko.Spec.%s) > 0 {\n", indent, rfp)
-	out += fmt.Sprintf("%s\tresolvedReferences := []*string{}\n", indent)
-	out += fmt.Sprintf("%s\tfor _, arrw := range ko.Spec.%s {\n", indent, rfp)
-	out += fmt.Sprintf("%s\t\tarr := arrw.From\n", indent)
-	out += readReferenceAndValidate(field, indentLevel+2)
-	out += fmt.Sprintf("%s\t\treferencedValue := string(*obj.%s)\n", indent, field.FieldConfig.References.Path)
-	out += fmt.Sprintf("%s\t\tresolvedReferences = append(resolvedReferences, &referencedValue)\n", indent)
+	out += fmt.Sprintf("%sif %s != nil && %s.From != nil {\n", indent, sourceVarName, sourceVarName)
+	out += fmt.Sprintf("%s\tarr := %s.From\n", indent, sourceVarName)
+	out += fmt.Sprintf("%s\tif arr == nil || arr.Name == nil || *arr.Name == \"\" {\n", indent)
+	out += fmt.Sprintf("%s\t\treturn fmt.Errorf(\"provided resource reference is nil or empty\")\n", indent)
 	out += fmt.Sprintf("%s\t}\n", indent)
-	out += fmt.Sprintf("%s\tko.Spec.%s = resolvedReferences\n", indent, field.Path)
-	out += fmt.Sprintf("%s}\n", indent)
-	out += fmt.Sprintf("%sreturn nil", indent)
-
-	return out
-}
-
-func resolveNestedSingleReference(r *model.CRD, field *model.Field, indentLevel int) string {
-	out := ""
-	indent := strings.Repeat("\t", indentLevel)
-
-	rfp := field.ReferenceFieldPath()
-
-	out += fmt.Sprintf("%sif ko.Spec.%s != nil &&\n", indent, rfp)
-	out += fmt.Sprintf("%s\tlen(ko.Spec.%s) > 0 {\n", indent, rfp)
-	out += fmt.Sprintf("%s\tresolvedReferences := []*string{}\n", indent)
-	out += fmt.Sprintf("%s\tfor _, arrw := range ko.Spec.%s {\n", indent, rfp)
-	out += fmt.Sprintf("%s\t\tarr := arrw.From\n", indent)
-	out += readReferenceAndValidate(field, indentLevel+2)
-	out += fmt.Sprintf("%s\t\treferencedValue := string(*obj.%s)\n", indent, field.FieldConfig.References.Path)
-	out += fmt.Sprintf("%s\t\tresolvedReferences = append(resolvedReferences, &referencedValue)\n", indent)
+	out += fmt.Sprintf("%s\tnamespacedName := types.NamespacedName{\n", indent)
+	out += fmt.Sprintf("%s\t\tNamespace: namespace,\n", indent)
+	out += fmt.Sprintf("%s\t\tName: *arr.Name,\n", indent)
 	out += fmt.Sprintf("%s\t}\n", indent)
-	out += fmt.Sprintf("%s\tko.Spec.%s = resolvedReferences\n", indent, field.Path)
-	out += fmt.Sprintf("%s}\n", indent)
-	out += fmt.Sprintf("%sreturn nil", indent)
-
-	return out
-}
-
-func resolveNestedSliceOfReferences(r *model.CRD, field *model.Field, indentLevel int) string {
-	out := ""
-	indent := strings.Repeat("\t", indentLevel)
-
-	fp := fieldpath.FromString(field.Path)
-	fp.Pop()
-
-	parent, ok := r.Fields[fp.String()]
-	if !ok {
-		panic("")
-	}
-
-	out += fmt.Sprintf("%sif len(ko.Spec.%s) > 0 {\n", indent, parent.Path)
-	out += fmt.Sprintf("%s\tfor _, elem := range ko.Spec.%s {\n", indent, parent.Path)
-	out += fmt.Sprintf("%s\t\tarrw := elem.%s\n", indent, field.GetReferenceFieldName().Camel)
-	out += fmt.Sprintf("%s\n", indent)
-	out += fmt.Sprintf("%s\t\tif arrw == nil || arrw.From == nil {\n", indent)
-	out += fmt.Sprintf("%s\t\t\tcontinue\n", indent)
-	out += fmt.Sprintf("%s\t\t}\n", indent)
-	out += fmt.Sprintf("%s\n", indent)
-	out += fmt.Sprintf("%s\t\tarr := arrw.From\n", indent)
-	out += fmt.Sprintf("%s\t\tif arr.Name == nil || *arr.Name == \"\" {\n", indent)
-	out += fmt.Sprintf("%s\t\t\treturn fmt.Errorf(\"provided resource reference is nil or empty\")\n", indent)
-	out += fmt.Sprintf("%s\t\t}\n", indent)
-	out += fmt.Sprintf("%s\n", indent)
-	out += readReferenceAndValidate(field, indentLevel+2)
-	out += fmt.Sprintf("%s\t\treferencedValue := string(*obj.%s)\n", indent, field.FieldConfig.References.Path)
-	out += fmt.Sprintf("%s\t\telem.%s = &referencedValue\n", indent, field.Names.Camel)
-	out += fmt.Sprintf("%s\t}\n", indent)
-	out += fmt.Sprintf("%s}\n", indent)
-	out += fmt.Sprintf("%sreturn nil", indent)
-
-	return out
-}
-
-// readReferenceAndValidate produces Go code that attempts to fetch a referenced
-// object from the K8s API server and validates whether it is in synced or
-// terminal conditions, returning the appropriate errors.
-func readReferenceAndValidate(field *model.Field, indentLevel int) string {
-	out := ""
-	indent := strings.Repeat("\t", indentLevel)
-
-	out += fmt.Sprintf("%sif arr == nil || arr.Name == nil || *arr.Name == \"\" {\n", indent)
-	out += fmt.Sprintf("%s\treturn fmt.Errorf(\"provided resource reference is nil or empty\")\n", indent)
-	out += fmt.Sprintf("%s}\n", indent)
-	out += fmt.Sprintf("%snamespacedName := types.NamespacedName{\n", indent)
-	out += fmt.Sprintf("%s\tNamespace: namespace,\n", indent)
-	out += fmt.Sprintf("%s\tName: *arr.Name,\n", indent)
-	out += fmt.Sprintf("%s}\n", indent)
 	if field.FieldConfig.References.ServiceName == "" {
-		out += fmt.Sprintf("%sobj := svcapitypes.%s{}\n", indent, field.FieldConfig.References.Resource)
+		out += fmt.Sprintf("%s\tobj := svcapitypes.%s{}\n", indent, field.FieldConfig.References.Resource)
 	} else {
-		out += fmt.Sprintf("%sobj := %sapitypes.%s{}\n", indent, field.ReferencedServiceName(), field.FieldConfig.References.Resource)
+		out += fmt.Sprintf("%s\tobj := %sapitypes.%s{}\n", indent, field.ReferencedServiceName(), field.FieldConfig.References.Resource)
 	}
-	out += fmt.Sprintf("%serr := apiReader.Get(ctx, namespacedName, &obj)\n", indent)
-	out += fmt.Sprintf("%sif err != nil {\n", indent)
-	out += fmt.Sprintf("%s\treturn err\n", indent)
-	out += fmt.Sprintf("%s}\n", indent)
-	out += fmt.Sprintf("%svar refResourceSynced, refResourceTerminal bool\n", indent)
-	out += fmt.Sprintf("%sfor _, cond := range obj.Status.Conditions {\n", indent)
-	out += fmt.Sprintf("%s\tif cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&\n", indent)
-	out += fmt.Sprintf("%s\t\tcond.Status == corev1.ConditionTrue {\n", indent)
-	out += fmt.Sprintf("%s\t\trefResourceSynced = true\n", indent)
+	out += fmt.Sprintf("%s\terr := apiReader.Get(ctx, namespacedName, &obj)\n", indent)
+	out += fmt.Sprintf("%s\tif err != nil {\n", indent)
+	out += fmt.Sprintf("%s\t\treturn err\n", indent)
 	out += fmt.Sprintf("%s\t}\n", indent)
-	out += fmt.Sprintf("%s\tif cond.Type == ackv1alpha1.ConditionTypeTerminal &&\n", indent)
-	out += fmt.Sprintf("%s\t\tcond.Status == corev1.ConditionTrue {\n", indent)
-	out += fmt.Sprintf("%s\t\trefResourceTerminal = true\n", indent)
+	out += fmt.Sprintf("%s\tvar refResourceSynced, refResourceTerminal bool\n", indent)
+	out += fmt.Sprintf("%s\tfor _, cond := range obj.Status.Conditions {\n", indent)
+	out += fmt.Sprintf("%s\t\tif cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&\n", indent)
+	out += fmt.Sprintf("%s\t\t\tcond.Status == corev1.ConditionTrue {\n", indent)
+	out += fmt.Sprintf("%s\t\t\trefResourceSynced = true\n", indent)
+	out += fmt.Sprintf("%s\t\t}\n", indent)
+	out += fmt.Sprintf("%s\t\tif cond.Type == ackv1alpha1.ConditionTypeTerminal &&\n", indent)
+	out += fmt.Sprintf("%s\t\t\tcond.Status == corev1.ConditionTrue {\n", indent)
+	out += fmt.Sprintf("%s\t\t\trefResourceTerminal = true\n", indent)
+	out += fmt.Sprintf("%s\t\t}\n", indent)
 	out += fmt.Sprintf("%s\t}\n", indent)
-	out += fmt.Sprintf("%s}\n", indent)
-	out += fmt.Sprintf("%sif refResourceTerminal {\n", indent)
-	out += fmt.Sprintf("%s\treturn ackerr.ResourceReferenceTerminalFor(\n", indent)
-	out += fmt.Sprintf("%s\t\t\"%s\",\n", indent, field.FieldConfig.References.Resource)
-	out += fmt.Sprintf("%s\t\tnamespace, *arr.Name)\n", indent)
-	out += fmt.Sprintf("%s}\n", indent)
-	out += fmt.Sprintf("%sif !refResourceSynced {\n", indent)
-	out += fmt.Sprintf("%s\treturn ackerr.ResourceReferenceNotSyncedFor(\n", indent)
-	out += fmt.Sprintf("%s\t\t\"%s\",\n", indent, field.FieldConfig.References.Resource)
-	out += fmt.Sprintf("%s\t\tnamespace, *arr.Name)\n", indent)
-	out += fmt.Sprintf("%s}\n", indent)
+	out += fmt.Sprintf("%s\tif refResourceTerminal {\n", indent)
+	out += fmt.Sprintf("%s\t\treturn ackerr.ResourceReferenceTerminalFor(\n", indent)
+	out += fmt.Sprintf("%s\t\t\t\"%s\",\n", indent, field.FieldConfig.References.Resource)
+	out += fmt.Sprintf("%s\t\t\tnamespace, *arr.Name)\n", indent)
+	out += fmt.Sprintf("%s\t}\n", indent)
+	out += fmt.Sprintf("%s\tif !refResourceSynced {\n", indent)
+	out += fmt.Sprintf("%s\t\treturn ackerr.ResourceReferenceNotSyncedFor(\n", indent)
+	out += fmt.Sprintf("%s\t\t\t\"%s\",\n", indent, field.FieldConfig.References.Resource)
+	out += fmt.Sprintf("%s\t\t\tnamespace, *arr.Name)\n", indent)
+	out += fmt.Sprintf("%s\t}\n", indent)
 
 	nilCheck := CheckNilReferencesPath(field, "obj")
 	if nilCheck != "" {
-		out += fmt.Sprintf("%sif %s {\n", indent, nilCheck)
-		out += fmt.Sprintf("%s\treturn ackerr.ResourceReferenceMissingTargetFieldFor(\n", indent)
-		out += fmt.Sprintf("%s\t\t\"%s\",\n", indent, field.FieldConfig.References.Resource)
-		out += fmt.Sprintf("%s\t\tnamespace, *arr.Name,\n", indent)
-		out += fmt.Sprintf("%s\t\t\"%s\")\n", indent, field.FieldConfig.References.Path)
-		out += fmt.Sprintf("%s}\n", indent)
+		out += fmt.Sprintf("%s\tif %s {\n", indent, nilCheck)
+		out += fmt.Sprintf("%s\t\treturn ackerr.ResourceReferenceMissingTargetFieldFor(\n", indent)
+		out += fmt.Sprintf("%s\t\t\t\"%s\",\n", indent, field.FieldConfig.References.Resource)
+		out += fmt.Sprintf("%s\t\t\tnamespace, *arr.Name,\n", indent)
+		out += fmt.Sprintf("%s\t\t\t\"%s\")\n", indent, field.FieldConfig.References.Path)
+		out += fmt.Sprintf("%s\t}\n", indent)
 	}
+
+	if shouldAppendTarget {
+		out += fmt.Sprintf("%s\t%s = append(%s, string(*obj.%s))\n", indent, targetVarName, targetVarName, field.FieldConfig.References.Path)
+	} else {
+		out += fmt.Sprintf("%s\t%s := string(*obj.%s)\n", indent, targetVarName, field.FieldConfig.References.Path)
+	}
+	out += fmt.Sprintf("%s}\n", indent)
 
 	return out
 }
