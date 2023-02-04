@@ -211,8 +211,9 @@ func Test_ReferenceForField_SingleReference(t *testing.T) {
 	crd := testutil.GetCRDByName(t, g, "Integration")
 	require.NotNil(crd)
 	expected :=
-		`	if ko.Spec.APIID != nil && ko.Spec.APIID.From != nil {
-		arr := ko.Spec.APIID.From
+		`	refVal := ""
+	if ko.Spec.APIRef != nil && ko.Spec.APIRef.From != nil {
+		arr := ko.Spec.APIRef.From
 		if arr == nil || arr.Name == nil || *arr.Name == "" {
 			return fmt.Errorf("provided resource reference is nil or empty")
 		}
@@ -252,7 +253,7 @@ func Test_ReferenceForField_SingleReference(t *testing.T) {
 				namespace, *arr.Name,
 				"Status.APIID")
 		}
-		refVal := string(*obj.Status.APIID)
+		refVal = string(*obj.Status.APIID)
 	}
 	ko.Spec.APIID = &refVal
 `
@@ -316,7 +317,7 @@ func Test_ReferenceForField_SliceOfReferences(t *testing.T) {
 					namespace, *arr.Name,
 					"Status.ID")
 			}
-			refVals = append(refVals, string(*obj.Status.ID))
+			refVals = append(refVals, obj.Status.ID)
 		}
 	}
 	ko.Spec.SecurityGroupIDs = refVals
@@ -339,8 +340,9 @@ func Test_ReferenceForField_NestedSingleReference(t *testing.T) {
 	require.NotNil(crd)
 	expected :=
 		`	if ko.Spec.JWTConfiguration != nil {
-		if ko.Spec.JWTConfiguration.Issuer != nil && ko.Spec.JWTConfiguration.Issuer.From != nil {
-			arr := ko.Spec.JWTConfiguration.Issuer.From
+		refVal := ""
+		if ko.Spec.JWTConfiguration.IssuerRef != nil && ko.Spec.JWTConfiguration.IssuerRef.From != nil {
+			arr := ko.Spec.JWTConfiguration.IssuerRef.From
 			if arr == nil || arr.Name == nil || *arr.Name == "" {
 				return fmt.Errorf("provided resource reference is nil or empty")
 			}
@@ -380,7 +382,7 @@ func Test_ReferenceForField_NestedSingleReference(t *testing.T) {
 					namespace, *arr.Name,
 					"Status.APIID")
 			}
-			refVal := string(*obj.Status.APIID)
+			refVal = string(*obj.Status.APIID)
 		}
 		ko.Spec.JWTConfiguration.Issuer = &refVal
 	}
@@ -406,8 +408,9 @@ func Test_ReferenceForField_SingleReference_DeeplyNested(t *testing.T) {
 	expected :=
 		`	if ko.Spec.Logging != nil {
 		if ko.Spec.Logging.LoggingEnabled != nil {
-			if ko.Spec.Logging.LoggingEnabled.TargetBucket != nil && ko.Spec.Logging.LoggingEnabled.TargetBucket.From != nil {
-				arr := ko.Spec.Logging.LoggingEnabled.TargetBucket.From
+			refVal := ""
+			if ko.Spec.Logging.LoggingEnabled.TargetBucketRef != nil && ko.Spec.Logging.LoggingEnabled.TargetBucketRef.From != nil {
+				arr := ko.Spec.Logging.LoggingEnabled.TargetBucketRef.From
 				if arr == nil || arr.Name == nil || *arr.Name == "" {
 					return fmt.Errorf("provided resource reference is nil or empty")
 				}
@@ -447,7 +450,7 @@ func Test_ReferenceForField_SingleReference_DeeplyNested(t *testing.T) {
 						namespace, *arr.Name,
 						"Spec.Name")
 				}
-				refVal := string(*obj.Spec.Name)
+				refVal = string(*obj.Spec.Name)
 			}
 			ko.Spec.Logging.LoggingEnabled.TargetBucket = &refVal
 		}
