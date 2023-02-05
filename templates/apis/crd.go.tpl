@@ -55,7 +55,7 @@ type {{ .CRD.Kind }}Status struct {
 // +kubebuilder:printcolumn:name="{{$column.Name}}",type={{$column.Type}},priority={{$column.Priority}},JSONPath=`{{$column.JSONPath}}`
 {{- end }}
 {{- if .CRD.PrintSyncedColumn }}
-// +kubebuilder:printcolumn:name="Synced",type="boolean",priority=0,JSONPath=".status.conditions[?(@.type==\"ACK.ResourceSynced\")].status"
+// +kubebuilder:printcolumn:name="Synced",type="string",priority=0,JSONPath=".status.conditions[?(@.type==\"ACK.ResourceSynced\")].status"
 {{- end }}
 {{- if .CRD.PrintAgeColumn }}
 // +kubebuilder:printcolumn:name="Age",type="date",priority=0,JSONPath=".metadata.creationTimestamp"
