@@ -213,7 +213,7 @@
         "defaultResyncPeriod": {
           "type": "number"
         },
-        "resourceResyncPeriod": {
+        "resourceResyncPeriods": {
           "type": "object"
         }
       },
