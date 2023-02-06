@@ -3522,7 +3522,7 @@ func TestSetResource_EventBridge_Rule_SetResourceForStruct(t *testing.T) {
 			fxf10.SecretManagerARN = resp.RedshiftDataParameters.SecretManagerArn
 		}
 		if resp.RedshiftDataParameters.Sql != nil {
-			fxf10.Sql = resp.RedshiftDataParameters.Sql
+			fxf10.SQL = resp.RedshiftDataParameters.Sql
 		}
 		if resp.RedshiftDataParameters.StatementName != nil {
 			fxf10.StatementName = resp.RedshiftDataParameters.StatementName
