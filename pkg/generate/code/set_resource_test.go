@@ -3384,7 +3384,7 @@ func TestSetResource_EventBridge_Rule_SetResourceForStruct(t *testing.T) {
 					}
 					fxf3f5f0.Subnets = fxf3f5f0f2
 				}
-				fxf3f5.AWSvpcConfiguration = fxf3f5f0
+				fxf3f5.AWSVPCConfiguration = fxf3f5f0
 			}
 			fxf3.NetworkConfiguration = fxf3f5
 		}
