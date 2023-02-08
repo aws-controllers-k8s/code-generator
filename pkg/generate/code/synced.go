@@ -28,26 +28,26 @@ import (
 // not. This code is generated using ack-generate configuration.
 // See ack-generate/pkg/config.SyncedConfiguration.
 //
-//  Sample output:
+//	Sample output:
 //
-//  	candidates0 := []string{"AVAILABLE", "ACTIVE"}
-//  	if !ackutil.InStrings(*r.ko.Status.TableStatus, candidates0) {
-//  		return false, nil
-//  	}
-//  	if r.ko.Spec.ProvisionedThroughput == nil {
-//  		return false, nil
-//  	}
-//  	if r.ko.Spec.ProvisionedThroughput.ReadCapacityUnits == nil {
-//  		return false, nil
-//  	}
-//  	candidates1 := []int{0, 10}
-//  	if !ackutil.InStrings(*r.ko.Spec.ProvisionedThroughput.ReadCapacityUnits, candidates1) {
-//  		return false, nil
-//  	}
-//  	candidates2 := []int{0}
-//  	if !ackutil.InStrings(*r.ko.Status.ItemCount, candidates2) {
-//  		return false, nil
-//  	}
+//		candidates0 := []string{"AVAILABLE", "ACTIVE"}
+//		if !ackutil.InStrings(*r.ko.Status.TableStatus, candidates0) {
+//			return false, nil
+//		}
+//		if r.ko.Spec.ProvisionedThroughput == nil {
+//			return false, nil
+//		}
+//		if r.ko.Spec.ProvisionedThroughput.ReadCapacityUnits == nil {
+//			return false, nil
+//		}
+//		candidates1 := []int{0, 10}
+//		if !ackutil.InStrings(*r.ko.Spec.ProvisionedThroughput.ReadCapacityUnits, candidates1) {
+//			return false, nil
+//		}
+//		candidates2 := []int{0}
+//		if !ackutil.InStrings(*r.ko.Status.ItemCount, candidates2) {
+//			return false, nil
+//		}
 func ResourceIsSynced(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,

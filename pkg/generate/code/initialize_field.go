@@ -33,10 +33,10 @@ import (
 // Example: generated code for "Logging.LoggingEnabled.TargetBucket" field
 // inside "s3" "bucket" crd looks like:
 //
-//  ```
-// 	r.ko.Spec.Logging = &svcapitypes.BucketLoggingStatus{}
-//	r.ko.Spec.Logging.LoggingEnabled = &svcapitypes.LoggingEnabled{}
-//  ```
+//	 ```
+//		r.ko.Spec.Logging = &svcapitypes.BucketLoggingStatus{}
+//		r.ko.Spec.Logging.LoggingEnabled = &svcapitypes.LoggingEnabled{}
+//	 ```
 func InitializeNestedStructField(
 	r *model.CRD,
 	sourceVarName string,

@@ -42,38 +42,41 @@ import (
 //
 // For *scalar* Go types, the output Go code looks like this:
 //
-// if ackcompare.HasNilDifference(a.ko.Spec.GrantFullControl, b.ko.Spec.GrantFullControl) {
-//     delta.Add("Spec.GrantFullControl", a.ko.Spec.GrantFullControl, b.ko.Spec.GrantFullControl)
-// } else if a.ko.Spec.GrantFullControl != nil && b.ko.Spec.GrantFullControl != nil {
-//     if *a.ko.Spec.GrantFullControl != *b.ko.Spec.GrantFullControl {
-//         delta.Add("Spec.GrantFullControl", a.ko.Spec.GrantFullControl, b.ko.Spec.GrantFullControl)
-//     }
-// }
+//	if ackcompare.HasNilDifference(a.ko.Spec.GrantFullControl, b.ko.Spec.GrantFullControl) {
+//	    delta.Add("Spec.GrantFullControl", a.ko.Spec.GrantFullControl, b.ko.Spec.GrantFullControl)
+//	} else if a.ko.Spec.GrantFullControl != nil && b.ko.Spec.GrantFullControl != nil {
+//
+//	    if *a.ko.Spec.GrantFullControl != *b.ko.Spec.GrantFullControl {
+//	        delta.Add("Spec.GrantFullControl", a.ko.Spec.GrantFullControl, b.ko.Spec.GrantFullControl)
+//	    }
+//	}
 //
 // For *struct* Go types, the output Go code looks like this (note that it is a
 // simple recursive-descent output of all the struct's fields...):
 //
-// if ackcompare.HasNilDifference(a.ko.Spec.CreateBucketConfiguration, b.ko.Spec.CreateBucketConfiguration) {
-//     delta.Add("Spec.CreateBucketConfiguration", a.ko.Spec.CreateBucketConfiguration, b.ko.Spec.CreateBucketConfiguration)
-// } else if a.ko.Spec.CreateBucketConfiguration != nil && b.ko.Spec.CreateBucketConfiguration != nil {
-//     if ackcompare.HasNilDifference(a.ko.Spec.CreateBucketConfiguration.LocationConstraint, b.ko.Spec.CreateBucketConfiguration.LocationConstraint) {
-//         delta.Add("Spec.CreateBucketConfiguration.LocationConstraint", a.ko.Spec.CreateBucketConfiguration.LocationConstraint, b.ko.Spec.CreateBucketConfiguration.LocationConstraint)
-//     } else if a.ko.Spec.CreateBucketConfiguration.LocationConstraint != nil && b.ko.Spec.CreateBucketConfiguration.LocationConstraint != nil {
-//         if *a.ko.Spec.CreateBucketConfiguration.LocationConstraint != *b.ko.Spec.CreateBucketConfiguration.LocationConstraint {
-//             delta.Add("Spec.CreateBucketConfiguration.LocationConstraint", a.ko.Spec.CreateBucketConfiguration.LocationConstraint, b.ko.Spec.CreateBucketConfiguration.LocationConstraint)
-//         }
-//     }
-// }
+//	if ackcompare.HasNilDifference(a.ko.Spec.CreateBucketConfiguration, b.ko.Spec.CreateBucketConfiguration) {
+//	    delta.Add("Spec.CreateBucketConfiguration", a.ko.Spec.CreateBucketConfiguration, b.ko.Spec.CreateBucketConfiguration)
+//	} else if a.ko.Spec.CreateBucketConfiguration != nil && b.ko.Spec.CreateBucketConfiguration != nil {
+//
+//	    if ackcompare.HasNilDifference(a.ko.Spec.CreateBucketConfiguration.LocationConstraint, b.ko.Spec.CreateBucketConfiguration.LocationConstraint) {
+//	        delta.Add("Spec.CreateBucketConfiguration.LocationConstraint", a.ko.Spec.CreateBucketConfiguration.LocationConstraint, b.ko.Spec.CreateBucketConfiguration.LocationConstraint)
+//	    } else if a.ko.Spec.CreateBucketConfiguration.LocationConstraint != nil && b.ko.Spec.CreateBucketConfiguration.LocationConstraint != nil {
+//	        if *a.ko.Spec.CreateBucketConfiguration.LocationConstraint != *b.ko.Spec.CreateBucketConfiguration.LocationConstraint {
+//	            delta.Add("Spec.CreateBucketConfiguration.LocationConstraint", a.ko.Spec.CreateBucketConfiguration.LocationConstraint, b.ko.Spec.CreateBucketConfiguration.LocationConstraint)
+//	        }
+//	    }
+//	}
 //
 // For *slice of strings* Go types, the output Go code looks like this:
 //
-// if ackcompare.HasNilDifference(a.ko.Spec.AllowedPublishers, b.ko.Spec.AllowedPublishers) {
-//     delta.Add("Spec.AllowedPublishers", a.ko.Spec.AllowedPublishers, b.ko.Spec.AllowedPublishers)
-// } else if a.ko.Spec.AllowedPublishers != nil && b.ko.Spec.AllowedPublishers != nil {
-//     if !ackcompare.SliceStringPEqual(a.ko.Spec.AllowedPublishers.SigningProfileVersionARNs, b.ko.Spec.AllowedPublishers.SigningProfileVersionARNs) {
-//         delta.Add("Spec.AllowedPublishers.SigningProfileVersionARNs", a.ko.Spec.AllowedPublishers.SigningProfileVersionARNs, b.ko.Spec.AllowedPublishers.SigningProfileVersionARNs)
-//     }
-// }
+//	if ackcompare.HasNilDifference(a.ko.Spec.AllowedPublishers, b.ko.Spec.AllowedPublishers) {
+//	    delta.Add("Spec.AllowedPublishers", a.ko.Spec.AllowedPublishers, b.ko.Spec.AllowedPublishers)
+//	} else if a.ko.Spec.AllowedPublishers != nil && b.ko.Spec.AllowedPublishers != nil {
+//
+//	    if !ackcompare.SliceStringPEqual(a.ko.Spec.AllowedPublishers.SigningProfileVersionARNs, b.ko.Spec.AllowedPublishers.SigningProfileVersionARNs) {
+//	        delta.Add("Spec.AllowedPublishers.SigningProfileVersionARNs", a.ko.Spec.AllowedPublishers.SigningProfileVersionARNs, b.ko.Spec.AllowedPublishers.SigningProfileVersionARNs)
+//	    }
+//	}
 func CompareResource(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,
@@ -238,9 +241,9 @@ func CompareResource(
 //
 // Output code will look something like this:
 //
-// if ackcompare.HasNilDifferenceStringP(a.ko.Spec.Name, b.ko.Spec.Name == nil) {
-//   delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
-// }
+//	if ackcompare.HasNilDifferenceStringP(a.ko.Spec.Name, b.ko.Spec.Name == nil) {
+//	  delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
+//	}
 func compareNil(
 	// struct informing code generator how to compare the field values
 	compareConfig *ackgenconfig.CompareFieldConfig,
@@ -302,9 +305,9 @@ func compareNil(
 //
 // Output code will look something like this:
 //
-//   if *a.ko.Spec.Name != *b.ko.Spec.Name) {
-//     delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
-//   }
+//	if *a.ko.Spec.Name != *b.ko.Spec.Name) {
+//	  delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
+//	}
 func compareScalar(
 	// struct informing code generator how to compare the field values
 	compareConfig *ackgenconfig.CompareFieldConfig,
@@ -372,9 +375,9 @@ func compareScalar(
 //
 // Output code will look something like this:
 //
-//   if !ackcompare.MapStringStringPEqual(a.ko.Spec.Tags, b.ko.Spec.Tags) {
-//     delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
-//   }
+//	if !ackcompare.MapStringStringPEqual(a.ko.Spec.Tags, b.ko.Spec.Tags) {
+//	  delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
+//	}
 func compareMap(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,
@@ -449,9 +452,9 @@ func compareMap(
 //
 // Output code will look something like this:
 //
-//   if !ackcompare.SliceStringPEqual(a.ko.Spec.SecurityGroupIDs, b.ko.Spec.SecurityGroupIDs) {
-//     delta.Add("Spec.SecurityGroupIDs", a.ko.Spec.SecurityGroupIDs, b.ko.Spec.SecurityGroupIDs)
-//   }
+//	if !ackcompare.SliceStringPEqual(a.ko.Spec.SecurityGroupIDs, b.ko.Spec.SecurityGroupIDs) {
+//	  delta.Add("Spec.SecurityGroupIDs", a.ko.Spec.SecurityGroupIDs, b.ko.Spec.SecurityGroupIDs)
+//	}
 func compareSlice(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,

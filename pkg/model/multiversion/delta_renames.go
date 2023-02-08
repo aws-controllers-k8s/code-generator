@@ -30,9 +30,10 @@ var (
 // distinguished api versions.
 //
 // Examples:
-//     if we rename X to Y in v1 and X to Y in v2 the map of renames is {}
-//     if we rename X to Y in v1 and X to Z in v2 the map of renames is {Y: Z}
-//     if we don't rename any field in v1 and we rename X to Y in v2 the map of renames if {X: Y}
+//
+//	if we rename X to Y in v1 and X to Y in v2 the map of renames is {}
+//	if we rename X to Y in v1 and X to Z in v2 the map of renames is {Y: Z}
+//	if we don't rename any field in v1 and we rename X to Y in v2 the map of renames if {X: Y}
 func ComputeRenamesDelta(srcRenames, dstRenames map[string]string) (map[string]string, error) {
 	// returns an error if we find any prohibited or unsupported renaming pattern.
 	for dstOld, dstNew := range dstRenames {

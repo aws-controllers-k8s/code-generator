@@ -62,26 +62,28 @@ func FindLateInitializedFieldNames(
 //
 // Sample generator config:
 // fields:
-//      Name:
-//        late_initialize: {}
-//      ImageScanningConfiguration.ScanOnPush:
-//        late_initialize:
-//          min_backoff_seconds: 5
-//          max_backoff_seconds: 15
-//      map..subfield.x:
-//        late_initialize:
-//          min_backoff_seconds: 5
-//      another.map..lastfield:
-//        late_initialize:
-//          min_backoff_seconds: 5
-//      some.list:
-//        late_initialize:
-//          min_backoff_seconds: 10
-//      structA.mapB..structC.valueD:
-//        late_initialize:
-//          min_backoff_seconds: 20
+//
+//	Name:
+//	  late_initialize: {}
+//	ImageScanningConfiguration.ScanOnPush:
+//	  late_initialize:
+//	    min_backoff_seconds: 5
+//	    max_backoff_seconds: 15
+//	map..subfield.x:
+//	  late_initialize:
+//	    min_backoff_seconds: 5
+//	another.map..lastfield:
+//	  late_initialize:
+//	    min_backoff_seconds: 5
+//	some.list:
+//	  late_initialize:
+//	    min_backoff_seconds: 10
+//	structA.mapB..structC.valueD:
+//	  late_initialize:
+//	    min_backoff_seconds: 20
 //
 // Sample output:
+//
 //	observedKo := rm.concreteResource(observed).ko
 //	latestKo := rm.concreteResource(latest).ko
 //	if observedKo.Spec.ImageScanningConfiguration != nil && latestKo.Spec.ImageScanningConfiguration != nil {
@@ -203,27 +205,28 @@ func LateInitializeFromReadOne(
 //
 // Sample GeneratorConfig:
 // fields:
-//      Name:
-//        late_initialize: {}
-//      ImageScanningConfiguration.ScanOnPush:
-//        late_initialize:
-//          min_backoff_seconds: 5
-//          max_backoff_seconds: 15
-//      map..subfield.x:
-//        late_initialize:
-//          min_backoff_seconds: 5
-//      another.map..lastfield:
-//        late_initialize:
-//          min_backoff_seconds: 5
-//      some.list:
-//        late_initialize:
-//          min_backoff_seconds: 10
-//      structA.mapB..structC.valueD:
-//        late_initialize:
-//          min_backoff_seconds: 20
 //
+//	Name:
+//	  late_initialize: {}
+//	ImageScanningConfiguration.ScanOnPush:
+//	  late_initialize:
+//	    min_backoff_seconds: 5
+//	    max_backoff_seconds: 15
+//	map..subfield.x:
+//	  late_initialize:
+//	    min_backoff_seconds: 5
+//	another.map..lastfield:
+//	  late_initialize:
+//	    min_backoff_seconds: 5
+//	some.list:
+//	  late_initialize:
+//	    min_backoff_seconds: 10
+//	structA.mapB..structC.valueD:
+//	  late_initialize:
+//	    min_backoff_seconds: 20
 //
 // Sample Output:
+//
 //	ko := rm.concreteResource(latest).ko.DeepCopy()
 //	if ko.Spec.ImageScanningConfiguration != nil {
 //		if ko.Spec.ImageScanningConfiguration.ScanOnPush == nil {
@@ -262,7 +265,6 @@ func LateInitializeFromReadOne(
 //		}
 //	}
 //	return false
-//
 func IncompleteLateInitialization(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,

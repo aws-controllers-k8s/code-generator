@@ -163,7 +163,6 @@ func checkRequiredFieldsMissingFromShape(
 // locates an identifier field in the shape that can be populated with an
 // identifier value from the CR.
 //
-//
 // As an example, DescribeVpcs EC2 API call doesn't have a ReadOne operation or
 // required fields. However, the input shape has a VpcIds field which can be
 // populated using a VpcId, a field in the VPC CR's Status. Therefore, require

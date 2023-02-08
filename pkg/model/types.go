@@ -89,10 +89,10 @@ func CleanGoType(
 //
 // As an example, if ReplacePkgName() is called with the following parameters:
 //
-//  subject:			"*ecr.Repository"
-//  apiPkgName:			"ecr"
-//  replacePkgAlias:	"svcsdk"
-//  keepPointer:		true
+//	subject:			"*ecr.Repository"
+//	apiPkgName:			"ecr"
+//	replacePkgAlias:	"svcsdk"
+//	keepPointer:		true
 //
 // the returned string would be "*svcsdk.Repository"
 //

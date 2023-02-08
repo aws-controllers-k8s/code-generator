@@ -31,44 +31,46 @@ import (
 // Assume a CRD called Repository that looks like this pseudo-schema:
 //
 // .Status
-//   .Authors ([]*string)
-//   .ImageData
-//     .Location (*string)
-//     .Tag (*string)
-//   .Name (*string)
+//
+//	.Authors ([]*string)
+//	.ImageData
+//	  .Location (*string)
+//	  .Tag (*string)
+//	.Name (*string)
 //
 // And assume an SDK Shape CreateRepositoryInput that looks like this
 // pseudo-schema:
 //
 // .Repository
-//   .Authors ([]*string)
-//   .ImageData
-//     .Location (*string)
-//     .Tag (*string)
-//   .Name
+//
+//	.Authors ([]*string)
+//	.ImageData
+//	  .Location (*string)
+//	  .Tag (*string)
+//	.Name
 //
 // This function is called from a template that generates the Go code that
 // represents linkage between the Kubernetes objects (CRs) and the aws-sdk-go
 // (SDK) objects. If we call this function with the following parameters:
 //
-//  opType:			OpTypeCreate
-//  sourceVarName:	ko
-//  targetVarName:	res
-//  indentLevel:	1
+//	opType:			OpTypeCreate
+//	sourceVarName:	ko
+//	targetVarName:	res
+//	indentLevel:	1
 //
 // Then this function should output something like this:
 //
-//   field1 := []*string{}
-//   for _, elem0 := range r.ko.Spec.Authors {
-//       elem0 := &string{*elem0}
-//       field0 = append(field0, elem0)
-//   }
-//   res.Authors = field1
-//   field1 := &svcsdk.ImageData{}
-//   field1.SetLocation(*r.ko.Spec.ImageData.Location)
-//   field1.SetTag(*r.ko.Spec.ImageData.Tag)
-//   res.ImageData = field1
-//	 res.SetName(*r.ko.Spec.Name)
+//	  field1 := []*string{}
+//	  for _, elem0 := range r.ko.Spec.Authors {
+//	      elem0 := &string{*elem0}
+//	      field0 = append(field0, elem0)
+//	  }
+//	  res.Authors = field1
+//	  field1 := &svcsdk.ImageData{}
+//	  field1.SetLocation(*r.ko.Spec.ImageData.Location)
+//	  field1.SetTag(*r.ko.Spec.ImageData.Tag)
+//	  res.ImageData = field1
+//		 res.SetName(*r.ko.Spec.Name)
 //
 // Note that for scalar fields, we use the SetXXX methods that are on all
 // aws-sdk-go SDK structs
@@ -539,18 +541,23 @@ func SetSDKGetAttributes(
 // The returned code looks something like this:
 //
 // attrMap := map[string]*string{}
-// if r.ko.Spec.DeliveryPolicy != nil {
-//     attrMap["DeliveryPolicy"] = r.ko.Spec.DeliveryPolicy
-// }
-// if r.ko.Spec.DisplayName != nil {
-//     attrMap["DisplayName"} = r.ko.Spec.DisplayName
-// }
-// if r.ko.Spec.KMSMasterKeyID != nil {
-//     attrMap["KmsMasterKeyId"] = r.ko.Spec.KMSMasterKeyID
-// }
-// if r.ko.Spec.Policy != nil {
-//     attrMap["Policy"] = r.ko.Spec.Policy
-// }
+//
+//	if r.ko.Spec.DeliveryPolicy != nil {
+//	    attrMap["DeliveryPolicy"] = r.ko.Spec.DeliveryPolicy
+//	}
+//
+//	if r.ko.Spec.DisplayName != nil {
+//	    attrMap["DisplayName"} = r.ko.Spec.DisplayName
+//	}
+//
+//	if r.ko.Spec.KMSMasterKeyID != nil {
+//	    attrMap["KmsMasterKeyId"] = r.ko.Spec.KMSMasterKeyID
+//	}
+//
+//	if r.ko.Spec.Policy != nil {
+//	    attrMap["Policy"] = r.ko.Spec.Policy
+//	}
+//
 // res.SetAttributes(attrMap)
 func SetSDKSetAttributes(
 	cfg *ackgenconfig.Config,
@@ -732,7 +739,7 @@ func SetSDKSetAttributes(
 //
 // Sample Output:
 //
-// 	if r.ko.Status.VPCID != nil {
+//	if r.ko.Status.VPCID != nil {
 //		f4 := []*string{}
 //		f4 = append(f4, r.ko.Status.VPCID)
 //		res.SetVpcIds(f4)
