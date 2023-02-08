@@ -118,5 +118,9 @@ func resolveReferenceFor{{ $field.FieldPathWithUnderscore }}(
 {{ GoCodeResolveReference .CRD $field "ko" 1 }}
 	return nil
 }
+
+{{ template "read_referenced_resource_and_validate" $field }}
+
 {{ end -}}
 {{ end -}}
+

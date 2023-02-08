@@ -211,51 +211,17 @@ func Test_ReferenceForField_SingleReference(t *testing.T) {
 	crd := testutil.GetCRDByName(t, g, "Integration")
 	require.NotNil(crd)
 	expected :=
-		`	refVal := ""
-	if ko.Spec.APIRef != nil && ko.Spec.APIRef.From != nil {
+		`	if ko.Spec.APIRef != nil && ko.Spec.APIRef.From != nil {
 		arr := ko.Spec.APIRef.From
 		if arr == nil || arr.Name == nil || *arr.Name == "" {
 			return fmt.Errorf("provided resource reference is nil or empty")
 		}
-		namespacedName := types.NamespacedName{
-			Namespace: namespace,
-			Name: *arr.Name,
-		}
-		obj := svcapitypes.API{}
-		err := apiReader.Get(ctx, namespacedName, &obj)
-		if err != nil {
+		obj := &svcapitypes.API{}
+		if err := getReferencedResourceState_API(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
 			return err
 		}
-		var refResourceSynced, refResourceTerminal bool
-		for _, cond := range obj.Status.Conditions {
-			if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
-				cond.Status == corev1.ConditionTrue {
-				refResourceSynced = true
-			}
-			if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
-				cond.Status == corev1.ConditionTrue {
-				refResourceTerminal = true
-			}
-		}
-		if refResourceTerminal {
-			return ackerr.ResourceReferenceTerminalFor(
-				"API",
-				namespace, *arr.Name)
-		}
-		if !refResourceSynced {
-			return ackerr.ResourceReferenceNotSyncedFor(
-				"API",
-				namespace, *arr.Name)
-		}
-		if obj.Status.APIID == nil {
-			return ackerr.ResourceReferenceMissingTargetFieldFor(
-				"API",
-				namespace, *arr.Name,
-				"Status.APIID")
-		}
-		refVal = string(*obj.Status.APIID)
+		ko.Spec.APIID = obj.Status.APIID
 	}
-	ko.Spec.APIID = &refVal
 `
 
 	field := crd.Fields["APIID"]
@@ -274,53 +240,17 @@ func Test_ReferenceForField_SliceOfReferences(t *testing.T) {
 	crd := testutil.GetCRDByName(t, g, "VpcLink")
 	require.NotNil(crd)
 	expected :=
-		`	refVals := []*string{}
+		`	ko.Spec.SecurityGroupIDs = []*string{}
 	for _, iter0 := range ko.Spec.SecurityGroupIDs {
-		if iter0 != nil && iter0.From != nil {
-			arr := iter0.From
-			if arr == nil || arr.Name == nil || *arr.Name == "" {
-				return fmt.Errorf("provided resource reference is nil or empty")
-			}
-			namespacedName := types.NamespacedName{
-				Namespace: namespace,
-				Name: *arr.Name,
-			}
-			obj := ec2apitypes.SecurityGroup{}
-			err := apiReader.Get(ctx, namespacedName, &obj)
-			if err != nil {
-				return err
-			}
-			var refResourceSynced, refResourceTerminal bool
-			for _, cond := range obj.Status.Conditions {
-				if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
-					cond.Status == corev1.ConditionTrue {
-					refResourceSynced = true
-				}
-				if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
-					cond.Status == corev1.ConditionTrue {
-					refResourceTerminal = true
-				}
-			}
-			if refResourceTerminal {
-				return ackerr.ResourceReferenceTerminalFor(
-					"SecurityGroup",
-					namespace, *arr.Name)
-			}
-			if !refResourceSynced {
-				return ackerr.ResourceReferenceNotSyncedFor(
-					"SecurityGroup",
-					namespace, *arr.Name)
-			}
-			if obj.Status.ID == nil {
-				return ackerr.ResourceReferenceMissingTargetFieldFor(
-					"SecurityGroup",
-					namespace, *arr.Name,
-					"Status.ID")
-			}
-			refVals = append(refVals, obj.Status.ID)
+		arr := iter0.From
+		if arr == nil || arr.Name == nil || *arr.Name == "" {
+			return fmt.Errorf("provided resource reference is nil or empty")
 		}
+		if err := getReferencedResourceState_VPCLink(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
+			return err
+		}
+		ko.Spec.SecurityGroupIDs = append(ko.Spec.SecurityGroupIDs, obj.Status.ID)
 	}
-	ko.Spec.SecurityGroupIDs = refVals
 `
 
 	field := crd.Fields["SecurityGroupIDs"]
@@ -340,51 +270,17 @@ func Test_ReferenceForField_NestedSingleReference(t *testing.T) {
 	require.NotNil(crd)
 	expected :=
 		`	if ko.Spec.JWTConfiguration != nil {
-		refVal := ""
 		if ko.Spec.JWTConfiguration.IssuerRef != nil && ko.Spec.JWTConfiguration.IssuerRef.From != nil {
 			arr := ko.Spec.JWTConfiguration.IssuerRef.From
 			if arr == nil || arr.Name == nil || *arr.Name == "" {
 				return fmt.Errorf("provided resource reference is nil or empty")
 			}
-			namespacedName := types.NamespacedName{
-				Namespace: namespace,
-				Name: *arr.Name,
-			}
-			obj := svcapitypes.API{}
-			err := apiReader.Get(ctx, namespacedName, &obj)
-			if err != nil {
+			obj := &svcapitypes.API{}
+			if err := getReferencedResourceState_API(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
 				return err
 			}
-			var refResourceSynced, refResourceTerminal bool
-			for _, cond := range obj.Status.Conditions {
-				if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
-					cond.Status == corev1.ConditionTrue {
-					refResourceSynced = true
-				}
-				if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
-					cond.Status == corev1.ConditionTrue {
-					refResourceTerminal = true
-				}
-			}
-			if refResourceTerminal {
-				return ackerr.ResourceReferenceTerminalFor(
-					"API",
-					namespace, *arr.Name)
-			}
-			if !refResourceSynced {
-				return ackerr.ResourceReferenceNotSyncedFor(
-					"API",
-					namespace, *arr.Name)
-			}
-			if obj.Status.APIID == nil {
-				return ackerr.ResourceReferenceMissingTargetFieldFor(
-					"API",
-					namespace, *arr.Name,
-					"Status.APIID")
-			}
-			refVal = string(*obj.Status.APIID)
+			ko.Spec.JWTConfiguration.Issuer = obj.Status.APIID
 		}
-		ko.Spec.JWTConfiguration.Issuer = &refVal
 	}
 `
 
@@ -408,51 +304,17 @@ func Test_ReferenceForField_SingleReference_DeeplyNested(t *testing.T) {
 	expected :=
 		`	if ko.Spec.Logging != nil {
 		if ko.Spec.Logging.LoggingEnabled != nil {
-			refVal := ""
 			if ko.Spec.Logging.LoggingEnabled.TargetBucketRef != nil && ko.Spec.Logging.LoggingEnabled.TargetBucketRef.From != nil {
 				arr := ko.Spec.Logging.LoggingEnabled.TargetBucketRef.From
 				if arr == nil || arr.Name == nil || *arr.Name == "" {
 					return fmt.Errorf("provided resource reference is nil or empty")
 				}
-				namespacedName := types.NamespacedName{
-					Namespace: namespace,
-					Name: *arr.Name,
-				}
-				obj := svcapitypes.Bucket{}
-				err := apiReader.Get(ctx, namespacedName, &obj)
-				if err != nil {
+				obj := &svcapitypes.Bucket{}
+				if err := getReferencedResourceState_Bucket(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
 					return err
 				}
-				var refResourceSynced, refResourceTerminal bool
-				for _, cond := range obj.Status.Conditions {
-					if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
-						cond.Status == corev1.ConditionTrue {
-						refResourceSynced = true
-					}
-					if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
-						cond.Status == corev1.ConditionTrue {
-						refResourceTerminal = true
-					}
-				}
-				if refResourceTerminal {
-					return ackerr.ResourceReferenceTerminalFor(
-						"Bucket",
-						namespace, *arr.Name)
-				}
-				if !refResourceSynced {
-					return ackerr.ResourceReferenceNotSyncedFor(
-						"Bucket",
-						namespace, *arr.Name)
-				}
-				if obj.Spec.Name == nil {
-					return ackerr.ResourceReferenceMissingTargetFieldFor(
-						"Bucket",
-						namespace, *arr.Name,
-						"Spec.Name")
-				}
-				refVal = string(*obj.Spec.Name)
+				ko.Spec.Logging.LoggingEnabled.TargetBucket = obj.Spec.Name
 			}
-			ko.Spec.Logging.LoggingEnabled.TargetBucket = &refVal
 		}
 	}
 `
