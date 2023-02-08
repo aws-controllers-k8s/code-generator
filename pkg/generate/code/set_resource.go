@@ -33,45 +33,47 @@ import (
 // Assume a CRD called Repository that looks like this pseudo-schema:
 //
 // .Status
-//   .Authors ([]*string)
-//   .ImageData
-//     .Location (*string)
-//     .Tag (*string)
-//   .Name (*string)
+//
+//	.Authors ([]*string)
+//	.ImageData
+//	  .Location (*string)
+//	  .Tag (*string)
+//	.Name (*string)
 //
 // And assume an SDK Shape CreateRepositoryOutput that looks like this
 // pseudo-schema:
 //
 // .Repository
-//   .Authors ([]*string)
-//   .ImageData
-//     .Location (*string)
-//     .Tag (*string)
-//   .Name
+//
+//	.Authors ([]*string)
+//	.ImageData
+//	  .Location (*string)
+//	  .Tag (*string)
+//	.Name
 //
 // This function is called from a template that generates the Go code that
 // represents linkage between the Kubernetes objects (CRs) and the aws-sdk-go
 // (SDK) objects. If we call this function with the following parameters:
 //
-//  opType:			OpTypeCreate
-//  sourceVarName:	resp
-//  targetVarName:	ko.Status
-//  indentLevel:	1
+//	opType:			OpTypeCreate
+//	sourceVarName:	resp
+//	targetVarName:	ko.Status
+//	indentLevel:	1
 //
 // Then this function should output something like this:
 //
-//   field0 := []*string{}
-//   for _, iter0 := range resp.Authors {
-//       var elem0 string
-//       elem0 = *iter
-//       field0 = append(field0, &elem0)
-//   }
-//   ko.Status.Authors = field0
-//   field1 := &svcapitypes.ImageData{}
-//   field1.Location = resp.ImageData.Location
-//   field1.Tag = resp.ImageData.Tag
-//   ko.Status.ImageData = field1
-//   ko.Status.Name = resp.Name
+//	field0 := []*string{}
+//	for _, iter0 := range resp.Authors {
+//	    var elem0 string
+//	    elem0 = *iter
+//	    field0 = append(field0, &elem0)
+//	}
+//	ko.Status.Authors = field0
+//	field1 := &svcapitypes.ImageData{}
+//	field1.Location = resp.ImageData.Location
+//	field1.Tag = resp.ImageData.Tag
+//	ko.Status.ImageData = field1
+//	ko.Status.Name = resp.Name
 func SetResource(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,
@@ -389,44 +391,47 @@ func ListMemberNameInReadManyOutput(
 // returned code looks like this:
 //
 // Note: "resp" is the source variable and represents the
-//       DescribeCacheClustersOutput shape/struct in the aws-sdk-go API for
-//       Elasticache
-// Note: "ko" is the target variable and represents the thing we'll be
-//		 setting fields on
 //
-//  if len(resp.CacheClusters) == 0 {
-//      return nil, ackerr.NotFound
-//  }
-//  found := false
-//  for _, elem := range resp.CacheClusters {
-//      if elem.ARN != nil {
-//          if ko.Status.ACKResourceMetadata == nil {
-//              ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
-//          }
-//          tmpARN := ackv1alpha1.AWSResourceName(*elemARN)
-//          ko.Status.ACKResourceMetadata.ARN = &tmpARN
-//      }
-//      if elem.AtRestEncryptionEnabled != nil {
-//          ko.Status.AtRestEncryptionEnabled = elem.AtRestEncryptionEnabled
-//      } else {
-//          ko.Status.AtRestEncryptionEnabled = nil
-//      }
-//      ...
-//      if elem.CacheClusterId != nil {
-//          if ko.Spec.CacheClusterID != nil {
-//              if *elem.CacheClusterId != *ko.Spec.CacheClusterID {
-//                  continue
-//              }
-//          }
-//          r.ko.Spec.CacheClusterID = elem.CacheClusterId
-//      } else {
-//          r.ko.Spec.CacheClusterID = nil
-//      }
-//      found = true
-//  }
-//  if !found {
-//      return nil, ackerr.NotFound
-//  }
+//	DescribeCacheClustersOutput shape/struct in the aws-sdk-go API for
+//	Elasticache
+//
+// Note: "ko" is the target variable and represents the thing we'll be
+//
+//			 setting fields on
+//
+//	 if len(resp.CacheClusters) == 0 {
+//	     return nil, ackerr.NotFound
+//	 }
+//	 found := false
+//	 for _, elem := range resp.CacheClusters {
+//	     if elem.ARN != nil {
+//	         if ko.Status.ACKResourceMetadata == nil {
+//	             ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
+//	         }
+//	         tmpARN := ackv1alpha1.AWSResourceName(*elemARN)
+//	         ko.Status.ACKResourceMetadata.ARN = &tmpARN
+//	     }
+//	     if elem.AtRestEncryptionEnabled != nil {
+//	         ko.Status.AtRestEncryptionEnabled = elem.AtRestEncryptionEnabled
+//	     } else {
+//	         ko.Status.AtRestEncryptionEnabled = nil
+//	     }
+//	     ...
+//	     if elem.CacheClusterId != nil {
+//	         if ko.Spec.CacheClusterID != nil {
+//	             if *elem.CacheClusterId != *ko.Spec.CacheClusterID {
+//	                 continue
+//	             }
+//	         }
+//	         r.ko.Spec.CacheClusterID = elem.CacheClusterId
+//	     } else {
+//	         r.ko.Spec.CacheClusterID = nil
+//	     }
+//	     found = true
+//	 }
+//	 if !found {
+//	     return nil, ackerr.NotFound
+//	 }
 func setResourceReadMany(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,
@@ -699,9 +704,9 @@ func setResourceReadMany(
 // ackResourceMetadataGuardConstructor returns Go code representing a nil-guard
 // and constructor for an ACKResourceMetadata struct:
 //
-// if ko.Status.ACKResourceMetadata == nil {
-//     ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
-// }
+//	if ko.Status.ACKResourceMetadata == nil {
+//	    ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
+//	}
 func ackResourceMetadataGuardConstructor(
 	// String representing the name of the variable that we will be **setting**
 	// with values we get from the Output shape. This will likely be
@@ -729,9 +734,9 @@ func ackResourceMetadataGuardConstructor(
 // identifierNameOrIDGuardConstructor returns Go code representing a nil-guard
 // and returns a `MissingNameIdentifier` error:
 //
-// if identifier.NameOrID == "" {
-//  return ackerrors.MissingNameIdentifier
-// }
+//	if identifier.NameOrID == "" {
+//	 return ackerrors.MissingNameIdentifier
+//	}
 func identifierNameOrIDGuardConstructor(
 	// String representing the name of the identifier that should have the
 	// `NameOrID` pointer defined
@@ -752,9 +757,10 @@ func identifierNameOrIDGuardConstructor(
 // As an example, for the GetTopicAttributes SNS API call, the returned code
 // looks like this:
 //
-// if ko.Status.ACKResourceMetadata == nil {
-//     ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
-// }
+//	if ko.Status.ACKResourceMetadata == nil {
+//	    ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
+//	}
+//
 // ko.Status.EffectiveDeliveryPolicy = resp.Attributes["EffectiveDeliveryPolicy"]
 // ko.Status.ACKResourceMetadata.OwnerAccountID = ackv1alpha1.AWSAccountID(resp.Attributes["Owner"])
 // ko.Status.ACKResourceMetadata.ARN = ackv1alpha1.AWSResourceName(resp.Attributes["TopicArn"])
@@ -882,41 +888,53 @@ func SetResourceGetAttributes(
 // An example of code with no additional keys:
 //
 // ```
-// 	if identifier.NameOrID == nil {
-// 		return ackerrors.MissingNameIdentifier
-// 	}
-// 	r.ko.Status.BrokerID = identifier.NameOrID
+//
+//	if identifier.NameOrID == nil {
+//		return ackerrors.MissingNameIdentifier
+//	}
+//	r.ko.Status.BrokerID = identifier.NameOrID
+//
 // ```
 //
 // An example of code with additional keys:
 //
 // ```
-// if identifier.NameOrID == nil {
-// 	  return ackerrors.MissingNameIdentifier
-// }
+//
+//	if identifier.NameOrID == nil {
+//		  return ackerrors.MissingNameIdentifier
+//	}
+//
 // r.ko.Spec.ResourceID = identifier.NameOrID
 //
 // f0, f0ok := identifier.AdditionalKeys["scalableDimension"]
-// if f0ok {
-// 	  r.ko.Spec.ScalableDimension = f0
-// }
+//
+//	if f0ok {
+//		  r.ko.Spec.ScalableDimension = f0
+//	}
+//
 // f1, f1ok := identifier.AdditionalKeys["serviceNamespace"]
-// if f1ok {
-// 	  r.ko.Spec.ServiceNamespace = f1
-// }
+//
+//	if f1ok {
+//		  r.ko.Spec.ServiceNamespace = f1
+//	}
+//
 // ```
 // An example of code that uses the ARN:
 //
 // ```
-// if r.ko.Status.ACKResourceMetadata == nil {
-// 	r.ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
-// }
+//
+//	if r.ko.Status.ACKResourceMetadata == nil {
+//		r.ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
+//	}
+//
 // r.ko.Status.ACKResourceMetadata.ARN = identifier.ARN
 //
 // f0, f0ok := identifier.AdditionalKeys["modelPackageName"]
-// if f0ok {
-// 	r.ko.Spec.ModelPackageName = &f0
-// }
+//
+//	if f0ok {
+//		r.ko.Spec.ModelPackageName = &f0
+//	}
+//
 // ```
 func SetResourceIdentifiers(
 	cfg *ackgenconfig.Config,
@@ -1135,9 +1153,10 @@ func setResourceIdentifierPrimaryIdentifier(
 // `AdditionalKeys` mapping:
 //
 // f0, f0ok := identifier.AdditionalKeys["scalableDimension"]
-// if f0ok {
-// 	r.ko.Spec.ScalableDimension = f0
-// }
+//
+//	if f0ok {
+//		r.ko.Spec.ScalableDimension = f0
+//	}
 func setResourceIdentifierAdditionalKey(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,
@@ -1624,10 +1643,10 @@ func setResourceForScalar(
 // - indentLevel: 1
 //
 // Sample Output (omit formatting for readability):
-// - opening: "for _, iter0 := range resp.Reservations {
-//	for _, elem := range iter0.Instances {"
-// - closing: "break } break }"
-// - updatedIndentLevel: 3
+//   - opening: "for _, iter0 := range resp.Reservations {
+//     for _, elem := range iter0.Instances {"
+//   - closing: "break } break }"
+//   - updatedIndentLevel: 3
 func generateForRangeLoops(
 	// shapeRef of the shape containing element
 	shapeRef *awssdkmodel.ShapeRef,

@@ -49,23 +49,23 @@ import "strings"
 // CreateFunction API call, which has a `Code` member of its Input shape that
 // looks like this:
 //
-// "Code": {
-//   "ImageUri": "string",
-//   "S3Bucket": "string",
-//   "S3Key": "string",
-//   "S3ObjectVersion": "string",
-//   "ZipFile": blob
-// },
+//	"Code": {
+//	  "ImageUri": "string",
+//	  "S3Bucket": "string",
+//	  "S3Key": "string",
+//	  "S3ObjectVersion": "string",
+//	  "ZipFile": blob
+//	},
 //
 // The GetFunction API call's Output shape has a same-named field called
 // `Code` in it, but this field looks like this:
 //
-// "Code": {
-//   "ImageUri": "string",
-//   "Location": "string",
-//   "RepositoryType": "string",
-//   "ResolvedImageUri": "string"
-// },
+//	"Code": {
+//	  "ImageUri": "string",
+//	  "Location": "string",
+//	  "RepositoryType": "string",
+//	  "ResolvedImageUri": "string"
+//	},
 //
 // This presents a conundrum to the ACK code generator, which, as noted above,
 // assumes the data types of same-named fields in the Create Operation's Input
@@ -80,23 +80,24 @@ import "strings"
 // ReadOne Operation's Output shape:
 //
 // resources:
-//   Function:
-//     fields:
-//       CodeLocation:
-//         is_read_only: true
-//         from:
-//           operation: GetFunction
-//           path: Code.Location
-//       CodeRepositoryType:
-//         is_read_only: true
-//         from:
-//           operation: GetFunction
-//           path: Code.RepositoryType
-//       CodeRegisteredImageURI:
-//         is_read_only: true
-//         from:
-//           operation: GetFunction
-//           path: Code.RegisteredImageUri
+//
+//	Function:
+//	  fields:
+//	    CodeLocation:
+//	      is_read_only: true
+//	      from:
+//	        operation: GetFunction
+//	        path: Code.Location
+//	    CodeRepositoryType:
+//	      is_read_only: true
+//	      from:
+//	        operation: GetFunction
+//	        path: Code.RepositoryType
+//	    CodeRegisteredImageURI:
+//	      is_read_only: true
+//	      from:
+//	        operation: GetFunction
+//	        path: Code.RegisteredImageUri
 type SourceFieldConfig struct {
 	// Operation refers to the ID of the API Operation where we will
 	// determine the field's Go type.
@@ -135,17 +136,20 @@ type SourceFieldConfig struct {
 // the SetResource generator:
 //
 // ```go
-// if resp.DBInstance.DBSecurityGroups != nil {
-//     f17 := []*string{}
-//     for _, f17iter := range resp.DBInstance.DBSecurityGroups {
-//         var f17elem string
-//         f17elem = *f17iter.DBSecurityGroupName
-//         f17 = append(f17, &f17elem)
-//     }
-//     ko.Spec.DBSecurityGroupNames = f17
-// } else {
-//     ko.Spec.DBSecurityGroupNames = nil
-// }
+//
+//	if resp.DBInstance.DBSecurityGroups != nil {
+//	    f17 := []*string{}
+//	    for _, f17iter := range resp.DBInstance.DBSecurityGroups {
+//	        var f17elem string
+//	        f17elem = *f17iter.DBSecurityGroupName
+//	        f17 = append(f17, &f17elem)
+//	    }
+//	    ko.Spec.DBSecurityGroupNames = f17
+//	} else {
+//
+//	    ko.Spec.DBSecurityGroupNames = nil
+//	}
+//
 // ```
 //
 // [0] https://github.com/aws/aws-sdk-go/blob/0a01aef9caf16d869c7340e729080205760dc2a2/models/apis/rds/2014-10-31/api-2.json#L2985
@@ -274,12 +278,14 @@ type LateInitializeConfig struct {
 // Example:
 // ```
 // Integration:
-//    fields:
-//      ApiId:
-//        references:
-//          resource: API
-//          path: Status.APIID
-//```
+//
+//	fields:
+//	  ApiId:
+//	    references:
+//	      resource: API
+//	      path: Status.APIID
+//
+// ```
 // The above configuration will result in generation of a new field 'APIRef'
 // of type 'AWSResourceReference' for ApiGatewayv2-Integration crd.
 // When 'APIRef' field is present in custom resource manifest, reconciler will

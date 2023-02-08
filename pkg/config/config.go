@@ -77,7 +77,7 @@ type PrefixConfig struct {
 // GetAdditionalColumns extracts AdditionalColumns defined for a given Resource
 func (c *Config) GetAdditionalColumns(resourceName string) []*AdditionalColumnConfig {
 	if c == nil {
-        return nil
+		return nil
 	}
 
 	resourceConfig, ok := c.Resources[resourceName]

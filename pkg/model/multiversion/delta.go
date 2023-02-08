@@ -24,16 +24,16 @@ import (
 
 // FieldChangeType represents the type of field modification.
 //
-// - FieldChangeTypeUnknown is used when ChangeType cannot be computed.
-// - FieldChangeTypeNone is used when a field name and structure didn't change.
-// - FieldChangeTypeAdded is used when a new field is introduced in a CRD.
-// - FieldChangeTypeRemoved is used a when a field is removed from a CRD.
-// - FieldChangeTypeRenamed is used when a field is renamed.
-// - FieldChangeTypeShapeChanged is used when a field shape has changed.
-// - FieldChangeTypeShapeChangedFromStringToSecret is used when a field change to
-//   a k8s secret type.
-// - FieldChangeTypeShapeChangedFromSecretToString is used when a field changed from
-//   a k8s secret to a Go string.
+//   - FieldChangeTypeUnknown is used when ChangeType cannot be computed.
+//   - FieldChangeTypeNone is used when a field name and structure didn't change.
+//   - FieldChangeTypeAdded is used when a new field is introduced in a CRD.
+//   - FieldChangeTypeRemoved is used a when a field is removed from a CRD.
+//   - FieldChangeTypeRenamed is used when a field is renamed.
+//   - FieldChangeTypeShapeChanged is used when a field shape has changed.
+//   - FieldChangeTypeShapeChangedFromStringToSecret is used when a field change to
+//     a k8s secret type.
+//   - FieldChangeTypeShapeChangedFromSecretToString is used when a field changed from
+//     a k8s secret to a Go string.
 type FieldChangeType string
 
 const (

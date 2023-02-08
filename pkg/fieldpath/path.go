@@ -128,40 +128,40 @@ func (p *Path) Size() int {
 //
 // Assume a ShapeRef that looks like this:
 //
-//  authShapeRef := &awssdkmodel.ShapeRef{
-//    ShapeName: "Author",
-//    Shape: &awssdkmodel.Shape{
-//      Type: "structure",
-//      MemberRefs: map[string]*awssdkmodel.ShapeRef{
-//        "Name": &awssdkmodel.ShapeRef{
-//          ShapeName: "Name",
-//          Shape: &awssdkmodel.Shape{
-//            Type: "string",
-//          },
-//        },
-//        "Address": &awssdkmodel.ShapeRef{
-//          ShapeName: "Address",
-//          Shape: &awssdkmodel.Shape{
-//            Type: "structure",
-//            MemberRefs: map[string]*awssdkmodel.ShapeRef{
-//              "State": &awssdkmodel.ShapeRef{
-//                ShapeName: "StateCode",
-//                Shape: &awssdkmodel.Shape{
-//                  Type: "string",
-//                },
-//              },
-//              "Country": &awssdkmodel.ShapeRef{
-//                ShapeName: "CountryCode",
-//                Shape: &awssdkmodel.Shape{
-//                  Type: "string",
-//                },
-//              },
-//            },
-//          },
-//        },
-//      },
-//    },
-//  }
+//	authShapeRef := &awssdkmodel.ShapeRef{
+//	  ShapeName: "Author",
+//	  Shape: &awssdkmodel.Shape{
+//	    Type: "structure",
+//	    MemberRefs: map[string]*awssdkmodel.ShapeRef{
+//	      "Name": &awssdkmodel.ShapeRef{
+//	        ShapeName: "Name",
+//	        Shape: &awssdkmodel.Shape{
+//	          Type: "string",
+//	        },
+//	      },
+//	      "Address": &awssdkmodel.ShapeRef{
+//	        ShapeName: "Address",
+//	        Shape: &awssdkmodel.Shape{
+//	          Type: "structure",
+//	          MemberRefs: map[string]*awssdkmodel.ShapeRef{
+//	            "State": &awssdkmodel.ShapeRef{
+//	              ShapeName: "StateCode",
+//	              Shape: &awssdkmodel.Shape{
+//	                Type: "string",
+//	              },
+//	            },
+//	            "Country": &awssdkmodel.ShapeRef{
+//	              ShapeName: "CountryCode",
+//	              Shape: &awssdkmodel.Shape{
+//	                Type: "string",
+//	              },
+//	            },
+//	          },
+//	        },
+//	      },
+//	    },
+//	  },
+//	}
 //
 // If I have the following Path:
 //
@@ -169,12 +169,12 @@ func (p *Path) Size() int {
 //
 // calling p.ShapeRef(authShapeRef) would return the following:
 //
-// &awssdkmodel.ShapeRef{
-//   ShapeName: "CountryCode",
-//   Shape: &awssdkmodel.Shape{
-//     Type: "string",
-//   },
-// },
+//	&awssdkmodel.ShapeRef{
+//	  ShapeName: "CountryCode",
+//	  Shape: &awssdkmodel.Shape{
+//	    Type: "string",
+//	  },
+//	},
 func (p *Path) ShapeRef(
 	subject *awssdkmodel.ShapeRef,
 ) *awssdkmodel.ShapeRef {
@@ -254,11 +254,12 @@ func memberShapeRef(
 // HasPrefix returns true if the supplied string, delimited on ".", matches
 // p.parts up to the length of the supplied string.
 // e.g. if the Path p represents "A.B":
-//  subject "A" -> true
-//  subject "A.B" -> true
-//  subject "A.B.C" -> false
-//  subject "B" -> false
-//  subject "A.C" -> false
+//
+//	subject "A" -> true
+//	subject "A.B" -> true
+//	subject "A.B.C" -> false
+//	subject "B" -> false
+//	subject "A.C" -> false
 func (p *Path) HasPrefix(subject string) bool {
 	subjectSplit := strings.Split(subject, ".")
 
