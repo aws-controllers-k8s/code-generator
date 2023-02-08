@@ -294,6 +294,19 @@ func SetSDK(
 		//     }
 		//     res.VpnMemberships = f0
 		// }
+
+		omitUnchangedFieldsOnUpdate := op == r.Ops.Update && r.OmitUnchangedFieldsOnUpdate()
+		if omitUnchangedFieldsOnUpdate {
+			fieldJSONPath := fmt.Sprintf("%s.%s", cfg.PrefixConfig.SpecField[1:], f.Names.Camel)
+			out += fmt.Sprintf(
+				"%sif delta.DifferentAt(%q) {\n", indent, fieldJSONPath,
+			)
+
+			// increase indentation level
+			indentLevel++
+			indent = "\t" + indent
+		}
+
 		out += fmt.Sprintf(
 			"%sif %s != nil {\n", indent, sourceAdaptedVarName,
 		)
@@ -353,6 +366,16 @@ func SetSDK(
 		out += fmt.Sprintf(
 			"%s}\n", indent,
 		)
+
+		if omitUnchangedFieldsOnUpdate {
+			// decrease indentation level
+			indentLevel--
+			indent = indent[1:]
+
+			out += fmt.Sprintf(
+				"%s}\n", indent,
+			)
+		}
 	}
 	return out
 }

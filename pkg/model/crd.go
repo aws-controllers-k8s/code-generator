@@ -362,6 +362,21 @@ func (r *CRD) HasImmutableFieldChanges() bool {
 	return false
 }
 
+// OmitUnchangedFieldsOnUpdate returns whether the controller needs to omit
+// unchanged fields from an update request or not.
+func (r *CRD) OmitUnchangedFieldsOnUpdate() bool {
+	if r.Config() == nil {
+		return false
+	}
+	rConfig, found := r.Config().Resources[r.Names.Original]
+	if found {
+		if rConfig.UpdateOperation != nil {
+			return rConfig.UpdateOperation.OmitUnchangedFields
+		}
+	}
+	return false
+}
+
 // IsARNPrimaryKey returns true if the CRD uses its ARN as its primary key in
 // ReadOne calls.
 func (r *CRD) IsARNPrimaryKey() bool {
