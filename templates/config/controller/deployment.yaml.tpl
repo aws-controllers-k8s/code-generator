@@ -37,10 +37,6 @@ spec:
         - "$(ACK_RESOURCE_TAGS)"
         - --watch-namespace
         - "$(ACK_WATCH_NAMESPACE)"
-        - --reconcile-default-resync-seconds
-        - "$(RECONCILE_DEFAULT_RESYNC_SECONDS)"
-        - --reconcile-resource-resync-seconds
-        - "$(RECONCILE_RESOURCE_RESYNC_SECONDS)"
         image: controller:latest
         name: controller
         ports:
