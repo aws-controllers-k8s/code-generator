@@ -99,6 +99,11 @@ func CompareResource(
 
 	resConfig := cfg.GetResourceConfig(r.Names.Camel)
 
+	tagField, err := r.GetTagField()
+	if err != nil {
+		panic(err)
+	}
+
 	// We need a deterministic order to traverse our top-level fields...
 	specFieldNames := []string{}
 	for fieldName := range r.SpecFields {
@@ -147,10 +152,18 @@ func CompareResource(
 			out += fmt.Sprintf("%s}\n", indent)
 			continue
 		}
+
+		// Use a special comparison model for tags, since they need to be
+		// converted into the common ACK tag type before doing a map delta
+		if tagField != nil && specField == tagField {
+			out += compareTags(deltaVarName, firstResAdaptedVarName, secondResAdaptedVarName, fieldPath, indentLevel)
+			continue
+		}
+
 		memberShapeRef := specField.ShapeRef
 		memberShape := memberShapeRef.Shape
 
-		// if ackcompare.HasNilDifference(a.ko.Spec.Name, b.ko.Spec.Name == nil) {
+		// if ackcompare.HasNilDifference(a.ko.Spec.Name, b.ko.Spec.Name) {
 		//   delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
 		// }
 		nilCode := compareNil(
@@ -520,6 +533,46 @@ func compareSlice(
 	return out
 }
 
+// compareTags outputs Go code that compares two slices of tags from two
+// resource fields by first converting them to the common ACK tag type and then
+// using a map comparison. If there is a difference, adds the difference to a
+// variable representing an `ackcompare.Delta`.
+//
+// Output code will look something like this:
+//
+//	if !ackcompare.MapStringStringEqual(ToACKTags(a.ko.Spec.Tags), ToACKTags(b.ko.Spec.Tags)) {
+//	  delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
+//	}
+func compareTags(
+	// String representing the name of the variable that is of type
+	// `*ackcompare.Delta`. We will generate Go code that calls the `Add()`
+	// method of this variable when differences between fields are detected.
+	deltaVarName string,
+	// String representing the name of the variable that represents the first
+	// CR under comparison. This will typically be something like
+	// "a.ko.Spec.Name". See `templates/pkg/resource/delta.go.tpl`.
+	firstResVarName string,
+	// String representing the name of the variable that represents the second
+	// CR under comparison. This will typically be something like
+	// "b.ko.Spec.Name". See `templates/pkg/resource/delta.go.tpl`.
+	secondResVarName string,
+	// String indicating the current field path being evaluated, e.g.
+	// "Author.Name". This does not include the top-level Spec or Status
+	// struct.
+	fieldPath string,
+	// Number of levels of indentation to use
+	indentLevel int,
+) string {
+	out := ""
+	indent := strings.Repeat("\t", indentLevel)
+
+	out += fmt.Sprintf("%sif !ackcompare.MapStringStringEqual(ToACKTags(%s), ToACKTags(%s)) {\n", indent, firstResVarName, secondResVarName)
+	out += fmt.Sprintf("%s\t%s.Add(\"%s\", %s, %s)\n", indent, deltaVarName, fieldPath, firstResVarName, secondResVarName)
+	out += fmt.Sprintf("%s}\n", indent)
+
+	return out
+}
+
 // CompareStruct outputs Go code that compares two struct values from two
 // resource fields and, if there is a difference, adds the difference to a
 // variable representing an `ackcompare.Delta`.
@@ -551,6 +604,11 @@ func CompareStruct(
 ) string {
 	out := ""
 
+	tagField, err := r.GetTagField()
+	if err != nil {
+		panic(err)
+	}
+
 	fieldConfigs := cfg.GetFieldConfigs(r.Names.Original)
 
 	for _, memberName := range shape.MemberNames() {
@@ -572,7 +630,9 @@ func CompareStruct(
 		// memberFieldPath contains the field path along with the prefix cfg.PrefixConfig.SpecField + "." hence we
 		// would need to substring to exclude cfg.PrefixConfig.SpecField + "." to get correct field config.
 		specFieldLen := len(strings.TrimPrefix(cfg.PrefixConfig.SpecField, "."))
-		fieldConfig := fieldConfigs[memberFieldPath[specFieldLen+1:len(memberFieldPath)]]
+		trimmedFieldPath := memberFieldPath[specFieldLen+1:]
+
+		fieldConfig := fieldConfigs[trimmedFieldPath]
 		if fieldConfig != nil {
 			compareConfig = fieldConfig.Compare
 		}
@@ -582,6 +642,13 @@ func CompareStruct(
 		}
 
 		memberShape := memberShapeRef.Shape
+
+		// Use a special comparison model for tags, since they need to be
+		// converted into the common ACK tag type before doing a map delta
+		if tagField != nil && tagField.Path == trimmedFieldPath {
+			out += compareTags(deltaVarName, firstResAdaptedVarName, secondResAdaptedVarName, fieldPath, indentLevel)
+			continue
+		}
 
 		// if ackcompare.HasNilDifference(a.ko.Spec.Name, b.ko.Spec.Name == nil) {
 		//   delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
@@ -604,6 +671,7 @@ func CompareStruct(
 			)
 			indentLevel++
 		}
+
 		switch memberShape.Type {
 		case "structure":
 			// Recurse through all the struct's fields and subfields, building
