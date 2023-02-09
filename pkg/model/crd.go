@@ -346,6 +346,8 @@ func (r *CRD) GetImmutableFieldPaths() []string {
 		}
 	}
 
+	// We need a deterministic order to traverse the immutable fields
+	sort.Strings(immutableFields)
 	return immutableFields
 }
 
