@@ -115,7 +115,7 @@ func resolveReferenceFor{{ $field.FieldPathWithUnderscore }}(
     }
 {{ end -}}
 
-{{ GoCodeResolveReference $field "ko" 1 }}
+{{ GoCodeResolveReference .CRD $field "ko" 1 }}
 	return nil
 }
 
