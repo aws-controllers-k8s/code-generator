@@ -98,7 +98,7 @@ func ReferenceFieldsValidation(
 			out += fmt.Sprintf("%sif %s.%s != nil"+
 				" && %s.%s != nil {\n", fIndent, pathVarPrefix, field.GetReferenceFieldName().Camel, pathVarPrefix, field.Names.Camel)
 			out += fmt.Sprintf("%s\treturn "+
-				"ackerr.ResourceReferenceAndIDNotSupportedFor(\"%s\", \"%s\")\n",
+				"ackerr.ResourceReferenceAndIDNotSupportedFor(%q, %q)\n",
 				fIndent, field.Path, field.ReferenceFieldPath())
 
 			// Close out all the curly braces with proper indentation
@@ -117,7 +117,7 @@ func ReferenceFieldsValidation(
 					" %s.%s == nil {\n", fIndent, pathVarPrefix,
 					field.ReferenceFieldPath(), pathVarPrefix, field.Path)
 				out += fmt.Sprintf("%s\treturn "+
-					"ackerr.ResourceReferenceOrIDRequiredFor(\"%s\", \"%s\")\n",
+					"ackerr.ResourceReferenceOrIDRequiredFor(%q, %q)\n",
 					fIndent, field.Path, field.ReferenceFieldPath())
 				out += fmt.Sprintf("%s}\n", fIndent)
 			}
@@ -284,7 +284,7 @@ func ResolveReferencesForField(r *model.CRD, field *model.Field, sourceVarName s
 			fieldAccessPrefix = iterVarName
 			outPrefix += fmt.Sprintf("%s\tarr := %s.From\n", indent, fieldAccessPrefix)
 			outPrefix += fmt.Sprintf("%s\tif arr == nil || arr.Name == nil || *arr.Name == \"\" {\n", indent)
-			outPrefix += fmt.Sprintf("%s\t\treturn fmt.Errorf(\"provided resource reference is nil or empty\")\n", indent)
+			outPrefix += fmt.Sprintf("%s\t\treturn fmt.Errorf(\"provided resource reference is nil or empty: \\%q\\\")\n", indent, field.ReferenceFieldPath())
 			outPrefix += fmt.Sprintf("%s\t}\n", indent)
 
 			outPrefix += fmt.Sprintf("%s\tif err := getReferencedResourceState_VPCLink(ctx, apiReader, obj, *arr.Name, namespace); err != nil {\n", indent)
@@ -301,7 +301,7 @@ func ResolveReferencesForField(r *model.CRD, field *model.Field, sourceVarName s
 			outPrefix += fmt.Sprintf("%sif %s != nil && %s.From != nil {\n", indent, fieldAccessPrefix, fieldAccessPrefix)
 			outPrefix += fmt.Sprintf("%s\tarr := %s.From\n", indent, fieldAccessPrefix)
 			outPrefix += fmt.Sprintf("%s\tif arr == nil || arr.Name == nil || *arr.Name == \"\" {\n", indent)
-			outPrefix += fmt.Sprintf("%s\t\treturn fmt.Errorf(\"provided resource reference is nil or empty\")\n", indent)
+			outPrefix += fmt.Sprintf("%s\t\treturn fmt.Errorf(\"provided resource reference is nil or empty: \\%q\\\")\n", indent, field.ReferenceFieldPath())
 			outPrefix += fmt.Sprintf("%s\t}\n", indent)
 
 			if field.FieldConfig.References.ServiceName == "" {
