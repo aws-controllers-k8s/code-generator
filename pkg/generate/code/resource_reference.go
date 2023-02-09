@@ -257,7 +257,7 @@ func ResolveReferencesForField(field *model.Field, sourceVarName string, indentL
 			outPrefix += fmt.Sprintf("%s\t\treturn fmt.Errorf(\"provided resource reference is nil or empty: \\%q\\\")\n", indent, field.ReferenceFieldPath())
 			outPrefix += fmt.Sprintf("%s\t}\n", indent)
 
-			outPrefix += fmt.Sprintf("%s\tif err := getReferencedResourceState_VPCLink(ctx, apiReader, obj, *arr.Name, namespace); err != nil {\n", indent)
+			outPrefix += fmt.Sprintf("%s\tif err := getReferencedResourceState_%s(ctx, apiReader, obj, *arr.Name, namespace); err != nil {\n", indent, field.FieldConfig.References.Resource)
 			outPrefix += fmt.Sprintf("%s\t\treturn err\n", indent)
 			outPrefix += fmt.Sprintf("%s\t}\n", indent)
 			outPrefix += fmt.Sprintf("%s\t%s = append(%s, obj.%s)\n", indent, targetVarName, targetVarName, field.FieldConfig.References.Path)
