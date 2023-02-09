@@ -246,7 +246,7 @@ func Test_ResolveReferencesForField_SliceOfReferences(t *testing.T) {
 		if arr == nil || arr.Name == nil || *arr.Name == "" {
 			return fmt.Errorf("provided resource reference is nil or empty: \"SecurityGroupRefs"\")
 		}
-		if err := getReferencedResourceState_VPCLink(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
+		if err := getReferencedResourceState_SecurityGroup(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
 			return err
 		}
 		ko.Spec.SecurityGroupIDs = append(ko.Spec.SecurityGroupIDs, obj.Status.ID)
