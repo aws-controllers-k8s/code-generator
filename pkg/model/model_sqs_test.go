@@ -62,7 +62,7 @@ func TestSQS_Queue(t *testing.T) {
 	expSpecFieldCamel := []string{
 		"ContentBasedDeduplication",
 		"DelaySeconds",
-		"FifoQueue",
+		"FIFOQueue",
 		"KMSDataKeyReusePeriodSeconds",
 		"KMSMasterKeyID",
 		"MaximumMessageSize",

@@ -2773,7 +2773,7 @@ func TestSetResource_SQS_Queue_GetAttributes(t *testing.T) {
 	ko.Spec.ContentBasedDeduplication = resp.Attributes["ContentBasedDeduplication"]
 	ko.Status.CreatedTimestamp = resp.Attributes["CreatedTimestamp"]
 	ko.Spec.DelaySeconds = resp.Attributes["DelaySeconds"]
-	ko.Spec.FifoQueue = resp.Attributes["FifoQueue"]
+	ko.Spec.FIFOQueue = resp.Attributes["FifoQueue"]
 	ko.Spec.KMSDataKeyReusePeriodSeconds = resp.Attributes["KmsDataKeyReusePeriodSeconds"]
 	ko.Spec.KMSMasterKeyID = resp.Attributes["KmsMasterKeyId"]
 	ko.Status.LastModifiedTimestamp = resp.Attributes["LastModifiedTimestamp"]
