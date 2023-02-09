@@ -199,7 +199,7 @@ return false || (ko.Spec.VPCRef != nil)`
 	assert.Equal(expected, code.ReferenceFieldsPresent(crd, "ko"))
 }
 
-func Test_ReferenceForField_SingleReference(t *testing.T) {
+func Test_ResolveReferencesForField_SingleReference(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
@@ -225,10 +225,10 @@ func Test_ReferenceForField_SingleReference(t *testing.T) {
 `
 
 	field := crd.Fields["APIID"]
-	assert.Equal(expected, code.ResolveReferencesForField(crd, field, "ko", 1))
+	assert.Equal(expected, code.ResolveReferencesForField(field, "ko", 1))
 }
 
-func Test_ReferenceForField_SliceOfReferences(t *testing.T) {
+func Test_ResolveReferencesForField_SliceOfReferences(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
@@ -254,10 +254,10 @@ func Test_ReferenceForField_SliceOfReferences(t *testing.T) {
 `
 
 	field := crd.Fields["SecurityGroupIDs"]
-	assert.Equal(expected, code.ResolveReferencesForField(crd, field, "ko", 1))
+	assert.Equal(expected, code.ResolveReferencesForField(field, "ko", 1))
 }
 
-func Test_ReferenceForField_NestedSingleReference(t *testing.T) {
+func Test_ResolveReferencesForField_NestedSingleReference(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
@@ -285,10 +285,10 @@ func Test_ReferenceForField_NestedSingleReference(t *testing.T) {
 `
 
 	field := crd.Fields["JWTConfiguration.Issuer"]
-	assert.Equal(expected, code.ResolveReferencesForField(crd, field, "ko", 1))
+	assert.Equal(expected, code.ResolveReferencesForField(field, "ko", 1))
 }
 
-func Test_ReferenceForField_SingleReference_DeeplyNested(t *testing.T) {
+func Test_ResolveReferencesForField_SingleReference_DeeplyNested(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
@@ -320,5 +320,5 @@ func Test_ReferenceForField_SingleReference_DeeplyNested(t *testing.T) {
 `
 
 	field := crd.Fields["Logging.LoggingEnabled.TargetBucket"]
-	assert.Equal(expected, code.ResolveReferencesForField(crd, field, "ko", 1))
+	assert.Equal(expected, code.ResolveReferencesForField(field, "ko", 1))
 }

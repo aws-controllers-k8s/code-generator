@@ -188,58 +188,27 @@ func ReferenceFieldsPresent(
 // ResolveReferencesForField produces Go code for accessing all references that
 // are related to the given concrete field, determining whether its in a valid
 // condition and updating the concrete field with the referenced value.
-// Sample code:
+// Sample code (resolving a nested singular reference):
 //
 // ```
-// refVal := ""
 //
-//	if ko.Spec.TargetRef != nil && ko.Spec.TargetRef.From != nil {
-//		arr := ko.Spec.TargetRef.From
-//		if arr == nil || arr.Name == nil || *arr.Name == "" {
-//			return fmt.Errorf("provided resource reference is nil or empty")
-//		}
-//		namespacedName := types.NamespacedName{
-//			Namespace: namespace,
-//			Name:      *arr.Name,
-//		}
-//		obj := svcapitypes.Integration{}
-//		err := apiReader.Get(ctx, namespacedName, &obj)
-//		if err != nil {
-//			return err
-//		}
-//		var refResourceSynced, refResourceTerminal bool
-//		for _, cond := range obj.Status.Conditions {
-//			if cond.Type == ackv1alpha1.ConditionTypeResourceSynced &&
-//				cond.Status == corev1.ConditionTrue {
-//				refResourceSynced = true
+//	if ko.Spec.JWTConfiguration != nil {
+//		if ko.Spec.JWTConfiguration.IssuerRef != nil && ko.Spec.JWTConfiguration.IssuerRef.From != nil {
+//			arr := ko.Spec.JWTConfiguration.IssuerRef.From
+//			if arr == nil || arr.Name == nil || *arr.Name == "" {
+//				return fmt.Errorf("provided resource reference is nil or empty: \"JWTConfiguration.IssuerRef"\")
 //			}
-//			if cond.Type == ackv1alpha1.ConditionTypeTerminal &&
-//				cond.Status == corev1.ConditionTrue {
-//				refResourceTerminal = true
+//			obj := &svcapitypes.API{}
+//			if err := getReferencedResourceState_API(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
+//				return err
 //			}
+//			ko.Spec.JWTConfiguration.Issuer = obj.Status.APIID
 //		}
-//		if refResourceTerminal {
-//			return ackerr.ResourceReferenceTerminalFor(
-//				"Integration",
-//				namespace, *arr.Name)
-//		}
-//		if !refResourceSynced {
-//			return ackerr.ResourceReferenceNotSyncedFor(
-//				"Integration",
-//				namespace, *arr.Name)
-//		}
-//		if obj.Status.IntegrationID == nil {
-//			return ackerr.ResourceReferenceMissingTargetFieldFor(
-//				"Integration",
-//				namespace, *arr.Name,
-//				"Status.IntegrationID")
-//		}
-//		refVal = string(*obj.Status.IntegrationID)
 //	}
 //
-// ko.Spec.Target = &refVal
 // ```
-func ResolveReferencesForField(r *model.CRD, field *model.Field, sourceVarName string, indentLevel int) string {
+func ResolveReferencesForField(field *model.Field, sourceVarName string, indentLevel int) string {
+	r := field.CRD
 	fp := fieldpath.FromString(field.Path)
 
 	outPrefix := ""
