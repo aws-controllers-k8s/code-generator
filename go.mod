@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/aws-controllers-k8s/pkg v0.0.3
-	github.com/aws-controllers-k8s/runtime v0.23.0
+	github.com/aws-controllers-k8s/runtime v0.24.0
 	github.com/aws/aws-sdk-go v1.44.93
 	github.com/dlclark/regexp2 v1.4.0 // indirect
 	// pin to v0.1.1 due to release problem with v0.1.2
@@ -54,6 +54,7 @@ require (
 	github.com/prometheus/client_model v0.2.0 // indirect
 	github.com/prometheus/common v0.28.0 // indirect
 	github.com/prometheus/procfs v0.6.0 // indirect
+	github.com/samber/lo v1.37.0 // indirect
 	github.com/sergi/go-diff v1.0.0 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
@@ -63,6 +64,7 @@ require (
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.19.1 // indirect
 	golang.org/x/crypto v0.1.0 // indirect
+	golang.org/x/exp v0.0.0-20220303212507-bbda1eaf7a17 // indirect
 	golang.org/x/net v0.1.0 // indirect
 	golang.org/x/oauth2 v0.0.0-20210819190943-2bc19b11175f // indirect
 	golang.org/x/sys v0.1.0 // indirect
