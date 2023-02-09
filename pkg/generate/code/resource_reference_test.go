@@ -214,7 +214,7 @@ func Test_ReferenceForField_SingleReference(t *testing.T) {
 		`	if ko.Spec.APIRef != nil && ko.Spec.APIRef.From != nil {
 		arr := ko.Spec.APIRef.From
 		if arr == nil || arr.Name == nil || *arr.Name == "" {
-			return fmt.Errorf("provided resource reference is nil or empty")
+			return fmt.Errorf("provided resource reference is nil or empty: \"APIRef"\")
 		}
 		obj := &svcapitypes.API{}
 		if err := getReferencedResourceState_API(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
@@ -244,7 +244,7 @@ func Test_ReferenceForField_SliceOfReferences(t *testing.T) {
 	for _, iter0 := range ko.Spec.SecurityGroupIDs {
 		arr := iter0.From
 		if arr == nil || arr.Name == nil || *arr.Name == "" {
-			return fmt.Errorf("provided resource reference is nil or empty")
+			return fmt.Errorf("provided resource reference is nil or empty: \"SecurityGroupRefs"\")
 		}
 		if err := getReferencedResourceState_VPCLink(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
 			return err
@@ -273,7 +273,7 @@ func Test_ReferenceForField_NestedSingleReference(t *testing.T) {
 		if ko.Spec.JWTConfiguration.IssuerRef != nil && ko.Spec.JWTConfiguration.IssuerRef.From != nil {
 			arr := ko.Spec.JWTConfiguration.IssuerRef.From
 			if arr == nil || arr.Name == nil || *arr.Name == "" {
-				return fmt.Errorf("provided resource reference is nil or empty")
+				return fmt.Errorf("provided resource reference is nil or empty: \"JWTConfiguration.IssuerRef"\")
 			}
 			obj := &svcapitypes.API{}
 			if err := getReferencedResourceState_API(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
@@ -307,7 +307,7 @@ func Test_ReferenceForField_SingleReference_DeeplyNested(t *testing.T) {
 			if ko.Spec.Logging.LoggingEnabled.TargetBucketRef != nil && ko.Spec.Logging.LoggingEnabled.TargetBucketRef.From != nil {
 				arr := ko.Spec.Logging.LoggingEnabled.TargetBucketRef.From
 				if arr == nil || arr.Name == nil || *arr.Name == "" {
-					return fmt.Errorf("provided resource reference is nil or empty")
+					return fmt.Errorf("provided resource reference is nil or empty: \"Logging.LoggingEnabled.TargetBucketRef"\")
 				}
 				obj := &svcapitypes.Bucket{}
 				if err := getReferencedResourceState_Bucket(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
