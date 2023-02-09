@@ -259,12 +259,13 @@ func ResolveReferencesForField(r *model.CRD, field *model.Field, sourceVarName s
 
 		indent := strings.Repeat("\t", indentLevel+idx)
 
-		if ref.Shape.Type == "structure" {
+		switch ref.Shape.Type {
+		case ("structure"):
 			fieldAccessPrefix = fmt.Sprintf("%s.%s", fieldAccessPrefix, fp.At(idx))
 
 			outPrefix += fmt.Sprintf("%sif %s != nil {\n", indent, fieldAccessPrefix)
 			outSuffix = fmt.Sprintf("%s}\n%s", indent, outSuffix)
-		} else if ref.Shape.Type == "list" {
+		case ("list"):
 			if (fp.Size() - idx) > 1 {
 				// TODO(nithomso): add support for structs nested within lists
 				// The logic for structs nested within lists needs to not only
@@ -292,9 +293,9 @@ func ResolveReferencesForField(r *model.CRD, field *model.Field, sourceVarName s
 			outPrefix += fmt.Sprintf("%s\t}\n", indent)
 			outPrefix += fmt.Sprintf("%s\t%s = append(%s, obj.%s)\n", indent, targetVarName, targetVarName, field.FieldConfig.References.Path)
 			outPrefix += fmt.Sprintf("%s}\n", indent)
-		} else if ref.Shape.Type == "map" {
+		case ("map"):
 			panic("references cannot be within a map")
-		} else {
+		default:
 			// base case for single references
 			fieldAccessPrefix = fmt.Sprintf("%s.%s", fieldAccessPrefix, cur.GetReferenceFieldName().Camel)
 
