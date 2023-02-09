@@ -246,7 +246,7 @@ func ResolveReferencesForField(r *model.CRD, field *model.Field, sourceVarName s
 	outSuffix := ""
 
 	fieldAccessPrefix := fmt.Sprintf("%s%s", sourceVarName, r.Config().PrefixConfig.SpecField)
-	targetVarName := fmt.Sprintf("%s%s.%s", sourceVarName, r.Config().PrefixConfig.SpecField, field.Path)
+	targetVarName := fmt.Sprintf("%s.%s", fieldAccessPrefix, field.Path)
 
 	for idx := 0; idx < fp.Size(); idx++ {
 		curFP := fp.CopyAt(idx).String()
