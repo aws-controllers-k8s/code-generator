@@ -1725,8 +1725,8 @@ func TestSetSDK_SQS_Queue_Create(t *testing.T) {
 	if r.ko.Spec.DelaySeconds != nil {
 		attrMap["DelaySeconds"] = r.ko.Spec.DelaySeconds
 	}
-	if r.ko.Spec.FifoQueue != nil {
-		attrMap["FifoQueue"] = r.ko.Spec.FifoQueue
+	if r.ko.Spec.FIFOQueue != nil {
+		attrMap["FifoQueue"] = r.ko.Spec.FIFOQueue
 	}
 	if r.ko.Spec.KMSDataKeyReusePeriodSeconds != nil {
 		attrMap["KmsDataKeyReusePeriodSeconds"] = r.ko.Spec.KMSDataKeyReusePeriodSeconds
