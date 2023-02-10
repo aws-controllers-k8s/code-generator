@@ -438,14 +438,18 @@ func SetSDKGetAttributes(
 				"%s\t%s.Set%s(string(*%s.Status.ACKResourceMetadata.ARN))\n",
 				indent, targetVarName, memberName, sourceVarName,
 			)
-			out += fmt.Sprintf(
-				"%s} else {\n", indent,
-			)
-			nameField := *r.SpecIdentifierField()
-			out += fmt.Sprintf(
-				"%s\t%s.Set%s(rm.ARNFromName(*%s.Spec.%s))\n",
-				indent, targetVarName, memberName, sourceVarName, nameField,
-			)
+			nameField := r.SpecIdentifierField()
+			if nameField != nil {
+				// There is no name or ID field for the resource, so don't try
+				// to set an ARN from a name. Example: Subscription from SNS...
+				out += fmt.Sprintf(
+					"%s} else {\n", indent,
+				)
+				out += fmt.Sprintf(
+					"%s\t%s.Set%s(rm.ARNFromName(*%s.Spec.%s))\n",
+					indent, targetVarName, memberName, sourceVarName, *nameField,
+				)
+			}
 			out += fmt.Sprintf(
 				"%s}\n", indent,
 			)
@@ -617,14 +621,18 @@ func SetSDKSetAttributes(
 				"%s\t%s.Set%s(string(*%s.Status.ACKResourceMetadata.ARN))\n",
 				indent, targetVarName, memberName, sourceVarName,
 			)
-			out += fmt.Sprintf(
-				"%s} else {\n", indent,
-			)
-			nameField := *r.SpecIdentifierField()
-			out += fmt.Sprintf(
-				"%s\t%s.Set%s(rm.ARNFromName(*%s.Spec.%s))\n",
-				indent, targetVarName, memberName, sourceVarName, nameField,
-			)
+			nameField := r.SpecIdentifierField()
+			if nameField != nil {
+				// There is no name or ID field for the resource, so don't try
+				// to set an ARN from a name. Example: Subscription from SNS...
+				out += fmt.Sprintf(
+					"%s} else {\n", indent,
+				)
+				out += fmt.Sprintf(
+					"%s\t%s.Set%s(rm.ARNFromName(*%s.Spec.%s))\n",
+					indent, targetVarName, memberName, sourceVarName, *nameField,
+				)
+			}
 			out += fmt.Sprintf(
 				"%s}\n", indent,
 			)
