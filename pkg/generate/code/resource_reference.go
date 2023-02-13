@@ -192,18 +192,16 @@ func ReferenceFieldsPresent(
 //
 // ```
 //
-//	if ko.Spec.JWTConfiguration != nil {
-//		if ko.Spec.JWTConfiguration.IssuerRef != nil && ko.Spec.JWTConfiguration.IssuerRef.From != nil {
-//			arr := ko.Spec.JWTConfiguration.IssuerRef.From
-//			if arr == nil || arr.Name == nil || *arr.Name == "" {
-//				return fmt.Errorf("provided resource reference is nil or empty: \"JWTConfiguration.IssuerRef"\")
-//			}
-//			obj := &svcapitypes.API{}
-//			if err := getReferencedResourceState_API(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
-//				return err
-//			}
-//			ko.Spec.JWTConfiguration.Issuer = obj.Status.APIID
+//		if ko.Spec.APIRef != nil && ko.Spec.APIRef.From != nil {
+//		arr := ko.Spec.APIRef.From
+//		if arr == nil || arr.Name == nil || *arr.Name == "" {
+//			return fmt.Errorf("provided resource reference is nil or empty: APIRef")
 //		}
+//		obj := &svcapitypes.API{}
+//		if err := getReferencedResourceState_API(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
+//			return err
+//		}
+//		ko.Spec.APIID = (*string)(obj.Status.APIID)
 //	}
 //
 // ```
