@@ -255,9 +255,8 @@ func ResolveReferencesForField(field *model.Field, sourceVarName string, indentL
 			outPrefix += fmt.Sprintf("%s\t\treturn fmt.Errorf(\"provided resource reference is nil or empty: %s\")\n", indent, field.ReferenceFieldPath())
 			outPrefix += fmt.Sprintf("%s\t}\n", indent)
 
-			outPrefix += fmt.Sprintf("%s\tif err := getReferencedResourceState_%s(ctx, apiReader, obj, *arr.Name, namespace); err != nil {\n", indent, field.FieldConfig.References.Resource)
-			outPrefix += fmt.Sprintf("%s\t\treturn err\n", indent)
-			outPrefix += fmt.Sprintf("%s\t}\n", indent)
+			outPrefix += getReferencedStateForField(field, indentLevel+idx)
+
 			outPrefix += fmt.Sprintf("%s\t%s = append(%s, obj.%s)\n", indent, targetVarName, targetVarName, field.FieldConfig.References.Path)
 			outPrefix += fmt.Sprintf("%s}\n", indent)
 		case ("map"):
@@ -272,20 +271,30 @@ func ResolveReferencesForField(field *model.Field, sourceVarName string, indentL
 			outPrefix += fmt.Sprintf("%s\t\treturn fmt.Errorf(\"provided resource reference is nil or empty: %s\")\n", indent, field.ReferenceFieldPath())
 			outPrefix += fmt.Sprintf("%s\t}\n", indent)
 
-			if field.FieldConfig.References.ServiceName == "" {
-				outPrefix += fmt.Sprintf("%s\tobj := &svcapitypes.%s{}\n", indent, field.FieldConfig.References.Resource)
-			} else {
-				outPrefix += fmt.Sprintf("%s\tobj := &%sapitypes.%s{}\n", indent, field.ReferencedServiceName(), field.FieldConfig.References.Resource)
-			}
-			outPrefix += fmt.Sprintf("%s\tif err := getReferencedResourceState_%s(ctx, apiReader, obj, *arr.Name, namespace); err != nil {\n", indent, field.FieldConfig.References.Resource)
-			outPrefix += fmt.Sprintf("%s\t\treturn err\n", indent)
-			outPrefix += fmt.Sprintf("%s\t}\n", indent)
+			outPrefix += getReferencedStateForField(field, indentLevel+idx)
+
 			outPrefix += fmt.Sprintf("%s\t%s = (%s)(obj.%s)\n", indent, targetVarName, field.GoType, field.FieldConfig.References.Path)
 			outPrefix += fmt.Sprintf("%s}\n", indent)
 		}
 	}
 
 	return outPrefix + outSuffix
+}
+
+func getReferencedStateForField(field *model.Field, indentLevel int) string {
+	out := ""
+	indent := strings.Repeat("\t", indentLevel)
+
+	if field.FieldConfig.References.ServiceName == "" {
+		out += fmt.Sprintf("%s\tobj := &svcapitypes.%s{}\n", indent, field.FieldConfig.References.Resource)
+	} else {
+		out += fmt.Sprintf("%s\tobj := &%sapitypes.%s{}\n", indent, field.ReferencedServiceName(), field.FieldConfig.References.Resource)
+	}
+	out += fmt.Sprintf("%s\tif err := getReferencedResourceState_%s(ctx, apiReader, obj, *arr.Name, namespace); err != nil {\n", indent, field.FieldConfig.References.Resource)
+	out += fmt.Sprintf("%s\t\treturn err\n", indent)
+	out += fmt.Sprintf("%s\t}\n", indent)
+
+	return out
 }
 
 func nestedStructNilCheck(path fieldpath.Path, fieldAccessPrefix string) string {

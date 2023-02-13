@@ -275,6 +275,7 @@ func Test_ResolveReferencesForField_SliceOfReferences(t *testing.T) {
 		if arr == nil || arr.Name == nil || *arr.Name == "" {
 			return fmt.Errorf("provided resource reference is nil or empty: SecurityGroupRefs")
 		}
+		obj := &ec2apitypes.SecurityGroup{}
 		if err := getReferencedResourceState_SecurityGroup(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
 			return err
 		}
