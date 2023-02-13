@@ -279,7 +279,7 @@ func Test_ResolveReferencesForField_SliceOfReferences(t *testing.T) {
 		if err := getReferencedResourceState_SecurityGroup(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
 			return err
 		}
-		ko.Spec.SecurityGroupIDs = append(ko.Spec.SecurityGroupIDs, (*string)obj.Status.ID)
+		ko.Spec.SecurityGroupIDs = append(ko.Spec.SecurityGroupIDs, (*string)(obj.Status.ID))
 	}
 `
 
