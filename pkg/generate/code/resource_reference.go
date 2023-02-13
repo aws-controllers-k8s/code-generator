@@ -257,7 +257,7 @@ func ResolveReferencesForField(field *model.Field, sourceVarName string, indentL
 
 			outPrefix += getReferencedStateForField(field, indentLevel+idx)
 
-			outPrefix += fmt.Sprintf("%s\t%s = append(%s, obj.%s)\n", indent, targetVarName, targetVarName, field.FieldConfig.References.Path)
+			outPrefix += fmt.Sprintf("%s\t%s = append(%s, (%s)obj.%s)\n", indent, targetVarName, targetVarName, field.ShapeRef.Shape.MemberRef.GoType(), field.FieldConfig.References.Path)
 			outPrefix += fmt.Sprintf("%s}\n", indent)
 		case ("map"):
 			panic("references cannot be within a map")
