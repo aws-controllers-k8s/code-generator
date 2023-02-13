@@ -214,17 +214,46 @@ func Test_ResolveReferencesForField_SingleReference(t *testing.T) {
 		`	if ko.Spec.APIRef != nil && ko.Spec.APIRef.From != nil {
 		arr := ko.Spec.APIRef.From
 		if arr == nil || arr.Name == nil || *arr.Name == "" {
-			return fmt.Errorf("provided resource reference is nil or empty: \"APIRef"\")
+			return fmt.Errorf("provided resource reference is nil or empty: APIRef")
 		}
 		obj := &svcapitypes.API{}
 		if err := getReferencedResourceState_API(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
 			return err
 		}
-		ko.Spec.APIID = obj.Status.APIID
+		ko.Spec.APIID = (*string)(obj.Status.APIID)
 	}
 `
 
 	field := crd.Fields["APIID"]
+	assert.Equal(expected, code.ResolveReferencesForField(field, "ko", 1))
+}
+
+func Test_ResolveReferencesForField_ReferencingARN(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "iam",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator.yaml",
+		})
+
+	crd := testutil.GetCRDByName(t, g, "User")
+	require.NotNil(crd)
+	expected :=
+		`	if ko.Spec.PermissionsBoundaryRef != nil && ko.Spec.PermissionsBoundaryRef.From != nil {
+		arr := ko.Spec.PermissionsBoundaryRef.From
+		if arr == nil || arr.Name == nil || *arr.Name == "" {
+			return fmt.Errorf("provided resource reference is nil or empty: PermissionsBoundaryRef")
+		}
+		obj := &svcapitypes.Policy{}
+		if err := getReferencedResourceState_Policy(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
+			return err
+		}
+		ko.Spec.PermissionsBoundary = (*string)(obj.Status.ACKResourceMetadata.ARN)
+	}
+`
+
+	field := crd.Fields["PermissionsBoundary"]
 	assert.Equal(expected, code.ResolveReferencesForField(field, "ko", 1))
 }
 
@@ -241,10 +270,10 @@ func Test_ResolveReferencesForField_SliceOfReferences(t *testing.T) {
 	require.NotNil(crd)
 	expected :=
 		`	ko.Spec.SecurityGroupIDs = []*string{}
-	for _, iter0 := range ko.Spec.SecurityGroupIDs {
+	for _, iter0 := range ko.Spec.SecurityGroupRefs {
 		arr := iter0.From
 		if arr == nil || arr.Name == nil || *arr.Name == "" {
-			return fmt.Errorf("provided resource reference is nil or empty: \"SecurityGroupRefs"\")
+			return fmt.Errorf("provided resource reference is nil or empty: SecurityGroupRefs")
 		}
 		if err := getReferencedResourceState_SecurityGroup(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
 			return err
@@ -273,13 +302,13 @@ func Test_ResolveReferencesForField_NestedSingleReference(t *testing.T) {
 		if ko.Spec.JWTConfiguration.IssuerRef != nil && ko.Spec.JWTConfiguration.IssuerRef.From != nil {
 			arr := ko.Spec.JWTConfiguration.IssuerRef.From
 			if arr == nil || arr.Name == nil || *arr.Name == "" {
-				return fmt.Errorf("provided resource reference is nil or empty: \"JWTConfiguration.IssuerRef"\")
+				return fmt.Errorf("provided resource reference is nil or empty: JWTConfiguration.IssuerRef")
 			}
 			obj := &svcapitypes.API{}
 			if err := getReferencedResourceState_API(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
 				return err
 			}
-			ko.Spec.JWTConfiguration.Issuer = obj.Status.APIID
+			ko.Spec.JWTConfiguration.Issuer = (*string)(obj.Status.APIID)
 		}
 	}
 `
@@ -307,13 +336,13 @@ func Test_ResolveReferencesForField_SingleReference_DeeplyNested(t *testing.T) {
 			if ko.Spec.Logging.LoggingEnabled.TargetBucketRef != nil && ko.Spec.Logging.LoggingEnabled.TargetBucketRef.From != nil {
 				arr := ko.Spec.Logging.LoggingEnabled.TargetBucketRef.From
 				if arr == nil || arr.Name == nil || *arr.Name == "" {
-					return fmt.Errorf("provided resource reference is nil or empty: \"Logging.LoggingEnabled.TargetBucketRef"\")
+					return fmt.Errorf("provided resource reference is nil or empty: Logging.LoggingEnabled.TargetBucketRef")
 				}
 				obj := &svcapitypes.Bucket{}
 				if err := getReferencedResourceState_Bucket(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
 					return err
 				}
-				ko.Spec.Logging.LoggingEnabled.TargetBucket = obj.Spec.Name
+				ko.Spec.Logging.LoggingEnabled.TargetBucket = (*string)(obj.Spec.Name)
 			}
 		}
 	}

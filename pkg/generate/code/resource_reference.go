@@ -243,7 +243,7 @@ func ResolveReferencesForField(field *model.Field, sourceVarName string, indentL
 				// see https://github.com/aws-controllers-k8s/community/issues/1291
 				panic(fmt.Errorf("references within lists inside lists aren't supported. crd: %q, path: %q", r.Kind, field.Path))
 			}
-			fieldAccessPrefix = fmt.Sprintf("%s.%s", fieldAccessPrefix, fp.At(idx))
+			fieldAccessPrefix = fmt.Sprintf("%s.%s", fieldAccessPrefix, cur.GetReferenceFieldName().Camel)
 
 			iterVarName := fmt.Sprintf("iter%d", idx)
 
@@ -282,7 +282,7 @@ func ResolveReferencesForField(field *model.Field, sourceVarName string, indentL
 			outPrefix += fmt.Sprintf("%s\tif err := getReferencedResourceState_%s(ctx, apiReader, obj, *arr.Name, namespace); err != nil {\n", indent, field.FieldConfig.References.Resource)
 			outPrefix += fmt.Sprintf("%s\t\treturn err\n", indent)
 			outPrefix += fmt.Sprintf("%s\t}\n", indent)
-			outPrefix += fmt.Sprintf("%s\t%s = obj.%s\n", indent, targetVarName, field.FieldConfig.References.Path)
+			outPrefix += fmt.Sprintf("%s\t%s = (%s)(obj.%s)\n", indent, targetVarName, field.GoType, field.FieldConfig.References.Path)
 			outPrefix += fmt.Sprintf("%s}\n", indent)
 		}
 	}
