@@ -117,7 +117,7 @@ func resolveReferenceFor{{ $field.FieldPathWithUnderscore }}(
 
 {{- $fp := ConstructFieldPath $field.Path -}}
 {{ $_ := $fp.Pop -}}
-{{ $isNested := gt $fp.Size 0 -}}
+{{ $isNested := gt $fp.Size 1 -}}
 {{ $isList := eq $field.ShapeRef.Shape.Type "list" -}}
 {{ if and (not $isList) (not $isNested) -}}
 	if ko.Spec.{{ $field.ReferenceFieldPath }} != nil &&
