@@ -97,6 +97,8 @@ func hasNonNilReferences(ko *svcapitypes.{{ .CRD.Names.Camel }}) bool {
 	{{ GoCodeContainsReferences .CRD "ko"}}
 }
 
+{{- $getReferencedResourceStateResources := (Nil) -}}
+
 {{ range $fieldName, $field := .CRD.Fields }}
 {{ if $field.HasReference }}
 // resolveReferenceFor{{ $field.FieldPathWithUnderscore }} reads the resource referenced
@@ -115,11 +117,14 @@ func resolveReferenceFor{{ $field.FieldPathWithUnderscore }}(
     }
 {{ end -}}
 
-{{ GoCodeResolveReference .CRD $field "ko" 1 }}
+{{ GoCodeResolveReference $field "ko" 1 }}
 	return nil
 }
 
+{{- if not (and $getReferencedResourceStateResources (eq (index $getReferencedResourceStateResources .FieldConfig.References.Resource) "true" )) }}
+{{- $getReferencedResourceStateResources = AddToMap $getReferencedResourceStateResources .FieldConfig.References.Resource "true" }}
 {{ template "read_referenced_resource_and_validate" $field }}
+{{ end -}}
 
 {{ end -}}
 {{ end -}}
