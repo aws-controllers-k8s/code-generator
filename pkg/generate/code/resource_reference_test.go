@@ -269,17 +269,20 @@ func Test_ResolveReferencesForField_SliceOfReferences(t *testing.T) {
 	crd := testutil.GetCRDByName(t, g, "VpcLink")
 	require.NotNil(crd)
 	expected :=
-		`	ko.Spec.SecurityGroupIDs = []*string{}
-	for _, iter0 := range ko.Spec.SecurityGroupRefs {
-		arr := iter0.From
-		if arr == nil || arr.Name == nil || *arr.Name == "" {
-			return fmt.Errorf("provided resource reference is nil or empty: SecurityGroupRefs")
+		`	if len(ko.Spec.SecurityGroupRefs) > 0 {
+		resolved0 := []*string{}
+		for _, iter0 := range ko.Spec.SecurityGroupRefs {
+			arr := iter0.From
+			if arr == nil || arr.Name == nil || *arr.Name == "" {
+				return fmt.Errorf("provided resource reference is nil or empty: SecurityGroupRefs")
+			}
+			obj := &ec2apitypes.SecurityGroup{}
+			if err := getReferencedResourceState_SecurityGroup(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
+				return err
+			}
+			resolved0 = append(resolved0, (*string)(obj.Status.ID))
 		}
-		obj := &ec2apitypes.SecurityGroup{}
-		if err := getReferencedResourceState_SecurityGroup(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
-			return err
-		}
-		ko.Spec.SecurityGroupIDs = append(ko.Spec.SecurityGroupIDs, (*string)(obj.Status.ID))
+		ko.Spec.SecurityGroupIDs = resolved0
 	}
 `
 

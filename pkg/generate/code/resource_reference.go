@@ -244,20 +244,24 @@ func ResolveReferencesForField(field *model.Field, sourceVarName string, indentL
 			fieldAccessPrefix = fmt.Sprintf("%s.%s", fieldAccessPrefix, cur.GetReferenceFieldName().Camel)
 
 			iterVarName := fmt.Sprintf("iter%d", idx)
+			aggRefName := fmt.Sprintf("resolved%d", idx)
 
 			// base case for references in a list
-			outPrefix += fmt.Sprintf("%s%s = %s{}\n", indent, targetVarName, field.GoType)
-			outPrefix += fmt.Sprintf("%sfor _, %s := range %s {\n", indent, iterVarName, fieldAccessPrefix)
+			outPrefix += fmt.Sprintf("%sif len(%s) > 0 {\n", indent, fieldAccessPrefix)
+			outPrefix += fmt.Sprintf("%s\t%s := %s{}\n", indent, aggRefName, field.GoType)
+			outPrefix += fmt.Sprintf("%s\tfor _, %s := range %s {\n", indent, iterVarName, fieldAccessPrefix)
 
 			fieldAccessPrefix = iterVarName
-			outPrefix += fmt.Sprintf("%s\tarr := %s.From\n", indent, fieldAccessPrefix)
-			outPrefix += fmt.Sprintf("%s\tif arr == nil || arr.Name == nil || *arr.Name == \"\" {\n", indent)
-			outPrefix += fmt.Sprintf("%s\t\treturn fmt.Errorf(\"provided resource reference is nil or empty: %s\")\n", indent, field.ReferenceFieldPath())
+			outPrefix += fmt.Sprintf("%s\t\tarr := %s.From\n", indent, fieldAccessPrefix)
+			outPrefix += fmt.Sprintf("%s\t\tif arr == nil || arr.Name == nil || *arr.Name == \"\" {\n", indent)
+			outPrefix += fmt.Sprintf("%s\t\t\treturn fmt.Errorf(\"provided resource reference is nil or empty: %s\")\n", indent, field.ReferenceFieldPath())
+			outPrefix += fmt.Sprintf("%s\t\t}\n", indent)
+
+			outPrefix += getReferencedStateForField(field, indentLevel+idx+1)
+
+			outPrefix += fmt.Sprintf("%s\t\t%s = append(%s, (%s)(obj.%s))\n", indent, aggRefName, aggRefName, field.ShapeRef.Shape.MemberRef.GoType(), field.FieldConfig.References.Path)
 			outPrefix += fmt.Sprintf("%s\t}\n", indent)
-
-			outPrefix += getReferencedStateForField(field, indentLevel+idx)
-
-			outPrefix += fmt.Sprintf("%s\t%s = append(%s, (%s)(obj.%s))\n", indent, targetVarName, targetVarName, field.ShapeRef.Shape.MemberRef.GoType(), field.FieldConfig.References.Path)
+			outPrefix += fmt.Sprintf("%s\t%s = %s\n", indent, targetVarName, aggRefName)
 			outPrefix += fmt.Sprintf("%s}\n", indent)
 		case ("map"):
 			panic("references cannot be within a map")
