@@ -12,7 +12,7 @@ ignore:
    - SAMLProvider
    - ServiceLinkedRole
    - ServiceSpecificCredential
-   - User
+   #- User
    - VirtualMFADevice
 resources:
   Role:
@@ -43,3 +43,28 @@ resources:
         type: "map[string]*bool"
       MyCustomInteger:
         type: "*int64"
+  User:
+    renames:
+      operations:
+        CreateUser:
+          input_fields:
+            UserName: Name
+    fields:
+      PermissionsBoundary:
+        references:
+          resource: Policy
+          path: Status.ACKResourceMetadata.ARN
+        set:
+          # The input and output shapes are different...
+          - from: PermissionsBoundary.PermissionsBoundaryArn
+      # In order to support attaching zero or more policies to a user, we use
+      # custom update code path code that uses the Attach/DetachUserPolicy API
+      # calls to manage the set of PolicyARNs attached to this User.
+      Policies:
+        type: "[]*string"
+        references:
+          resource: Policy
+          path: Status.ACKResourceMetadata.ARN
+      Tags:
+        compare:
+          is_ignored: true

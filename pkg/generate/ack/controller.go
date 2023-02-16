@@ -62,6 +62,16 @@ var (
 		"Dereference": func(s *string) string {
 			return *s
 		},
+		"AddToMap": func(m map[string]interface{}, k string, v interface{}) map[string]interface{} {
+			if len(m) == 0 {
+				m = make(map[string]interface{})
+			}
+			m[k] = v
+			return m
+		},
+		"Nil": func() interface{} {
+			return nil
+		},
 		"ResourceExceptionCode": func(r *ackmodel.CRD, httpStatusCode int) string {
 			return r.ExceptionCode(httpStatusCode)
 		},
@@ -182,6 +192,9 @@ var (
 			indentLevel int) string {
 			return code.InitializeNestedStructField(r, sourceVarName, f,
 				apiPkgImportName, indentLevel)
+		},
+		"GoCodeResolveReference": func(f *ackmodel.Field, sourceVarName string, indentLevel int) string {
+			return code.ResolveReferencesForField(f, sourceVarName, indentLevel)
 		},
 	}
 )
