@@ -107,8 +107,7 @@ trap "clean_up" EXIT
 mkdir -p "$TMP_DIR"
 cp -a "$SERVICE_CONTROLLER_SOURCE_PATH/config" "$TMP_DIR"
 
-# remove crd/common from bases to prevent inclusion of AdoptedResource CRD from being generated in the bundle directory
-sed -i.orig '/^bases:$/d' "$tmp_kustomize_config_dir/crd/kustomization.yaml"
+# remove crd/common from resources to prevent inclusion of AdoptedResource CRD from being generated in the bundle directory
 sed -i.orig '/- common$/d' "$tmp_kustomize_config_dir/crd/kustomization.yaml"
 
 # prepare bundle generate arguments
