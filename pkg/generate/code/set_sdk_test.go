@@ -1367,6 +1367,128 @@ func TestSetSDK_Elasticache_User_Create_Override_Values(t *testing.T) {
 	)
 }
 
+func TestSetSDK_MQ_Broker_newUpdateRequest_OmitUnchangedValues(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "mq")
+
+	crd := testutil.GetCRDByName(t, g, "Broker")
+	require.NotNil(crd)
+
+	expected := `
+	if delta.DifferentAt("Spec.AuthenticationStrategy") {
+		if r.ko.Spec.AuthenticationStrategy != nil {
+			res.SetAuthenticationStrategy(*r.ko.Spec.AuthenticationStrategy)
+		}
+	}
+	if delta.DifferentAt("Spec.AutoMinorVersionUpgrade") {
+		if r.ko.Spec.AutoMinorVersionUpgrade != nil {
+			res.SetAutoMinorVersionUpgrade(*r.ko.Spec.AutoMinorVersionUpgrade)
+		}
+	}
+	if delta.DifferentAt("Spec.BrokerID") {
+		if r.ko.Status.BrokerID != nil {
+			res.SetBrokerId(*r.ko.Status.BrokerID)
+		}
+	}
+	if delta.DifferentAt("Spec.Configuration") {
+		if r.ko.Spec.Configuration != nil {
+			f3 := &svcsdk.ConfigurationId{}
+			if r.ko.Spec.Configuration.ID != nil {
+				f3.SetId(*r.ko.Spec.Configuration.ID)
+			}
+			if r.ko.Spec.Configuration.Revision != nil {
+				f3.SetRevision(*r.ko.Spec.Configuration.Revision)
+			}
+			res.SetConfiguration(f3)
+		}
+	}
+	if delta.DifferentAt("Spec.EngineVersion") {
+		if r.ko.Spec.EngineVersion != nil {
+			res.SetEngineVersion(*r.ko.Spec.EngineVersion)
+		}
+	}
+	if delta.DifferentAt("Spec.HostInstanceType") {
+		if r.ko.Spec.HostInstanceType != nil {
+			res.SetHostInstanceType(*r.ko.Spec.HostInstanceType)
+		}
+	}
+	if delta.DifferentAt("Spec.LDAPServerMetadata") {
+		if r.ko.Spec.LDAPServerMetadata != nil {
+			f6 := &svcsdk.LdapServerMetadataInput{}
+			if r.ko.Spec.LDAPServerMetadata.Hosts != nil {
+				f6f0 := []*string{}
+				for _, f6f0iter := range r.ko.Spec.LDAPServerMetadata.Hosts {
+					var f6f0elem string
+					f6f0elem = *f6f0iter
+					f6f0 = append(f6f0, &f6f0elem)
+				}
+				f6.SetHosts(f6f0)
+			}
+			if r.ko.Spec.LDAPServerMetadata.RoleBase != nil {
+				f6.SetRoleBase(*r.ko.Spec.LDAPServerMetadata.RoleBase)
+			}
+			if r.ko.Spec.LDAPServerMetadata.RoleName != nil {
+				f6.SetRoleName(*r.ko.Spec.LDAPServerMetadata.RoleName)
+			}
+			if r.ko.Spec.LDAPServerMetadata.RoleSearchMatching != nil {
+				f6.SetRoleSearchMatching(*r.ko.Spec.LDAPServerMetadata.RoleSearchMatching)
+			}
+			if r.ko.Spec.LDAPServerMetadata.RoleSearchSubtree != nil {
+				f6.SetRoleSearchSubtree(*r.ko.Spec.LDAPServerMetadata.RoleSearchSubtree)
+			}
+			if r.ko.Spec.LDAPServerMetadata.ServiceAccountPassword != nil {
+				f6.SetServiceAccountPassword(*r.ko.Spec.LDAPServerMetadata.ServiceAccountPassword)
+			}
+			if r.ko.Spec.LDAPServerMetadata.ServiceAccountUsername != nil {
+				f6.SetServiceAccountUsername(*r.ko.Spec.LDAPServerMetadata.ServiceAccountUsername)
+			}
+			if r.ko.Spec.LDAPServerMetadata.UserBase != nil {
+				f6.SetUserBase(*r.ko.Spec.LDAPServerMetadata.UserBase)
+			}
+			if r.ko.Spec.LDAPServerMetadata.UserRoleName != nil {
+				f6.SetUserRoleName(*r.ko.Spec.LDAPServerMetadata.UserRoleName)
+			}
+			if r.ko.Spec.LDAPServerMetadata.UserSearchMatching != nil {
+				f6.SetUserSearchMatching(*r.ko.Spec.LDAPServerMetadata.UserSearchMatching)
+			}
+			if r.ko.Spec.LDAPServerMetadata.UserSearchSubtree != nil {
+				f6.SetUserSearchSubtree(*r.ko.Spec.LDAPServerMetadata.UserSearchSubtree)
+			}
+			res.SetLdapServerMetadata(f6)
+		}
+	}
+	if delta.DifferentAt("Spec.Logs") {
+		if r.ko.Spec.Logs != nil {
+			f7 := &svcsdk.Logs{}
+			if r.ko.Spec.Logs.Audit != nil {
+				f7.SetAudit(*r.ko.Spec.Logs.Audit)
+			}
+			if r.ko.Spec.Logs.General != nil {
+				f7.SetGeneral(*r.ko.Spec.Logs.General)
+			}
+			res.SetLogs(f7)
+		}
+	}
+	if delta.DifferentAt("Spec.SecurityGroups") {
+		if r.ko.Spec.SecurityGroups != nil {
+			f8 := []*string{}
+			for _, f8iter := range r.ko.Spec.SecurityGroups {
+				var f8elem string
+				f8elem = *f8iter
+				f8 = append(f8, &f8elem)
+			}
+			res.SetSecurityGroups(f8)
+		}
+	}
+`
+	assert.Equal(
+		expected,
+		code.SetSDK(crd.Config(), crd, model.OpTypeUpdate, "r.ko", "res", 1),
+	)
+}
+
 func TestSetSDK_RDS_DBInstance_Create(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)

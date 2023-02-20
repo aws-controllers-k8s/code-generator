@@ -12,3 +12,5 @@ resources:
     fields:
       Users.Password:
         is_secret: true
+    update_operation:
+      omit_unchanged_fields: true

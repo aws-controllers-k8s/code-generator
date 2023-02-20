@@ -319,9 +319,14 @@ type UpdateOperationConfig struct {
 	// CustomMethodName is a string for the method name to replace the
 	// sdkUpdate() method implementation for this resource
 	CustomMethodName string `json:"custom_method_name"`
+	// OmitUnchangedFields instructs the code generator on how to generate
+	// `newUpdateRequestPayload` function. If the boolean is true, the code generator
+	// will leverage `delta.DifferentAt` to check whether a field have changed or not
+	// before including it in the update request.
+	OmitUnchangedFields bool `json:"omit_unchanged_fields"`
 }
 
-// AdditionalConfig can be used to specify additional printer columns to be included
+// AdditionalColumnConfig can be used to specify additional printer columns to be included
 // in a Resource's output from kubectl.
 type AdditionalColumnConfig struct {
 	// Name is the thing to display in the column's output.
