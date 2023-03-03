@@ -39,12 +39,28 @@ type Config struct {
 	// SetManyOutput function fails with NotFound error.
 	// Default is "return nil, ackerr.NotFound"
 	SetManyOutputNotFoundErrReturn string `json:"set_many_output_notfound_err_return,omitempty"`
+	// SDKNames lets you specify SDK object names. This configuration field was
+	// introduces when we learned that the EventBridgePipes service renamed, not
+	// only the service model name, but also the iface name to `PipesAPI`. See
+	// https://github.com/aws/aws-sdk-go/blob/main/service/pipes/pipesiface/interface.go#L62
+	SDKNames SDKNames `json:"sdk_names"`
+}
+
+// SDKNames contains information on the SDK Client package. More precisely
+// it holds information on how to correctly import the {service}/iface main
+// interface and client structs.
+type SDKNames struct {
 	// ModelName lets you specify the path used to identify the AWS service API
 	// in the aws-sdk-go's models/apis/ directory. This field is optional and
 	// only needed for services such as the opensearchservice service where the
 	// model name is `opensearch` and the service package is called
 	// `opensearchservice`.
-	ModelName string `json:"model_name,omitempty"`
+	Model string `json:"model_name,omitempty"`
+	// ClientInterface is the name of the interface that defines the "shape" of
+	// the a sdk service client. e.g PipesAPI, LambdaAPI, etc...
+	ClientInterface string `json:"client_interface,omitempty"`
+	// ClientStruct is the name of the service client struct. e.g Lambda, Pipes, etc...
+	ClientStruct string `json:"client_struct,omitempty"`
 }
 
 // IgnoreSpec represents instructions to the ACK code generator to

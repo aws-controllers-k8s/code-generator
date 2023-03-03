@@ -327,9 +327,18 @@ func (a *SDKAPI) GetServiceFullName() string {
 	return a.API.Metadata.ServiceFullName
 }
 
-// APIInterfaceTypeName returns the name of the aws-sdk-go primary API
+// ClientInterfaceTypeName returns the name of the aws-sdk-go primary API
 // interface type name.
-func (a *SDKAPI) APIInterfaceTypeName() string {
+func (a *SDKAPI) ClientInterfaceTypeName() string {
+	if a == nil || a.API == nil {
+		return ""
+	}
+	return fmt.Sprintf("%s%s", a.API.StructName(), "API")
+}
+
+// ClientStructTypeName returns the name of the aws-sdk-go primary API
+// struct type name.
+func (a *SDKAPI) ClientStructTypeName() string {
 	if a == nil || a.API == nil {
 		return ""
 	}

@@ -28,7 +28,7 @@ var (
 	_ = &metav1.Time{}
 	_ = strings.ToLower("")
 	_ = &aws.JSONValue{}
-	_ = &svcsdk.{{ .APIInterfaceTypeName}}{}
+	_ = &svcsdk.{{ .ClientStructTypeName }}{}
 	_ = &svcapitypes.{{ .CRD.Names.Camel }}{}
 	_ = ackv1alpha1.AWSAccountID("")
 	_ = &ackerr.NotFound

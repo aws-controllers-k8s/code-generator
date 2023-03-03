@@ -45,7 +45,7 @@ func loadModel(svcAlias string, apiVersion string, apiGroup string, defaultCfg a
 		return nil, err
 	}
 
-	modelName := strings.ToLower(cfg.ModelName)
+	modelName := strings.ToLower(cfg.SDKNames.Model)
 	if modelName == "" {
 		modelName = svcAlias
 	}
