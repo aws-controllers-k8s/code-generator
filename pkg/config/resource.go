@@ -672,7 +672,7 @@ func (c *Config) GetAllRenames(
 	opRenameConfigs := resourceConfig.Renames.Operations
 	for opName, opRenameConfigs := range opRenameConfigs {
 		for _, op := range operations {
-			if opName != op.Name {
+			if opName != op.ExportedName {
 				continue
 			}
 			for old, new := range opRenameConfigs.InputFields {
