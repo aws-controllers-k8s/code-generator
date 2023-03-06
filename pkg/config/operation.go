@@ -56,7 +56,7 @@ func (c *Config) OperationIsIgnored(operation *awssdkmodel.Operation) bool {
 	if operation == nil {
 		return true
 	}
-	return util.InStrings(operation.Name, c.Ignore.Operations)
+	return util.InStrings(operation.ExportedName, c.Ignore.Operations)
 }
 
 // UnmarshalJSON parses input for a either a string or
@@ -88,7 +88,7 @@ func (c *Config) GetOutputWrapperFieldPath(
 	if c == nil {
 		return nil
 	}
-	opConfig, found := c.Operations[op.Name]
+	opConfig, found := c.Operations[op.ExportedName]
 	if !found {
 		return nil
 	}
@@ -111,7 +111,7 @@ func (c *Config) GetSetOutputCustomMethodName(
 	if c == nil {
 		return nil
 	}
-	opConfig, found := c.Operations[op.Name]
+	opConfig, found := c.Operations[op.ExportedName]
 	if !found {
 		return nil
 	}
@@ -132,7 +132,7 @@ func (c *Config) GetCustomImplementation(
 		return ""
 	}
 
-	operationConfig, found := c.Operations[op.Name]
+	operationConfig, found := c.Operations[op.ExportedName]
 	if !found {
 		return ""
 	}
@@ -150,7 +150,7 @@ func (c *Config) GetCustomCheckRequiredFieldsMissingMethod(
 		return ""
 	}
 
-	operationConfig, found := c.Operations[op.Name]
+	operationConfig, found := c.Operations[op.ExportedName]
 	if !found {
 		return ""
 	}

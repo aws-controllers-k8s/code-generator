@@ -668,13 +668,13 @@ func (r *CRD) GetSanitizedMemberPath(
 	// Handles field renames, if applicable
 	fieldName := cfg.GetResourceFieldName(
 		r.Names.Original,
-		op.Name,
+		op.ExportedName,
 		memberName,
 	)
 	cleanFieldNames := names.New(fieldName)
 	pathFieldName := cleanFieldNames.Camel
 
-	inSpec, inStatus := r.HasMember(fieldName, op.Name)
+	inSpec, inStatus := r.HasMember(fieldName, op.ExportedName)
 	if inSpec {
 		resVarPath = resVarPath + cfg.PrefixConfig.SpecField + "." + pathFieldName
 	} else if inStatus {

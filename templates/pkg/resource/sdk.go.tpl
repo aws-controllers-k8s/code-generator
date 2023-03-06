@@ -160,8 +160,8 @@ func (rm *resourceManager) sdkDelete(
 {{ $hookCode }}
 {{- end }}
 	var resp {{ .CRD.GetOutputShapeGoType .CRD.Ops.Delete }}; _ = resp;
-	resp, err = rm.sdkapi.{{ .CRD.Ops.Delete.Name }}WithContext(ctx, input)
-	rm.metrics.RecordAPICall("DELETE", "{{ .CRD.Ops.Delete.Name }}", err)
+	resp, err = rm.sdkapi.{{ .CRD.Ops.Delete.ExportedName }}WithContext(ctx, input)
+	rm.metrics.RecordAPICall("DELETE", "{{ .CRD.Ops.Delete.ExportedName }}", err)
 {{- if $hookCode := Hook .CRD "sdk_delete_post_request" }}
 {{ $hookCode }}
 {{- end }}

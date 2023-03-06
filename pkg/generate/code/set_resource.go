@@ -210,10 +210,10 @@ func SetResource(
 		// Handles field renames, if applicable
 		fieldName := cfg.GetResourceFieldName(
 			r.Names.Original,
-			op.Name,
+			op.ExportedName,
 			memberName,
 		)
-		inSpec, inStatus := r.HasMember(fieldName, op.Name)
+		inSpec, inStatus := r.HasMember(fieldName, op.ExportedName)
 		if inSpec {
 			targetAdaptedVarName += cfg.PrefixConfig.SpecField
 			f = r.SpecFields[fieldName]
@@ -499,7 +499,7 @@ func setResourceReadMany(
 	matchFieldNames := r.ListOpMatchFieldNames()
 
 	for _, mfName := range matchFieldNames {
-		if inSpec, inStat := r.HasMember(mfName, op.Name); !inSpec && !inStat {
+		if inSpec, inStat := r.HasMember(mfName, op.ExportedName); !inSpec && !inStat {
 			msg := fmt.Sprintf(
 				"Match field name %s is not in %s Spec or Status fields",
 				mfName, r.Names.Camel,
@@ -569,10 +569,10 @@ func setResourceReadMany(
 		// Handles field renames, if applicable
 		fieldName := cfg.GetResourceFieldName(
 			r.Names.Original,
-			op.Name,
+			op.ExportedName,
 			memberName,
 		)
-		inSpec, inStatus := r.HasMember(fieldName, op.Name)
+		inSpec, inStatus := r.HasMember(fieldName, op.ExportedName)
 		if inSpec {
 			targetAdaptedVarName += cfg.PrefixConfig.SpecField
 			f = r.SpecFields[fieldName]
@@ -1045,7 +1045,7 @@ func SetResourceIdentifiers(
 		// Handles field renames, if applicable
 		fieldName := cfg.GetResourceFieldName(
 			r.Names.Original,
-			op.Name,
+			op.ExportedName,
 			memberName,
 		)
 

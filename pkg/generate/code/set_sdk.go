@@ -168,7 +168,7 @@ func SetSDK(
 		out += fmt.Sprintf("%s%s.SetAttributes(attrMap)\n", indent, targetVarName)
 	}
 
-	opConfig, override := cfg.GetOverrideValues(op.Name)
+	opConfig, override := cfg.GetOverrideValues(op.ExportedName)
 	for memberIndex, memberName := range inputShape.MemberNames() {
 		if r.UnpacksAttributesMap() && memberName == "Attributes" {
 			continue
@@ -219,10 +219,10 @@ func SetSDK(
 		// Handles field renames, if applicable
 		fieldName := cfg.GetResourceFieldName(
 			r.Names.Original,
-			op.Name,
+			op.ExportedName,
 			memberName,
 		)
-		inSpec, inStatus := r.HasMember(fieldName, op.Name)
+		inSpec, inStatus := r.HasMember(fieldName, op.ExportedName)
 		if inSpec {
 			sourceAdaptedVarName += cfg.PrefixConfig.SpecField
 			f = r.SpecFields[fieldName]
@@ -792,7 +792,7 @@ func setSDKReadMany(
 	indent := strings.Repeat("\t", indentLevel)
 
 	resVarPath := ""
-	opConfig, override := cfg.GetOverrideValues(op.Name)
+	opConfig, override := cfg.GetOverrideValues(op.ExportedName)
 	var err error
 	for memberIndex, memberName := range inputShape.MemberNames() {
 		if override {
@@ -817,7 +817,7 @@ func setSDKReadMany(
 		// Handles field renames, if applicable
 		fieldName := cfg.GetResourceFieldName(
 			r.Names.Original,
-			op.Name,
+			op.ExportedName,
 			memberName,
 		)
 		resVarPath, err = r.GetSanitizedMemberPath(memberName, op, sourceVarName)
