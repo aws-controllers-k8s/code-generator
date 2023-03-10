@@ -13,7 +13,9 @@
 
 package config
 
-import "strings"
+import (
+	"strings"
+)
 
 // SourceFieldConfig instructs the code generator how to handle a field in the
 // Resource's SpecFields/StatusFields collection that takes its value from an
@@ -390,10 +392,15 @@ type FieldConfig struct {
 	// TODO(jaypipes,crtbry): Figure out if we can roll the CustomShape stuff
 	// into this type override...
 	Type *string `json:"type,omitempty"`
+	// Documentation is a string that is added *in addition to* any existing
+	// field documentation derived from the field's doc-2.json contents. For
+	// custom fields, this allows you to add custom documentation for the
+	// field.
+	Documentation *string `json:"documentation,omitempty"`
 }
 
 // GetFieldConfigs returns all FieldConfigs for a given resource as a map.
-// The map is keyed by the resource's field names after applying renames, if applicable.
+// The map is keyed by the resource's field paths
 func (c *Config) GetFieldConfigs(resourceName string) map[string]*FieldConfig {
 	if c == nil {
 		return map[string]*FieldConfig{}

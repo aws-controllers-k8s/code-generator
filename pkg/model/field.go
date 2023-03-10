@@ -64,6 +64,65 @@ type Field struct {
 	MemberFields map[string]*Field
 }
 
+// GetDocumentation returns a string containing the field's
+// description/docstring. If the field has a ShapeRef that has non-empty
+// Documentation AND the field has a Documentation configuration option, then
+// the docstring contained in the Documentation configuration option will be
+// appended to ShapeRef's docstring following 2 line breaks with Go comment
+// line beginnings.
+//
+// In other words, if there is a field with a ShapeRef that has a Documentation string containing:
+//
+// "// This field contains the identifier for the cluster
+//
+//	// running the cache services"
+//
+// and the field has a FieldConfig.Documentation string containing:
+//
+// "please note that this field is updated on the service
+//
+//	side"
+//
+// then the string returned from this method will be:
+//
+// "// This field contains the identifier for the cluster
+//
+//	// running the cache services
+//	//
+//	// please note that this field is updated on the service
+//	// side"
+func (f *Field) GetDocumentation() string {
+	hasShapeDoc := false
+	var sb strings.Builder
+	if f.ShapeRef != nil {
+		if f.ShapeRef.Documentation != "" {
+			hasShapeDoc = true
+			sb.WriteString(f.ShapeRef.Documentation)
+		}
+	}
+	if f.FieldConfig != nil {
+		if f.FieldConfig.Documentation != nil {
+			if hasShapeDoc {
+				sb.WriteString("\n//\n")
+			}
+			// Strip any leading comment slashes from the config option
+			// docstring since we'll be automatically adding the Go comment
+			// slashes to the beginning of each new line
+			cfgDoc := *f.FieldConfig.Documentation
+			lines := strings.Split(cfgDoc, "\n")
+			numLines := len(lines)
+			for x, line := range lines {
+				sb.WriteString("// ")
+				sb.WriteString(strings.TrimLeft(line, "/ "))
+				if x < (numLines - 1) {
+					sb.WriteString("\n")
+				}
+			}
+		}
+	}
+	return sb.String()
+}
+
 // IsRequired checks the FieldConfig for Field and returns if the field is
 // marked as required or not.A
 //
