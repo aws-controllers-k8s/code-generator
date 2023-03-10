@@ -14,9 +14,10 @@ import (
 
 {{ if .CRD.HasReferenceFields -}}
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
-	ackcondition "github.com/aws-controllers-k8s/runtime/pkg/condition"
+	// ackcondition "github.com/aws-controllers-k8s/runtime/pkg/condition"
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 {{ end -}}
+	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
 {{ $servicePackageName := .ServicePackageName -}}
 {{ $apiVersion := .APIVersion -}}
@@ -41,23 +42,78 @@ import (
 {{ end -}}
 {{ end -}}
 
+type resourceReferenceMap struct {
+	// All of the references that have been resolved for the resource. The field
+	// path of the reference field is the key and the resolved value is the
+	// value.
+	// TODO(redbackthomson): Sync MUTEX
+	resolvedReferences map[string]any
+}
+
+// setReferencedValue sets the resolved reference value for the resource at a
+// given field path
+func (rm *resourceManager) setReferencedValue(ctx context.Context, path string, refValue any) {
+	rlog := ackrtlog.FromContext(ctx)
+	rlog.Info("setting resolved reference", "path", path, "referencedValue", refValue)
+	rm.refMap.resolvedReferences[path] = refValue
+}
+
+// getReferencedValue will attempt to return the value of a resolved
+// reference for a resource, or nil if it does not exist
+func (rm *resourceManager) getReferencedValue(path string) (any, bool) {
+	val, ok := rm.refMap.resolvedReferences[path]
+	return val, ok
+}
+
+func (rm *resourceManager) CopyWithResolvedReferences(res acktypes.AWSResource) acktypes.AWSResource {
+	ko := rm.concreteResource(res).ko.DeepCopy()
+
+	if val, ok := rm.getReferencedValue("Logging.LoggingEnabled.TargetBucket"); ok {
+		ko.Spec.Logging.LoggingEnabled.TargetBucket = (val).(*string)
+
+		// TODO: Deal with nested lists
+		// TODO: Look into set resource pkg/generate/code/set_resource.go
+		// routeInnerListValues := (val).([][]*string)
+		// for i, routes := range ko.Spec.Routes {
+		// 	for j, _ := range routes.InnerList {
+		// 		ko.Spec.Routes[i].InnerList[j].Value = routeInnerListValues[i][j]
+		// 	}
+		// }
+	}
+
+	return &resource{ko}
+}
+
+func (rm *resourceManager) ClearResolvedReferences(res acktypes.AWSResource) acktypes.AWSResource {
+	ko := rm.concreteResource(res).ko.DeepCopy()
+
+	if _, ok := rm.getReferencedValue("Logging.LoggingEnabled.TargetBucket"); ok {
+		ko.Spec.Logging.LoggingEnabled.TargetBucket = nil
+	}
+
+	return &resource{ko}
+}
+
+func NewReferenceMap() *resourceReferenceMap {
+	return &resourceReferenceMap{
+		resolvedReferences: make(map[string]any),
+	}
+}
+
 // ResolveReferences finds if there are any Reference field(s) present
 // inside AWSResource passed in the parameter and attempts to resolve
-// those reference field(s) into target field(s).
-// It returns an AWSResource with resolved reference(s), and an error if the
-// passed AWSResource's reference field(s) cannot be resolved.
-// This method also adds/updates the ConditionTypeReferencesResolved for the
-// AWSResource.
+// those reference field(s) into the resolved reference cache within the
+// resource manager. No fields are modified within the resource itself.
 func (rm *resourceManager) ResolveReferences(
 	ctx context.Context,
 	apiReader client.Reader,
 	res acktypes.AWSResource,
-) (acktypes.AWSResource, error) {
+) (error) {
 {{ if not .CRD.HasReferenceFields -}}
 	return res, nil
 {{ else -}}
 	namespace := res.MetaObject().GetNamespace()
-	ko := rm.concreteResource(res).ko.DeepCopy()
+	ko := rm.concreteResource(res).ko
 	err := validateReferenceFields(ko)
 {{- if $hookCode := Hook .CRD "references_pre_resolve" }}
 {{ $hookCode }}
@@ -65,22 +121,17 @@ func (rm *resourceManager) ResolveReferences(
 	{{ range $fieldName, $field := .CRD.Fields -}}
 	{{ if $field.HasReference -}}
 	if err == nil {
-		err = resolveReferenceFor{{ $field.FieldPathWithUnderscore }}(ctx, apiReader, namespace, ko)
+		err = rm.resolveReferenceFor{{ $field.FieldPathWithUnderscore }}(ctx, apiReader, namespace, ko)
 	}
 	{{ end -}}
 	{{ end -}}
 {{- if $hookCode := Hook .CRD "references_post_resolve" }}
 {{ $hookCode }}
 {{- end }}
-	// If there was an error while resolving any reference, reset all the
-	// resolved values so that they do not get persisted inside etcd
-	if err != nil {
-		ko = rm.concreteResource(res).ko.DeepCopy()
-	}
-	if hasNonNilReferences(ko) {
-		return ackcondition.WithReferencesResolvedCondition(&resource{ko}, err)
-	}
-	return &resource{ko}, err
+	// if hasNonNilReferences(ko) {
+	// 	return ackcondition.WithReferencesResolvedCondition(&resource{ko}, err)
+	// } 
+	return err
 {{ end -}}
 }
 
@@ -104,7 +155,7 @@ func hasNonNilReferences(ko *svcapitypes.{{ .CRD.Names.Camel }}) bool {
 // resolveReferenceFor{{ $field.FieldPathWithUnderscore }} reads the resource referenced
 // from {{ $field.ReferenceFieldPath }} field and sets the {{ $field.Path }}
 // from referenced resource
-func resolveReferenceFor{{ $field.FieldPathWithUnderscore }}(
+func (rm *resourceManager) resolveReferenceFor{{ $field.FieldPathWithUnderscore }}(
 	ctx context.Context,
 	apiReader client.Reader,
 	namespace string,
@@ -125,7 +176,6 @@ func resolveReferenceFor{{ $field.FieldPathWithUnderscore }}(
 {{- $getReferencedResourceStateResources = AddToMap $getReferencedResourceStateResources .FieldConfig.References.Resource "true" }}
 {{ template "read_referenced_resource_and_validate" $field }}
 {{ end -}}
-
 {{ end -}}
 {{ end -}}
 

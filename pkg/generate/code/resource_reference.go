@@ -17,6 +17,8 @@ import (
 	"fmt"
 	"strings"
 
+	lo "github.com/samber/lo"
+
 	"github.com/aws-controllers-k8s/code-generator/pkg/fieldpath"
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 )
@@ -212,9 +214,28 @@ func ResolveReferencesForField(field *model.Field, sourceVarName string, indentL
 	outPrefix := ""
 	outSuffix := ""
 
-	fieldAccessPrefix := fmt.Sprintf("%s%s", sourceVarName, r.Config().PrefixConfig.SpecField)
-	targetVarName := fmt.Sprintf("%s.%s", fieldAccessPrefix, field.Path)
+	indent := strings.Repeat("\t", indentLevel)
 
+	needsSetReferenced := true
+
+	numLists := field.GetNumberParentLists()
+	refWithinList := numLists > 0
+
+	resRefVar := "resolved"
+	nestedIndexVarPrefix := "indx"
+	if refWithinList {
+		// Create a temp variable for the resolved references. If the field is
+		// within a list, or nested lists, then use a multi-dimensional array to
+		// hold the relative indexes of the reference within those parent lists
+		resRefType := fmt.Sprintf("%s%s", strings.Repeat("[]", numLists), field.ShapeRef.GoType())
+		outPrefix += fmt.Sprintf("%s%s := make(%s, 0)\n", indent, resRefVar, resRefType)
+		outSuffix = fmt.Sprintf("%srm.setReferencedValue(ctx, %q, %s)\n%s", indent, field.Path, resRefVar, outSuffix)
+		needsSetReferenced = false
+	}
+
+	fieldAccessPrefix := fmt.Sprintf("%s%s", sourceVarName, r.Config().PrefixConfig.SpecField)
+
+	curListDepth := 0
 	for idx := 0; idx < fp.Size(); idx++ {
 		curFP := fp.CopyAt(idx).String()
 		cur, ok := r.Fields[curFP]
@@ -226,60 +247,102 @@ func ResolveReferencesForField(field *model.Field, sourceVarName string, indentL
 
 		indent := strings.Repeat("\t", indentLevel+idx)
 
+		// temp vars for storing additions to outPrefix and outSuffix
+		addPrefix := ""
+		addSuffix := ""
+
 		switch ref.Shape.Type {
 		case ("structure"):
 			fieldAccessPrefix = fmt.Sprintf("%s.%s", fieldAccessPrefix, fp.At(idx))
 
-			outPrefix += fmt.Sprintf("%sif %s != nil {\n", indent, fieldAccessPrefix)
+			addPrefix += fmt.Sprintf("%sif %s != nil {\n", indent, fieldAccessPrefix)
 			outSuffix = fmt.Sprintf("%s}\n%s", indent, outSuffix)
 		case ("list"):
-			if (fp.Size() - idx) > 1 {
-				// TODO(nithomso): add support for structs nested within lists
-				// The logic for structs nested within lists needs to not only
-				// be added here, but also in a custom patching solution since
-				// it isn't supported by `StrategicMergePatch`
-				// see https://github.com/aws-controllers-k8s/community/issues/1291
-				panic(fmt.Errorf("references within lists inside lists aren't supported. crd: %q, path: %q", r.Kind, field.Path))
-			}
-			fieldAccessPrefix = fmt.Sprintf("%s.%s", fieldAccessPrefix, cur.GetReferenceFieldName().Camel)
-
 			iterVarName := fmt.Sprintf("iter%d", idx)
 			aggRefName := fmt.Sprintf("resolved%d", idx)
 
+			// check if there are more layers below
+			if (fp.Size() - idx) > 1 {
+				fieldAccessPrefix = fmt.Sprintf("%s.%s", fieldAccessPrefix, fp.At(idx))
+				indexVarName := fmt.Sprintf("%s%d", nestedIndexVarPrefix, curListDepth)
+
+				addPrefix += fmt.Sprintf("%sif len(%s) > 0 {\n", indent, fieldAccessPrefix)
+				addPrefix += fmt.Sprintf("%s\tfor %s, %s := range %s {\n", indent, indexVarName, iterVarName, fieldAccessPrefix)
+
+				// if there are no more lists below, then start adding primitives
+				if curListDepth == (numLists - 1) {
+					addPrefix += fmt.Sprintf("%s\t\t%s = append(%s, nil)\n", indent, resRefVar, resRefVar)
+				} else {
+					// otherwise create another slice to fill
+					newResValType := fmt.Sprintf("%s%s", strings.Repeat("[]", numLists-curListDepth), field.ShapeRef.GoType())
+					addPrefix += fmt.Sprintf("%s\t\t%s = append(%s, make(%s, 0))\n", indent, resRefVar, resRefVar, newResValType)
+				}
+
+				addSuffix += fmt.Sprintf("%s\t}\n", indent)
+				if needsSetReferenced {
+					addSuffix += fmt.Sprintf("%s\trm.setReferencedValue(ctx, %q, %s)\n", indent, field.Path, aggRefName)
+				}
+				addSuffix += fmt.Sprintf("%s}\n", indent)
+
+				fieldAccessPrefix = iterVarName
+				break
+			}
+
+			fieldAccessPrefix = fmt.Sprintf("%s.%s", fieldAccessPrefix, cur.GetReferenceFieldName().Camel)
+
 			// base case for references in a list
-			outPrefix += fmt.Sprintf("%sif len(%s) > 0 {\n", indent, fieldAccessPrefix)
-			outPrefix += fmt.Sprintf("%s\t%s := %s{}\n", indent, aggRefName, field.GoType)
-			outPrefix += fmt.Sprintf("%s\tfor _, %s := range %s {\n", indent, iterVarName, fieldAccessPrefix)
+			addPrefix += fmt.Sprintf("%sif len(%s) > 0 {\n", indent, fieldAccessPrefix)
+
+			// if it's not within a list then create a temp var to load
+			if !refWithinList {
+				addPrefix += fmt.Sprintf("%s\tvar %s %s\n", indent, aggRefName, field.ShapeRef.Shape.GoType())
+			}
+
+			addPrefix += fmt.Sprintf("%s\tfor _, %s := range %s {\n", indent, iterVarName, fieldAccessPrefix)
 
 			fieldAccessPrefix = iterVarName
-			outPrefix += fmt.Sprintf("%s\t\tarr := %s.From\n", indent, fieldAccessPrefix)
-			outPrefix += fmt.Sprintf("%s\t\tif arr == nil || arr.Name == nil || *arr.Name == \"\" {\n", indent)
-			outPrefix += fmt.Sprintf("%s\t\t\treturn fmt.Errorf(\"provided resource reference is nil or empty: %s\")\n", indent, field.ReferenceFieldPath())
-			outPrefix += fmt.Sprintf("%s\t\t}\n", indent)
+			addPrefix += fmt.Sprintf("%s\t\tarr := %s.From\n", indent, fieldAccessPrefix)
+			addPrefix += fmt.Sprintf("%s\t\tif arr == nil || arr.Name == nil || *arr.Name == \"\" {\n", indent)
+			addPrefix += fmt.Sprintf("%s\t\t\treturn fmt.Errorf(\"provided resource reference is nil or empty: %s\")\n", indent, field.ReferenceFieldPath())
+			addPrefix += fmt.Sprintf("%s\t\t}\n", indent)
 
-			outPrefix += getReferencedStateForField(field, indentLevel+idx+1)
+			addPrefix += getReferencedStateForField(field, indentLevel+idx+1)
 
-			outPrefix += fmt.Sprintf("%s\t\t%s = append(%s, (%s)(obj.%s))\n", indent, aggRefName, aggRefName, field.ShapeRef.Shape.MemberRef.GoType(), field.FieldConfig.References.Path)
-			outPrefix += fmt.Sprintf("%s\t}\n", indent)
-			outPrefix += fmt.Sprintf("%s\t%s = %s\n", indent, targetVarName, aggRefName)
-			outPrefix += fmt.Sprintf("%s}\n", indent)
+			addPrefix += fmt.Sprintf("%s\t\t%s = append(%s, (%s)(obj.%s))\n", indent, aggRefName, aggRefName, field.ShapeRef.Shape.MemberRef.GoType(), field.FieldConfig.References.Path)
+
+			addPrefix += fmt.Sprintf("%s\t}\n", indent)
+			if needsSetReferenced {
+				addPrefix += fmt.Sprintf("%s\trm.setReferencedValue(ctx, %q, %s)\n", indent, field.Path, aggRefName)
+			}
+			addPrefix += fmt.Sprintf("%s}\n", indent)
 		case ("map"):
 			panic("references cannot be within a map")
 		default:
 			// base case for single references
 			fieldAccessPrefix = fmt.Sprintf("%s.%s", fieldAccessPrefix, cur.GetReferenceFieldName().Camel)
 
-			outPrefix += fmt.Sprintf("%sif %s != nil && %s.From != nil {\n", indent, fieldAccessPrefix, fieldAccessPrefix)
-			outPrefix += fmt.Sprintf("%s\tarr := %s.From\n", indent, fieldAccessPrefix)
-			outPrefix += fmt.Sprintf("%s\tif arr == nil || arr.Name == nil || *arr.Name == \"\" {\n", indent)
-			outPrefix += fmt.Sprintf("%s\t\treturn fmt.Errorf(\"provided resource reference is nil or empty: %s\")\n", indent, field.ReferenceFieldPath())
-			outPrefix += fmt.Sprintf("%s\t}\n", indent)
+			addPrefix += fmt.Sprintf("%sif %s != nil && %s.From != nil {\n", indent, fieldAccessPrefix, fieldAccessPrefix)
+			addPrefix += fmt.Sprintf("%s\tarr := %s.From\n", indent, fieldAccessPrefix)
+			addPrefix += fmt.Sprintf("%s\tif arr == nil || arr.Name == nil || *arr.Name == \"\" {\n", indent)
+			addPrefix += fmt.Sprintf("%s\t\treturn fmt.Errorf(\"provided resource reference is nil or empty: %s\")\n", indent, field.ReferenceFieldPath())
+			addPrefix += fmt.Sprintf("%s\t}\n", indent)
 
-			outPrefix += getReferencedStateForField(field, indentLevel+idx)
+			addPrefix += getReferencedStateForField(field, indentLevel+idx)
 
-			outPrefix += fmt.Sprintf("%s\t%s = (%s)(obj.%s)\n", indent, targetVarName, field.GoType, field.FieldConfig.References.Path)
-			outPrefix += fmt.Sprintf("%s}\n", indent)
+			// if we are inside lists, set it to the appropriate indexes
+			if refWithinList {
+				indexList := strings.Join(lo.Times(numLists, func(indx int) string {
+					return fmt.Sprintf("[%s%d]", nestedIndexVarPrefix, indx)
+				}), "")
+				addPrefix += fmt.Sprintf("%s\t\t%s%s = obj.%s\n", indent, resRefVar, indexList, field.FieldConfig.References.Path)
+			} else {
+				addPrefix += fmt.Sprintf("%s\trm.setReferencedValue(ctx, %q, obj.%s)\n", indent, field.Path, field.FieldConfig.References.Path)
+			}
+			addPrefix += fmt.Sprintf("%s}\n", indent)
 		}
+
+		outPrefix += addPrefix
+		outSuffix = fmt.Sprintf("%s\n%s", addSuffix, outSuffix)
 	}
 
 	return outPrefix + outSuffix

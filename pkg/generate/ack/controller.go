@@ -196,6 +196,12 @@ var (
 		"GoCodeResolveReference": func(f *ackmodel.Field, sourceVarName string, indentLevel int) string {
 			return code.ResolveReferencesForField(f, sourceVarName, indentLevel)
 		},
+		"GoCodeCopyWithResolvedReferences": func(f *ackmodel.Field, sourceVarName, targetVarName string, indentLevel int) string {
+			return ""
+		},
+		"ClearResolvedReferences": func(f *ackmodel.Field, sourceVarName, targetVarName string, indentLevel int) string {
+			return ""
+		},
 	}
 )
 
