@@ -52,13 +52,14 @@ type Model struct {
 // service API
 func (m *Model) MetaVars() templateset.MetaVars {
 	return templateset.MetaVars{
-		ServicePackageName:   m.servicePackageName,
-		ServiceID:            m.SDKAPI.ServiceID(),
-		ServiceModelName:     m.cfg.ModelName,
-		APIGroup:             m.APIGroup(),
-		APIVersion:           m.apiVersion,
-		APIInterfaceTypeName: m.SDKAPI.APIInterfaceTypeName(),
-		CRDNames:             m.crdNames(),
+		ServicePackageName:      m.servicePackageName,
+		ServiceID:               m.SDKAPI.ServiceID(),
+		ServiceModelName:        m.cfg.SDKNames.Model,
+		APIGroup:                m.APIGroup(),
+		APIVersion:              m.apiVersion,
+		ClientInterfaceTypeName: m.ClientInterfaceTypeName(),
+		ClientStructTypeName:    m.ClientStructTypeName(),
+		CRDNames:                m.crdNames(),
 	}
 }
 
@@ -864,6 +865,24 @@ func (m *Model) APIGroup() string {
 		suffix = m.SDKAPI.APIGroupSuffix
 	}
 	return fmt.Sprintf("%s.%s", m.servicePackageName, suffix)
+}
+
+// ClientInterfaceTypeName returns the name of the aws-sdk-go primary API
+// interface type name.
+func (m *Model) ClientInterfaceTypeName() string {
+	if m.cfg.SDKNames.ClientInterface != "" {
+		return m.cfg.SDKNames.ClientInterface
+	}
+	return m.SDKAPI.ClientInterfaceTypeName()
+}
+
+// ClientStructTypeName returns the name of the aws-sdk-go primary client
+// struct type name.
+func (m *Model) ClientStructTypeName() string {
+	if m.cfg.SDKNames.ClientStruct != "" {
+		return m.cfg.SDKNames.ClientStruct
+	}
+	return m.SDKAPI.ClientStructTypeName()
 }
 
 // New returns a new Model struct for a supplied API model.
