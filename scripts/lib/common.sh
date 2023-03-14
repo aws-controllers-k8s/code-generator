@@ -154,7 +154,7 @@ is_public_ecr_logged_in() {
     [ -z "$auth_string" ] && return 1
     [ "$auth_string" = "null" ] && return 1
 
-    expiration_time=$(jq -r --arg url $public_ecr_url '.auths[$url].auth' ~/.docker/config.json | base64 -d | cut -d":" -f2 | base64 -d | jq -r ".expiration")
+    expiration_time=$(echo $auth_string | base64 -d | cut -d":" -f2 | base64 -d | jq -r ".expiration")
 
     # If any part of this doesn't exist, the user isn't logged in
     [ -z "$expiration_time" ] && return 1
