@@ -31,12 +31,6 @@ var (
 type resourceDescriptor struct {
 }
 
-// GroupKind returns a Kubernetes metav1.GroupKind struct that describes the
-// API Group and Kind of CRs described by the descriptor
-func (d *resourceDescriptor) GroupKind() *metav1.GroupKind {
-	return &GroupKind
-}
-
 // GroupVersionKind returns a Kubernetes schema.GroupVersionKind struct that
 // describes the API Group, Version and Kind of CRs described by the descriptor
 func (d *resourceDescriptor) GroupVersionKind() schema.GroupVersionKind {
