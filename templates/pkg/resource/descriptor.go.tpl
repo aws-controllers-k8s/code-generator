@@ -3,6 +3,7 @@
 package {{ .CRD.Names.Snake }}
 
 import (
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
 	acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
@@ -34,6 +35,12 @@ type resourceDescriptor struct {
 // API Group and Kind of CRs described by the descriptor
 func (d *resourceDescriptor) GroupKind() *metav1.GroupKind {
 	return &GroupKind
+}
+
+// GroupVersionKind returns a Kubernetes schema.GroupVersionKind struct that
+// describes the API Group, Version and Kind of CRs described by the descriptor
+func (d *resourceDescriptor) GroupVersionKind() schema.GroupVersionKind {
+	return svcapitypes.GroupVersion.WithKind(GroupKind.Kind)
 }
 
 // EmptyRuntimeObject returns an empty object prototype that may be used in
