@@ -18,7 +18,7 @@ import (
 	"reflect"
 	"testing"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	rtclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -53,8 +53,8 @@ func (ids *fakeIdentifiers) Region() *ackv1alpha1.AWSRegion {
 
 type fakeDescriptor struct{}
 
-func (fd *fakeDescriptor) GroupKind() *metav1.GroupKind {
-	return nil
+func (fd *fakeDescriptor) GroupVersionKind() schema.GroupVersionKind {
+	return schema.GroupVersionKind{}
 }
 
 func (fd *fakeDescriptor) EmptyRuntimeObject() rtclient.Object {
