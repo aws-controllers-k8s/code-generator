@@ -216,7 +216,7 @@ func ResolveReferencesForField(field *model.Field, sourceVarName string, indentL
 
 	indent := strings.Repeat("\t", indentLevel)
 
-	numLists := field.GetNumberParentLists()
+	numLists := field.GetNumberLists()
 	currentListDepth := 0 // Stores how many slices we are iterating within
 
 	resRefVar := "resolved"
@@ -284,7 +284,7 @@ func ResolveReferencesForField(field *model.Field, sourceVarName string, indentL
 			indexList := strings.Join(lo.Times(numLists, func(indx int) string {
 				return fmt.Sprintf("[%s]", fmt.Sprintf(nestedIndexVarPrefixFmt, indx))
 			}), "")
-			outPrefix += fmt.Sprintf("%s\t\t%s%s = obj.%s\n", indent, resRefVar, indexList, field.FieldConfig.References.Path)
+			outPrefix += fmt.Sprintf("%s\t\t%s%s = (%s)(obj.%s)\n", indent, resRefVar, indexList, resRefElemType, field.FieldConfig.References.Path)
 			outPrefix += fmt.Sprintf("%s}\n", indent)
 		}
 	}
@@ -295,7 +295,7 @@ func ResolveReferencesForField(field *model.Field, sourceVarName string, indentL
 func CopyWithResolvedReferences(field *model.Field, targetVarName string, indentLevel int) string {
 	r := field.CRD
 
-	numLists := field.GetNumberParentLists()
+	numLists := field.GetNumberLists()
 	nestedIndexVarPrefixFmt := "f%didx"
 
 	outPrefix, outSuffix := IterResolvedReferenceValues(field, indentLevel, true, nestedIndexVarPrefixFmt, func(nestedIndent string, fieldNamePrefix string, castResolvedVar string) (outPrefix string, outSuffix string) {
@@ -311,7 +311,7 @@ func CopyWithResolvedReferences(field *model.Field, targetVarName string, indent
 
 func ClearResolvedReferences(field *model.Field, targetVarName string, indentLevel int) string {
 	r := field.CRD
-	numLists := field.GetNumberParentLists()
+	numLists := field.GetNumberLists()
 
 	nestedIndexVarPrefixFmt := "f%didx"
 	shouldCast := numLists > 0
@@ -330,7 +330,7 @@ func IterResolvedReferenceValues(field *model.Field, indentLevel int, shouldCast
 
 	indent := strings.Repeat("\t", indentLevel)
 
-	numLists := field.GetNumberParentLists()
+	numLists := field.GetNumberLists()
 
 	castResolvedVar := "castResRef"
 

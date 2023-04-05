@@ -79,8 +79,8 @@ func (rm *resourceManager) CopyWithResolvedReferences(res acktypes.AWSResource) 
 func (rm *resourceManager) ClearResolvedReferences(res acktypes.AWSResource) (acktypes.AWSResource, error) {
 	ko := rm.concreteResource(res).ko.DeepCopy()
 
-{{ range $fieldName, $field := .CRD.Fields }}
-{{ if $field.HasReference }}
+{{ range $fieldName, $field := .CRD.Fields -}}
+{{ if $field.HasReference -}}
 {{ GoCodeClearResolvedReferences $field "ko" 1 }}
 {{ end -}}
 {{ end -}}

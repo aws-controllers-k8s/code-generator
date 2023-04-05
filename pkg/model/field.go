@@ -273,15 +273,15 @@ func (f *Field) FieldPathWithUnderscore() string {
 	return strings.ReplaceAll(f.Path, ".", "_")
 }
 
-// GetNumberParentLists counts the number of parent shape refs that are of type
-// "list".
-func (f *Field) GetNumberParentLists() int {
+// GetNumberLists counts the number of shape refs that are of type
+// "list" within the field path of the current field.
+func (f *Field) GetNumberLists() int {
 	fp := fieldpath.FromString(f.Path)
 
 	// walk through all the parent fields, check their shape type and return the
 	// count of lists
 	numLists := 0
-	for idx := 0; idx < fp.Size()-1; idx++ {
+	for idx := 0; idx < fp.Size(); idx++ {
 		cp := fp.CopyAt(idx).String()
 		parPath := f.CRD.Fields[cp]
 		if parPath.ShapeRef != nil && parPath.ShapeRef.Shape != nil && parPath.ShapeRef.Shape.Type == "list" {
