@@ -193,23 +193,70 @@ func ReferenceFieldsPresent(
 // Sample code (resolving a nested singular reference):
 //
 // ```
+// var resolved *string
 //
-//		if ko.Spec.APIRef != nil && ko.Spec.APIRef.From != nil {
-//		arr := ko.Spec.APIRef.From
-//		if arr == nil || arr.Name == nil || *arr.Name == "" {
-//			return fmt.Errorf("provided resource reference is nil or empty: APIRef")
+//	if ko.Spec.KMSKeyRef != nil && ko.Spec.KMSKeyRef.From != nil {
+//		arr := ko.Spec.KMSKeyRef.From
+//		if arr.Name == nil || *arr.Name == "" {
+//			return fmt.Errorf("provided resource reference is nil or empty: KMSKeyRef")
 //		}
-//		obj := &svcapitypes.API{}
-//		if err := getReferencedResourceState_API(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
+//		obj := &kmsapitypes.Key{}
+//		if err := getReferencedResourceState_Key(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
 //			return err
 //		}
-//		ko.Spec.APIID = (*string)(obj.Status.APIID)
+//		resolved = (*string)(obj.Status.ACKResourceMetadata.ARN)
 //	}
 //
+// rm.setReferencedValue(ctx, "KMSKeyARN", resolved)
+// ```
+//
+// Sample code (resolving a list of references):
+// ```
+// var resolved []*string
+//
+//	if ko.Spec.VPCConfig != nil {
+//		for f0idx, f0iter := range ko.Spec.VPCConfig.SecurityGroupRefs {
+//			if f0iter != nil && f0iter.From != nil {
+//				arr := f0iter.From
+//				if arr.Name == nil || *arr.Name == "" {
+//					return fmt.Errorf("provided resource reference is nil or empty: VPCConfig.SecurityGroupRefs")
+//				}
+//				obj := &ec2apitypes.SecurityGroup{}
+//				if err := getReferencedResourceState_SecurityGroup(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
+//					return err
+//				}
+//				resolved[f0idx] = (*string)(obj.Status.ID)
+//			}
+//		}
+//	}
+//
+// rm.setReferencedValue(ctx, "VPCConfig.SecurityGroupIDs", resolved)
+// ```
+//
+// Sample code (resolving a list of structs containing references):
+// ```
+// var resolved []*string
+// resolved = make([]*string, len(ko.Spec.Routes))
+//
+//	for f0idx, f0iter := range ko.Spec.Routes {
+//		if f0iter.VPCEndpointRef != nil && f0iter.VPCEndpointRef.From != nil {
+//			arr := f0iter.VPCEndpointRef.From
+//			if arr.Name == nil || *arr.Name == "" {
+//				return fmt.Errorf("provided resource reference is nil or empty: Routes.VPCEndpointRef")
+//			}
+//			obj := &svcapitypes.VPCEndpoint{}
+//			if err := getReferencedResourceState_VPCEndpoint(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
+//				return err
+//			}
+//			resolved[f0idx] = (*string)(obj.Status.VPCEndpointID)
+//		}
+//	}
+//
+// rm.setReferencedValue(ctx, "Routes.VPCEndpointID", resolved)
 // ```
 func ResolveReferencesForField(field *model.Field, sourceVarName string, indentLevel int) string {
 	r := field.CRD
-	fp := fieldpath.FromString(field.Path)
+	fp := fieldpath.FromString(field.ReferenceFieldPath())
 
 	outPrefix := ""
 	outSuffix := ""
@@ -220,21 +267,30 @@ func ResolveReferencesForField(field *model.Field, sourceVarName string, indentL
 	currentListDepth := 0 // Stores how many slices we are iterating within
 
 	resRefVar := "resolved"
+	nestedIterVarPrefixFmt := "f%diter"
 	nestedIndexVarPrefixFmt := "f%didx"
 
 	resRefElemType := field.ShapeRef.GoType()
+	if field.ShapeRef.Shape.Type == "list" {
+		resRefElemType = field.ShapeRef.Shape.MemberRef.GoType()
+	}
 
 	// If the field is within a list, or nested lists, then use a
 	// multi-dimensional array to hold the relative indexes of the reference
 	// within those parent lists
 	resRefType := fmt.Sprintf("%s%s", strings.Repeat("[]", numLists), resRefElemType)
 
+	outPrefix += fmt.Sprintf("%shasResolved := false\n", indent)
 	outPrefix += fmt.Sprintf("%svar %s %s\n", indent, resRefVar, resRefType)
-	outSuffix = fmt.Sprintf("%srm.setReferencedValue(ctx, %q, %s)\n%s", indent, field.Path, resRefVar, outSuffix)
+
+	outSuffix = fmt.Sprintf("%s}\n%s", indent, outSuffix)
+	outSuffix = fmt.Sprintf("%s\trm.setReferencedValue(ctx, %q, %s)\n%s", indent, field.Path, resRefVar, outSuffix)
+	outSuffix = fmt.Sprintf("%sif hasResolved {\n%s", indent, outSuffix)
 
 	fieldAccessPrefix := fmt.Sprintf("%s%s", sourceVarName, r.Config().PrefixConfig.SpecField)
 
-	for idx := 0; idx < fp.Size(); idx++ {
+	idx := 0
+	for idx = 0; idx < fp.Size()-1; idx++ {
 		curFP := fp.CopyAt(idx).String()
 		cur, ok := r.Fields[curFP]
 		if !ok {
@@ -246,14 +302,16 @@ func ResolveReferencesForField(field *model.Field, sourceVarName string, indentL
 		indent := strings.Repeat("\t", indentLevel+idx)
 
 		switch ref.Shape.Type {
+		case ("map"):
+			panic("references cannot be within a map")
 		case ("structure"):
 			fieldAccessPrefix = fmt.Sprintf("%s.%s", fieldAccessPrefix, fp.At(idx))
 
 			outPrefix += fmt.Sprintf("%sif %s != nil {\n", indent, fieldAccessPrefix)
 			outSuffix = fmt.Sprintf("%s}\n%s", indent, outSuffix)
 		case ("list"):
-			iterVarName := fmt.Sprintf("f%diter", idx)
-			idxVarName := fmt.Sprintf(nestedIndexVarPrefixFmt, idx)
+			iterVarName := fmt.Sprintf(nestedIterVarPrefixFmt, currentListDepth)
+			idxVarName := fmt.Sprintf(nestedIndexVarPrefixFmt, currentListDepth)
 
 			fieldAccessPrefix = fmt.Sprintf("%s.%s", fieldAccessPrefix, fp.At(idx))
 
@@ -263,31 +321,44 @@ func ResolveReferencesForField(field *model.Field, sourceVarName string, indentL
 
 			outSuffix = fmt.Sprintf("%s}\n%s", indent, outSuffix)
 
-			currentListDepth++
-
 			fieldAccessPrefix = iterVarName
-		case ("map"):
-			panic("references cannot be within a map")
-		default:
-			// base case for single references
-			fieldAccessPrefix = fmt.Sprintf("%s.%s", fieldAccessPrefix, cur.GetReferenceFieldName().Camel)
 
-			outPrefix += fmt.Sprintf("%sif %s != nil && %s.From != nil {\n", indent, fieldAccessPrefix, fieldAccessPrefix)
-			outPrefix += fmt.Sprintf("%s\tarr := %s.From\n", indent, fieldAccessPrefix)
-			outPrefix += fmt.Sprintf("%s\tif arr == nil || arr.Name == nil || *arr.Name == \"\" {\n", indent)
-			outPrefix += fmt.Sprintf("%s\t\treturn fmt.Errorf(\"provided resource reference is nil or empty: %s\")\n", indent, field.ReferenceFieldPath())
-			outPrefix += fmt.Sprintf("%s\t}\n", indent)
-
-			outPrefix += getReferencedStateForField(field, indentLevel+idx)
-
-			// if we are inside lists, set it to the appropriate indexes
-			indexList := strings.Join(lo.Times(numLists, func(indx int) string {
-				return fmt.Sprintf("[%s]", fmt.Sprintf(nestedIndexVarPrefixFmt, indx))
-			}), "")
-			outPrefix += fmt.Sprintf("%s\t\t%s%s = (%s)(obj.%s)\n", indent, resRefVar, indexList, resRefElemType, field.FieldConfig.References.Path)
-			outPrefix += fmt.Sprintf("%s}\n", indent)
+			currentListDepth++
 		}
 	}
+
+	fieldAccessPrefix = fmt.Sprintf("%s.%s", fieldAccessPrefix, field.GetReferenceFieldName().Camel)
+	innerIndent := strings.Repeat("\t", indentLevel+idx)
+
+	// If the reference field is a list of primitives, iterate through each.
+	// We need to duplicate some code from above, here, because `*Ref` fields
+	// aren't registered as fields, so we can't use the same common logic
+	if field.ShapeRef.Shape.Type == "list" {
+		iterVarName := fmt.Sprintf(nestedIterVarPrefixFmt, currentListDepth)
+		idxVarName := fmt.Sprintf(nestedIndexVarPrefixFmt, currentListDepth)
+
+		outPrefix += fmt.Sprintf("%s%s = make(%s%s, len(%s))\n", innerIndent, resRefVar, strings.Repeat("[]", numLists-currentListDepth), resRefElemType, fieldAccessPrefix)
+		outPrefix += fmt.Sprintf("%sfor %s, %s := range %s {\n", innerIndent, idxVarName, iterVarName, fieldAccessPrefix)
+		outSuffix = fmt.Sprintf("%s}\n%s", indent, outSuffix)
+		fieldAccessPrefix = iterVarName
+	}
+
+	outPrefix += fmt.Sprintf("%sif %s != nil && %s.From != nil {\n", indent, fieldAccessPrefix, fieldAccessPrefix)
+
+	outPrefix += fmt.Sprintf("%s\tarr := %s.From\n", indent, fieldAccessPrefix)
+	outPrefix += fmt.Sprintf("%s\tif arr.Name == nil || *arr.Name == \"\" {\n", indent)
+	outPrefix += fmt.Sprintf("%s\t\treturn fmt.Errorf(\"provided resource reference is nil or empty: %s\")\n", indent, field.ReferenceFieldPath())
+	outPrefix += fmt.Sprintf("%s\t}\n", indent)
+
+	outPrefix += getReferencedStateForField(field, indentLevel+idx)
+
+	// if we are inside lists, set it to the appropriate indexes
+	indexList := strings.Join(lo.Times(numLists, func(indx int) string {
+		return fmt.Sprintf("[%s]", fmt.Sprintf(nestedIndexVarPrefixFmt, indx))
+	}), "")
+	outPrefix += fmt.Sprintf("%s\t\t%s%s = (%s)(obj.%s)\n", indent, resRefVar, indexList, resRefElemType, field.FieldConfig.References.Path)
+	outPrefix += fmt.Sprintf("%s\t\thasResolved = true\n", indent)
+	outPrefix += fmt.Sprintf("%s}\n", indent)
 
 	return outPrefix + outSuffix
 }
@@ -297,9 +368,18 @@ func CopyWithResolvedReferences(field *model.Field, targetVarName string, indent
 
 	numLists := field.GetNumberLists()
 	nestedIndexVarPrefixFmt := "f%didx"
+	isListOfRefs := field.ShapeRef.Shape.Type == "list"
 
 	outPrefix, outSuffix := IterResolvedReferenceValues(field, indentLevel, true, nestedIndexVarPrefixFmt, func(nestedIndent string, fieldNamePrefix string, castResolvedVar string) (outPrefix string, outSuffix string) {
-		indexList := strings.Join(lo.Times(numLists, func(indx int) string {
+		// Access all of the relevant indexes when setting the final value. But
+		// if the field is a list of refs, we want to copy the entire slice
+		// over, so we don't have to initialise the slice manually
+		indexCount := numLists
+		if isListOfRefs {
+			indexCount--
+		}
+
+		indexList := strings.Join(lo.Times(indexCount, func(indx int) string {
 			return fmt.Sprintf("[%s]", fmt.Sprintf(nestedIndexVarPrefixFmt, indx))
 		}), "")
 		outPrefix += fmt.Sprintf("%s%s%s%s = %s%s\n", nestedIndent, targetVarName, r.Config().PrefixConfig.SpecField, fieldNamePrefix, castResolvedVar, indexList)
@@ -314,7 +394,11 @@ func ClearResolvedReferences(field *model.Field, targetVarName string, indentLev
 	numLists := field.GetNumberLists()
 
 	nestedIndexVarPrefixFmt := "f%didx"
-	shouldCast := numLists > 0
+
+	// We only need to cast the object, to access its properties, if there are
+	// structs within slices. If it's a list of slices, then that means there
+	// needs to be at least 2. Otherwise there needs to be at least 1
+	shouldCast := lo.Ternary(field.ShapeRef.Shape.Type == "list", numLists > 1, numLists > 0)
 
 	outPrefix, outSuffix := IterResolvedReferenceValues(field, indentLevel, shouldCast, nestedIndexVarPrefixFmt, func(nestedIndent string, fieldNamePrefix string, castResolvedVar string) (outPrefix string, outSuffix string) {
 		outPrefix += fmt.Sprintf("%s%s%s%s = nil\n", nestedIndent, targetVarName, r.Config().PrefixConfig.SpecField, fieldNamePrefix)
@@ -331,6 +415,7 @@ func IterResolvedReferenceValues(field *model.Field, indentLevel int, shouldCast
 	indent := strings.Repeat("\t", indentLevel)
 
 	numLists := field.GetNumberLists()
+	isListOfRefs := field.ShapeRef.Shape.Type == "list"
 
 	castResolvedVar := "castResRef"
 
@@ -345,6 +430,9 @@ func IterResolvedReferenceValues(field *model.Field, indentLevel int, shouldCast
 
 	if shouldCast {
 		resRefElemType := field.ShapeRef.GoType()
+		if field.ShapeRef.Shape.Type == "list" {
+			resRefElemType = field.ShapeRef.Shape.MemberRef.GoType()
+		}
 		resRefType := fmt.Sprintf("%s%s", strings.Repeat("[]", numLists), resRefElemType)
 		outPrefix += fmt.Sprintf("%s%s, ok := (val).(%s)\n", indent, castResolvedVar, resRefType)
 		outPrefix += fmt.Sprintf("%sif !ok {\n", indent)
@@ -354,6 +442,11 @@ func IterResolvedReferenceValues(field *model.Field, indentLevel int, shouldCast
 
 	// Iterate through nested lists if necessary
 	for idx := 0; idx < numLists; idx++ {
+		// We don't want to access the individual refs within a slice of refs
+		if idx == numLists-1 && isListOfRefs {
+			break
+		}
+
 		innerIndent := fmt.Sprintf("%s%s", indent, strings.Repeat("\t", idx))
 		idxVarName := fmt.Sprintf(nestedIndexVarPrefixFmt, idx)
 
@@ -382,8 +475,14 @@ func IterResolvedReferenceValues(field *model.Field, indentLevel int, shouldCast
 		indexList := ""
 
 		if cur.ShapeRef.Shape.Type == "list" {
-			indexList = fmt.Sprintf("[%s]", fmt.Sprintf(nestedIndexVarPrefixFmt, nestedFieldDepth))
-			nestedFieldDepth++
+			// We want to access indexes when iterating through lists of structs. If
+			// we find a list at the end of the field path, then we know the field
+			// must be a list of refs. We want to pass that back as a full array,
+			// rather than accessing the individual values.
+			if idx != fp.Size()-1 && !isListOfRefs {
+				indexList = fmt.Sprintf("[%s]", fmt.Sprintf(nestedIndexVarPrefixFmt, nestedFieldDepth))
+				nestedFieldDepth++
+			}
 		}
 
 		fieldNamePrefix = fmt.Sprintf("%s.%s%s", fieldNamePrefix, fieldName, indexList)

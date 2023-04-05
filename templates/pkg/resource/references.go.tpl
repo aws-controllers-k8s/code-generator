@@ -103,7 +103,7 @@ func (rm *resourceManager) ResolveReferences(
 	res acktypes.AWSResource,
 ) (bool, error) {
 {{ if not .CRD.HasReferenceFields -}}
-	return res, nil
+	return false, nil
 {{ else -}}
 	namespace := res.MetaObject().GetNamespace()
 	ko := rm.concreteResource(res).ko
