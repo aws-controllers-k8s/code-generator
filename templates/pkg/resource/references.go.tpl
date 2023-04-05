@@ -14,7 +14,6 @@ import (
 
 {{ if .CRD.HasReferenceFields -}}
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
-	// ackcondition "github.com/aws-controllers-k8s/runtime/pkg/condition"
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 {{ end -}}
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
@@ -65,33 +64,27 @@ func (rm *resourceManager) getReferencedValue(path string) (any, bool) {
 	return val, ok
 }
 
-func (rm *resourceManager) CopyWithResolvedReferences(res acktypes.AWSResource) acktypes.AWSResource {
+func (rm *resourceManager) CopyWithResolvedReferences(res acktypes.AWSResource) (acktypes.AWSResource, error) {
 	ko := rm.concreteResource(res).ko.DeepCopy()
 
-	if val, ok := rm.getReferencedValue("Logging.LoggingEnabled.TargetBucket"); ok {
-		ko.Spec.Logging.LoggingEnabled.TargetBucket = (val).(*string)
+{{ range $fieldName, $field := .CRD.Fields -}}
+{{ if $field.HasReference -}}
+{{ GoCodeCopyWithResolvedReferences $field "ko" 1 }}
+{{ end -}}
+{{ end -}}
 
-		// TODO: Deal with nested lists
-		// TODO: Look into set resource pkg/generate/code/set_resource.go
-		// routeInnerListValues := (val).([][]*string)
-		// for i, routes := range ko.Spec.Routes {
-		// 	for j, _ := range routes.InnerList {
-		// 		ko.Spec.Routes[i].InnerList[j].Value = routeInnerListValues[i][j]
-		// 	}
-		// }
-	}
-
-	return &resource{ko}
+	return &resource{ko}, nil
 }
 
-func (rm *resourceManager) ClearResolvedReferences(res acktypes.AWSResource) acktypes.AWSResource {
+func (rm *resourceManager) ClearResolvedReferences(res acktypes.AWSResource) (acktypes.AWSResource, error) {
 	ko := rm.concreteResource(res).ko.DeepCopy()
 
-	if _, ok := rm.getReferencedValue("Logging.LoggingEnabled.TargetBucket"); ok {
-		ko.Spec.Logging.LoggingEnabled.TargetBucket = nil
-	}
-
-	return &resource{ko}
+{{ range $fieldName, $field := .CRD.Fields }}
+{{ if $field.HasReference }}
+{{ GoCodeClearResolvedReferences $field "ko" 1 }}
+{{ end -}}
+{{ end -}}
+	return &resource{ko}, nil
 }
 
 func NewReferenceMap() *resourceReferenceMap {
@@ -108,7 +101,7 @@ func (rm *resourceManager) ResolveReferences(
 	ctx context.Context,
 	apiReader client.Reader,
 	res acktypes.AWSResource,
-) (error) {
+) (bool, error) {
 {{ if not .CRD.HasReferenceFields -}}
 	return res, nil
 {{ else -}}
@@ -128,10 +121,7 @@ func (rm *resourceManager) ResolveReferences(
 {{- if $hookCode := Hook .CRD "references_post_resolve" }}
 {{ $hookCode }}
 {{- end }}
-	// if hasNonNilReferences(ko) {
-	// 	return ackcondition.WithReferencesResolvedCondition(&resource{ko}, err)
-	// } 
-	return err
+	return hasNonNilReferences(ko), err
 {{ end -}}
 }
 

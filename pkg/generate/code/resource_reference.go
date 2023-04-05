@@ -292,6 +292,108 @@ func ResolveReferencesForField(field *model.Field, sourceVarName string, indentL
 	return outPrefix + outSuffix
 }
 
+func CopyWithResolvedReferences(field *model.Field, targetVarName string, indentLevel int) string {
+	r := field.CRD
+
+	numLists := field.GetNumberParentLists()
+	nestedIndexVarPrefixFmt := "f%didx"
+
+	outPrefix, outSuffix := IterResolvedReferenceValues(field, indentLevel, true, nestedIndexVarPrefixFmt, func(nestedIndent string, fieldNamePrefix string, castResolvedVar string) (outPrefix string, outSuffix string) {
+		indexList := strings.Join(lo.Times(numLists, func(indx int) string {
+			return fmt.Sprintf("[%s]", fmt.Sprintf(nestedIndexVarPrefixFmt, indx))
+		}), "")
+		outPrefix += fmt.Sprintf("%s%s%s%s = %s%s\n", nestedIndent, targetVarName, r.Config().PrefixConfig.SpecField, fieldNamePrefix, castResolvedVar, indexList)
+		return outPrefix, outSuffix
+	})
+
+	return outPrefix + outSuffix
+}
+
+func ClearResolvedReferences(field *model.Field, targetVarName string, indentLevel int) string {
+	r := field.CRD
+	numLists := field.GetNumberParentLists()
+
+	nestedIndexVarPrefixFmt := "f%didx"
+	shouldCast := numLists > 0
+
+	outPrefix, outSuffix := IterResolvedReferenceValues(field, indentLevel, shouldCast, nestedIndexVarPrefixFmt, func(nestedIndent string, fieldNamePrefix string, castResolvedVar string) (outPrefix string, outSuffix string) {
+		outPrefix += fmt.Sprintf("%s%s%s%s = nil\n", nestedIndent, targetVarName, r.Config().PrefixConfig.SpecField, fieldNamePrefix)
+		return outPrefix, outSuffix
+	})
+
+	return outPrefix + outSuffix
+}
+
+func IterResolvedReferenceValues(field *model.Field, indentLevel int, shouldCast bool, nestedIndexVarPrefixFmt string, innerRender func(nestedIndent string, fieldNamePrefix string, castResolvedVar string) (outPrefix string, outSuffix string)) (outPrefix string, outSuffix string) {
+	r := field.CRD
+	fp := fieldpath.FromString(field.Path)
+
+	indent := strings.Repeat("\t", indentLevel)
+
+	numLists := field.GetNumberParentLists()
+
+	castResolvedVar := "castResRef"
+
+	if shouldCast {
+		outPrefix += fmt.Sprintf("%sif val, ok := rm.getReferencedValue(%q); ok {\n", indent, field.Path)
+	} else {
+		// Since we aren't using the value in the cast, we need to ignore it
+		// in the response value
+		outPrefix += fmt.Sprintf("%sif _, ok := rm.getReferencedValue(%q); ok {\n", indent, field.Path)
+	}
+	outSuffix = fmt.Sprintf("%s}\n%s", indent, outSuffix)
+
+	if shouldCast {
+		resRefElemType := field.ShapeRef.GoType()
+		resRefType := fmt.Sprintf("%s%s", strings.Repeat("[]", numLists), resRefElemType)
+		outPrefix += fmt.Sprintf("%s%s, ok := (val).(%s)\n", indent, castResolvedVar, resRefType)
+		outPrefix += fmt.Sprintf("%sif !ok {\n", indent)
+		outPrefix += fmt.Sprintf("%s\treturn nil, ackerr.ResourceReferenceValueCastFailedFor(%q)\n", indent, field.Path)
+		outPrefix += fmt.Sprintf("%s}\n", indent)
+	}
+
+	// Iterate through nested lists if necessary
+	for idx := 0; idx < numLists; idx++ {
+		innerIndent := fmt.Sprintf("%s%s", indent, strings.Repeat("\t", idx))
+		idxVarName := fmt.Sprintf(nestedIndexVarPrefixFmt, idx)
+
+		parentIndexList := strings.Join(lo.Times(idx, func(indx int) string {
+			return fmt.Sprintf("[%s]", fmt.Sprintf(nestedIndexVarPrefixFmt, indx))
+		}), "")
+
+		outPrefix += fmt.Sprintf("%sfor %s, _ := range %s%s {\n", innerIndent, idxVarName, castResolvedVar, parentIndexList)
+		outSuffix = fmt.Sprintf("%s}\n%s", indent, outSuffix)
+	}
+
+	nestedIndent := strings.Repeat("\t", indentLevel+numLists)
+
+	// Build the target field accessor
+	fieldNamePrefix := ""
+	nestedFieldDepth := 0
+	for idx := 0; idx < fp.Size(); idx++ {
+		curFP := fp.CopyAt(idx)
+
+		cur, ok := r.Fields[curFP.String()]
+		if !ok {
+			panic(fmt.Sprintf("unable to find field with path %q. crd: %q", curFP.String(), r.Kind))
+		}
+
+		fieldName := curFP.Pop()
+		indexList := ""
+
+		if cur.ShapeRef.Shape.Type == "list" {
+			indexList = fmt.Sprintf("[%s]", fmt.Sprintf(nestedIndexVarPrefixFmt, nestedFieldDepth))
+			nestedFieldDepth++
+		}
+
+		fieldNamePrefix = fmt.Sprintf("%s.%s%s", fieldNamePrefix, fieldName, indexList)
+	}
+
+	innerPrefix, innerSuffix := innerRender(nestedIndent, fieldNamePrefix, castResolvedVar)
+
+	return (outPrefix + innerPrefix), (innerSuffix + outSuffix)
+}
+
 func getReferencedStateForField(field *model.Field, indentLevel int) string {
 	out := ""
 	indent := strings.Repeat("\t", indentLevel)
