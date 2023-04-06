@@ -40,7 +40,7 @@ import (
 {{ end -}}
 {{ end -}}
 
-func (rm *resourceManager) ClearResolvedReferences(res acktypes.AWSResource) (acktypes.AWSResource, error) {
+func (rm *resourceManager) ClearResolvedReferences(res acktypes.AWSResource) (acktypes.AWSResource) {
 	ko := rm.concreteResource(res).ko.DeepCopy()
 
 {{ range $fieldName, $field := .CRD.Fields -}}
@@ -48,7 +48,7 @@ func (rm *resourceManager) ClearResolvedReferences(res acktypes.AWSResource) (ac
 {{ GoCodeClearResolvedReferences $field "ko" 1 }}
 {{ end -}}
 {{ end -}}
-	return &resource{ko}, nil
+	return &resource{ko}
 }
 
 // ResolveReferences finds if there are any Reference field(s) present
