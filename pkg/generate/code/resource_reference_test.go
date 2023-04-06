@@ -22,21 +22,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test_ReferenceFieldsValidation_NoReferenceConfig(t *testing.T) {
-	assert := assert.New(t)
-	require := require.New(t)
-
-	g := testutil.NewModelForServiceWithOptions(t, "apigatewayv2",
-		&testutil.TestingModelOptions{
-			GeneratorConfigFile: "generator-with-reference.yaml",
-		})
-
-	crd := testutil.GetCRDByName(t, g, "Api")
-	require.NotNil(crd)
-	expected := ""
-	assert.Equal(expected, code.ReferenceFieldsValidation(crd, "ko", 1))
-}
-
 func Test_ReferenceFieldsValidation_SingleReference(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
@@ -48,6 +33,8 @@ func Test_ReferenceFieldsValidation_SingleReference(t *testing.T) {
 
 	crd := testutil.GetCRDByName(t, g, "Integration")
 	require.NotNil(crd)
+
+	field := crd.Fields["APIID"]
 	expected :=
 		`	if ko.Spec.APIRef != nil && ko.Spec.APIID != nil {
 		return ackerr.ResourceReferenceAndIDNotSupportedFor("APIID", "APIRef")
@@ -56,10 +43,10 @@ func Test_ReferenceFieldsValidation_SingleReference(t *testing.T) {
 		return ackerr.ResourceReferenceOrIDRequiredFor("APIID", "APIRef")
 	}
 `
-	assert.Equal(expected, code.ReferenceFieldsValidation(crd, "ko", 1))
+	assert.Equal(expected, code.ReferenceFieldsValidation(field, "ko", 1))
 }
 
-func Test_ReferenceFieldsValidation_SliceOfReferences(t *testing.T) {
+func Test_ReferenceFieldsValidation_WithOptional_SliceOfReferences(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
@@ -72,18 +59,40 @@ func Test_ReferenceFieldsValidation_SliceOfReferences(t *testing.T) {
 	// just to test code generation for slices of reference
 	crd := testutil.GetCRDByName(t, g, "VpcLink")
 	require.NotNil(crd)
+
+	field := crd.Fields["SecurityGroupIDs"]
 	expected :=
 		`	if ko.Spec.SecurityGroupRefs != nil && ko.Spec.SecurityGroupIDs != nil {
 		return ackerr.ResourceReferenceAndIDNotSupportedFor("SecurityGroupIDs", "SecurityGroupRefs")
 	}
-	if ko.Spec.SubnetRefs != nil && ko.Spec.SubnetIDs != nil {
+`
+	assert.Equal(expected, code.ReferenceFieldsValidation(field, "ko", 1))
+}
+
+func Test_ReferenceFieldsValidation_WithRequired_SliceOfReferences(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "apigatewayv2",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-reference.yaml",
+		})
+
+	//NOTE: For the moment, we are substituting SecurityGroupId with ApiId
+	// just to test code generation for slices of reference
+	crd := testutil.GetCRDByName(t, g, "VpcLink")
+	require.NotNil(crd)
+
+	field := crd.Fields["SubnetIDs"]
+	expected :=
+		`	if ko.Spec.SubnetRefs != nil && ko.Spec.SubnetIDs != nil {
 		return ackerr.ResourceReferenceAndIDNotSupportedFor("SubnetIDs", "SubnetRefs")
 	}
 	if ko.Spec.SubnetRefs == nil && ko.Spec.SubnetIDs == nil {
 		return ackerr.ResourceReferenceOrIDRequiredFor("SubnetIDs", "SubnetRefs")
 	}
 `
-	assert.Equal(expected, code.ReferenceFieldsValidation(crd, "ko", 1))
+	assert.Equal(expected, code.ReferenceFieldsValidation(field, "ko", 1))
 }
 
 func Test_ReferenceFieldsValidation_NestedReference(t *testing.T) {
@@ -97,6 +106,8 @@ func Test_ReferenceFieldsValidation_NestedReference(t *testing.T) {
 
 	crd := testutil.GetCRDByName(t, g, "Authorizer")
 	require.NotNil(crd)
+
+	field := crd.Fields["JWTConfiguration.Issuer"]
 	expected :=
 		`	if ko.Spec.JWTConfiguration != nil {
 		if ko.Spec.JWTConfiguration.IssuerRef != nil && ko.Spec.JWTConfiguration.Issuer != nil {
@@ -104,99 +115,7 @@ func Test_ReferenceFieldsValidation_NestedReference(t *testing.T) {
 		}
 	}
 `
-	assert.Equal(expected, code.ReferenceFieldsValidation(crd, "ko", 1))
-}
-
-func Test_ReferenceFieldsPresent_NoReferenceConfig(t *testing.T) {
-	assert := assert.New(t)
-	require := require.New(t)
-
-	g := testutil.NewModelForServiceWithOptions(t, "apigatewayv2",
-		&testutil.TestingModelOptions{
-			GeneratorConfigFile: "generator-with-reference.yaml",
-		})
-
-	crd := testutil.GetCRDByName(t, g, "Api")
-	require.NotNil(crd)
-	expected := "return false"
-	assert.Equal(expected, code.ReferenceFieldsPresent(crd, "ko"))
-}
-
-func Test_ReferenceFieldsPresent_SingleReference(t *testing.T) {
-	assert := assert.New(t)
-	require := require.New(t)
-
-	g := testutil.NewModelForServiceWithOptions(t, "apigatewayv2",
-		&testutil.TestingModelOptions{
-			GeneratorConfigFile: "generator-with-reference.yaml",
-		})
-
-	crd := testutil.GetCRDByName(t, g, "Integration")
-	require.NotNil(crd)
-	expected := "return false || (ko.Spec.APIRef != nil)"
-	assert.Equal(expected, code.ReferenceFieldsPresent(crd, "ko"))
-}
-
-func Test_ReferenceFieldsPresent_SliceOfReferences(t *testing.T) {
-	assert := assert.New(t)
-	require := require.New(t)
-
-	g := testutil.NewModelForServiceWithOptions(t, "apigatewayv2",
-		&testutil.TestingModelOptions{
-			GeneratorConfigFile: "generator-with-reference.yaml",
-		})
-
-	//NOTE: For the moment, we are substituting SecurityGroupId with ApiId
-	// just to test code generation for slices of reference
-	crd := testutil.GetCRDByName(t, g, "VpcLink")
-	require.NotNil(crd)
-	expected := "return false || (ko.Spec.SecurityGroupRefs != nil) || (ko.Spec.SubnetRefs != nil)"
-	assert.Equal(expected, code.ReferenceFieldsPresent(crd, "ko"))
-}
-
-func Test_ReferenceFieldsPresent_NestedReference(t *testing.T) {
-	assert := assert.New(t)
-	require := require.New(t)
-
-	g := testutil.NewModelForServiceWithOptions(t, "apigatewayv2",
-		&testutil.TestingModelOptions{
-			GeneratorConfigFile: "generator-with-nested-reference.yaml",
-		})
-
-	crd := testutil.GetCRDByName(t, g, "Authorizer")
-	require.NotNil(crd)
-	expected := "return false || (ko.Spec.JWTConfiguration != nil && ko.Spec.JWTConfiguration.IssuerRef != nil)"
-	assert.Equal(expected, code.ReferenceFieldsPresent(crd, "ko"))
-}
-
-func Test_ReferenceFieldsPresent_NestedSliceOfStructsReference(t *testing.T) {
-	assert := assert.New(t)
-	require := require.New(t)
-
-	g := testutil.NewModelForServiceWithOptions(t, "ec2",
-		&testutil.TestingModelOptions{
-			GeneratorConfigFile: "generator-with-nested-reference.yaml",
-		})
-
-	crd := testutil.GetCRDByName(t, g, "RouteTable")
-	require.NotNil(crd)
-	expected :=
-		`if ko.Spec.Routes != nil {
-	for _, iter35 := range ko.Spec.Routes {
-		if iter35.GatewayRef != nil {
-			return true
-		}
-	}
-}
-if ko.Spec.Routes != nil {
-	for _, iter38 := range ko.Spec.Routes {
-		if iter38.NATGatewayRef != nil {
-			return true
-		}
-	}
-}
-return false || (ko.Spec.VPCRef != nil)`
-	assert.Equal(expected, code.ReferenceFieldsPresent(crd, "ko"))
+	assert.Equal(expected, code.ReferenceFieldsValidation(field, "ko", 1))
 }
 
 func Test_ResolveReferencesForField_SingleReference(t *testing.T) {
@@ -212,13 +131,14 @@ func Test_ResolveReferencesForField_SingleReference(t *testing.T) {
 	require.NotNil(crd)
 	expected :=
 		`	if ko.Spec.APIRef != nil && ko.Spec.APIRef.From != nil {
+		hasReferences = true
 		arr := ko.Spec.APIRef.From
-		if arr == nil || arr.Name == nil || *arr.Name == "" {
-			return fmt.Errorf("provided resource reference is nil or empty: APIRef")
+		if arr.Name == nil || *arr.Name == "" {
+			return hasReferences, fmt.Errorf("provided resource reference is nil or empty: APIRef")
 		}
 		obj := &svcapitypes.API{}
 		if err := getReferencedResourceState_API(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
-			return err
+			return hasReferences, err
 		}
 		ko.Spec.APIID = (*string)(obj.Status.APIID)
 	}
@@ -241,13 +161,14 @@ func Test_ResolveReferencesForField_ReferencingARN(t *testing.T) {
 	require.NotNil(crd)
 	expected :=
 		`	if ko.Spec.PermissionsBoundaryRef != nil && ko.Spec.PermissionsBoundaryRef.From != nil {
+		hasReferences = true
 		arr := ko.Spec.PermissionsBoundaryRef.From
-		if arr == nil || arr.Name == nil || *arr.Name == "" {
-			return fmt.Errorf("provided resource reference is nil or empty: PermissionsBoundaryRef")
+		if arr.Name == nil || *arr.Name == "" {
+			return hasReferences, fmt.Errorf("provided resource reference is nil or empty: PermissionsBoundaryRef")
 		}
 		obj := &svcapitypes.Policy{}
 		if err := getReferencedResourceState_Policy(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
-			return err
+			return hasReferences, err
 		}
 		ko.Spec.PermissionsBoundary = (*string)(obj.Status.ACKResourceMetadata.ARN)
 	}
@@ -269,20 +190,22 @@ func Test_ResolveReferencesForField_SliceOfReferences(t *testing.T) {
 	crd := testutil.GetCRDByName(t, g, "VpcLink")
 	require.NotNil(crd)
 	expected :=
-		`	if len(ko.Spec.SecurityGroupRefs) > 0 {
-		resolved0 := []*string{}
-		for _, iter0 := range ko.Spec.SecurityGroupRefs {
-			arr := iter0.From
-			if arr == nil || arr.Name == nil || *arr.Name == "" {
-				return fmt.Errorf("provided resource reference is nil or empty: SecurityGroupRefs")
+		`	for _, f0iter := range ko.Spec.SecurityGroupRefs {
+		if f0iter != nil && f0iter.From != nil {
+			hasReferences = true
+			arr := f0iter.From
+			if arr.Name == nil || *arr.Name == "" {
+				return hasReferences, fmt.Errorf("provided resource reference is nil or empty: SecurityGroupRefs")
 			}
 			obj := &ec2apitypes.SecurityGroup{}
 			if err := getReferencedResourceState_SecurityGroup(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
-				return err
+				return hasReferences, err
 			}
-			resolved0 = append(resolved0, (*string)(obj.Status.ID))
+			if ko.Spec.SecurityGroupIDs == nil {
+				ko.Spec.SecurityGroupIDs = make([]*string, 0, 1)
+			}
+			ko.Spec.SecurityGroupIDs = append(ko.Spec.SecurityGroupIDs, (*string)(obj.Status.ID))
 		}
-		ko.Spec.SecurityGroupIDs = resolved0
 	}
 `
 
@@ -304,13 +227,14 @@ func Test_ResolveReferencesForField_NestedSingleReference(t *testing.T) {
 	expected :=
 		`	if ko.Spec.JWTConfiguration != nil {
 		if ko.Spec.JWTConfiguration.IssuerRef != nil && ko.Spec.JWTConfiguration.IssuerRef.From != nil {
+			hasReferences = true
 			arr := ko.Spec.JWTConfiguration.IssuerRef.From
-			if arr == nil || arr.Name == nil || *arr.Name == "" {
-				return fmt.Errorf("provided resource reference is nil or empty: JWTConfiguration.IssuerRef")
+			if arr.Name == nil || *arr.Name == "" {
+				return hasReferences, fmt.Errorf("provided resource reference is nil or empty: JWTConfiguration.IssuerRef")
 			}
 			obj := &svcapitypes.API{}
 			if err := getReferencedResourceState_API(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
-				return err
+				return hasReferences, err
 			}
 			ko.Spec.JWTConfiguration.Issuer = (*string)(obj.Status.APIID)
 		}
@@ -338,13 +262,14 @@ func Test_ResolveReferencesForField_SingleReference_DeeplyNested(t *testing.T) {
 		`	if ko.Spec.Logging != nil {
 		if ko.Spec.Logging.LoggingEnabled != nil {
 			if ko.Spec.Logging.LoggingEnabled.TargetBucketRef != nil && ko.Spec.Logging.LoggingEnabled.TargetBucketRef.From != nil {
+				hasReferences = true
 				arr := ko.Spec.Logging.LoggingEnabled.TargetBucketRef.From
-				if arr == nil || arr.Name == nil || *arr.Name == "" {
-					return fmt.Errorf("provided resource reference is nil or empty: Logging.LoggingEnabled.TargetBucketRef")
+				if arr.Name == nil || *arr.Name == "" {
+					return hasReferences, fmt.Errorf("provided resource reference is nil or empty: Logging.LoggingEnabled.TargetBucketRef")
 				}
 				obj := &svcapitypes.Bucket{}
 				if err := getReferencedResourceState_Bucket(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
-					return err
+					return hasReferences, err
 				}
 				ko.Spec.Logging.LoggingEnabled.TargetBucket = (*string)(obj.Spec.Name)
 			}
@@ -354,4 +279,230 @@ func Test_ResolveReferencesForField_SingleReference_DeeplyNested(t *testing.T) {
 
 	field := crd.Fields["Logging.LoggingEnabled.TargetBucket"]
 	assert.Equal(expected, code.ResolveReferencesForField(field, "ko", 1))
+}
+
+func Test_ResolveReferencesForField_SingleReference_WithinSlice(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "ec2",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-nested-references.yaml",
+		})
+
+	crd := testutil.GetCRDByName(t, g, "RouteTable")
+	require.NotNil(crd)
+
+	// the Go template has the appropriate nil checks to ensure the parent path exists
+	expected :=
+		`	for f0idx, f0iter := range ko.Spec.Routes {
+		if f0iter.GatewayRef != nil && f0iter.GatewayRef.From != nil {
+			hasReferences = true
+			arr := f0iter.GatewayRef.From
+			if arr.Name == nil || *arr.Name == "" {
+				return hasReferences, fmt.Errorf("provided resource reference is nil or empty: Routes.GatewayRef")
+			}
+			obj := &svcapitypes.InternetGateway{}
+			if err := getReferencedResourceState_InternetGateway(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
+				return hasReferences, err
+			}
+			ko.Spec.Routes[f0idx].GatewayID = (*string)(obj.Status.InternetGatewayID)
+		}
+	}
+`
+
+	field := crd.Fields["Routes.GatewayID"]
+	assert.Equal(expected, code.ResolveReferencesForField(field, "ko", 1))
+}
+
+func Test_ResolveReferencesForField_SingleReference_WithinMultipleSlices(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "s3",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-nested-references.yaml",
+		})
+
+	crd := testutil.GetCRDByName(t, g, "Bucket")
+	require.NotNil(crd)
+
+	// the Go template has the appropriate nil checks to ensure the parent path exists
+	expected :=
+		`	if ko.Spec.Notification != nil {
+		for f0idx, f0iter := range ko.Spec.Notification.LambdaFunctionConfigurations {
+			if f0iter.Filter != nil {
+				if f0iter.Filter.Key != nil {
+					for f1idx, f1iter := range f0iter.Filter.Key.FilterRules {
+						if f1iter.ValueRef != nil && f1iter.ValueRef.From != nil {
+							hasReferences = true
+							arr := f1iter.ValueRef.From
+							if arr.Name == nil || *arr.Name == "" {
+								return hasReferences, fmt.Errorf("provided resource reference is nil or empty: Notification.LambdaFunctionConfigurations.Filter.Key.FilterRules.ValueRef")
+							}
+							obj := &svcapitypes.Bucket{}
+							if err := getReferencedResourceState_Bucket(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
+								return hasReferences, err
+							}
+							ko.Spec.Notification.LambdaFunctionConfigurations[f0idx].Filter.Key.FilterRules[f1idx].Value = (*string)(obj.Spec.Name)
+						}
+					}
+				}
+			}
+		}
+	}
+`
+
+	field := crd.Fields["Notification.LambdaFunctionConfigurations.Filter.Key.FilterRules.Value"]
+	assert.Equal(expected, code.ResolveReferencesForField(field, "ko", 1))
+}
+
+func Test_ClearResolvedReferencesForField_SingleReference(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "apigatewayv2",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-reference.yaml",
+		})
+
+	crd := testutil.GetCRDByName(t, g, "Integration")
+	require.NotNil(crd)
+	expected :=
+		`	if ko.Spec.APIRef != nil {
+		ko.Spec.APIID = nil
+	}
+`
+
+	field := crd.Fields["APIID"]
+	assert.Equal(expected, code.ClearResolvedReferencesForField(field, "ko", 1))
+}
+
+func Test_ClearResolvedReferencesForField_SliceOfReferences(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "apigatewayv2",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-reference.yaml",
+		})
+
+	crd := testutil.GetCRDByName(t, g, "VpcLink")
+	require.NotNil(crd)
+	expected :=
+		`	if len(ko.Spec.SecurityGroupRefs) > 0 {
+		ko.Spec.SecurityGroupIDs = nil
+	}
+`
+
+	field := crd.Fields["SecurityGroupIDs"]
+	assert.Equal(expected, code.ClearResolvedReferencesForField(field, "ko", 1))
+}
+
+func Test_ClearResolvedReferencesForField_NestedSingleReference(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "apigatewayv2",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-nested-reference.yaml",
+		})
+
+	crd := testutil.GetCRDByName(t, g, "Authorizer")
+	require.NotNil(crd)
+	expected :=
+		`	if ko.Spec.JWTConfiguration != nil {
+		if ko.Spec.JWTConfiguration.IssuerRef != nil {
+			ko.Spec.JWTConfiguration.Issuer = nil
+		}
+	}
+`
+
+	field := crd.Fields["JWTConfiguration.Issuer"]
+	assert.Equal(expected, code.ClearResolvedReferencesForField(field, "ko", 1))
+}
+
+func Test_ClearResolvedReferencesForField_SingleReference_DeeplyNested(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "s3",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-nested-references.yaml",
+		})
+
+	crd := testutil.GetCRDByName(t, g, "Bucket")
+	require.NotNil(crd)
+
+	// the Go template has the appropriate nil checks to ensure the parent path exists
+	expected :=
+		`	if ko.Spec.Logging != nil {
+		if ko.Spec.Logging.LoggingEnabled != nil {
+			if ko.Spec.Logging.LoggingEnabled.TargetBucketRef != nil {
+				ko.Spec.Logging.LoggingEnabled.TargetBucket = nil
+			}
+		}
+	}
+`
+
+	field := crd.Fields["Logging.LoggingEnabled.TargetBucket"]
+	assert.Equal(expected, code.ClearResolvedReferencesForField(field, "ko", 1))
+}
+
+func Test_ClearResolvedReferencesForField_SingleReference_WithinSlice(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "ec2",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-nested-references.yaml",
+		})
+
+	crd := testutil.GetCRDByName(t, g, "RouteTable")
+	require.NotNil(crd)
+
+	// the Go template has the appropriate nil checks to ensure the parent path exists
+	expected :=
+		`	for f0idx, f0iter := range ko.Spec.Routes {
+		if f0iter.GatewayRef != nil {
+			ko.Spec.Routes[f0idx].GatewayID = nil
+		}
+	}
+`
+
+	field := crd.Fields["Routes.GatewayID"]
+	assert.Equal(expected, code.ClearResolvedReferencesForField(field, "ko", 1))
+}
+
+func Test_ClearResolvedReferencesForField_SingleReference_WithinMultipleSlices(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "s3",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-nested-references.yaml",
+		})
+
+	crd := testutil.GetCRDByName(t, g, "Bucket")
+	require.NotNil(crd)
+
+	// the Go template has the appropriate nil checks to ensure the parent path exists
+	expected :=
+		`	if ko.Spec.Notification != nil {
+		for f0idx, f0iter := range ko.Spec.Notification.LambdaFunctionConfigurations {
+			if f0iter.Filter != nil {
+				if f0iter.Filter.Key != nil {
+					for f1idx, f1iter := range f0iter.Filter.Key.FilterRules {
+						if f1iter.ValueRef != nil {
+							ko.Spec.Notification.LambdaFunctionConfigurations[f0idx].Filter.Key.FilterRules[f1idx].Value = nil
+						}
+					}
+				}
+			}
+		}
+	}
+`
+
+	field := crd.Fields["Notification.LambdaFunctionConfigurations.Filter.Key.FilterRules.Value"]
+	assert.Equal(expected, code.ClearResolvedReferencesForField(field, "ko", 1))
 }

@@ -172,7 +172,7 @@ func ResolveReferencesForField(field *model.Field, sourceVarName string, indentL
 			concreteValueAccessor := buildIndexBasedFieldAccessor(field, sourceVarName, indexVarFmt)
 			if isListOfRefs {
 				innerOut += fmt.Sprintf("%sif %s == nil {\n", innerIndent, concreteValueAccessor)
-				innerOut += fmt.Sprintf("%s%s = make([]%s, 0, 1)\n", innerIndent, concreteValueAccessor, resRefElemType)
+				innerOut += fmt.Sprintf("%s\t%s = make([]%s, 0, 1)\n", innerIndent, concreteValueAccessor, resRefElemType)
 				innerOut += fmt.Sprintf("%s}\n", innerIndent)
 				innerOut += fmt.Sprintf("%s%s = append(%s, (%s)(obj.%s))\n", innerIndent, concreteValueAccessor, concreteValueAccessor, resRefElemType, field.FieldConfig.References.Path)
 			} else {
@@ -185,17 +185,12 @@ func ResolveReferencesForField(field *model.Field, sourceVarName string, indentL
 	return iterOut
 }
 
-func ClearResolvedReferences(field *model.Field, targetVarName string, indentLevel int) string {
-	refName := field.GetReferenceFieldName()
-
+func ClearResolvedReferencesForField(field *model.Field, targetVarName string, indentLevel int) string {
 	isListOfRefs := field.ShapeRef.Shape.Type == "list"
 
 	iterOut := IterReferenceValues(field, indentLevel, targetVarName, false, true, false,
 		func(fieldAccessPrefix string, indexVarFmt string, innerIndentLevel int) (innerOut string) {
 			innerIndent := strings.Repeat("\t", innerIndentLevel)
-
-			// Get parent field to get to the refs
-			parentAccessor := buildIndexBasedFieldAccessorWithOffset(field, targetVarName, indexVarFmt, 1)
 
 			// If we are dealing with a list of references, then we don't need to
 			// iterate over all of the references individually. We know that if the list
@@ -203,9 +198,9 @@ func ClearResolvedReferences(field *model.Field, targetVarName string, indentLev
 			// To deal with this, we should iterate only to the parent of the list and
 			// then check these conditions.
 			if isListOfRefs {
-				innerOut += fmt.Sprintf("%sif len(%s.%s) > 0 {\n", innerIndent, parentAccessor, refName.Camel)
+				innerOut += fmt.Sprintf("%sif len(%s) > 0 {\n", innerIndent, fieldAccessPrefix)
 			} else {
-				innerOut += fmt.Sprintf("%sif %s.%s != nil {\n", innerIndent, parentAccessor, refName.Camel)
+				innerOut += fmt.Sprintf("%sif %s != nil {\n", innerIndent, fieldAccessPrefix)
 			}
 			innerOut += fmt.Sprintf("%s\t%s = nil\n", innerIndent, buildIndexBasedFieldAccessor(field, targetVarName, indexVarFmt))
 			innerOut += fmt.Sprintf("%s}\n", innerIndent)
@@ -219,8 +214,6 @@ func ClearResolvedReferences(field *model.Field, targetVarName string, indentLev
 func IterReferenceValues(field *model.Field, indentLevel int, sourceVarName string, shouldValidateRef bool, shouldRenderIndexes, shouldRenderIterators bool, innerRender func(fieldAccessPrefix string, indexVarFmt string, indentLevel int) (innerOut string)) (out string) {
 	r := field.CRD
 	fp := fieldpath.FromString(field.ReferenceFieldPath())
-
-	indent := strings.Repeat("\t", indentLevel)
 
 	outPrefix := ""
 	outSuffix := ""
@@ -260,7 +253,7 @@ func IterReferenceValues(field *model.Field, indentLevel int, sourceVarName stri
 
 			outPrefix += fmt.Sprintf("%sfor %s, %s := range %s {\n", indent,
 				lo.Ternary(shouldRenderIndexes, idxVarName, "_"),
-				lo.Ternary(shouldRenderIterators, iterVarName, "_"),
+				iterVarName,
 				fieldAccessPrefix,
 			)
 
@@ -273,7 +266,7 @@ func IterReferenceValues(field *model.Field, indentLevel int, sourceVarName stri
 	}
 
 	fieldAccessPrefix = fmt.Sprintf("%s.%s", fieldAccessPrefix, field.GetReferenceFieldName().Camel)
-	innerIndent := strings.Repeat("\t", indentLevel+fpDepth)
+	innerIndentLevel := indentLevel + fpDepth
 
 	if shouldValidateRef {
 		// If the reference field is a list of primitives, iterate through each.
@@ -282,19 +275,22 @@ func IterReferenceValues(field *model.Field, indentLevel int, sourceVarName stri
 		if field.ShapeRef.Shape.Type == "list" {
 			iterVarName := fmt.Sprintf(nestedIterVarPrefixFmt, currentListDepth)
 
-			outPrefix += fmt.Sprintf("%sfor _, %s := range %s {\n", innerIndent,
+			outPrefix += fmt.Sprintf("%sfor _, %s := range %s {\n", strings.Repeat("\t", innerIndentLevel),
 				lo.Ternary(shouldRenderIterators, iterVarName, "_"),
 				fieldAccessPrefix,
 			)
-			outSuffix = fmt.Sprintf("%s}\n%s", innerIndent, outSuffix)
+			outSuffix = fmt.Sprintf("%s}\n%s", strings.Repeat("\t", innerIndentLevel), outSuffix)
 			fieldAccessPrefix = iterVarName
+
+			innerIndentLevel++
 		}
 
-		outPrefix += fmt.Sprintf("%sif %s != nil && %s.From != nil {\n", indent, fieldAccessPrefix, fieldAccessPrefix)
-		outSuffix = fmt.Sprintf("%s}\n%s", indent, outSuffix)
+		outPrefix += fmt.Sprintf("%sif %s != nil && %s.From != nil {\n", strings.Repeat("\t", innerIndentLevel), fieldAccessPrefix, fieldAccessPrefix)
+		outSuffix = fmt.Sprintf("%s}\n%s", strings.Repeat("\t", innerIndentLevel), outSuffix)
+		innerIndentLevel++
 	}
 
-	innerPrefix := innerRender(fieldAccessPrefix, nestedIndexVarPrefixFmt, indentLevel+fpDepth)
+	innerPrefix := innerRender(fieldAccessPrefix, nestedIndexVarPrefixFmt, innerIndentLevel)
 
 	return outPrefix + innerPrefix + outSuffix
 }
@@ -360,13 +356,13 @@ func getReferencedStateForField(field *model.Field, indentLevel int) string {
 	indent := strings.Repeat("\t", indentLevel)
 
 	if field.FieldConfig.References.ServiceName == "" {
-		out += fmt.Sprintf("%s\tobj := &svcapitypes.%s{}\n", indent, field.FieldConfig.References.Resource)
+		out += fmt.Sprintf("%sobj := &svcapitypes.%s{}\n", indent, field.FieldConfig.References.Resource)
 	} else {
-		out += fmt.Sprintf("%s\tobj := &%sapitypes.%s{}\n", indent, field.ReferencedServiceName(), field.FieldConfig.References.Resource)
+		out += fmt.Sprintf("%sobj := &%sapitypes.%s{}\n", indent, field.ReferencedServiceName(), field.FieldConfig.References.Resource)
 	}
-	out += fmt.Sprintf("%s\tif err := getReferencedResourceState_%s(ctx, apiReader, obj, *arr.Name, namespace); err != nil {\n", indent, field.FieldConfig.References.Resource)
-	out += fmt.Sprintf("%s\t\treturn hasReferences, err\n", indent)
-	out += fmt.Sprintf("%s\t}\n", indent)
+	out += fmt.Sprintf("%sif err := getReferencedResourceState_%s(ctx, apiReader, obj, *arr.Name, namespace); err != nil {\n", indent, field.FieldConfig.References.Resource)
+	out += fmt.Sprintf("%s\treturn hasReferences, err\n", indent)
+	out += fmt.Sprintf("%s}\n", indent)
 
 	return out
 }

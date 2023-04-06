@@ -32,3 +32,11 @@ resources:
         references:
           resource: Bucket
           path: Spec.Name
+      Notification:
+        from:
+          operation: PutBucketNotificationConfiguration
+          path: NotificationConfiguration
+      Notification.LambdaFunctionConfigurations.Filter.Key.FilterRules.Value:
+        references:
+          resource: Bucket
+          path: Spec.Name # This is a nonsense reference just to test the case of nested slices

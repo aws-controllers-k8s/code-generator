@@ -194,7 +194,7 @@ var (
 			return code.ResolveReferencesForField(f, sourceVarName, indentLevel)
 		},
 		"GoCodeClearResolvedReferences": func(f *ackmodel.Field, targetVarName string, indentLevel int) string {
-			return code.ClearResolvedReferences(f, targetVarName, indentLevel)
+			return code.ClearResolvedReferencesForField(f, targetVarName, indentLevel)
 		},
 	}
 )
