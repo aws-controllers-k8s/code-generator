@@ -53,76 +53,78 @@ func ReferenceFieldsValidation(
 		field := crd.Fields[fieldName]
 		var fIndent string
 		if field.HasReference() {
+			outPrefix, outSuffix := "", ""
+
 			fIndentLevel := indentLevel
 			fp := fieldpath.FromString(field.Path)
 			// remove fieldName from fieldPath before adding nil checks
 			fp.Pop()
 
 			// prefix of the field path for referencing in the model
-			fieldNamePrefix := ""
-			// prefix of the field path for the generated code
-			pathVarPrefix := fmt.Sprintf("%s%s", sourceVarName, crd.Config().PrefixConfig.SpecField)
+			fieldAccessPrefix := fmt.Sprintf("%s%s", sourceVarName,
+				crd.Config().PrefixConfig.SpecField)
 
-			// this loop outputs a nil-guard for each level of nested field path
-			// or an iterator for any level that is a slice
-			fieldDepth := 0
-			for fp.Size() > 0 {
-				fIndent = strings.Repeat("\t", fIndentLevel)
-				currentField := fp.PopFront()
+			nestedIterVarPrefixFmt := "f%diter"
 
-				if fieldNamePrefix == "" {
-					fieldNamePrefix = currentField
-				} else {
-					fieldNamePrefix = fmt.Sprintf("%s.%s", fieldNamePrefix, currentField)
-				}
-				pathVarPrefix = fmt.Sprintf("%s.%s", pathVarPrefix, currentField)
-
-				fieldConfig, ok := crd.Fields[fieldNamePrefix]
+			// TODO (RedbackThomson): Reduce duplication of this chunk of code
+			// across methods
+			currentListDepth := 0
+			idx := 0
+			for idx = 0; idx < fp.Size(); idx++ {
+				curFP := fp.CopyAt(idx).String()
+				cur, ok := crd.Fields[curFP]
 				if !ok {
-					panic(fmt.Sprintf("CRD %s has no Field with path %s", crd.Kind, fieldNamePrefix))
+					panic(fmt.Sprintf("unable to find field with path %q. crd: %q", curFP, crd.Kind))
 				}
 
-				if fieldConfig.ShapeRef.Shape.Type == "list" {
-					out += fmt.Sprintf("%sfor _, iter%d := range %s {\n", fIndent, fieldDepth, pathVarPrefix)
-					// reset the path variable name
-					pathVarPrefix = fmt.Sprintf("iter%d", fieldDepth)
-				} else {
-					out += fmt.Sprintf("%sif %s != nil {\n", fIndent, pathVarPrefix)
-				}
+				ref := cur.ShapeRef
 
-				fIndentLevel++
-				fieldDepth++
+				indent := strings.Repeat("\t", indentLevel+idx)
+
+				switch ref.Shape.Type {
+				case ("map"):
+					panic("references cannot be within a map")
+				case ("structure"):
+					fieldAccessPrefix = fmt.Sprintf("%s.%s", fieldAccessPrefix, fp.At(idx))
+
+					outPrefix += fmt.Sprintf("%sif %s != nil {\n", indent, fieldAccessPrefix)
+					outSuffix = fmt.Sprintf("%s}\n%s", indent, outSuffix)
+				case ("list"):
+					iterVarName := fmt.Sprintf(nestedIterVarPrefixFmt, currentListDepth)
+
+					fieldAccessPrefix = fmt.Sprintf("%s.%s", fieldAccessPrefix, fp.At(idx))
+					outPrefix += fmt.Sprintf("%sfor _, %s := range %s {\n", indent, iterVarName, fieldAccessPrefix)
+
+					outSuffix = fmt.Sprintf("%s}\n%s", indent, outSuffix)
+
+					fieldAccessPrefix = iterVarName
+
+					currentListDepth++
+				}
 			}
 
 			fIndent = strings.Repeat("\t", fIndentLevel)
 			// Validation to make sure both target field and reference are
 			// not present at the same time in desired resource
-			out += fmt.Sprintf("%sif %s.%s != nil"+
-				" && %s.%s != nil {\n", fIndent, pathVarPrefix, field.GetReferenceFieldName().Camel, pathVarPrefix, field.Names.Camel)
-			out += fmt.Sprintf("%s\treturn "+
+			outPrefix += fmt.Sprintf("%sif %s.%s != nil"+
+				" && %s.%s != nil {\n", fIndent, fieldAccessPrefix, field.GetReferenceFieldName().Camel, fieldAccessPrefix, field.Names.Camel)
+			outPrefix += fmt.Sprintf("%s\treturn "+
 				"ackerr.ResourceReferenceAndIDNotSupportedFor(%q, %q)\n",
 				fIndent, field.Path, field.ReferenceFieldPath())
-
-			// Close out all the curly braces with proper indentation
-			for fIndentLevel >= indentLevel {
-				fIndent = strings.Repeat("\t", fIndentLevel)
-				out += fmt.Sprintf("%s}\n", fIndent)
-				fIndentLevel--
-			}
-
-			fIndent = strings.Repeat("\t", indentLevel)
+			outPrefix += fmt.Sprintf("%s}\n", fIndent)
 
 			// If the field is required, make sure either Ref or original
 			// field is present in the resource
 			if field.IsRequired() {
-				out += fmt.Sprintf("%sif %s.%s == nil &&"+
-					" %s.%s == nil {\n", fIndent, pathVarPrefix,
-					field.ReferenceFieldPath(), pathVarPrefix, field.Path)
-				out += fmt.Sprintf("%s\treturn "+
+				outPrefix += fmt.Sprintf("%sif %s.%s == nil &&"+
+					" %s.%s == nil {\n", fIndent, fieldAccessPrefix,
+					field.GetReferenceFieldName().Camel, fieldAccessPrefix, field.Names.Camel)
+				outPrefix += fmt.Sprintf("%s\treturn "+
 					"ackerr.ResourceReferenceOrIDRequiredFor(%q, %q)\n",
-					fIndent, field.Path, field.ReferenceFieldPath())
-				out += fmt.Sprintf("%s}\n", fIndent)
+					fIndent, field.Names.Camel, field.GetReferenceFieldName().Camel)
+				outPrefix += fmt.Sprintf("%s}\n", fIndent)
 			}
+			out += outPrefix + outSuffix
 		}
 	}
 	return out
@@ -145,38 +147,85 @@ func ReferenceFieldsValidation(
 func ReferenceFieldsPresent(
 	crd *model.CRD,
 	sourceVarName string,
+	indentLevel int,
 ) string {
 	iteratorsOut := ""
 	returnOut := "return false"
-	fieldAccessPrefix := fmt.Sprintf("%s%s", sourceVarName,
-		crd.Config().PrefixConfig.SpecField)
+	nestedIterVarPrefixFmt := "f%diter"
+
 	// Sorted fieldnames are used for consistent code-generation
-	for fieldIndex, fieldName := range crd.SortedFieldNames() {
+	for _, fieldName := range crd.SortedFieldNames() {
 		field := crd.Fields[fieldName]
+		fieldAccessPrefix := fmt.Sprintf("%s%s", sourceVarName,
+			crd.Config().PrefixConfig.SpecField)
+
 		if field.HasReference() {
-			fp := fieldpath.FromString(field.Path)
+			fp := fieldpath.FromString(field.ReferenceFieldPath())
 			// remove fieldName from fieldPath before adding nil checks
 			// for nested fieldPath
 			fp.Pop()
 
 			// Determine whether the field is nested
 			if fp.Size() > 0 {
-				// Determine whether the field is inside a slice
-				parentField, ok := crd.Fields[fp.String()]
-				if !ok {
-					panic(fmt.Sprintf("CRD %s has no Field with path %s", crd.Kind, fp.String()))
+				outPrefix, outSuffix := "", ""
+
+				// TODO (RedbackThomson): Reduce duplication of this chunk of code
+				// across methods
+				currentListDepth := 0
+				idx := 0
+				for idx = 0; idx < fp.Size(); idx++ {
+					curFP := fp.CopyAt(idx).String()
+					cur, ok := crd.Fields[curFP]
+					if !ok {
+						panic(fmt.Sprintf("unable to find field with path %q. crd: %q", curFP, crd.Kind))
+					}
+
+					ref := cur.ShapeRef
+
+					indent := strings.Repeat("\t", indentLevel+idx)
+
+					switch ref.Shape.Type {
+					case ("map"):
+						panic("references cannot be within a map")
+					case ("structure"):
+						fieldAccessPrefix = fmt.Sprintf("%s.%s", fieldAccessPrefix, fp.At(idx))
+
+						outPrefix += fmt.Sprintf("%sif %s != nil {\n", indent, fieldAccessPrefix)
+						outSuffix = fmt.Sprintf("%s}\n%s", indent, outSuffix)
+					case ("list"):
+						iterVarName := fmt.Sprintf(nestedIterVarPrefixFmt, currentListDepth)
+
+						fieldAccessPrefix = fmt.Sprintf("%s.%s", fieldAccessPrefix, fp.At(idx))
+						outPrefix += fmt.Sprintf("%sfor _, %s := range %s {\n", indent, iterVarName, fieldAccessPrefix)
+
+						outSuffix = fmt.Sprintf("%s}\n%s", indent, outSuffix)
+
+						fieldAccessPrefix = iterVarName
+
+						currentListDepth++
+					}
 				}
 
-				if parentField.ShapeRef.Shape.Type == "list" {
-					iteratorsOut += fmt.Sprintf("if %s {\n", nestedStructNilCheck(*fp.Copy(), fieldAccessPrefix))
-					iteratorsOut += fmt.Sprintf("\tfor _, iter%d := range %s.%s {\n", fieldIndex, fieldAccessPrefix, parentField.Path)
-					iteratorsOut += fmt.Sprintf("\t\tif iter%d.%s != nil {\n", fieldIndex, field.GetReferenceFieldName().Camel)
-					iteratorsOut += fmt.Sprintf("\t\t\treturn true\n")
-					iteratorsOut += fmt.Sprintf("\t\t}\n")
-					iteratorsOut += fmt.Sprintf("\t}\n")
-					iteratorsOut += fmt.Sprintf("}\n")
-					continue
+				fieldAccessPrefix = fmt.Sprintf("%s.%s", fieldAccessPrefix, field.GetReferenceFieldName().Camel)
+				innerIndent := strings.Repeat("\t", indentLevel+idx)
+
+				// If the reference field is a list of primitives, iterate through each.
+				// We need to duplicate some code from above, here, because `*Ref` fields
+				// aren't registered as fields, so we can't use the same common logic
+				if field.ShapeRef.Shape.Type == "list" {
+					iterVarName := fmt.Sprintf(nestedIterVarPrefixFmt, currentListDepth)
+
+					outPrefix += fmt.Sprintf("%sfor _, %s := range %s {\n", innerIndent, iterVarName, fieldAccessPrefix)
+					outSuffix = fmt.Sprintf("%s}\n%s", innerIndent, outSuffix)
+					fieldAccessPrefix = iterVarName
 				}
+
+				outPrefix += fmt.Sprintf("%sif %s != nil {\n", innerIndent, fieldAccessPrefix)
+				outPrefix += fmt.Sprintf("%sreturn true", innerIndent)
+				outSuffix = fmt.Sprintf("%s}\n%s", innerIndent, outSuffix)
+
+				iteratorsOut += outPrefix + outSuffix
+				continue
 			}
 
 			nilCheck := nestedStructNilCheck(*fp.Copy(), fieldAccessPrefix) + " && " + fmt.Sprintf("%s.%s != nil", fieldAccessPrefix,
@@ -339,7 +388,7 @@ func ResolveReferencesForField(field *model.Field, sourceVarName string, indentL
 
 		outPrefix += fmt.Sprintf("%s%s = make(%s%s, len(%s))\n", innerIndent, resRefVar, strings.Repeat("[]", numLists-currentListDepth), resRefElemType, fieldAccessPrefix)
 		outPrefix += fmt.Sprintf("%sfor %s, %s := range %s {\n", innerIndent, idxVarName, iterVarName, fieldAccessPrefix)
-		outSuffix = fmt.Sprintf("%s}\n%s", indent, outSuffix)
+		outSuffix = fmt.Sprintf("%s}\n%s", innerIndent, outSuffix)
 		fieldAccessPrefix = iterVarName
 	}
 
@@ -454,7 +503,7 @@ func IterResolvedReferenceValues(field *model.Field, indentLevel int, shouldCast
 			return fmt.Sprintf("[%s]", fmt.Sprintf(nestedIndexVarPrefixFmt, indx))
 		}), "")
 
-		outPrefix += fmt.Sprintf("%sfor %s, _ := range %s%s {\n", innerIndent, idxVarName, castResolvedVar, parentIndexList)
+		outPrefix += fmt.Sprintf("%sfor %s := range %s%s {\n", innerIndent, idxVarName, castResolvedVar, parentIndexList)
 		outSuffix = fmt.Sprintf("%s}\n%s", indent, outSuffix)
 	}
 

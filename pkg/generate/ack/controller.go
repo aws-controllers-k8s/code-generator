@@ -175,8 +175,8 @@ var (
 		"GoCodeReferencesValidation": func(r *ackmodel.CRD, sourceVarName string, indentLevel int) string {
 			return code.ReferenceFieldsValidation(r, sourceVarName, indentLevel)
 		},
-		"GoCodeContainsReferences": func(r *ackmodel.CRD, sourceVarName string) string {
-			return code.ReferenceFieldsPresent(r, sourceVarName)
+		"GoCodeContainsReferences": func(r *ackmodel.CRD, sourceVarName string, indentLevel int) string {
+			return code.ReferenceFieldsPresent(r, sourceVarName, indentLevel)
 		},
 		"CheckNilFieldPath": func(f *ackmodel.Field, sourceVarName string) string {
 			return code.CheckNilFieldPath(f, sourceVarName)
