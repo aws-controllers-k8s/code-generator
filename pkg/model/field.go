@@ -22,7 +22,6 @@ import (
 	"github.com/gertd/go-pluralize"
 
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/config"
-	"github.com/aws-controllers-k8s/code-generator/pkg/fieldpath"
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
 )
 
@@ -271,25 +270,6 @@ func (f *Field) ReferenceFieldPath() string {
 // name from the fieldPath.
 func (f *Field) FieldPathWithUnderscore() string {
 	return strings.ReplaceAll(f.Path, ".", "_")
-}
-
-// GetNumberLists counts the number of shape refs that are of type
-// "list" within the field path of the current field.
-func (f *Field) GetNumberLists() int {
-	fp := fieldpath.FromString(f.Path)
-
-	// walk through all the parent fields, check their shape type and return the
-	// count of lists
-	numLists := 0
-	for idx := 0; idx < fp.Size(); idx++ {
-		cp := fp.CopyAt(idx).String()
-		parPath := f.CRD.Fields[cp]
-		if parPath.ShapeRef != nil && parPath.ShapeRef.Shape != nil && parPath.ShapeRef.Shape.Type == "list" {
-			numLists++
-		}
-	}
-
-	return numLists
 }
 
 // NewReferenceField returns a pointer to a new Field object.
