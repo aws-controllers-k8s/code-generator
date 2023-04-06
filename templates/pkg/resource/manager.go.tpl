@@ -55,8 +55,6 @@ type resourceManager struct {
 	// rr is the Reconciler which can be used for various utility
 	// functions such as querying for Secret values given a SecretReference
 	rr acktypes.Reconciler
-	// refMap is the map of resolved resource references
-	refMap *resourceReferenceMap
 	// awsAccountID is the AWS account identifier that contains the resources
 	// managed by this resource manager
 	awsAccountID ackv1alpha1.AWSAccountID
@@ -330,7 +328,6 @@ func newResourceManager(
 		log: log,
 		metrics: metrics,
 		rr: rr,
-		refMap: &resourceReferenceMap{resolvedReferences: make(map[string]interface{})},
 		awsAccountID: id,
 		awsRegion: region,
 		sess:		 sess,

@@ -172,11 +172,8 @@ var (
 		"GoCodeIncompleteLateInitialization": func(r *ackmodel.CRD, resVarName string, indentLevel int) string {
 			return code.IncompleteLateInitialization(r.Config(), r, resVarName, indentLevel)
 		},
-		"GoCodeReferencesValidation": func(r *ackmodel.CRD, sourceVarName string, indentLevel int) string {
-			return code.ReferenceFieldsValidation(r, sourceVarName, indentLevel)
-		},
-		"GoCodeContainsReferences": func(r *ackmodel.CRD, sourceVarName string, indentLevel int) string {
-			return code.ReferenceFieldsPresent(r, sourceVarName, indentLevel)
+		"GoCodeReferencesValidation": func(f *ackmodel.Field, sourceVarName string, indentLevel int) string {
+			return code.ReferenceFieldsValidation(f, sourceVarName, indentLevel)
 		},
 		"CheckNilFieldPath": func(f *ackmodel.Field, sourceVarName string) string {
 			return code.CheckNilFieldPath(f, sourceVarName)
@@ -195,9 +192,6 @@ var (
 		},
 		"GoCodeResolveReference": func(f *ackmodel.Field, sourceVarName string, indentLevel int) string {
 			return code.ResolveReferencesForField(f, sourceVarName, indentLevel)
-		},
-		"GoCodeCopyWithResolvedReferences": func(f *ackmodel.Field, targetVarName string, indentLevel int) string {
-			return code.CopyWithResolvedReferences(f, targetVarName, indentLevel)
 		},
 		"GoCodeClearResolvedReferences": func(f *ackmodel.Field, targetVarName string, indentLevel int) string {
 			return code.ClearResolvedReferences(f, targetVarName, indentLevel)
