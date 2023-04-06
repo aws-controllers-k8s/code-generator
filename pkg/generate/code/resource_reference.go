@@ -22,9 +22,21 @@ import (
 	"github.com/samber/lo"
 )
 
-// ReferenceFieldsValidation produces the go code to validate reference field and
+var (
+	// iterVarFmt stores the format string which takes an integer and creates
+	// the name of a variable used for the iterator part of a for-each loop
+	iterVarFmt = "f%diter"
+
+	// indexVarFmt stores the format string which takes an integer and creates
+	// the name of a variable used for the index part of a for-each loop
+	indexVarFmt = "f%didx"
+)
+
+// ReferenceFieldsValidation returns the go code to validate reference field and
 // corresponding identifier field. Iterates through all references within
 // slices, if necessary.
+//
+// Sample output (list of references):
 //
 //	for _, iter0 := range ko.Spec.Routes {
 //	  if iter0.GatewayRef != nil && iter0.GatewayID != nil {
@@ -32,7 +44,7 @@ import (
 //	  }
 //	}
 //
-// Sample code:
+// Sample output (a single, required reference):
 //
 //	if ko.Spec.APIRef != nil && ko.Spec.APIID != nil {
 //	  return ackerr.ResourceReferenceAndIDNotSupportedFor("APIID", "APIRef")
@@ -46,8 +58,8 @@ func ReferenceFieldsValidation(
 	sourceVarName string,
 	indentLevel int,
 ) (out string) {
-	out = IterReferenceValues(field, indentLevel, sourceVarName, false, false, true,
-		func(fieldAccessPrefix string, indexVarFmt string, innerIndentLevel int) (innerOut string) {
+	out = iterReferenceValues(field, indentLevel, sourceVarName, false,
+		func(fieldAccessPrefix string, _, innerIndentLevel int) (innerOut string) {
 			innerIndent := strings.Repeat("\t", innerIndentLevel)
 
 			// Get parent field path, in order to get to both the refs and concretes
@@ -81,73 +93,69 @@ func ReferenceFieldsValidation(
 	return out
 }
 
-// ResolveReferencesForField produces Go code for accessing all references that
+// ResolveReferencesForField returns Go code for accessing all references that
 // are related to the given concrete field, determining whether its in a valid
 // condition and updating the concrete field with the referenced value.
-// Sample code (resolving a nested singular reference):
 //
-// ```
-// var resolved *string
+// Sample output (resolving a singular reference):
 //
-//	if ko.Spec.KMSKeyRef != nil && ko.Spec.KMSKeyRef.From != nil {
-//		arr := ko.Spec.KMSKeyRef.From
+//	if ko.Spec.APIRef != nil && ko.Spec.APIRef.From != nil {
+//		hasReferences = true
+//		arr := ko.Spec.APIRef.From
 //		if arr.Name == nil || *arr.Name == "" {
-//			return fmt.Errorf("provided resource reference is nil or empty: KMSKeyRef")
+//			return hasReferences, fmt.Errorf("provided resource reference is nil or empty: APIRef")
 //		}
-//		obj := &kmsapitypes.Key{}
-//		if err := getReferencedResourceState_Key(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
-//			return err
+//		obj := &svcapitypes.API{}
+//		if err := getReferencedResourceState_API(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
+//			return hasReferences, err
 //		}
-//		resolved = (*string)(obj.Status.ACKResourceMetadata.ARN)
+//		ko.Spec.APIID = (*string)(obj.Status.APIID)
 //	}
 //
-// rm.setReferencedValue(ctx, "KMSKeyARN", resolved)
-// ```
+// Sample output (resolving a list of references):
 //
-// Sample code (resolving a list of references):
-// ```
-// var resolved []*string
-//
-//	if ko.Spec.VPCConfig != nil {
-//		for f0idx, f0iter := range ko.Spec.VPCConfig.SecurityGroupRefs {
-//			if f0iter != nil && f0iter.From != nil {
-//				arr := f0iter.From
-//				if arr.Name == nil || *arr.Name == "" {
-//					return fmt.Errorf("provided resource reference is nil or empty: VPCConfig.SecurityGroupRefs")
-//				}
-//				obj := &ec2apitypes.SecurityGroup{}
-//				if err := getReferencedResourceState_SecurityGroup(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
-//					return err
-//				}
-//				resolved[f0idx] = (*string)(obj.Status.ID)
-//			}
-//		}
-//	}
-//
-// rm.setReferencedValue(ctx, "VPCConfig.SecurityGroupIDs", resolved)
-// ```
-//
-// Sample code (resolving a list of structs containing references):
-// ```
-// var resolved []*string
-// resolved = make([]*string, len(ko.Spec.Routes))
-//
-//	for f0idx, f0iter := range ko.Spec.Routes {
-//		if f0iter.VPCEndpointRef != nil && f0iter.VPCEndpointRef.From != nil {
-//			arr := f0iter.VPCEndpointRef.From
+//	for _, f0iter := range ko.Spec.SecurityGroupRefs {
+//		if f0iter != nil && f0iter.From != nil {
+//			hasReferences = true
+//			arr := f0iter.From
 //			if arr.Name == nil || *arr.Name == "" {
-//				return fmt.Errorf("provided resource reference is nil or empty: Routes.VPCEndpointRef")
+//				return hasReferences, fmt.Errorf("provided resource reference is nil or empty: SecurityGroupRefs")
 //			}
-//			obj := &svcapitypes.VPCEndpoint{}
-//			if err := getReferencedResourceState_VPCEndpoint(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
-//				return err
+//			obj := &ec2apitypes.SecurityGroup{}
+//			if err := getReferencedResourceState_SecurityGroup(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
+//				return hasReferences, err
 //			}
-//			resolved[f0idx] = (*string)(obj.Status.VPCEndpointID)
+//			if ko.Spec.SecurityGroupIDs == nil {
+//				ko.Spec.SecurityGroupIDs = make([]*string, 0, 1)
+//			}
+//			ko.Spec.SecurityGroupIDs = append(ko.Spec.SecurityGroupIDs, (*string)(obj.Status.ID))
 //		}
 //	}
 //
-// rm.setReferencedValue(ctx, "Routes.VPCEndpointID", resolved)
-// ```
+// Sample output (resolving nested lists of structs containing references):
+//
+//	if ko.Spec.Notification != nil {
+//		for f0idx, f0iter := range ko.Spec.Notification.LambdaFunctionConfigurations {
+//			if f0iter.Filter != nil {
+//				if f0iter.Filter.Key != nil {
+//					for f1idx, f1iter := range f0iter.Filter.Key.FilterRules {
+//						if f1iter.ValueRef != nil && f1iter.ValueRef.From != nil {
+//							hasReferences = true
+//							arr := f1iter.ValueRef.From
+//							if arr.Name == nil || *arr.Name == "" {
+//								return hasReferences, fmt.Errorf("provided resource reference is nil or empty: Notification.LambdaFunctionConfigurations.Filter.Key.FilterRules.ValueRef")
+//							}
+//							obj := &svcapitypes.Bucket{}
+//							if err := getReferencedResourceState_Bucket(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
+//								return hasReferences, err
+//							}
+//							ko.Spec.Notification.LambdaFunctionConfigurations[f0idx].Filter.Key.FilterRules[f1idx].Value = (*string)(obj.Spec.Name)
+//						}
+//					}
+//				}
+//			}
+//		}
+//	}
 func ResolveReferencesForField(field *model.Field, sourceVarName string, indentLevel int) string {
 	isListOfRefs := field.ShapeRef.Shape.Type == "list"
 
@@ -156,40 +164,74 @@ func ResolveReferencesForField(field *model.Field, sourceVarName string, indentL
 		resRefElemType = field.ShapeRef.Shape.MemberRef.GoType()
 	}
 
-	iterOut := IterReferenceValues(field, indentLevel, sourceVarName, true, true, true,
-		func(fieldAccessPrefix string, indexVarFmt string, innerIndentLevel int) (innerOut string) {
+	iterOut := iterReferenceValues(field, indentLevel, sourceVarName, true,
+		func(fieldAccessPrefix string, listDepth, innerIndentLevel int) string {
 			innerIndent := strings.Repeat("\t", innerIndentLevel)
 
-			innerOut += fmt.Sprintf("%shasReferences = true\n", innerIndent)
+			outPrefix := ""
+			outSuffix := ""
 
-			innerOut += fmt.Sprintf("%sarr := %s.From\n", innerIndent, fieldAccessPrefix)
-			innerOut += fmt.Sprintf("%sif arr.Name == nil || *arr.Name == \"\" {\n", innerIndent)
-			innerOut += fmt.Sprintf("%s\treturn hasReferences, fmt.Errorf(\"provided resource reference is nil or empty: %s\")\n", innerIndent, field.ReferenceFieldPath())
-			innerOut += fmt.Sprintf("%s}\n", innerIndent)
+			// If the reference field is a list of primitives, iterate through each.
+			// We need to duplicate some code from above, here, because `*Ref` fields
+			// aren't registered as fields, so we can't use the same common logic
+			if isListOfRefs {
+				iterVarName := fmt.Sprintf(iterVarFmt, listDepth)
 
-			innerOut += getReferencedStateForField(field, innerIndentLevel)
+				outPrefix += fmt.Sprintf("%sfor _, %s := range %s {\n", strings.Repeat("\t", innerIndentLevel), iterVarName, fieldAccessPrefix)
+				outSuffix = fmt.Sprintf("%s}\n%s", strings.Repeat("\t", innerIndentLevel), outSuffix)
+				fieldAccessPrefix = iterVarName
+
+				innerIndentLevel++
+				innerIndent = strings.Repeat("\t", innerIndentLevel)
+			}
+
+			outPrefix += fmt.Sprintf("%sif %s != nil && %s.From != nil {\n", strings.Repeat("\t", innerIndentLevel), fieldAccessPrefix, fieldAccessPrefix)
+			outSuffix = fmt.Sprintf("%s}\n%s", strings.Repeat("\t", innerIndentLevel), outSuffix)
+
+			innerIndentLevel++
+			innerIndent = strings.Repeat("\t", innerIndentLevel)
+
+			outPrefix += fmt.Sprintf("%shasReferences = true\n", innerIndent)
+
+			outPrefix += fmt.Sprintf("%sarr := %s.From\n", innerIndent, fieldAccessPrefix)
+			outPrefix += fmt.Sprintf("%sif arr.Name == nil || *arr.Name == \"\" {\n", innerIndent)
+			outPrefix += fmt.Sprintf("%s\treturn hasReferences, fmt.Errorf(\"provided resource reference is nil or empty: %s\")\n", innerIndent, field.ReferenceFieldPath())
+			outPrefix += fmt.Sprintf("%s}\n", innerIndent)
+
+			outPrefix += getReferencedStateForField(field, innerIndentLevel)
 
 			concreteValueAccessor := buildIndexBasedFieldAccessor(field, sourceVarName, indexVarFmt)
 			if isListOfRefs {
-				innerOut += fmt.Sprintf("%sif %s == nil {\n", innerIndent, concreteValueAccessor)
-				innerOut += fmt.Sprintf("%s\t%s = make([]%s, 0, 1)\n", innerIndent, concreteValueAccessor, resRefElemType)
-				innerOut += fmt.Sprintf("%s}\n", innerIndent)
-				innerOut += fmt.Sprintf("%s%s = append(%s, (%s)(obj.%s))\n", innerIndent, concreteValueAccessor, concreteValueAccessor, resRefElemType, field.FieldConfig.References.Path)
+				outPrefix += fmt.Sprintf("%sif %s == nil {\n", innerIndent, concreteValueAccessor)
+				outPrefix += fmt.Sprintf("%s\t%s = make([]%s, 0, 1)\n", innerIndent, concreteValueAccessor, resRefElemType)
+				outPrefix += fmt.Sprintf("%s}\n", innerIndent)
+				outPrefix += fmt.Sprintf("%s%s = append(%s, (%s)(obj.%s))\n", innerIndent, concreteValueAccessor, concreteValueAccessor, resRefElemType, field.FieldConfig.References.Path)
 			} else {
-				innerOut += fmt.Sprintf("%s%s = (%s)(obj.%s)\n", innerIndent, concreteValueAccessor, resRefElemType, field.FieldConfig.References.Path)
+				outPrefix += fmt.Sprintf("%s%s = (%s)(obj.%s)\n", innerIndent, concreteValueAccessor, resRefElemType, field.FieldConfig.References.Path)
 			}
 
-			return innerOut
+			return outPrefix + outSuffix
 		})
 
 	return iterOut
 }
 
+// ClearResolvedReferencesForField returns Go code that iterates over all
+// references within an AWSResource and, if the reference is non-nil, sets the
+// respective concrete value to nil.
+//
+// Sample output:
+//
+//	for f0idx, f0iter := range ko.Spec.Routes {
+//		if f0iter.GatewayRef != nil {
+//			ko.Spec.Routes[f0idx].GatewayID = nil
+//		}
+//	}
 func ClearResolvedReferencesForField(field *model.Field, targetVarName string, indentLevel int) string {
 	isListOfRefs := field.ShapeRef.Shape.Type == "list"
 
-	iterOut := IterReferenceValues(field, indentLevel, targetVarName, false, true, false,
-		func(fieldAccessPrefix string, indexVarFmt string, innerIndentLevel int) (innerOut string) {
+	iterOut := iterReferenceValues(field, indentLevel, targetVarName, true,
+		func(fieldAccessPrefix string, _, innerIndentLevel int) (innerOut string) {
 			innerIndent := strings.Repeat("\t", innerIndentLevel)
 
 			// If we are dealing with a list of references, then we don't need to
@@ -211,7 +253,24 @@ func ClearResolvedReferencesForField(field *model.Field, targetVarName string, i
 	return iterOut
 }
 
-func IterReferenceValues(field *model.Field, indentLevel int, sourceVarName string, shouldValidateRef bool, shouldRenderIndexes, shouldRenderIterators bool, innerRender func(fieldAccessPrefix string, indexVarFmt string, indentLevel int) (innerOut string)) (out string) {
+// iterReferenceValues returns Go code that drills down through the spec, doing
+// nil checks and iterating over values, until it reaches the reference field
+// for the given field. Once it reaches the reference field, it runs the inner
+// render callback. It returns the concatenation of the drilling code and the
+// inner render return value.
+//
+// The inner render callback is passed a `fieldAccessPrefix`, which is the name
+// of a variable which can be used to access the ref field within the nested
+// lists and structs, a `listDepth`, which represents the number of lists that
+// the ref field is inside, and an `indentLevel` which represents the layers of
+// indentation the code has reached.
+func iterReferenceValues(
+	field *model.Field,
+	indentLevel int,
+	sourceVarName string,
+	shouldRenderIndexes bool,
+	innerRender func(fieldAccessPrefix string, listDepth, indentLevel int) (innerOut string),
+) (out string) {
 	r := field.CRD
 	fp := fieldpath.FromString(field.ReferenceFieldPath())
 
@@ -219,9 +278,6 @@ func IterReferenceValues(field *model.Field, indentLevel int, sourceVarName stri
 	outSuffix := ""
 
 	currentListDepth := 0 // Stores how many slices we are iterating within
-
-	nestedIterVarPrefixFmt := "f%diter"
-	nestedIndexVarPrefixFmt := "f%didx"
 
 	fieldAccessPrefix := fmt.Sprintf("%s%s", sourceVarName, r.Config().PrefixConfig.SpecField)
 
@@ -246,8 +302,8 @@ func IterReferenceValues(field *model.Field, indentLevel int, sourceVarName stri
 			outPrefix += fmt.Sprintf("%sif %s != nil {\n", indent, fieldAccessPrefix)
 			outSuffix = fmt.Sprintf("%s}\n%s", indent, outSuffix)
 		case ("list"):
-			iterVarName := fmt.Sprintf(nestedIterVarPrefixFmt, currentListDepth)
-			idxVarName := fmt.Sprintf(nestedIndexVarPrefixFmt, currentListDepth)
+			iterVarName := fmt.Sprintf(iterVarFmt, currentListDepth)
+			idxVarName := fmt.Sprintf(indexVarFmt, currentListDepth)
 
 			fieldAccessPrefix = fmt.Sprintf("%s.%s", fieldAccessPrefix, fp.At(fpDepth))
 
@@ -268,29 +324,7 @@ func IterReferenceValues(field *model.Field, indentLevel int, sourceVarName stri
 	fieldAccessPrefix = fmt.Sprintf("%s.%s", fieldAccessPrefix, field.GetReferenceFieldName().Camel)
 	innerIndentLevel := indentLevel + fpDepth
 
-	if shouldValidateRef {
-		// If the reference field is a list of primitives, iterate through each.
-		// We need to duplicate some code from above, here, because `*Ref` fields
-		// aren't registered as fields, so we can't use the same common logic
-		if field.ShapeRef.Shape.Type == "list" {
-			iterVarName := fmt.Sprintf(nestedIterVarPrefixFmt, currentListDepth)
-
-			outPrefix += fmt.Sprintf("%sfor _, %s := range %s {\n", strings.Repeat("\t", innerIndentLevel),
-				lo.Ternary(shouldRenderIterators, iterVarName, "_"),
-				fieldAccessPrefix,
-			)
-			outSuffix = fmt.Sprintf("%s}\n%s", strings.Repeat("\t", innerIndentLevel), outSuffix)
-			fieldAccessPrefix = iterVarName
-
-			innerIndentLevel++
-		}
-
-		outPrefix += fmt.Sprintf("%sif %s != nil && %s.From != nil {\n", strings.Repeat("\t", innerIndentLevel), fieldAccessPrefix, fieldAccessPrefix)
-		outSuffix = fmt.Sprintf("%s}\n%s", strings.Repeat("\t", innerIndentLevel), outSuffix)
-		innerIndentLevel++
-	}
-
-	innerPrefix := innerRender(fieldAccessPrefix, nestedIndexVarPrefixFmt, innerIndentLevel)
+	innerPrefix := innerRender(fieldAccessPrefix, currentListDepth, innerIndentLevel)
 
 	return outPrefix + innerPrefix + outSuffix
 }
@@ -351,6 +385,9 @@ func buildIndexBasedFieldAccessor(field *model.Field, sourceVarName, indexVarFmt
 	return buildIndexBasedFieldAccessorWithOffset(field, sourceVarName, indexVarFmt, 0)
 }
 
+// getReferencedStateForField returns Go code that makes a call to
+// `getReferencedResourceState_*` (using the referenced field resource) and sets
+// the response into an object (of the referenced type) called `obj`
 func getReferencedStateForField(field *model.Field, indentLevel int) string {
 	out := ""
 	indent := strings.Repeat("\t", indentLevel)
@@ -365,14 +402,4 @@ func getReferencedStateForField(field *model.Field, indentLevel int) string {
 	out += fmt.Sprintf("%s}\n", indent)
 
 	return out
-}
-
-func nestedStructNilCheck(path fieldpath.Path, fieldAccessPrefix string) string {
-	out := ""
-	fieldNamePrefix := ""
-	for path.Size() > 0 {
-		fieldNamePrefix = fmt.Sprintf("%s.%s", fieldNamePrefix, path.PopFront())
-		out += fmt.Sprintf("%s%s != nil && ", fieldAccessPrefix, fieldNamePrefix)
-	}
-	return strings.TrimSuffix(out, " && ")
 }
