@@ -62,7 +62,7 @@ func Test_ReferenceFieldsValidation_WithOptional_SliceOfReferences(t *testing.T)
 
 	field := crd.Fields["SecurityGroupIDs"]
 	expected :=
-		`	if ko.Spec.SecurityGroupRefs != nil && ko.Spec.SecurityGroupIDs != nil {
+		`	if len(ko.Spec.SecurityGroupRefs) > 0 && len(ko.Spec.SecurityGroupIDs) > 0 {
 		return ackerr.ResourceReferenceAndIDNotSupportedFor("SecurityGroupIDs", "SecurityGroupRefs")
 	}
 `
@@ -85,10 +85,10 @@ func Test_ReferenceFieldsValidation_WithRequired_SliceOfReferences(t *testing.T)
 
 	field := crd.Fields["SubnetIDs"]
 	expected :=
-		`	if ko.Spec.SubnetRefs != nil && ko.Spec.SubnetIDs != nil {
+		`	if len(ko.Spec.SubnetRefs) > 0 && len(ko.Spec.SubnetIDs) > 0 {
 		return ackerr.ResourceReferenceAndIDNotSupportedFor("SubnetIDs", "SubnetRefs")
 	}
-	if ko.Spec.SubnetRefs == nil && ko.Spec.SubnetIDs == nil {
+	if len(ko.Spec.SubnetRefs) == 0 && len(ko.Spec.SubnetIDs) == 0 {
 		return ackerr.ResourceReferenceOrIDRequiredFor("SubnetIDs", "SubnetRefs")
 	}
 `

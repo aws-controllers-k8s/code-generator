@@ -58,6 +58,8 @@ func ReferenceFieldsValidation(
 	sourceVarName string,
 	indentLevel int,
 ) (out string) {
+	isListOfRefs := field.ShapeRef.Shape.Type == "list"
+
 	out = iterReferenceValues(field, indentLevel, sourceVarName, false,
 		func(fieldAccessPrefix string, _, innerIndentLevel int) (innerOut string) {
 			innerIndent := strings.Repeat("\t", innerIndentLevel)
@@ -68,8 +70,13 @@ func ReferenceFieldsValidation(
 
 			// Validation to make sure both target field and reference are
 			// not present at the same time in desired resource
-			innerOut += fmt.Sprintf("%sif %s.%s != nil"+
-				" && %s.%s != nil {\n", innerIndent, parentFP.String(), field.GetReferenceFieldName().Camel, parentFP.String(), field.Names.Camel)
+			if isListOfRefs {
+				innerOut += fmt.Sprintf("%sif len(%s.%s) > 0"+
+					" && len(%s.%s) > 0 {\n", innerIndent, parentFP.String(), field.GetReferenceFieldName().Camel, parentFP.String(), field.Names.Camel)
+			} else {
+				innerOut += fmt.Sprintf("%sif %s.%s != nil"+
+					" && %s.%s != nil {\n", innerIndent, parentFP.String(), field.GetReferenceFieldName().Camel, parentFP.String(), field.Names.Camel)
+			}
 			innerOut += fmt.Sprintf("%s\treturn "+
 				"ackerr.ResourceReferenceAndIDNotSupportedFor(%q, %q)\n",
 				innerIndent, field.Path, field.ReferenceFieldPath())
@@ -78,9 +85,15 @@ func ReferenceFieldsValidation(
 			// If the field is required, make sure either Ref or original
 			// field is present in the resource
 			if field.IsRequired() {
-				innerOut += fmt.Sprintf("%sif %s.%s == nil &&"+
-					" %s.%s == nil {\n", innerIndent, parentFP.String(),
-					field.GetReferenceFieldName().Camel, parentFP.String(), field.Names.Camel)
+				if isListOfRefs {
+					innerOut += fmt.Sprintf("%sif len(%s.%s) == 0 &&"+
+						" len(%s.%s) == 0 {\n", innerIndent, parentFP.String(),
+						field.GetReferenceFieldName().Camel, parentFP.String(), field.Names.Camel)
+				} else {
+					innerOut += fmt.Sprintf("%sif %s.%s == nil &&"+
+						" %s.%s == nil {\n", innerIndent, parentFP.String(),
+						field.GetReferenceFieldName().Camel, parentFP.String(), field.Names.Camel)
+				}
 				innerOut += fmt.Sprintf("%s\treturn "+
 					"ackerr.ResourceReferenceOrIDRequiredFor(%q, %q)\n",
 					innerIndent, field.Names.Camel, field.GetReferenceFieldName().Camel)
