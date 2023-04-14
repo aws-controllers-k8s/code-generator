@@ -126,8 +126,12 @@ func (frm *fakeRM) LateInitialize(context.Context, acktypes.AWSResource) (acktyp
 	return nil, nil
 }
 
-func (frm *fakeRM) ResolveReferences(context.Context, rtclient.Reader, acktypes.AWSResource) (acktypes.AWSResource, error) {
-	return nil, nil
+func (frm *fakeRM) ResolveReferences(context.Context, rtclient.Reader, acktypes.AWSResource) (acktypes.AWSResource, bool, error) {
+	return nil, false, nil
+}
+
+func (frm *fakeRM) ClearResolvedReferences(acktypes.AWSResource) acktypes.AWSResource {
+	return nil
 }
 
 func (frm *fakeRM) IsSynced(context.Context, acktypes.AWSResource) (bool, error) {
