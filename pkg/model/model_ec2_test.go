@@ -161,24 +161,25 @@ func TestEC2_NestedReference(t *testing.T) {
 	assert := assert.New(t)
 
 	g := testutil.NewModelForServiceWithOptions(t, "ec2", &testutil.TestingModelOptions{
-		GeneratorConfigFile: "generator-with-nested-reference.yaml",
+		GeneratorConfigFile: "generator-with-nested-references.yaml",
 	})
 
 	tds, err := g.GetTypeDefs()
 	assert.Nil(err)
 	assert.NotNil(tds)
 
-	var createRouteInputTD *model.TypeDef
+	var routeTypeDef *model.TypeDef
 
 	for _, td := range tds {
-		if td != nil && strings.EqualFold(td.Names.Original, "createRouteInput") {
-			createRouteInputTD = td
+		if td != nil && strings.EqualFold(td.Names.Original, "CreateRouteInput") {
+			routeTypeDef = td
 			break
 		}
 	}
-	assert.NotNil(t, createRouteInputTD)
-	gatewayIdAttr := createRouteInputTD.GetAttribute("GatewayId")
-	gatewayRefAttr := createRouteInputTD.GetAttribute("GatewayRef")
+
+	assert.NotNil(routeTypeDef)
+	gatewayIdAttr := routeTypeDef.GetAttribute("GatewayId")
+	gatewayRefAttr := routeTypeDef.GetAttribute("GatewayRef")
 
 	assert.Equal("GatewayID", gatewayIdAttr.Names.Camel)
 	assert.Equal("GatewayRef", gatewayRefAttr.Names.Camel)

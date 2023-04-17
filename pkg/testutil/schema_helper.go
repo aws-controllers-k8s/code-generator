@@ -76,7 +76,7 @@ func NewModelForServiceWithOptions(t *testing.T, servicePackageName string, opti
 
 	generatorConfigPath := filepath.Join(path, "models", "apis", servicePackageName, options.ServiceAPIVersion, options.GeneratorConfigFile)
 	if _, err := os.Stat(generatorConfigPath); os.IsNotExist(err) {
-		generatorConfigPath = ""
+		t.Fatalf("Could not find generator file %q", generatorConfigPath)
 	}
 	cfg, err := ackgenconfig.New(generatorConfigPath, ackgenerate.DefaultConfig)
 	if err != nil {
