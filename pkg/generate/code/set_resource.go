@@ -955,12 +955,14 @@ func SetResourceIdentifiers(
 ) string {
 	op := r.Ops.ReadOne
 	if op == nil {
-		if r.Ops.GetAttributes != nil {
-			// TODO(RedbackThomson): Support attribute maps for resource identifiers
-			return ""
+		switch {
+		case r.Ops.GetAttributes != nil:
+			// If single lookups can only be done with GetAttributes
+			op = r.Ops.GetAttributes
+		case r.Ops.ReadMany != nil:
+			// If single lookups can only be done using ReadMany
+			op = r.Ops.ReadMany
 		}
-		// If single lookups can only be done using ReadMany
-		op = r.Ops.ReadMany
 	}
 	inputShape := op.InputRef.Shape
 	if inputShape == nil {
