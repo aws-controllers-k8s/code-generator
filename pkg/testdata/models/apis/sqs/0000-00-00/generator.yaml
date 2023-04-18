@@ -38,3 +38,6 @@ resources:
       QueueArn:
         is_attribute: true
         is_read_only: true
+      QueueUrl:
+        is_read_only: true
+        is_primary_key: true

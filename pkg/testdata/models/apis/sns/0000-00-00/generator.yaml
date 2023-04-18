@@ -1,5 +1,6 @@
 resources:
   Topic:
+    is_arn_primary_key: true
     unpack_attributes_map:
       set_attributes_single_attribute: true
     fields:

@@ -2971,6 +2971,49 @@ func TestSetResource_RDS_DBInstances_SetResourceIdentifiers(t *testing.T) {
 	)
 }
 
+func TestSetResource_SNS_Topics_SetResourceIdentifiers(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "sns")
+
+	crd := testutil.GetCRDByName(t, g, "Topic")
+	require.NotNil(crd)
+
+	expected := `
+	if r.ko.Status.ACKResourceMetadata == nil {
+		r.ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
+	}
+	r.ko.Status.ACKResourceMetadata.ARN = identifier.ARN
+`
+	assert.Equal(
+		expected,
+		code.SetResourceIdentifiers(crd.Config(), crd, "identifier", "r.ko", 1),
+	)
+}
+
+func TestSetResource_SQS_Queues_SetResourceIdentifiers(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "sqs")
+
+	crd := testutil.GetCRDByName(t, g, "Queue")
+	require.NotNil(crd)
+
+	expected := `
+	if identifier.NameOrID == "" {
+		return ackerrors.MissingNameIdentifier
+	}
+	r.ko.Status.QueueURL = &identifier.NameOrID
+
+`
+	assert.Equal(
+		expected,
+		code.SetResourceIdentifiers(crd.Config(), crd, "identifier", "r.ko", 1),
+	)
+}
+
 func TestSetResource_RDS_DBSubnetGroup_SetResourceIdentifiers(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
