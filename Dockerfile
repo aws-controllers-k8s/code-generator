@@ -53,8 +53,10 @@ FROM $base_image
 ARG base_image
 LABEL org.opencontainers.image.base.name=$base_image
 ARG service_alias
+ARG service_controller_git_version
 ARG work_dir=/github.com/aws-controllers-k8s/$service_alias-controller
 LABEL org.opencontainers.image.source=https://github.com/aws-controllers-k8s/$service_alias-controller
+LABEL org.opencontainers.image.version=$service_controller_git_version
 WORKDIR /
 COPY --from=builder $work_dir/bin/controller $work_dir/LICENSE $work_dir/ATTRIBUTION.md /bin/
 # Make this image non-root by default
