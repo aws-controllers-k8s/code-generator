@@ -62,6 +62,8 @@ RUN GIT_VERSION=$service_controller_git_version && \
     -a -o $work_dir/bin/controller $work_dir/cmd/controller/main.go
 
 FROM $base_image
+ARG base_image
+LABEL org.opencontainers.image.base.name=$base_image
 ARG service_alias
 ARG work_dir=/github.com/aws-controllers-k8s/$service_alias-controller
 LABEL org.opencontainers.image.source=https://github.com/aws-controllers-k8s/$service_alias-controller
