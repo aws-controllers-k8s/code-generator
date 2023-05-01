@@ -73,7 +73,7 @@ log:
 installScope: cluster
 
 # Set the value of the "namespace" to be watched by the controller
-# This would only work if installScope is set to "namespace". If left empty it would watch the release namespace by default.
+# This value is only used when the `installScope` is set to "namespace". If left empty, the default value is the release namespace for the chart.
 watchNamespace: ""
 
 resourceTags:
