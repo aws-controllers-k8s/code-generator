@@ -415,6 +415,36 @@ func (r *CRD) GetPrimaryKeyField() (*Field, error) {
 	return primaryField, nil
 }
 
+// GetMatchingInputShapeFieldName returns the name of the field in the Input shape.
+// For simplicity, we assume that there will be only one setConfig for the
+// any unique sdkField, per operation. Which means that we will never set
+// two different sdk field from the same
+func (r *CRD) GetMatchingInputShapeFieldName(opType OpType, sdkField string) string {
+	// At this stage nil-checks for r.cfg is not necessary
+	for _, f := range r.Fields {
+		if f.FieldConfig == nil {
+			continue
+		}
+		rmMethod := ResourceManagerMethodFromOpType(opType)
+		for _, setCfg := range f.FieldConfig.Set {
+			if setCfg == nil {
+				continue
+			}
+			if setCfg.Ignore == true || setCfg.To == nil {
+				continue
+			}
+			// If the Method attribute is nil, that means the setter config applies to
+			// all resource manager methods for this field.
+			if setCfg.Method == nil || strings.EqualFold(rmMethod, *setCfg.Method) {
+				if setCfg.To != nil && *setCfg.To == sdkField {
+					return f.Names.Camel
+				}
+			}
+		}
+	}
+	return ""
+}
+
 // SetOutputCustomMethodName returns custom set output operation as *string for
 // given operation on custom resource
 func (r *CRD) SetOutputCustomMethodName(

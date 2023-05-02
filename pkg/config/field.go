@@ -191,6 +191,19 @@ type SetFieldConfig struct {
 	// f17elem = *f17iter.DBSecurityGroupName
 	// ```
 	From *string `json:"from,omitempty"`
+	// To instructs the code generator to output Go code that sets the value of
+	// an Input sdkField with the content of a CR field.
+	//
+	// ```yaml
+	// resources:
+	//   User:
+	//     fields:
+	//       URL:
+	//         set:
+	//           - method: Update
+	//             to: NewURL
+	// ```
+	To *string `json:"to,omitempty"`
 	// Ignore instructs the code generator to ignore this field in the Output
 	// shape when setting the value of the resource's field in the Spec. This
 	// is useful when we know that, for example, the returned value of field in

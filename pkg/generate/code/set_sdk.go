@@ -222,6 +222,15 @@ func SetSDK(
 			op.ExportedName,
 			memberName,
 		)
+
+		// Check if we have any configurations instructing the code
+		// generator to set an SDK input field from this specific
+		// field path.
+		fallbackFieldName := r.GetMatchingInputShapeFieldName(opType, fieldName)
+		if fallbackFieldName != "" {
+			fieldName = fallbackFieldName
+		}
+
 		inSpec, inStatus := r.HasMember(fieldName, op.ExportedName)
 		if inSpec {
 			sourceAdaptedVarName += cfg.PrefixConfig.SpecField
