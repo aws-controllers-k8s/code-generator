@@ -615,6 +615,14 @@ func (r *CRD) ListOpMatchFieldNames() []string {
 	return r.cfg.GetListOpMatchFieldNames(r.Names.Original)
 }
 
+func (r *CRD) MaxResultsFieldName() string {
+	return r.cfg.GetPaginationMaxResultsFieldName(r.Names.Original)
+}
+
+func (r *CRD) NextTokenFieldName() string {
+	return r.cfg.GetPaginationNextTokenFieldName(r.Names.Original)
+}
+
 // GetAllRenames returns all the field renames observed in the generator config
 // for a given OpType.
 func (r *CRD) GetAllRenames(op OpType) map[string]string {

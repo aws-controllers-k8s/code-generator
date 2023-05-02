@@ -1709,3 +1709,182 @@ func generateForRangeLoops(
 	opening = strings.Replace(opening, iterVarName, outputVarName, 1)
 	return opening, closing, updatedIndentLevel
 }
+
+func FindInArray(
+	cfg *ackgenconfig.Config,
+	r *model.CRD,
+	// The type of operation to look for the Output shape
+	opType model.OpType,
+	// String representing the name of the variable that we will grab the
+	// Output shape from. This will likely be "resp" since in the templates
+	// that call this method, the "source variable" is the response struct
+	// returned by the aws-sdk-go's SDK API call corresponding to the Operation
+	sourceVarName string,
+	// String representing the name of the variable that we will be **setting**
+	// with values we get from the Output shape. This will likely be
+	// "ko.Status" since that is the name of the "target variable" that the
+	// templates that call this method use.
+	targetVarName string,
+	matchWith string,
+	// Number of levels of indentation to use
+	indentLevel int,
+) string {
+	out := "\n"
+	indent := strings.Repeat("\t", indentLevel)
+
+	op := r.Ops.ReadMany
+	matchFieldNames := r.ListOpMatchFieldNames()
+
+	outputShape := op.OutputRef.Shape
+
+	listShapeName := ""
+	var sourceElemShape *awssdkmodel.Shape
+	_ = sourceElemShape
+
+	// Find the element in the output shape that contains the list of
+	// resources:
+	// Check if there's a wrapperFieldPath, which will
+	// point directly to the shape.
+	wrapperFieldPath := r.GetOutputWrapperFieldPath(op)
+	if wrapperFieldPath != nil {
+		// fieldpath API needs fully qualified name
+		wfp := fieldpath.FromString(outputShape.ShapeName + "." + *wrapperFieldPath)
+		wfpShapeRef := wfp.ShapeRef(&op.OutputRef)
+		if wfpShapeRef != nil {
+			listShapeName = wfpShapeRef.ShapeName
+			sourceElemShape = wfpShapeRef.Shape.MemberRef.Shape
+		}
+	}
+
+	// If listShape can't be found using wrapperFieldPath,
+	// then fall back to looking for the first field with a list type;
+	// this heuristic seems to work for most list operations in aws-sdk-go.
+	if listShapeName == "" {
+		for memberName, memberShapeRef := range outputShape.MemberRefs {
+			if memberShapeRef.Shape.Type == "list" {
+				listShapeName = memberName
+				sourceElemShape = memberShapeRef.Shape.MemberRef.Shape
+				break
+			}
+		}
+	}
+
+	if listShapeName == "" {
+		panic("List output shape had no field of type 'list'")
+	}
+
+	for _, mfName := range matchFieldNames {
+		if inSpec, inStat := r.HasMember(mfName, op.ExportedName); !inSpec && !inStat {
+			msg := fmt.Sprintf(
+				"Match field name %s is not in %s Spec or Status fields",
+				mfName, r.Names.Camel,
+			)
+			panic(msg)
+		}
+	}
+
+	elemVarName := "elem"
+	pathToShape := listShapeName
+	if wrapperFieldPath != nil {
+		pathToShape = *wrapperFieldPath
+	}
+
+	// for _, elem := range resp.InternetGateways {
+	opening, _, _ := generateForRangeLoops(&op.OutputRef, pathToShape, sourceVarName, elemVarName, indentLevel)
+	out += opening
+
+	for _, memberName := range sourceElemShape.MemberNames() {
+		sourceMemberShapeRef := sourceElemShape.MemberRefs[memberName]
+		sourceMemberShape := sourceMemberShapeRef.Shape
+		sourceAdaptedVarName := elemVarName + "." + memberName
+		// Determine whether the input shape's field is in the Spec or the
+		// Status struct and set the source variable appropriately.
+		var f *model.Field
+		// var targetMemberShapeRef *awssdkmodel.ShapeRef
+		targetAdaptedVarName := targetVarName
+
+		// Handles field renames, if applicable
+		fieldName := cfg.GetResourceFieldName(
+			r.Names.Original,
+			op.ExportedName,
+			memberName,
+		)
+		inSpec, inStatus := r.HasMember(fieldName, op.ExportedName)
+		if inSpec {
+			targetAdaptedVarName += cfg.PrefixConfig.SpecField
+			f = r.SpecFields[fieldName]
+		} else if inStatus {
+			targetAdaptedVarName += cfg.PrefixConfig.StatusField
+			f = r.StatusFields[fieldName]
+		} else {
+			// field not found in Spec or Status
+			continue
+		}
+
+		// We may have some special instructions for how to handle setting the
+		// field value...
+		setCfg := f.GetSetterConfig(model.OpTypeList)
+
+		if setCfg != nil && setCfg.Ignore {
+			continue
+		}
+
+		_ = f.ShapeRef
+
+		//ex: r.ko.Spec.CacheClusterID
+		_ = fmt.Sprintf(
+			"%s.%s", targetAdaptedVarName, f.Names.Camel,
+		)
+		var matchWithPath string
+		if inSpec {
+			matchWithPath = matchWith + ".Spec"
+		}
+
+		switch sourceMemberShape.Type {
+		case "list", "structure", "map":
+		default:
+			//          if ko.Spec.CacheClusterID != nil {
+			//              if *elem.CacheClusterId != *ko.Spec.CacheClusterID {
+			//                  continue
+			//              }
+			//          }
+
+			if util.InStrings(fieldName, matchFieldNames) {
+				out += fmt.Sprintf(
+					"%s\tif %s != nil {\n", indent, sourceAdaptedVarName,
+				)
+				out += fmt.Sprintf(
+					"%s\t\tif %s.%s != nil {\n",
+					indent,
+					matchWithPath,
+					f.Names.Camel,
+				)
+				out += fmt.Sprintf(
+					"%s\t\t\tif *%s != *%s.%s {\n",
+					indent,
+					sourceAdaptedVarName,
+					matchWithPath,
+					f.Names.Camel,
+				)
+				out += fmt.Sprintf("\t\t\t\t%srespMatch = elem\n", indent)
+				out += fmt.Sprintf("\t\t\t\t%sbreak\n", indent)
+
+				out += fmt.Sprintf(
+					"%s\t\t\t}\n", indent,
+				)
+				out += fmt.Sprintf(
+					"%s\t\t}\n", indent,
+				)
+				out += fmt.Sprintf(
+					"%s\t}\n", indent,
+				)
+			}
+		}
+
+	}
+
+	// }
+	out += fmt.Sprintf("%s}\n", indent)
+
+	return out
+}

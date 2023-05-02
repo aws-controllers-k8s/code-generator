@@ -310,6 +310,13 @@ type ListOperationConfig struct {
 	// MatchFields lists the names of fields in the Shape of the
 	// list element in the List Operation's Output shape.
 	MatchFields []string `json:"match_fields"`
+
+	Pagination *PaginationConfig `json:"pagination"`
+}
+
+type PaginationConfig struct {
+	MaxResultsField string `json:"max_results_field"`
+	NextTokenField  string `json:"next_token_field"`
 }
 
 // UpdateOperationConfig contains instructions for the code generator to handle
@@ -717,6 +724,44 @@ func (c *Config) GetListOpMatchFieldNames(
 		return res
 	}
 	return rConfig.ListOperation.MatchFields
+}
+
+func (c *Config) GetPaginationMaxResultsFieldName(
+	resName string,
+) string {
+	if c == nil {
+		return ""
+	}
+	rConfig, found := c.Resources[resName]
+	if !found {
+		return ""
+	}
+	if rConfig.ListOperation == nil {
+		return ""
+	}
+	if rConfig.ListOperation.Pagination == nil {
+		return ""
+	}
+	return rConfig.ListOperation.Pagination.NextTokenField
+}
+
+func (c *Config) GetPaginationNextTokenFieldName(
+	resName string,
+) string {
+	if c == nil {
+		return ""
+	}
+	rConfig, found := c.Resources[resName]
+	if !found {
+		return ""
+	}
+	if rConfig.ListOperation == nil {
+		return ""
+	}
+	if rConfig.ListOperation.Pagination == nil {
+		return ""
+	}
+	return rConfig.ListOperation.Pagination.NextTokenField
 }
 
 // TagsAreIgnored returns whether ensuring controller tags should be ignored

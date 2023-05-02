@@ -44,7 +44,7 @@ var (
 {{- else if .CRD.Ops.GetAttributes }}
 	{{- template "sdk_find_get_attributes" . }}
 {{- else if .CRD.Ops.ReadMany }}
-	{{- template "sdk_find_read_many" . }}
+	{{- template "sdk_find_read_many_pagination" . }}
 {{- else }}
 	{{- template "sdk_find_not_implemented" . }}
 {{- end }}
