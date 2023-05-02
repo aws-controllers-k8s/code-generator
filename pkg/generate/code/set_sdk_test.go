@@ -1779,7 +1779,9 @@ func TestSetSDK_SNS_Topic_Create(t *testing.T) {
 	if r.ko.Spec.Policy != nil {
 		attrMap["Policy"] = r.ko.Spec.Policy
 	}
-	res.SetAttributes(attrMap)
+	if len(attrMap) > 0 {
+		res.SetAttributes(attrMap)
+	}
 	if r.ko.Spec.Name != nil {
 		res.SetName(*r.ko.Spec.Name)
 	}
@@ -1874,7 +1876,9 @@ func TestSetSDK_SQS_Queue_Create(t *testing.T) {
 	if r.ko.Spec.VisibilityTimeout != nil {
 		attrMap["VisibilityTimeout"] = r.ko.Spec.VisibilityTimeout
 	}
-	res.SetAttributes(attrMap)
+	if len(attrMap) > 0 {
+		res.SetAttributes(attrMap)
+	}
 	if r.ko.Spec.QueueName != nil {
 		res.SetQueueName(*r.ko.Spec.QueueName)
 	}
