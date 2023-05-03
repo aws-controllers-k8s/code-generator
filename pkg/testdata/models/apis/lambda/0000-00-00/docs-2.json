@@ -230,7 +230,7 @@
     "CodeSigningConfigId": {
       "base": null,
       "refs": {
-        "CodeSigningConfig$CodeSigningConfigId": "<p>Unique identifer for the Code signing configuration.</p>"
+        "CodeSigningConfig$CodeSigningConfigId": "<p>Unique identifier for the Code signing configuration.</p>"
       }
     },
     "CodeSigningConfigList": {
@@ -428,7 +428,7 @@
       }
     },
     "EFSIOException": {
-      "base": "<p>An error occured when reading from or writing to a connected file system.</p>",
+      "base": "<p>An error occurred when reading from or writing to a connected file system.</p>",
       "refs": {
       }
     },

@@ -65,7 +65,7 @@ Environment variables:
   BUNDLE_DOCKER_IMG_TAG:            Bundle container image tag
                                     Default: \$AWS_SERVICE-bundle-\$BUNDLE_VERSION
   BUNDLE_DOCKER_IMG:                The bundle container image (including the tag).
-                                    Supercedes the use of BUNDLE_DOCKER_IMAGE_TAG
+                                    Supersedes the use of BUNDLE_DOCKER_IMAGE_TAG
                                     and DOCKER_REPOSITORY if set.
                                     Default: $DEFAULT_DOCKER_REPOSITORY:\$AWS_SERVICE-bundle-\$BUNDLE_VERSION
   ADD_RH_CERTIFICATION_LABELS       Adds the certification labels required by Red Hat

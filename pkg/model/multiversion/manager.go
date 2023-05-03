@@ -34,7 +34,7 @@ var (
 )
 
 // APIVersionManager is a API versions manager. It contains the mapping
-// of each non-deprecated version with their correspending ackmodel.Model
+// of each non-deprecated version with their corresponding ackmodel.Model
 // and APIInfos.
 type APIVersionManager struct {
 	gitRepo  *git.Repository

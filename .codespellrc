@@ -1,0 +1,6 @@
+[codespell]
+skip = .codespellrc,./.git,./go.local.sum,./pkg/testdata
+ignore-words-list = specfield,uptodate,fpr
+check-filenames =
+check-hidden =
+quiet = 2

@@ -105,8 +105,8 @@ func (a *SDKAPI) GetOperationMap(cfg *ackgenconfig.Config) *OperationMap {
 		if !found {
 			panic("operation " + opID + " in generator.yaml 'operations:' object does not exist.")
 		}
-		for _, ot := range opCfg.OperationType {
-			opType := OpTypeFromString(ot)
+		for _, operationType := range opCfg.OperationType {
+			opType := OpTypeFromString(operationType)
 			opMap[opType][opCfg.ResourceName] = op
 		}
 	}
