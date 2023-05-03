@@ -95,7 +95,7 @@ syntax/tree.go (from RegexTree.cs and RegexNode.cs): ported literally as possibl
 
 syntax/writer.go (from RegexWriter.cs): ported literally with minor changes to make it more Go-ish.
 
-match.go (from RegexMatch.cs): ported, simplified, and changed to handle Go's lack of inheritence.
+match.go (from RegexMatch.cs): ported, simplified, and changed to handle Go's lack of inheritance.
 
 regexp.go (from Regex.cs and RegexOptions.cs): conceptually serves the same "starting point", but is simplified 
     and changed to handle differences in C# strings and Go strings/runes.  

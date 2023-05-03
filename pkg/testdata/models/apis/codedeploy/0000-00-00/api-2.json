@@ -1691,7 +1691,7 @@
     "ECSTaskSet":{
       "type":"structure",
       "members":{
-        "identifer":{"shape":"ECSTaskSetIdentifier"},
+        "identifier":{"shape":"ECSTaskSetIdentifier"},
         "desiredCount":{"shape":"ECSTaskSetCount"},
         "pendingCount":{"shape":"ECSTaskSetCount"},
         "runningCount":{"shape":"ECSTaskSetCount"},

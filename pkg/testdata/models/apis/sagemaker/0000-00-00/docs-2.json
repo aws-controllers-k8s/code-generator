@@ -34,7 +34,7 @@
     "CreateModelPackage": "<p>Creates a model package that you can use to create Amazon SageMaker models or list on AWS Marketplace, or a versioned model that is part of a model group. Buyers can subscribe to model packages listed on AWS Marketplace to create models in Amazon SageMaker.</p> <p>To create a model package by specifying a Docker container that contains your inference code and the Amazon S3 location of your model artifacts, provide values for <code>InferenceSpecification</code>. To create a model from an algorithm resource that you created or subscribed to in AWS Marketplace, provide a value for <code>SourceAlgorithmSpecification</code>.</p> <note> <p>There are two types of model packages:</p> <ul> <li> <p>Versioned - a model that is part of a model group in the model registry.</p> </li> <li> <p>Unversioned - a model package that is not part of a model group.</p> </li> </ul> </note>",
     "CreateModelPackageGroup": "<p>Creates a model group. A model group contains a group of model versions.</p>",
     "CreateModelQualityJobDefinition": "<p>Creates a definition for a job that monitors model quality and drift. For information about model monitor, see <a href=\"https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor.html\">Amazon SageMaker Model Monitor</a>.</p>",
-    "CreateMonitoringSchedule": "<p>Creates a schedule that regularly starts Amazon SageMaker Processing Jobs to monitor the data captured for an Amazon SageMaker Endoint.</p>",
+    "CreateMonitoringSchedule": "<p>Creates a schedule that regularly starts Amazon SageMaker Processing Jobs to monitor the data captured for an Amazon SageMaker Endpoint.</p>",
     "CreateNotebookInstance": "<p>Creates an Amazon SageMaker notebook instance. A notebook instance is a machine learning (ML) compute instance running on a Jupyter notebook. </p> <p>In a <code>CreateNotebookInstance</code> request, specify the type of ML compute instance that you want to run. Amazon SageMaker launches the instance, installs common libraries that you can use to explore datasets for model training, and attaches an ML storage volume to the notebook instance. </p> <p>Amazon SageMaker also provides a set of example notebooks. Each notebook demonstrates how to use Amazon SageMaker with a specific algorithm or with a machine learning framework. </p> <p>After receiving the request, Amazon SageMaker does the following:</p> <ol> <li> <p>Creates a network interface in the Amazon SageMaker VPC.</p> </li> <li> <p>(Option) If you specified <code>SubnetId</code>, Amazon SageMaker creates a network interface in your own VPC, which is inferred from the subnet ID that you provide in the input. When creating this network interface, Amazon SageMaker attaches the security group that you specified in the request to the network interface that it creates in your VPC.</p> </li> <li> <p>Launches an EC2 instance of the type specified in the request in the Amazon SageMaker VPC. If you specified <code>SubnetId</code> of your VPC, Amazon SageMaker specifies both network interfaces when launching this instance. This enables inbound traffic from your own VPC to the notebook instance, assuming that the security groups allow it.</p> </li> </ol> <p>After creating the notebook instance, Amazon SageMaker returns its Amazon Resource Name (ARN). You can't change the name of a notebook instance after you create it.</p> <p>After Amazon SageMaker creates the notebook instance, you can connect to the Jupyter server and work in Jupyter notebooks. For example, you can write code to explore a dataset that you can use for model training, train a model, host models by creating Amazon SageMaker endpoints, and validate hosted models. </p> <p>For more information, see <a href=\"https://docs.aws.amazon.com/sagemaker/latest/dg/how-it-works.html\">How It Works</a>. </p>",
     "CreateNotebookInstanceLifecycleConfig": "<p>Creates a lifecycle configuration that you can associate with a notebook instance. A <i>lifecycle configuration</i> is a collection of shell scripts that run when you create or start a notebook instance.</p> <p>Each lifecycle configuration script has a limit of 16384 characters.</p> <p>The value of the <code>$PATH</code> environment variable that is available to both scripts is <code>/sbin:bin:/usr/sbin:/usr/bin</code>.</p> <p>View CloudWatch Logs for notebook instance lifecycle configurations in log group <code>/aws/sagemaker/NotebookInstances</code> in log stream <code>[notebook-instance-name]/[LifecycleConfigHook]</code>.</p> <p>Lifecycle configuration scripts cannot run for longer than 5 minutes. If a script runs for longer than 5 minutes, it fails and the notebook instance is not created or started.</p> <p>For information about notebook instance lifestyle configurations, see <a href=\"https://docs.aws.amazon.com/sagemaker/latest/dg/notebook-lifecycle-config.html\">Step 2.1: (Optional) Customize a Notebook Instance</a>.</p>",
     "CreatePipeline": "<p>Creates a pipeline using a JSON pipeline definition.</p>",
@@ -84,7 +84,7 @@
     "DeleteTrial": "<p>Deletes the specified trial. All trial components that make up the trial must be deleted first. Use the <a>DescribeTrialComponent</a> API to get the list of trial components.</p>",
     "DeleteTrialComponent": "<p>Deletes the specified trial component. A trial component must be disassociated from all trials before the trial component can be deleted. To disassociate a trial component from a trial, call the <a>DisassociateTrialComponent</a> API.</p>",
     "DeleteUserProfile": "<p>Deletes a user profile. When a user profile is deleted, the user loses access to their EFS volume, including data, notebooks, and other artifacts.</p>",
-    "DeleteWorkforce": "<p>Use this operation to delete a workforce.</p> <p>If you want to create a new workforce in an AWS Region where a workforce already exists, use this operation to delete the existing workforce and then use to create a new workforce.</p> <important> <p>If a private workforce contains one or more work teams, you must use the operation to delete all work teams before you delete the workforce. If you try to delete a workforce that contains one or more work teams, you will recieve a <code>ResourceInUse</code> error.</p> </important>",
+    "DeleteWorkforce": "<p>Use this operation to delete a workforce.</p> <p>If you want to create a new workforce in an AWS Region where a workforce already exists, use this operation to delete the existing workforce and then use to create a new workforce.</p> <important> <p>If a private workforce contains one or more work teams, you must use the operation to delete all work teams before you delete the workforce. If you try to delete a workforce that contains one or more work teams, you will receive a <code>ResourceInUse</code> error.</p> </important>",
     "DeleteWorkteam": "<p>Deletes an existing work team. This operation can't be undone.</p>",
     "DeregisterDevices": "<p>Deregisters the specified devices. After you deregister a device, you will need to re-register the devices.</p>",
     "DescribeAction": "<p>Describes an action.</p>",
@@ -193,7 +193,7 @@
     "ListUserProfiles": "<p>Lists user profiles.</p>",
     "ListWorkforces": "<p>Use this operation to list all private and vendor workforces in an AWS Region. Note that you can only have one private workforce per AWS Region.</p>",
     "ListWorkteams": "<p>Gets a list of private work teams that you have defined in a region. The list may be empty if no work team satisfies the filter specified in the <code>NameContains</code> parameter.</p>",
-    "PutModelPackageGroupPolicy": "<p>Adds a resouce policy to control access to a model group. For information about resoure policies, see <a href=\"https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_identity-vs-resource.html\">Identity-based policies and resource-based policies</a> in the <i>AWS Identity and Access Management User Guide.</i>.</p>",
+    "PutModelPackageGroupPolicy": "<p>Adds a resource policy to control access to a model group. For information about resource policies, see <a href=\"https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_identity-vs-resource.html\">Identity-based policies and resource-based policies</a> in the <i>AWS Identity and Access Management User Guide.</i>.</p>",
     "RegisterDevices": "<p>Register devices.</p>",
     "RenderUiTemplate": "<p>Renders the UI template so that you can preview the worker's experience. </p>",
     "Search": "<p>Finds Amazon SageMaker resources that match a search query. Matching resources are returned as a list of <code>SearchRecord</code> objects in the response. You can sort the search results by any resource property in a ascending or descending order.</p> <p>You can query against the following value types: numeric, text, Boolean, and timestamp.</p>",
@@ -754,7 +754,7 @@
       }
     },
     "AutoMLCandidate": {
-      "base": "<p>An Autopilot job returns recommendations, or candidates. Each candidate has futher details about the steps involed, and the status.</p>",
+      "base": "<p>An Autopilot job returns recommendations, or candidates. Each candidate has further details about the steps involved, and the status.</p>",
       "refs": {
         "AutoMLCandidates$member": null,
         "DescribeAutoMLJobResponse$BestCandidate": "<p>Returns the job's BestCandidate.</p>"
@@ -4020,7 +4020,7 @@
       "base": null,
       "refs": {
         "CreateFlowDefinitionResponse$FlowDefinitionArn": "<p>The Amazon Resource Name (ARN) of the flow definition you create.</p>",
-        "DescribeFlowDefinitionResponse$FlowDefinitionArn": "<p>The Amazon Resource Name (ARN) of the flow defintion.</p>",
+        "DescribeFlowDefinitionResponse$FlowDefinitionArn": "<p>The Amazon Resource Name (ARN) of the flow definition.</p>",
         "FlowDefinitionSummary$FlowDefinitionArn": "<p>The Amazon Resource Name (ARN) of the flow definition.</p>"
       }
     },
@@ -4190,7 +4190,7 @@
     "Groups": {
       "base": null,
       "refs": {
-        "OidcMemberDefinition$Groups": "<p>A list of comma seperated strings that identifies user groups in your OIDC IdP. Each user group is made up of a group of private workers.</p>"
+        "OidcMemberDefinition$Groups": "<p>A list of comma separated strings that identifies user groups in your OIDC IdP. Each user group is made up of a group of private workers.</p>"
       }
     },
     "HookParameters": {
@@ -5948,7 +5948,7 @@
       }
     },
     "ModelArtifacts": {
-      "base": "<p>Provides information about the location that is configured for storing model artifacts. </p> <p>Model artifacts are the output that results from training a model, and typically consist of trained parameters, a model defintion that desribes how to compute inferences, and other metadata.</p>",
+      "base": "<p>Provides information about the location that is configured for storing model artifacts. </p> <p>Model artifacts are the output that results from training a model, and typically consist of trained parameters, a model definition that describes how to compute inferences, and other metadata.</p>",
       "refs": {
         "DescribeCompilationJobResponse$ModelArtifacts": "<p>Information about the location in Amazon S3 that has been configured for storing the model artifacts used in the compilation job.</p>",
         "DescribeTrainingJobResponse$ModelArtifacts": "<p>Information about the Amazon S3 location that is configured for storing model artifacts. </p>",
@@ -6223,7 +6223,7 @@
       }
     },
     "ModelQualityJobInput": {
-      "base": "<p>The input for the model quality monitoring job. Currently endponts are supported for input for model quality monitoring jobs.</p>",
+      "base": "<p>The input for the model quality monitoring job. Currently endpoints are supported for input for model quality monitoring jobs.</p>",
       "refs": {
         "CreateModelQualityJobDefinitionRequest$ModelQualityJobInput": "<p>A list of the inputs that are monitored. Currently endpoints are supported.</p>",
         "DescribeModelQualityJobDefinitionResponse$ModelQualityJobInput": "<p>Inputs for the model quality job.</p>"
@@ -6578,8 +6578,8 @@
     "MonitoringTimeOffsetString": {
       "base": null,
       "refs": {
-        "EndpointInput$StartTimeOffset": "<p>If specified, monitoring jobs substract this time from the start time. For information about using offsets for scheduling monitoring jobs, see <a href=\"https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-model-quality-schedule.html\">Schedule Model Quality Monitoring Jobs</a>.</p>",
-        "EndpointInput$EndTimeOffset": "<p>If specified, monitoring jobs substract this time from the end time. For information about using offsets for scheduling monitoring jobs, see <a href=\"https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-model-quality-schedule.html\">Schedule Model Quality Monitoring Jobs</a>.</p>"
+        "EndpointInput$StartTimeOffset": "<p>If specified, monitoring jobs subtract this time from the start time. For information about using offsets for scheduling monitoring jobs, see <a href=\"https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-model-quality-schedule.html\">Schedule Model Quality Monitoring Jobs</a>.</p>",
+        "EndpointInput$EndTimeOffset": "<p>If specified, monitoring jobs subtract this time from the end time. For information about using offsets for scheduling monitoring jobs, see <a href=\"https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-model-quality-schedule.html\">Schedule Model Quality Monitoring Jobs</a>.</p>"
       }
     },
     "MonitoringType": {
@@ -6722,7 +6722,7 @@
         "ListModelQualityJobDefinitionsRequest$NextToken": "<p>If the result of the previous <code>ListModelQualityJobDefinitions</code> request was truncated, the response includes a <code>NextToken</code>. To retrieve the next set of model quality monitoring job definitions, use the token in the next request.</p>",
         "ListModelQualityJobDefinitionsResponse$NextToken": "<p>If the response is truncated, Amazon SageMaker returns this token. To retrieve the next set of model quality monitoring job definitions, use it in the next request.</p>",
         "ListMonitoringExecutionsRequest$NextToken": "<p>The token returned if the response is truncated. To retrieve the next set of job executions, use it in the next request.</p>",
-        "ListMonitoringExecutionsResponse$NextToken": "<p>If the response is truncated, Amazon SageMaker returns this token. To retrieve the next set of jobs, use it in the subsequent reques</p>",
+        "ListMonitoringExecutionsResponse$NextToken": "<p>If the response is truncated, Amazon SageMaker returns this token. To retrieve the next set of jobs, use it in the subsequent request</p>",
         "ListMonitoringSchedulesRequest$NextToken": "<p>The token returned if the response is truncated. To retrieve the next set of job executions, use it in the next request.</p>",
         "ListMonitoringSchedulesResponse$NextToken": "<p>If the response is truncated, Amazon SageMaker returns this token. To retrieve the next set of jobs, use it in the subsequent request.</p>",
         "ListNotebookInstanceLifecycleConfigsInput$NextToken": "<p>If the result of a <code>ListNotebookInstanceLifecycleConfigs</code> request was truncated, the response includes a <code>NextToken</code>. To get the next set of lifecycle configurations, use the token in the next request.</p>",
@@ -7582,7 +7582,7 @@
     "ProcessingS3DataDistributionType": {
       "base": null,
       "refs": {
-        "EndpointInput$S3DataDistributionType": "<p>Whether input data distributed in Amazon S3 is fully replicated or sharded by an S3 key. Defauts to <code>FullyReplicated</code> </p>",
+        "EndpointInput$S3DataDistributionType": "<p>Whether input data distributed in Amazon S3 is fully replicated or sharded by an S3 key. Defaults to <code>FullyReplicated</code> </p>",
         "ProcessingS3Input$S3DataDistributionType": "<p>Whether to distribute the data from Amazon S3 to all processing instances with <code>FullyReplicated</code>, or whether the data from Amazon S3 is shared by Amazon S3 key, downloading one shard of data to each processing instance.</p>"
       }
     },
@@ -7601,7 +7601,7 @@
     "ProcessingS3InputMode": {
       "base": null,
       "refs": {
-        "EndpointInput$S3InputMode": "<p>Whether the <code>Pipe</code> or <code>File</code> is used as the input mode for transfering data for the monitoring job. <code>Pipe</code> mode is recommended for large datasets. <code>File</code> mode is useful for small files that fit in memory. Defaults to <code>File</code>.</p>",
+        "EndpointInput$S3InputMode": "<p>Whether the <code>Pipe</code> or <code>File</code> is used as the input mode for transferring data for the monitoring job. <code>Pipe</code> mode is recommended for large datasets. <code>File</code> mode is useful for small files that fit in memory. Defaults to <code>File</code>.</p>",
         "ProcessingS3Input$S3InputMode": "<p>Whether to use <code>File</code> or <code>Pipe</code> input mode. In File mode, Amazon SageMaker copies the data from the input source onto the local ML storage volume before starting your processing container. This is the most commonly used input mode. In <code>Pipe</code> mode, Amazon SageMaker streams input data from the source directly to your processing container into named pipes without using the ML storage volume.</p>"
       }
     },

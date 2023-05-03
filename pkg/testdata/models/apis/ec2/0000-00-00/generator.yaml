@@ -75,7 +75,7 @@ operations:
   CreateVpcEndpoint:
     output_wrapper_field_path: VpcEndpoint
   RunInstances:
-    #ouput shape: Reservation
+    #output shape: Reservation
     output_wrapper_field_path: Instances
     operation_type:
       - Create

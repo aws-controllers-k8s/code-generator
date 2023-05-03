@@ -250,7 +250,7 @@ func CompareResource(
 
 // compareNil outputs Go code that compares two field values for nullability
 // and, if there is a nil difference, adds the difference to a variable
-// represeting the `ackcompare.Delta`
+// representing the `ackcompare.Delta`
 //
 // Output code will look something like this:
 //

@@ -45,7 +45,7 @@
     "SkipWaitTimeForInstanceTermination": "<p>In a blue/green deployment, overrides any specified wait time and starts terminating instances immediately after the traffic routing is complete.</p>",
     "StopDeployment": "<p>Attempts to stop an ongoing deployment.</p>",
     "TagResource": "<p> Associates the list of tags in the input <code>Tags</code> parameter with the resource identified by the <code>ResourceArn</code> input parameter. </p>",
-    "UntagResource": "<p> Disassociates a resource from a list of tags. The resource is identified by the <code>ResourceArn</code> input parameter. The tags are identfied by the list of keys in the <code>TagKeys</code> input parameter. </p>",
+    "UntagResource": "<p> Disassociates a resource from a list of tags. The resource is identified by the <code>ResourceArn</code> input parameter. The tags are identified by the list of keys in the <code>TagKeys</code> input parameter. </p>",
     "UpdateApplication": "<p>Changes the name of an application.</p>",
     "UpdateDeploymentGroup": "<p>Changes information about a deployment group.</p>"
   },
@@ -185,7 +185,7 @@
       "refs": {
         "ListTagsForResourceInput$ResourceArn": "<p> The ARN of a CodeDeploy resource. <code>ListTagsForResource</code> returns all the tags associated with the resource that is identified by the <code>ResourceArn</code>. </p>",
         "TagResourceInput$ResourceArn": "<p> The ARN of a resource, such as a CodeDeploy application or deployment group. </p>",
-        "UntagResourceInput$ResourceArn": "<p> The ARN that specifies from which resource to disassociate the tags with the keys in the <code>TagKeys</code> input paramter. </p>"
+        "UntagResourceInput$ResourceArn": "<p> The ARN that specifies from which resource to disassociate the tags with the keys in the <code>TagKeys</code> input parameter. </p>"
       }
     },
     "ArnNotSupportedException": {
@@ -710,7 +710,7 @@
       "base": "<p> Information about the deployment target. </p>",
       "refs": {
         "DeploymentTargetList$member": null,
-        "GetDeploymentTargetOutput$deploymentTarget": "<p> A deployment target that contains information about a deployment such as its status, lifecyle events, and when it was last updated. It also contains metadata about the deployment target. The deployment target metadata depends on the deployment target's type (<code>instanceTarget</code>, <code>lambdaTarget</code>, or <code>ecsTarget</code>). </p>"
+        "GetDeploymentTargetOutput$deploymentTarget": "<p> A deployment target that contains information about a deployment such as its status, lifecycle events, and when it was last updated. It also contains metadata about the deployment target. The deployment target metadata depends on the deployment target's type (<code>instanceTarget</code>, <code>lambdaTarget</code>, or <code>ecsTarget</code>). </p>"
       }
     },
     "DeploymentTargetDoesNotExistException": {
@@ -889,7 +889,7 @@
     "ECSTaskSetIdentifier": {
       "base": null,
       "refs": {
-        "ECSTaskSet$identifer": "<p> A unique ID of an <code>ECSTaskSet</code>. </p>"
+        "ECSTaskSet$identifier": "<p> A unique ID of an <code>ECSTaskSet</code>. </p>"
       }
     },
     "ECSTaskSetList": {

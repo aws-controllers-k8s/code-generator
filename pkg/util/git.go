@@ -25,7 +25,7 @@ import (
 
 // LoadRepository loads a repository from the local file system.
 // TODO(a-hilaly): load repository into a memory filesystem (needs go1.16
-// migration or use somethign like https://github.com/spf13/afero
+// migration or use something like https://github.com/spf13/afero
 func LoadRepository(path string) (*git.Repository, error) {
 	return git.PlainOpen(path)
 }

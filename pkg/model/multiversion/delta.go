@@ -110,7 +110,7 @@ func ComputeFieldDeltas(
 ) ([]FieldDelta, error) {
 	deltas := []FieldDelta{}
 
-	// collect field names and sort them to ensure a determenistic output order.
+	// collect field names and sort them to ensure a deterministic output order.
 	srcNames := []string{}
 	for name := range srcFields {
 		srcNames = append(srcNames, name)
@@ -134,7 +134,7 @@ func ComputeFieldDeltas(
 		dstField, ok := dstFields[srcName]
 		// If a field is found in both arrays only three changes are possible:
 		// None, TypeChange and ChangeTypeShapeChangedToSecret.
-		// NOTE(a-hilaly): carefull about X -> Y then Z -> X renames. It should
+		// NOTE(a-hilaly): careful about X -> Y then Z -> X renames. It should
 		// not be allowed.
 		if ok {
 			// mark field as visited.
@@ -188,7 +188,7 @@ func ComputeFieldDeltas(
 			dstField, ok2 := dstFields[newName]
 			if !ok2 {
 				// if a field was renamed and we can't find it in dstNames, something
-				// very wrong happend during CRD loading.
+				// very wrong happened during CRD loading.
 				return nil, fmt.Errorf("cannot find renamed field %s " + newName)
 			}
 

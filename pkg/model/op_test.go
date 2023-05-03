@@ -121,8 +121,8 @@ func TestGetOpTypeAndResourceNameFromOpID(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		ot, resName := model.GetOpTypeAndResourceNameFromOpID(test.opID, g.GetConfig())
-		assert.Equal(test.expOpType, ot, test.opID)
+		opType, resName := model.GetOpTypeAndResourceNameFromOpID(test.opID, g.GetConfig())
+		assert.Equal(test.expOpType, opType, test.opID)
 		assert.Equal(test.expResName, resName, test.opID)
 	}
 }
@@ -154,8 +154,8 @@ func TestGetOpTypeAndResourceNameFromOpID_PluralSingular(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		ot, resName := model.GetOpTypeAndResourceNameFromOpID(test.opID, g.GetConfig())
-		assert.Equal(test.expOpType, ot, test.opID)
+		opType, resName := model.GetOpTypeAndResourceNameFromOpID(test.opID, g.GetConfig())
+		assert.Equal(test.expOpType, opType, test.opID)
 		assert.Equal(test.expResName, resName, test.opID)
 	}
 }

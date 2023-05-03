@@ -62,7 +62,7 @@ Environment variables:
   AWS_SDK_GO_VERSION:                   Overrides the version of github.com/aws/aws-sdk-go used
                                         by 'ack-generate' to fetch the service API Specifications.
                                         Default: Version of aws/aws-sdk-go in service go.mod
-  TEMPLATE_DIRS:                        Overrides the list of directories containg ack-generate
+  TEMPLATE_DIRS:                        Overrides the list of directories containing ack-generate
                                         templates.
                                         Default: $TEMPLATE_DIRS
   K8S_RBAC_ROLE_NAME:                   Name of the Kubernetes Role to use when generating

@@ -137,7 +137,7 @@ func Test_computeRenames(t *testing.T) {
 				return
 			}
 
-			// Since 1.12 formating functions prints maps in key-sorted order.
+			// Since 1.12 formatting functions prints maps in key-sorted order.
 			// See https://golang.org/doc/go1.12#fmt
 			if fmt.Sprintf("%v", got) != fmt.Sprintf("%v", tt.want) {
 				t.Errorf("computeRenamesDelta() = %v, want %v", got, tt.want)

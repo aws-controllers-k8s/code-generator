@@ -130,7 +130,7 @@ type SyncedConfig struct {
 	When []SyncedCondition `json:"when"`
 }
 
-// SyncedCondition represent one of the unique condition that should be fullfiled in
+// SyncedCondition represent one of the unique condition that should be fulfilled in
 // order to assert whether a resource is synced.
 type SyncedCondition struct {
 	// Path of the field. e.g Status.Processing
@@ -343,7 +343,7 @@ type AdditionalColumnConfig struct {
 }
 
 // PrintConfig informs instruct the code generator on how to sort kubebuilder
-// printcolumn marker coments.
+// printcolumn marker comments.
 type PrintConfig struct {
 	// AddAgeColumn a boolean informing the code generator whether to append a kubebuilder
 	// marker comment to show a resource Age (created since date) in `kubectl get` response.

@@ -19,7 +19,7 @@ resources:
             - 0
 operations:
   DescribeBackup:
-    # DescribeBackupOutput is an unsual shape because it contains information for
+    # DescribeBackupOutput is an unusual shape because it contains information for
     # the backup it self (BackupDetails), the table details when the backup was
     # created (SourceTableDetails) and the table features (SourceTableFeatureDetails).
     # If not specified the code generator will try to determine the wrapper field by

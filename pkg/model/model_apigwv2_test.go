@@ -75,7 +75,7 @@ func TestAPIGatewayV2_Api(t *testing.T) {
 	assert.NotNil(crd.SpecFields["Basepath"])
 	assert.NotNil(crd.SpecFields["FailOnWarnings"])
 
-	// The required property should get overriden for Name and ProtocolType fields.
+	// The required property should get overridden for Name and ProtocolType fields.
 	assert.False(crd.SpecFields["Name"].IsRequired())
 	assert.False(crd.SpecFields["ProtocolType"].IsRequired())
 

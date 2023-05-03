@@ -60,7 +60,7 @@ type GenerationMetadata struct {
 	LastModification lastModificationInfo `json:"last_modification"`
 	// AWS SDK Go version used generate the APIs
 	AWSSDKGoVersion string `json:"aws_sdk_go_version"`
-	// Informatiom about the ack-generate binary used to generate the APIs
+	// Information about the ack-generate binary used to generate the APIs
 	ACKGenerateInfo ackGenerateInfo `json:"ack_generate_info"`
 	// Information about the generator config file used to generate the APIs
 	GeneratorConfigInfo generatorConfigInfo `json:"generator_config_info"`
