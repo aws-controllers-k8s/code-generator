@@ -72,6 +72,10 @@ log:
 # cluster wide.
 installScope: cluster
 
+# Set the value of the "namespace" to be watched by the controller
+# This value is only used when the `installScope` is set to "namespace". If left empty, the default value is the release namespace for the chart.
+watchNamespace: ""
+
 resourceTags:
   # Configures the ACK service controller to always set key/value pairs tags on
   # resources that it manages.
