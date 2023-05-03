@@ -59,13 +59,15 @@ func BundleAssets(
 		return nil, err
 	}
 
-	olmVersion := strings.TrimLeft(releaseVersion, "v")
+	// Remove any `v` index that may have been included
+	strippedVersion := strings.TrimPrefix(releaseVersion, "v")
+
 	olmVars := templateOLMVars{
 		ackgenerate.ImageReleaseVars{
-			ReleaseVersion:  releaseVersion,
+			ReleaseVersion:  strippedVersion,
 			ImageRepository: imageRepository,
 		},
-		olmVersion,
+		strippedVersion,
 		time.Now().Format("2006-01-02 15:04:05"),
 		m.MetaVars(),
 		commonMeta,

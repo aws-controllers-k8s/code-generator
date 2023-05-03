@@ -77,7 +77,7 @@ func Release(
 	releaseVars := &templateReleaseVars{
 		metaVars,
 		ImageReleaseVars{
-			ReleaseVersion:  releaseVersion,
+			ReleaseVersion:  strings.TrimPrefix(releaseVersion, "v"),
 			ImageRepository: imageRepository,
 		},
 		metadata,
