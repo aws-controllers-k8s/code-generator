@@ -31,7 +31,7 @@ deployment:
 
 # If "installScope: cluster" then these labels will be applied to ClusterRole
 role:
- labels: {}
+  labels: {}
   
 metrics:
   service:
