@@ -27,7 +27,7 @@ import (
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
 )
 
-// SetResource returns the Go code that sets a CRD's field value to the value
+// SetResource returns the Go code that sets a CRD's field value from the value
 // of an output shape's member fields.  Status fields are always updated.
 //
 // Assume a CRD called Repository that looks like this pseudo-schema:

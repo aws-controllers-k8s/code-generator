@@ -2164,3 +2164,27 @@ func Test_SetSDK_ECR_Repository_newListRequestPayload(t *testing.T) {
 		code.SetSDK(crd.Config(), crd, model.OpTypeList, "r.ko", "res", 1),
 	)
 }
+
+func TestSetSDK_IAM_User_NewPath(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "iam", &testutil.TestingModelOptions{
+		GeneratorConfigFile: "generator-user-newpath.yaml",
+	})
+
+	crd := testutil.GetCRDByName(t, g, "User")
+	require.NotNil(crd)
+	expected := `
+	if r.ko.Spec.Path != nil {
+		res.SetNewPath(*r.ko.Spec.Path)
+	}
+	if r.ko.Spec.UserName != nil {
+		res.SetUserName(*r.ko.Spec.UserName)
+	}
+`
+	assert.Equal(
+		expected,
+		code.SetSDK(crd.Config(), crd, model.OpTypeUpdate, "r.ko", "res", 1),
+	)
+}

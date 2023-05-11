@@ -1,0 +1,23 @@
+ignore:
+  resource_names:
+   - AccessKey
+   - AccountAlias
+   - Group
+   - InstanceProfile
+   - LoginProfile
+   - OpenIDConnectProvider
+   - Policy
+   - PolicyVersion
+   - Role
+   - SAMLProvider
+   - ServiceLinkedRole
+   - ServiceSpecificCredential
+   # User
+   - VirtualMFADevice
+resources:
+  User:
+    fields:
+      Path:
+        set:
+        - method: Update
+          to: NewPath
