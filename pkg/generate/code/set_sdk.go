@@ -137,7 +137,9 @@ func SetSDK(
 		// attrMap["DisplayName"} = r.ko.Spec.DisplayName
 		// attrMap["KmsMasterKeyId"] = r.ko.Spec.KMSMasterKeyID
 		// attrMap["Policy"] = r.ko.Spec.Policy
-		// res.SetAttributes(attrMap)
+		// if len(attrMap) > 0 {
+		//     res.SetAttributes(attrMap)
+		// }
 		fieldConfigs := cfg.GetFieldConfigs(r.Names.Original)
 		out += fmt.Sprintf("%sattrMap := map[string]*string{}\n", indent)
 		sortedAttrFieldNames := []string{}
@@ -165,7 +167,13 @@ func SetSDK(
 				)
 			}
 		}
-		out += fmt.Sprintf("%s%s.SetAttributes(attrMap)\n", indent, targetVarName)
+		out += fmt.Sprintf(
+			"%sif len(attrMap) > 0 {\n", indent,
+		)
+		out += fmt.Sprintf("\t%s%s.SetAttributes(attrMap)\n", indent, targetVarName)
+		out += fmt.Sprintf(
+			"%s}\n", indent,
+		)
 	}
 
 	opConfig, override := cfg.GetOverrideValues(op.ExportedName)
