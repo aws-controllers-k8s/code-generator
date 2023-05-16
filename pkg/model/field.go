@@ -213,7 +213,7 @@ func (f *Field) GetFieldDocsConfig() *ackgenconfig.FieldDocsConfig {
 		return nil
 	}
 
-	return resourceConfig.Fields[f.Names.Camel]
+	return resourceConfig.Fields[f.Path]
 }
 
 // HasReference returns true if the supplied field *path* refers to a Field

@@ -1,0 +1,14 @@
+resources:
+  Cluster:
+    fields:
+      RoleARN:
+        append: |
+          !!! Hello earthlings! I have come to assume your permissions.
+      ResourcesVPCConfig.SecurityGroupIDs:
+        prepend: |
+          !!! Let's take it from the top
+      Identity.OIDC.Issuer:
+        override: |
+          !!! All your docs has become mine
+          
+          That whitespace is entirely on purpose
