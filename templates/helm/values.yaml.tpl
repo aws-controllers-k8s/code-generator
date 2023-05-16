@@ -28,6 +28,26 @@ deployment:
   # Which priorityClassName to set?
   # See: https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/#pod-priority
   priorityClassName: ""
+  extraVolumes: []
+  extraVolumeMounts: []
+
+  # Additional server container environment variables
+  #
+  # You specify this manually like you would a raw deployment manifest.
+  # This means you can bind in environment variables from secrets.
+  #
+  # e.g. static environment variable:
+  #  - name: DEMO_GREETING
+  #    value: "Hello from the environment"
+  #
+  # e.g. secret environment variable:
+  # - name: USERNAME
+  #   valueFrom:
+  #     secretKeyRef:
+  #       name: mysecret
+  #       key: username
+  extraEnvVars: []
+
 
 # If "installScope: cluster" then these labels will be applied to ClusterRole
 role:
