@@ -45,7 +45,8 @@ type Model struct {
 	typeRenames        map[string]string
 	// Instructions to the code generator how to handle the API and its
 	// resources
-	cfg *ackgenconfig.Config
+	cfg    *ackgenconfig.Config
+	docCfg *ackgenconfig.DocumentationConfig
 }
 
 // MetaVars returns a MetaVars struct populated with metadata about the AWS
@@ -108,7 +109,7 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 			SetAttributes: setAttributesOps[crdName],
 		}
 		m.RemoveIgnoredOperations(&ops)
-		crd := NewCRD(m.SDKAPI, m.cfg, crdNames, ops)
+		crd := NewCRD(m.SDKAPI, m.cfg, m.docCfg, crdNames, ops)
 
 		// OK, begin to gather the CRDFields that will go into the Spec struct.
 		// These fields are those members of the Create operation's Input
@@ -893,12 +894,14 @@ func New(
 	servicePackageName string,
 	apiVersion string,
 	cfg ackgenconfig.Config,
+	docCfg ackgenconfig.DocumentationConfig,
 ) (*Model, error) {
 	m := &Model{
 		SDKAPI:             SDKAPI,
 		servicePackageName: servicePackageName,
 		apiVersion:         apiVersion,
 		cfg:                &cfg,
+		docCfg:             &docCfg,
 	}
 	m.ApplyShapeIgnoreRules()
 	return m, nil

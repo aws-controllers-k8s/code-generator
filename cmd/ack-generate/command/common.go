@@ -68,8 +68,13 @@ func loadModel(svcAlias string, apiVersion string, apiGroup string, defaultCfg a
 		sdkAPI.APIGroupSuffix = apiGroup
 	}
 
+	docCfg, err := ackgenconfig.NewDocumentationConfig(optDocumentationConfigPath)
+	if err != nil {
+		return nil, err
+	}
+
 	m, err := ackmodel.New(
-		sdkAPI, svcAlias, apiVersion, cfg,
+		sdkAPI, svcAlias, apiVersion, cfg, docCfg,
 	)
 	if err != nil {
 		return nil, err

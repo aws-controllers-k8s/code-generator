@@ -65,19 +65,20 @@ type Field struct {
 }
 
 // GetDocumentation returns a string containing the field's
-// description/docstring. If the field has a ShapeRef that has non-empty
-// Documentation AND the field has a Documentation configuration option, then
-// the docstring contained in the Documentation configuration option will be
-// appended to ShapeRef's docstring following 2 line breaks with Go comment
-// line beginnings.
+// description/docstring. The ShapeRef from the AWS SDK is used as the default
+// value for the documentation of the field. If a documentation override has
+// been provided (in the `documentation.yaml`) file, then it will either be
+// prependend or appended, or entirely overridden.
 //
-// In other words, if there is a field with a ShapeRef that has a Documentation string containing:
+// For example, if there is a field with a ShapeRef that has a Documentation
+// string containing:
 //
 // "// This field contains the identifier for the cluster
 //
-//	// running the cache services"
+//	running the cache services"
 //
-// and the field has a FieldConfig.Documentation string containing:
+// and the field has a documentation config specifies the following should be
+// appended:
 //
 // "please note that this field is updated on the service
 //
@@ -88,36 +89,76 @@ type Field struct {
 // "// This field contains the identifier for the cluster
 //
 //	// running the cache services
-//	//
 //	// please note that this field is updated on the service
 //	// side"
 func (f *Field) GetDocumentation() string {
+	cfg := f.GetFieldDocsConfig()
+
 	hasShapeDoc := false
-	var sb strings.Builder
+	var prepend strings.Builder
+	var out strings.Builder
+
 	if f.ShapeRef != nil {
 		if f.ShapeRef.Documentation != "" {
 			hasShapeDoc = true
-			sb.WriteString(f.ShapeRef.Documentation)
+			out.WriteString(f.ShapeRef.Documentation)
 		}
 	}
-	if f.FieldConfig != nil {
-		if f.FieldConfig.Documentation != nil {
-			if hasShapeDoc {
-				sb.WriteString("\n//\n")
-			}
-			// Strip any leading comment slashes from the config option
-			// docstring since we'll be automatically adding the Go comment
-			// slashes to the beginning of each new line
-			cfgDoc := *f.FieldConfig.Documentation
-			lines := strings.Split(cfgDoc, "\n")
-			numLines := len(lines)
-			for x, line := range lines {
-				sb.WriteString("// ")
-				sb.WriteString(strings.TrimLeft(line, "/ "))
-				if x < (numLines - 1) {
-					sb.WriteString("\n")
-				}
-			}
+	if cfg == nil {
+		return out.String()
+	}
+
+	// Ensure configuration has exclusive options
+	if cfg.Override != nil && (cfg.Append != nil || cfg.Prepend != nil) {
+		panic("Documentation cannot contain override and prepend/append. Field: " + f.CRD.Kind)
+	}
+
+	if cfg.Override != nil {
+		return f.formatUserProvidedDocstring(*cfg.Override)
+	}
+
+	if cfg.Append != nil {
+		if hasShapeDoc {
+			out.WriteString("\n//\n")
+		}
+		out.WriteString(f.formatUserProvidedDocstring(*cfg.Append))
+	}
+
+	if cfg.Prepend != nil {
+		prepend.WriteString(f.formatUserProvidedDocstring(*cfg.Prepend))
+		if hasShapeDoc {
+			prepend.WriteString("\n//\n")
+		}
+	}
+
+	return prepend.String() + out.String()
+}
+
+// formatUserProvidedDocstring sanitises a doc string provided by the user so
+// that it fits the format of the existing AWS SDK GoDocs. This method will
+// split it by lines, strip it of leading whitespace and slashes and prepend
+// `//` to each line.
+func (f *Field) formatUserProvidedDocstring(in string) string {
+	var sb strings.Builder
+	// Strip any leading comment slashes from the config option
+	// docstring since we'll be automatically adding the Go comment
+	// slashes to the beginning of each new line
+	lines := strings.Split(in, "\n")
+
+	// Traverse in reverse order until, deleting empty lines
+	for i := len(lines) - 1; i >= 0; i-- {
+		if strings.TrimSpace(lines[i]) != "" {
+			break
+		}
+		lines = lines[:i]
+	}
+
+	numLines := len(lines)
+	for idx, line := range lines {
+		sb.WriteString("// ")
+		sb.WriteString(strings.TrimLeft(line, " \\\t/"))
+		if idx < (numLines - 1) {
+			sb.WriteString("\n")
 		}
 	}
 	return sb.String()
@@ -162,6 +203,17 @@ func (f *Field) GetSetterConfig(opType OpType) *ackgenconfig.SetFieldConfig {
 		}
 	}
 	return nil
+}
+
+// GetFieldDocsConfig returns the field documentation configuration for the
+// current field if it exists, otherwise it returns nil.
+func (f *Field) GetFieldDocsConfig() *ackgenconfig.FieldDocsConfig {
+	resourceConfig, exists := f.CRD.docCfg.Resources[f.CRD.Names.Camel]
+	if !exists {
+		return nil
+	}
+
+	return resourceConfig.Fields[f.Names.Camel]
 }
 
 // HasReference returns true if the supplied field *path* refers to a Field

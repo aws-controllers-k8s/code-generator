@@ -25,6 +25,7 @@ ACK_GENERATE_BIN_PATH=${ACK_GENERATE_BIN_PATH:-$DEFAULT_ACK_GENERATE_BIN_PATH}
 ACK_GENERATE_API_VERSION=${ACK_GENERATE_API_VERSION:-"v1alpha1"}
 ACK_GENERATE_CONFIG_PATH=${ACK_GENERATE_CONFIG_PATH:-""}
 ACK_METADATA_CONFIG_PATH=${ACK_METADATA_CONFIG_PATH:-""}
+ACK_DOCUMENTATION_CONFIG_PATH=${ACK_DOCUMENTATION_CONFIG_PATH:-""}
 ACK_GENERATE_SERVICE_ACCOUNT_NAME=${ACK_GENERATE_SERVICE_ACCOUNT_NAME:-"ack-$SERVICE-controller"}
 AWS_SDK_GO_VERSION=${AWS_SDK_GO_VERSION:-""}
 DEFAULT_RUNTIME_CRD_DIR="$ROOT_DIR/../../aws-controllers-k8s/runtime/config"
@@ -56,6 +57,9 @@ Environment variables:
   ACK_METADATA_CONFIG_PATH:             Specify a path to the metadata config YAML file to
                                         instruct the code generator for the service.
                                         Default: metadata.yaml
+  ACK_DOCUMENTATION_CONFIG_PATH:        Specify a path to the documentation config YAML file to
+                                        instruct the code generator for the service.
+                                        Default: documentation.yaml
   ACK_GENERATE_SERVICE_ACCOUNT_NAME:    Name of the Kubernetes Service Account and
                                         Cluster Role to use in Helm chart.
                                         Default: $ACK_GENERATE_SERVICE_ACCOUNT_NAME
@@ -153,6 +157,14 @@ if [ -z "$ACK_METADATA_CONFIG_PATH" ]; then
     fi
 fi
 
+# If there's a documentation.yaml in the service's directory and the caller hasn't
+# specified an override, use that.
+if [ -z "$ACK_DOCUMENTATION_CONFIG_PATH" ]; then
+    if [ -f "$SERVICE_CONTROLLER_SOURCE_PATH/documentation.yaml" ]; then
+        ACK_DOCUMENTATION_CONFIG_PATH="$SERVICE_CONTROLLER_SOURCE_PATH/documentation.yaml"
+    fi
+fi
+
 ag_args=("$SERVICE" -o "$SERVICE_CONTROLLER_SOURCE_PATH" --template-dirs "$TEMPLATE_DIRS")
 if [ -n "$ACK_GENERATE_CACHE_DIR" ]; then
     ag_args=("${ag_args[@]}" --cache-dir "$ACK_GENERATE_CACHE_DIR")
@@ -171,6 +183,11 @@ fi
 if [ -n "$ACK_METADATA_CONFIG_PATH" ]; then
     ag_args=("${ag_args[@]}" --metadata-config-path "$ACK_METADATA_CONFIG_PATH")
     apis_args=("${apis_args[@]}" --metadata-config-path "$ACK_METADATA_CONFIG_PATH")
+fi
+
+if [ -n "$ACK_DOCUMENTATION_CONFIG_PATH" ]; then
+    ag_args=("${ag_args[@]}" --documentation-config-path "$ACK_DOCUMENTATION_CONFIG_PATH")
+    apis_args=("${apis_args[@]}" --documentation-config-path "$ACK_DOCUMENTATION_CONFIG_PATH")
 fi
 
 if [ -n "$AWS_SDK_GO_VERSION" ]; then
