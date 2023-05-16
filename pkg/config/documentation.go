@@ -21,8 +21,13 @@ type ResourceDocsConfig struct {
 // FieldDocsConfig represents the configuration for the documentation overrides
 // of a single field
 type FieldDocsConfig struct {
-	Append   *string `json:"append,omitempty"`
-	Prepend  *string `json:"prepend,omitempty"`
+	// Append specifies a string that will be added to the end of the existing
+	// GoDoc comment for the field
+	Append *string `json:"append,omitempty"`
+	// Prepend specifies a string that will be added before the existing
+	// GoDoc comment for the field
+	Prepend *string `json:"prepend,omitempty"`
+	// Override will entirely replace the GoDoc comment for the field
 	Override *string `json:"override,omitempty"`
 }
 
