@@ -58,6 +58,15 @@
         },
         "priorityClassName": {
           "type": "string"
+        },
+        "extraVolumeMounts": {
+          "type": "array"
+        },
+        "extraVolumes": {
+          "type": "array"
+        },
+        "extraEnvVars": {
+          "type": "array"
         }
       },
       "required": [
