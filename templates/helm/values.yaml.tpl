@@ -110,7 +110,7 @@ deletionPolicy: delete
 # controller reconciliation configurations
 reconcile:
   # The default duration, in seconds, to wait before resyncing desired state of custom resources.
-  defaultResyncPeriod: 0
+  defaultResyncPeriod: 36000 # 10 Hours
   # An object representing the reconcile resync configuration for each specific resource.
   resourceResyncPeriods: {}
 
