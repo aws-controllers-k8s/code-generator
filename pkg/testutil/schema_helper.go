@@ -32,6 +32,8 @@ type TestingModelOptions struct {
 	APIVersion string
 	// The generator config file. Defaults to generator.yaml
 	GeneratorConfigFile string
+	// The documentation config file. No default value
+	DocumentationConfigFile string
 	// The AWS Service's API version. Defaults to 00-00-0000
 	ServiceAPIVersion string
 }
@@ -88,7 +90,17 @@ func NewModelForServiceWithOptions(t *testing.T, servicePackageName string, opti
 	if err != nil {
 		t.Fatal(err)
 	}
-	m, err := ackmodel.New(sdkAPI, servicePackageName, options.APIVersion, cfg)
+
+	docConfigPath := ""
+	if options.DocumentationConfigFile != "" {
+		docConfigPath = filepath.Join(path, "models", "apis", servicePackageName, options.ServiceAPIVersion, options.DocumentationConfigFile)
+	}
+	docCfg, err := ackgenconfig.NewDocumentationConfig(docConfigPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	m, err := ackmodel.New(sdkAPI, servicePackageName, options.APIVersion, cfg, docCfg)
 	if err != nil {
 		t.Fatal(err)
 	}

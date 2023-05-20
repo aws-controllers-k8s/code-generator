@@ -29,6 +29,8 @@ type APIInfo struct {
 	AWSSDKVersion string
 	// Full path of the generator config file.
 	GeneratorConfigPath string
+	// Full path of the documentation config file.
+	DocumentationConfigPath string
 	// The API version.
 	APIVersion string
 }

@@ -104,11 +104,17 @@ func NewAPIVersionManager(
 			return nil, err
 		}
 
+		docCfg, err := ackgenconfig.NewDocumentationConfig(apiInfo.DocumentationConfigPath)
+		if err != nil {
+			return nil, err
+		}
+
 		i, err := ackmodel.New(
 			sdkAPI,
 			servicePackageName,
 			version.APIVersion,
 			cfg,
+			docCfg,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("cannot create model for API version %s: %v", version.APIVersion, err)

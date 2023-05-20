@@ -30,21 +30,22 @@ A tool to generate AWS service controller code`
 )
 
 var (
-	defaultCacheDir        string
-	optCacheDir            string
-	optRefreshCache        bool
-	optAWSSDKGoVersion     string
-	defaultTemplateDirs    []string
-	optTemplateDirs        []string
-	defaultServicesDir     string
-	optServicesDir         string
-	optDryRun              bool
-	sdkDir                 string
-	optGeneratorConfigPath string
-	optMetadataConfigPath  string
-	optOutputPath          string
-	optServiceAccountName  string
-	optImageRepository     string
+	defaultCacheDir            string
+	optCacheDir                string
+	optRefreshCache            bool
+	optAWSSDKGoVersion         string
+	defaultTemplateDirs        []string
+	optTemplateDirs            []string
+	defaultServicesDir         string
+	optServicesDir             string
+	optDryRun                  bool
+	sdkDir                     string
+	optGeneratorConfigPath     string
+	optMetadataConfigPath      string
+	optDocumentationConfigPath string
+	optOutputPath              string
+	optServiceAccountName      string
+	optImageRepository         string
 )
 
 var rootCmd = &cobra.Command{
@@ -116,6 +117,9 @@ func init() {
 	)
 	rootCmd.PersistentFlags().StringVar(
 		&optMetadataConfigPath, "metadata-config-path", "", "Path to file containing service metadata to use",
+	)
+	rootCmd.PersistentFlags().StringVar(
+		&optDocumentationConfigPath, "documentation-config-path", "", "Path to file containing additions for the API documentation fields",
 	)
 	rootCmd.PersistentFlags().StringVarP(
 		&optOutputPath, "output", "o", "", "Path to directory to output generated files (if generating crossplane providers, this should be the root of the aws-crossplane directory)",

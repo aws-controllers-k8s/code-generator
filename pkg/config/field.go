@@ -405,11 +405,6 @@ type FieldConfig struct {
 	// TODO(jaypipes,crtbry): Figure out if we can roll the CustomShape stuff
 	// into this type override...
 	Type *string `json:"type,omitempty"`
-	// Documentation is a string that is added *in addition to* any existing
-	// field documentation derived from the field's doc-2.json contents. For
-	// custom fields, this allows you to add custom documentation for the
-	// field.
-	Documentation *string `json:"documentation,omitempty"`
 }
 
 // GetFieldConfigs returns all FieldConfigs for a given resource as a map.

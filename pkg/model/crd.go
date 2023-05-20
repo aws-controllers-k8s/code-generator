@@ -64,6 +64,7 @@ func (ops Ops) IterOps() []*awssdkmodel.Operation {
 type CRD struct {
 	sdkAPI *SDKAPI
 	cfg    *ackgenconfig.Config
+	docCfg *ackgenconfig.DocumentationConfig
 	Names  names.Names
 	Kind   string
 	Plural string
@@ -785,6 +786,7 @@ func (r *CRD) SortedFieldNames() []string {
 func NewCRD(
 	sdkAPI *SDKAPI,
 	cfg *ackgenconfig.Config,
+	docCfg *ackgenconfig.DocumentationConfig,
 	crdNames names.Names,
 	ops Ops,
 ) *CRD {
@@ -794,6 +796,7 @@ func NewCRD(
 	return &CRD{
 		sdkAPI:                   sdkAPI,
 		cfg:                      cfg,
+		docCfg:                   docCfg,
 		Names:                    crdNames,
 		Kind:                     kind,
 		Plural:                   plural,

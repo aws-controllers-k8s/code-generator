@@ -2,6 +2,7 @@ package model_test
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/aws-controllers-k8s/pkg/names"
@@ -17,44 +18,57 @@ import (
 func TestFieldDocumentation(t *testing.T) {
 	require := require.New(t)
 
-	g := testutil.NewModelForServiceWithOptions(t, "ec2",
+	g := testutil.NewModelForServiceWithOptions(t, "eks",
 		&testutil.TestingModelOptions{
-			GeneratorConfigFile: "generator-with-doc-overrides.yaml",
+			GeneratorConfigFile:     "generator.yaml",
+			DocumentationConfigFile: "documentation.yaml",
 		},
 	)
 
 	crds, err := g.GetCRDs()
 	require.Nil(err)
 
-	crd := getCRDByName("LaunchTemplate", crds)
+	crd := getCRDByName("Cluster", crds)
 	require.NotNil(crd)
 
 	specFields := crd.SpecFields
 
-	// We have not altered the docstring for LaunchTemplateData from the
+	// We have not altered the docstring for Version from the
 	// docstring that comes in the doc-2.json file...
-	ltdField := specFields["LaunchTemplateData"]
+	ltdField := specFields["Version"]
 	require.NotNil(ltdField)
 	require.NotNil(ltdField.ShapeRef)
 
 	require.Equal(
-		"// The information for the launch template.",
+		"// The desired Kubernetes version for your cluster. If you don't specify a value\n// here, the latest version available in Amazon EKS is used.",
 		ltdField.GetDocumentation(),
 	)
 
-	// We have added an additional docstring for
-	// LaunchTemplateData.HibernationOptions.Configured to the docstring that
-	// comes in the doc-2.json file...
-	hoField := ltdField.MemberFields["HibernationOptions"]
-	require.NotNil(hoField)
-	require.NotNil(hoField.ShapeRef)
-	hocField := hoField.MemberFields["Configured"]
-	require.NotNil(hocField)
-	require.NotNil(hocField.ShapeRef)
+	prependField := crd.Fields["ResourcesVPCConfig.SecurityGroupIDs"]
+	require.NotNil(prependField)
+	require.NotNil(prependField.ShapeRef)
+
+	require.True(
+		strings.HasPrefix(prependField.GetDocumentation(), "// !!! Let's take it from the top"),
+	)
+
+	appendField := crd.Fields["RoleARN"]
+	require.NotNil(appendField)
+	require.NotNil(appendField.ShapeRef)
+
+	require.True(
+		strings.HasSuffix(appendField.GetDocumentation(), "// !!! Hello earthlings! I have come to assume your permissions."),
+	)
+
+	overrideField := crd.Fields["Identity.OIDC.Issuer"]
+	require.NotNil(overrideField)
+	require.NotNil(overrideField.ShapeRef)
 
 	require.Equal(
-		"// If you set this parameter to true, the instance is enabled for hibernation.\n// \n// Default: false\n//\n// XXX extended docs XXX",
-		hocField.GetDocumentation(),
+		"// !!! All your docs has become mine\n"+
+			"// \n"+
+			"// That whitespace is entirely on purpose",
+		overrideField.GetDocumentation(),
 	)
 
 }
