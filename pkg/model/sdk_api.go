@@ -220,6 +220,9 @@ func (a *SDKAPI) GetInputShapeRef(
 	if !ok {
 		return nil, false
 	}
+	if path == "." {
+		return &op.InputRef, true
+	}
 	return getMemberByPath(op.InputRef.Shape, path)
 }
 
