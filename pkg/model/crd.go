@@ -686,6 +686,28 @@ func (r *CRD) GetIdentifiers() []string {
 	return identifiers
 }
 
+func (r *CRD) IsMemberAList(
+	memberName string,
+	op *awssdkmodel.Operation) bool {
+	cfg := r.Config()
+
+	// Handles field renames, if applicable
+	fieldName := cfg.GetResourceFieldName(
+		r.Names.Original,
+		op.ExportedName,
+		memberName,
+	)
+	cleanFieldNames := names.New(fieldName)
+	pathFieldName := cleanFieldNames.Camel
+
+	if _, ok := r.Fields[pathFieldName]; ok {
+		if strings.Contains(r.Fields[pathFieldName].GoType, "[]") {
+			return true
+		}
+	}
+	return false
+}
+
 // GetSanitizedMemberPath takes a shape member field, checks for renames, checks
 // for existence in Spec and Status, then constructs and returns the var path.
 // Returns error if memberName is not present in either Spec or Status.

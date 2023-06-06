@@ -874,9 +874,15 @@ func setSDKReadMany(
 				indentLevel+1,
 			)
 
-			//  f0 = append(f0, sourceVarName)
-			out += fmt.Sprintf("%s\t%s = append(%s, %s)\n", indent,
-				memberVarName, memberVarName, resVarPath)
+			if r.IsMemberAList(memberName, op) {
+				//  f0 = append(f0, sourceVarName...)
+				out += fmt.Sprintf("%s\t%s = append(%s, %s...)\n", indent,
+					memberVarName, memberVarName, resVarPath)
+			} else {
+				//  f0 = append(f0, sourceVarName)
+				out += fmt.Sprintf("%s\t%s = append(%s, %s)\n", indent,
+					memberVarName, memberVarName, resVarPath)
+			}
 
 			// res.SetIds(f0)
 			out += setSDKForScalar(
