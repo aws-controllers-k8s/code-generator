@@ -277,6 +277,13 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 					)
 					panic(msg)
 				}
+			} else if fieldConfig.Type != nil {
+				// We have a custom field that has a type override and has not
+				// been inferred via the normal Create Input shape or via the
+				// SourceFieldConfig. Manually construct the field and its
+				// shape reference here.
+				typeOverride := *fieldConfig.Type
+				memberShapeRef = m.SDKAPI.GetShapeRefFromType(typeOverride)
 			} else {
 				// Status field is not well defined
 				continue
