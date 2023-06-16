@@ -44,6 +44,7 @@ var (
 	controllerIncludePaths = []string{
 		"boilerplate.go.tpl",
 		"pkg/resource/references_read_referenced_resource.go.tpl",
+		"pkg/resource/sdk_find_custom.go.tpl",
 		"pkg/resource/sdk_find_read_one.go.tpl",
 		"pkg/resource/sdk_find_get_attributes.go.tpl",
 		"pkg/resource/sdk_find_read_many.go.tpl",

@@ -39,7 +39,9 @@ var (
 )
 
 // sdkFind returns SDK-specific information about a supplied resource
-{{ if .CRD.Ops.ReadOne }}
+{{ if .CRD.CustomFindMethodName }}
+	{{- template "sdk_find_custom" . }}
+{{- else if .CRD.Ops.ReadOne }}
 	{{- template "sdk_find_read_one" . }}
 {{- else if .CRD.Ops.GetAttributes }}
 	{{- template "sdk_find_get_attributes" . }}

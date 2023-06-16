@@ -63,6 +63,18 @@ type ResourceConfig struct {
 	// very little consistency to the APIs that we can use to instruct the code
 	// generator :(
 	UpdateOperation *UpdateOperationConfig `json:"update_operation,omitempty"`
+	// ReadOperation contains instructions for the code generator to generate
+	// Go code for the read operation for the resource. For some resources,
+	// there is no describe/find/list apis. However, it is possible to write
+	// `read` function for such resources using another resource's (say,
+	// resource B) `read` function. Then, one could write custom code to find
+	// the relevant resource from the response of resource B's read function.
+	//
+	// Additionally, if the `read` function for a resource is not available
+	// then reconciler's progression is stalled with the error `read`
+	// operation `notImplemented`. Custom read function allows the
+	// reconciler's progression.
+	ReadOperation *ReadOperationsConfig `json:"find_operation,omitempty"`
 	// Reconcile describes options for controlling the reconciliation
 	// logic for a particular resource.
 	Reconcile *ReconcileConfig `json:"reconcile,omitempty"`
@@ -324,6 +336,15 @@ type UpdateOperationConfig struct {
 	// will leverage `delta.DifferentAt` to check whether a field have changed or not
 	// before including it in the update request.
 	OmitUnchangedFields bool `json:"omit_unchanged_fields"`
+}
+
+// ReadOperationsConfig contains instructions for the code generator to handle
+// custom read operations for service APIs that have resources that have
+// difficult-to-standardize read operations.
+type ReadOperationsConfig struct {
+	// CustomMethodName is a string for the method name to replace the
+	// sdkFind() method implementation for this resource
+	CustomMethodName string `json:"custom_method_name"`
 }
 
 // AdditionalColumnConfig can be used to specify additional printer columns to be included
@@ -646,6 +667,19 @@ func (c *Config) GetCustomUpdateMethodName(resourceName string) string {
 	if found {
 		if rConfig.UpdateOperation != nil {
 			return rConfig.UpdateOperation.CustomMethodName
+		}
+	}
+	return ""
+}
+
+func (c *Config) GetCustomFindMethodName(resourceName string) string {
+	if c == nil {
+		return ""
+	}
+	rConfig, found := c.Resources[resourceName]
+	if found {
+		if rConfig.ReadOperation != nil {
+			return rConfig.ReadOperation.CustomMethodName
 		}
 	}
 	return ""
