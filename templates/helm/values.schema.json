@@ -231,6 +231,18 @@
       },
       "type": "object"
     },
+    "leaderElection": {
+      "description": "Parameter to configure the controller's leader election system.",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "namespace": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "serviceAccount": {
       "description": "ServiceAccount settings",
       "properties": {

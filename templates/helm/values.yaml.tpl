@@ -121,3 +121,11 @@ serviceAccount:
   name: {{ .ServiceAccountName }}
   annotations: {}
     # eks.amazonaws.com/role-arn: arn:aws:iam::AWS_ACCOUNT_ID:role/IAM_ROLE_NAME
+
+# leader election configurations
+leaderElection:
+  # Enables controller leader election
+  enabled: false
+  # Sets the leader election namespace. By default it will try to use the namespace of
+  # the service account mounted to the controller pod.
+  namespace: ""
