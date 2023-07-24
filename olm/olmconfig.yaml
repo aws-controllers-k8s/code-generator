@@ -1,0 +1,40 @@
+# This configuration is a placeholder. Replace any values with relevant values for your
+# service controller project.
+---
+annotations:
+  capabilityLevel: Basic Install
+  shortDescription: AWS CloudWatch controller is a service controller for managing CloudWatch resources
+    in Kubernetes
+displayName: AWS Controllers for Kubernetes - Amazon CloudWatch
+description: |-
+  Manage Amazon CloudWatch resources in AWS from within your Kubernetes cluster.
+
+
+  **About Amazon CloudWatch**
+
+
+  {ADD YOUR DESCRIPTION HERE}
+
+
+  **About the AWS Controllers for Kubernetes**
+
+
+  This controller is a component of the [AWS Controller for Kubernetes](https://github.com/aws/aws-controllers-k8s)
+  project. This project is currently in **developer preview**.
+
+
+  **Pre-Installation Steps**
+
+
+  Please follow the following link: [Red Hat OpenShift](https://aws-controllers-k8s.github.io/community/docs/user-docs/openshift/)
+samples:
+- kind: ExampleCustomKind
+  spec: '{}'
+- kind: SecondExampleCustomKind
+  spec: '{}'
+maintainers:
+- name: "cloudwatch maintainer team"
+  email: "ack-maintainers@amazon.com"
+links:
+- name: Amazon CloudWatch Developer Resources
+  url: https://aws.amazon.com/CloudWatch/developer-resources/
