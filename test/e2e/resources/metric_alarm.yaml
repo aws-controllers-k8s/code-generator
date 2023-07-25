@@ -1,0 +1,14 @@
+apiVersion: cloudwatch.services.k8s.aws/v1alpha1
+kind: MetricAlarm
+metadata:
+  name: $METRIC_ALARM_NAME
+spec:
+  alarmDescription: CPU Utilization greater than or equal to 90% for 5 minutes
+  name: $METRIC_ALARM_NAME
+  comparisonOperator: GreaterThanOrEqualToThreshold
+  evaluationPeriods: 5
+  metricName: CPUUtilization
+  namespace: AWS/EC2
+  period: 60
+  statistic: Maximum
+  threshold: 90
