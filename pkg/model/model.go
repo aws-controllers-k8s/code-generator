@@ -49,6 +49,11 @@ type Model struct {
 	docCfg *ackgenconfig.DocumentationConfig
 }
 
+type Nested struct {
+	arr    []string
+	Config *ackgenconfig.FieldConfig
+}
+
 // MetaVars returns a MetaVars struct populated with metadata about the AWS
 // service API
 func (m *Model) MetaVars() templateset.MetaVars {
@@ -74,6 +79,32 @@ func (m *Model) crdNames() []string {
 	}
 
 	return crdConfigs
+}
+
+func CheckIfFieldExists(
+	field map[string]*Field,
+	currValue string,
+) bool {
+	_, ok := field[currValue]
+	if ok {
+		return true
+	}
+	return false
+}
+
+func CheckType(
+	currValue string,
+	field map[string]*Field,
+) (passThisField *Field, ans bool) {
+	// Current field exists in CRD
+	// Check if the field is of type structure
+	typeOfField := field[currValue].ShapeRef.Shape.Type
+
+	if typeOfField != "structure" {
+		return nil, false
+	}
+	passThisField = field[currValue]
+	return passThisField, true
 }
 
 // GetCRDs returns a slice of `CRD` structs that describe the
@@ -138,6 +169,7 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 
 		// Now any additional Spec fields that are required from other API
 		// operations.
+		var alltoInjectNestedFields []Nested
 		for targetFieldName, fieldConfig := range m.cfg.GetFieldConfigs(crdName) {
 			if fieldConfig.IsReadOnly {
 				// It's a Status field...
@@ -182,6 +214,18 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 				// shape reference here.
 				typeOverride := *fieldConfig.Type
 				memberShapeRef = m.SDKAPI.GetShapeRefFromType(typeOverride)
+
+				var toInjectNestedFields Nested
+				targetArray := strings.Split(targetFieldName, ".")
+
+				// Check if the custom field is nested
+				if len(targetArray) > 1 {
+					for _, newfield := range targetArray {
+						toInjectNestedFields.arr = append(toInjectNestedFields.arr, newfield)
+					}
+					toInjectNestedFields.Config = fieldConfig
+					alltoInjectNestedFields = append(alltoInjectNestedFields, toInjectNestedFields)
+				}
 			} else {
 				// Spec field is not well defined
 				continue
@@ -296,8 +340,47 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 		// Now add the additional printer columns that have been defined explicitly
 		// in additional_columns
 		crd.addAdditionalPrinterColumns(m.cfg.GetAdditionalColumns(crdName))
-
 		crds = append(crds, crd)
+
+		for _, toInjectNestedFields := range alltoInjectNestedFields {
+
+			addThis := ""
+			var previous *Field
+			var res bool
+
+			len := len(toInjectNestedFields.arr)
+
+			for n, value := range toInjectNestedFields.arr {
+				if n == 0 {
+					// first element is a field of CRD
+					fieldsInCRD := crd.SpecFields
+					if CheckIfFieldExists(fieldsInCRD, value) {
+						// Check if the field is of type structure
+						previous, res = CheckType(value, fieldsInCRD)
+						if res != true {
+							fmt.Println("Cannot add new field here")
+							break
+						}
+					}
+				} else if n < (len - 1) {
+					fieldsInParent := previous.MemberFields
+					// Check if parentField contains current field
+					if CheckIfFieldExists(fieldsInParent, value) {
+						// Check if the field is of type structure
+						previous, res = CheckType(value, fieldsInParent)
+						if res != true {
+							fmt.Println("Cannot add new field here")
+							break
+						}
+					}
+				} else {
+					// Last value, which is also the new custom field
+					addThis = value
+				}
+			}
+			previous.ShapeRef.Shape.MemberRefs[addThis] = m.SDKAPI.GetShapeRefFromType(*toInjectNestedFields.Config.Type)
+		}
+
 	}
 	sort.Slice(crds, func(i, j int) bool {
 		return crds[i].Names.Camel < crds[j].Names.Camel
