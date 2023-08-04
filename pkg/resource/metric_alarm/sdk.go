@@ -72,6 +72,8 @@ func (rm *resourceManager) sdkFind(
 	if err != nil {
 		return nil, err
 	}
+	input.SetAlarmNames([]*string{r.ko.Spec.Name})
+
 	var resp *svcsdk.DescribeAlarmsOutput
 	resp, err = rm.sdkapi.DescribeAlarmsWithContext(ctx, input)
 	rm.metrics.RecordAPICall("READ_MANY", "DescribeAlarms", err)
