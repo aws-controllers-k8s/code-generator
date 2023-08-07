@@ -69,6 +69,8 @@ code paths:
 * convert_tags_post_to_ack_tags
 * convert_tags_pre_from_ack_tags
 * convert_tags_post_from_ack_tags
+* pre_set_resource_identifiers
+* post_set_resource_identifiers
 
 The "pre_build_request" hooks are called BEFORE the call to construct
 the Input shape that is used in the API operation and therefore BEFORE
@@ -143,6 +145,12 @@ tags into K8s resource tags
 
 The "convert_tags_post_from_ack_tags" are called after converting the ACK
 tags into K8s resource tags
+
+The "pre_set_resource_identifiers" hook is called before the generated code
+that sets the resource identifiers to uniquely identify a resource
+
+The "post_set_resource_identifiers" hook is called after the generated code
+that sets the resource identifiers to uniquely identify a resource
 */
 
 // ResourceHookCode returns a string with custom callback code for a resource
