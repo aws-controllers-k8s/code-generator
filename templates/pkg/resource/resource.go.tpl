@@ -72,7 +72,13 @@ func (r *resource) SetStatus(desired acktypes.AWSResource) {
 // SetIdentifiers sets the Spec or Status field that is referenced as the unique
 // resource identifier
 func (r *resource) SetIdentifiers(identifier *ackv1alpha1.AWSIdentifiers) error {
+{{- if $hookCode := Hook .CRD "pre_set_resource_identifiers" }}
+{{ $hookCode }}
+{{- end }}
 {{- GoCodeSetResourceIdentifiers .CRD "identifier" "r.ko" 1}}
+{{- if $hookCode := Hook .CRD "post_set_resource_identifiers" }}
+{{ $hookCode }}
+{{- end }}
 	return nil
 }
 
