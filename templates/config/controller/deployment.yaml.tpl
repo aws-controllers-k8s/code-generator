@@ -79,5 +79,6 @@ spec:
       terminationGracePeriodSeconds: 10
       serviceAccountName: {{ .ServiceAccountName }}
       hostIPC: false
-      hostNetwork: false
       hostPID: false
+      hostNetwork: false
+      dnsPolicy: ClusterFirst

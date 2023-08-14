@@ -141,8 +141,9 @@ spec:
       priorityClassName: {{ .Values.deployment.priorityClassName }}
       {{ end -}}
       hostIPC: false
-      hostNetwork: false
       hostPID: false
+      hostNetwork: {{ .Values.deployment.hostNetwork }}
+      dnsPolicy: {{ .Values.deployment.dnsPolicy }}
       volumes:
       {{- if .Values.aws.credentials.secretName -}}
         - name: {{ .Values.aws.credentials.secretName }}
