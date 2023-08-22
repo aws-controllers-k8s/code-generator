@@ -14,6 +14,7 @@
 package code
 
 import (
+	"encoding/json"
 	"fmt"
 	"sort"
 	"strings"
@@ -113,6 +114,18 @@ func SetSDK(
 		return ""
 	}
 	inputShape := op.InputRef.Shape
+
+	if r.Names.Camel == "Function" {
+		_, ok := r.SpecFields["Code"]
+		if ok {
+			// k, _ := json.Marshal(op.InputRef.Shape)
+			// fmt.Println("InputRef.Shape", string(k)) // createFunction, getFunction, deleteFunction
+
+			i, _ := json.Marshal(op.InputRef.Shape.MemberRefs["Attributes"])
+			fmt.Println("InputRef.Shape.MemeberRefs[Attributes]", string(i)) // null
+		}
+	}
+
 	if inputShape == nil {
 		return ""
 	}
@@ -177,6 +190,20 @@ func SetSDK(
 	}
 
 	opConfig, override := cfg.GetOverrideValues(op.ExportedName)
+
+	if r.Names.Camel == "Function" {
+		_, ok := r.SpecFields["Code"]
+		if ok {
+			opConfig, override := cfg.GetOverrideValues(op.ExportedName)
+
+			fmt.Println("opConfig is", opConfig) // map[]
+			fmt.Println("override is", override) // false
+
+			fmt.Println("Member names are", inputShape.MemberNames())
+		}
+	}
+
+	// for create op: Member Names have Code
 	for memberIndex, memberName := range inputShape.MemberNames() {
 		if r.UnpacksAttributesMap() && memberName == "Attributes" {
 			continue
@@ -240,6 +267,21 @@ func SetSDK(
 		}
 
 		inSpec, inStatus := r.HasMember(fieldName, op.ExportedName)
+		if r.Names.Camel == "Function" {
+			_, ok := r.SpecFields["Code"]
+			// d, _ := json.Marshal(r.SpecFields["Code"])
+			// fmt.Println("Fields are", string(d))
+
+			if ok {
+				_, ok2 := r.SpecFields["Code"].MemberFields["S3SHA256"]
+				if ok2 {
+					fmt.Println("spec status", inSpec, inStatus)
+				}
+				fmt.Println("spec status", inSpec, inStatus)
+			}
+
+		}
+
 		if inSpec {
 			sourceAdaptedVarName += cfg.PrefixConfig.SpecField
 			f = r.SpecFields[fieldName]
