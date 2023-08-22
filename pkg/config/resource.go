@@ -14,6 +14,8 @@
 package config
 
 import (
+	"encoding/json"
+	"fmt"
 	"strings"
 
 	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
@@ -557,6 +559,14 @@ func (c *Config) GetResourceFieldName(
 	if !ok {
 		return origFieldName
 	}
+
+	if resourceName == "Function" {
+		if origFieldName == "Code" {
+			t, _ := json.Marshal(rConfig.Renames)
+			fmt.Println("rConfig.Renames", string(t))
+		}
+	}
+
 	if rConfig.Renames == nil {
 		return origFieldName
 	}
