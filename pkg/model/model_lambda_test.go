@@ -103,3 +103,31 @@ func TestLambda_Function(t *testing.T) {
 	}
 	assert.Equal(expStatusFieldCamel, attrCamelNames(statusFields))
 }
+
+func TestLambda_NestedFields_In_Type(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "lambda", &testutil.TestingModelOptions{
+		GeneratorConfigFile: "generator-with-custom-nested-types.yaml",
+	})
+
+	crds, err := g.GetCRDs()
+	require.Nil(err)
+
+	crd := getCRDByName("Function", crds)
+	require.NotNil(crd)
+
+	//Nested Field
+	fieldPath := "Code.S3SHA256"
+	field, found := crd.Fields[fieldPath]
+	require.True(found)
+	require.NotNil(field.FieldConfig)
+
+	assert.Contains(crd.SpecFields, "Code")
+	codeField := crd.SpecFields["Code"]
+
+	assert.Equal("S3SHA256", attrCamelNames(codeField.MemberFields))
+	assert.Equal("string", codeField.MemberFields["S3SHA256"].GoType)
+
+}

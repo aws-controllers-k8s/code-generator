@@ -1,0 +1,11 @@
+resources:
+  Function:
+    synced:
+      when:
+        - path: Status.State
+          in: [ "Active" ]
+    fields:
+      Code.S3SHA256:
+        type: string
+        compare:
+          is_ignored: true
