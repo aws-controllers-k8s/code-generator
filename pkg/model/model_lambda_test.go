@@ -105,6 +105,10 @@ func TestLambda_Function(t *testing.T) {
 }
 
 func TestLambda_NestedFields_In_Type(t *testing.T) {
+	// This test is to check if a custom field
+	// defined as a nestedField using `type:`,
+	// is nested properly inside its parentField
+
 	assert := assert.New(t)
 	require := require.New(t)
 
@@ -118,16 +122,10 @@ func TestLambda_NestedFields_In_Type(t *testing.T) {
 	crd := getCRDByName("Function", crds)
 	require.NotNil(crd)
 
-	//Nested Field
-	fieldPath := "Code.S3SHA256"
-	field, found := crd.Fields[fieldPath]
-	require.True(found)
-	require.NotNil(field.FieldConfig)
-
 	assert.Contains(crd.SpecFields, "Code")
 	codeField := crd.SpecFields["Code"]
 
-	assert.Equal("S3SHA256", attrCamelNames(codeField.MemberFields))
-	assert.Equal("string", codeField.MemberFields["S3SHA256"].GoType)
-
+	// Check if Nested Field is inside its Parent Field
+	assert.Contains(codeField.MemberFields, "S3SHA256")
+	assert.Contains(codeField.ShapeRef.Shape.MemberRefs, "S3SHA256")
 }

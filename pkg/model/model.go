@@ -231,8 +231,12 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 				continue
 			}
 
-			memberNames := names.New(targetFieldName)
-			crd.AddSpecField(memberNames, memberShapeRef)
+			// For custom fields that are defined as Nested fields, the addition of them as field is handled later
+			if alltoInjectNestedFields == nil {
+				memberNames := names.New(targetFieldName)
+				crd.AddSpecField(memberNames, memberShapeRef)
+			}
+
 		}
 
 		// Now process the fields that will go into the Status struct. We want
@@ -354,22 +358,24 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 				if n == 0 {
 					// first element is a field of CRD
 					fieldsInCRD := crd.SpecFields
+					parentName := crd.Names.Camel
 					if CheckIfFieldExists(fieldsInCRD, value) {
 						// Check if the field is of type structure
 						previous, res = CheckType(value, fieldsInCRD)
 						if res != true {
-							fmt.Println("Cannot add new field here")
+							fmt.Printf("Cannot add new field here, %s is not of type Structure", parentName)
 							break
 						}
 					}
 				} else if n < (len - 1) {
 					fieldsInParent := previous.MemberFields
+					parentName := previous.Names.Camel
 					// Check if parentField contains current field
 					if CheckIfFieldExists(fieldsInParent, value) {
 						// Check if the field is of type structure
 						previous, res = CheckType(value, fieldsInParent)
 						if res != true {
-							fmt.Println("Cannot add new field here")
+							fmt.Printf("Cannot add new field here, %s is not of type Structure", parentName)
 							break
 						}
 					}
@@ -378,6 +384,18 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 					addThis = value
 				}
 			}
+			// To add newField in its parentField's MemeberFields
+			fPath := addThis
+			memberNames := names.New(addThis)
+			typeOverride := *toInjectNestedFields.Config.Type
+			shapeRef := m.SDKAPI.GetShapeRefFromType(typeOverride)
+			fConfig := crd.cfg.GetFieldConfigByPath(crd.Names.Original, fPath)
+			f := NewField(crd, fPath, memberNames, shapeRef, fConfig)
+			crd.Fields[fPath] = f
+
+			previous.MemberFields[addThis] = f
+
+			// To add newField as a part of ShapeRef of its parentField
 			previous.ShapeRef.Shape.MemberRefs[addThis] = m.SDKAPI.GetShapeRefFromType(*toInjectNestedFields.Config.Type)
 		}
 
