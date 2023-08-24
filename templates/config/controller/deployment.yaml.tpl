@@ -29,8 +29,7 @@ spec:
         - "$(AWS_REGION)"
         - --aws-endpoint-url
         - "$(AWS_ENDPOINT_URL)"
-        - --enable-development-logging
-        - "$(ACK_ENABLE_DEVELOPMENT_LOGGING)"
+        - --enable-development-logging=$(ACK_ENABLE_DEVELOPMENT_LOGGING)
         - --log-level
         - "$(ACK_LOG_LEVEL)"
         - --resource-tags
