@@ -14,7 +14,6 @@
 package code
 
 import (
-	"encoding/json"
 	"fmt"
 	"sort"
 	"strings"
@@ -115,17 +114,6 @@ func SetSDK(
 	}
 	inputShape := op.InputRef.Shape
 
-	if r.Names.Camel == "Function" {
-		_, ok := r.SpecFields["Code"]
-		if ok {
-			// k, _ := json.Marshal(op.InputRef.Shape)
-			// fmt.Println("InputRef.Shape", string(k)) // createFunction, getFunction, deleteFunction
-
-			i, _ := json.Marshal(op.InputRef.Shape.MemberRefs["Attributes"])
-			fmt.Println("InputRef.Shape.MemeberRefs[Attributes]", string(i)) // null
-		}
-	}
-
 	if inputShape == nil {
 		return ""
 	}
@@ -191,18 +179,6 @@ func SetSDK(
 
 	opConfig, override := cfg.GetOverrideValues(op.ExportedName)
 
-	if r.Names.Camel == "Function" {
-		_, ok := r.SpecFields["Code"]
-		if ok {
-			opConfig, override := cfg.GetOverrideValues(op.ExportedName)
-
-			fmt.Println("opConfig is", opConfig) // map[]
-			fmt.Println("override is", override) // false
-
-			fmt.Println("Member names are", inputShape.MemberNames())
-		}
-	}
-
 	// for create op: Member Names have Code
 	for memberIndex, memberName := range inputShape.MemberNames() {
 		if r.UnpacksAttributesMap() && memberName == "Attributes" {
@@ -267,20 +243,6 @@ func SetSDK(
 		}
 
 		inSpec, inStatus := r.HasMember(fieldName, op.ExportedName)
-		if r.Names.Camel == "Function" {
-			_, ok := r.SpecFields["Code"]
-			// d, _ := json.Marshal(r.SpecFields["Code"])
-			// fmt.Println("Fields are", string(d))
-
-			if ok {
-				_, ok2 := r.SpecFields["Code"].MemberFields["S3SHA256"]
-				if ok2 {
-					fmt.Println("spec status", inSpec, inStatus)
-				}
-				fmt.Println("spec status", inSpec, inStatus)
-			}
-
-		}
 
 		if inSpec {
 			sourceAdaptedVarName += cfg.PrefixConfig.SpecField
@@ -364,6 +326,23 @@ func SetSDK(
 			// increase indentation level
 			indentLevel++
 			indent = "\t" + indent
+		}
+
+		//check ignore
+		// fieldConfigs := cfg.GetFieldConfigs(r.Names.Original)
+		flag := false
+		if f.FieldConfig != nil {
+			if f.FieldConfig.Set != nil {
+				set := f.FieldConfig.Set
+				for _, value := range set {
+					if value.Ignore == true {
+						flag = true
+					}
+				}
+			}
+		}
+		if flag {
+			continue
 		}
 
 		out += fmt.Sprintf(
@@ -1137,6 +1116,38 @@ func SetSDKForStruct(
 		cleanMemberName := cleanMemberNames.Camel
 		sourceAdaptedVarName := sourceVarName + "." + cleanMemberName
 		memberFieldPath := sourceFieldPath + "." + cleanMemberName
+
+		// flag := false
+		// if r.Fields[targetFieldName] != nil {
+		// 	if r.Fields[targetFieldName].MemberFields[memberName] != nil {
+		// 		if r.Fields[targetFieldName].MemberFields[memberName].FieldConfig != nil {
+		// 			if r.Fields[targetFieldName].MemberFields[memberName].FieldConfig.Set != nil {
+		// 				set := r.Fields[targetFieldName].MemberFields[memberName].FieldConfig.Set
+		// 				for _, value := range set {
+		// 					if value.Ignore == true {
+		// 						flag = true
+		// 					}
+		// 				}
+		// 			}
+		// 		}
+		// 	}
+		// }
+		// if r.Fields[memberName] != nil {
+		// 	if r.Fields[memberName].FieldConfig != nil {
+		// 		if r.Fields[memberName].FieldConfig.Set != nil {
+		// 			set := r.Fields[memberName].FieldConfig.Set
+		// 			for _, value := range set {
+		// 				if value.Ignore == true {
+		// 					flag = true
+		// 				}
+		// 			}
+		// 		}
+		// 	}
+		// }
+
+		// if flag {
+		// 	continue
+		// }
 
 		out += fmt.Sprintf(
 			"%sif %s != nil {\n", indent, sourceAdaptedVarName,

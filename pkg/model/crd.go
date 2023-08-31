@@ -426,14 +426,6 @@ func (r *CRD) GetMatchingInputShapeFieldName(opType OpType, sdkField string) str
 		if f.FieldConfig == nil {
 			continue
 		}
-		if r.Names.Camel == "Function" && f.Names.Camel == "Code" {
-			// a, _ := json.Marshal(f.FieldConfig)
-			// fmt.Println("f.Fieldconfig", string(a))
-
-			// b, _ := json.Marshal(f.FieldConfig.Set)
-			// fmt.Println("f.fieldConfig.Set", string(b))
-
-		}
 		rmMethod := ResourceManagerMethodFromOpType(opType)
 		for _, setCfg := range f.FieldConfig.Set {
 			if setCfg == nil {
