@@ -328,23 +328,6 @@ func SetSDK(
 			indent = "\t" + indent
 		}
 
-		//check ignore
-		// fieldConfigs := cfg.GetFieldConfigs(r.Names.Original)
-		flag := false
-		if f.FieldConfig != nil {
-			if f.FieldConfig.Set != nil {
-				set := f.FieldConfig.Set
-				for _, value := range set {
-					if value.Ignore == true {
-						flag = true
-					}
-				}
-			}
-		}
-		if flag {
-			continue
-		}
-
 		out += fmt.Sprintf(
 			"%sif %s != nil {\n", indent, sourceAdaptedVarName,
 		)
@@ -1117,37 +1100,26 @@ func SetSDKForStruct(
 		sourceAdaptedVarName := sourceVarName + "." + cleanMemberName
 		memberFieldPath := sourceFieldPath + "." + cleanMemberName
 
-		// flag := false
-		// if r.Fields[targetFieldName] != nil {
-		// 	if r.Fields[targetFieldName].MemberFields[memberName] != nil {
-		// 		if r.Fields[targetFieldName].MemberFields[memberName].FieldConfig != nil {
-		// 			if r.Fields[targetFieldName].MemberFields[memberName].FieldConfig.Set != nil {
-		// 				set := r.Fields[targetFieldName].MemberFields[memberName].FieldConfig.Set
-		// 				for _, value := range set {
-		// 					if value.Ignore == true {
-		// 						flag = true
-		// 					}
-		// 				}
-		// 			}
-		// 		}
-		// 	}
-		// }
-		// if r.Fields[memberName] != nil {
-		// 	if r.Fields[memberName].FieldConfig != nil {
-		// 		if r.Fields[memberName].FieldConfig.Set != nil {
-		// 			set := r.Fields[memberName].FieldConfig.Set
-		// 			for _, value := range set {
-		// 				if value.Ignore == true {
-		// 					flag = true
-		// 				}
-		// 			}
-		// 		}
-		// 	}
-		// }
+		// todo: To make `ignore` functionality work for all fields that has `ignore` set to `true`,
+		// we need to add the below logic inside `SetSDK` function.
 
-		// if flag {
-		// 	continue
-		// }
+		// To check if the field member has `ignore` set to `true`.
+		// This condition currently applies only for members of a field whose shape is `structure`
+		if r.Fields[targetFieldName] != nil {
+			memberField := r.Fields[targetFieldName].MemberFields[memberName]
+			if memberField != nil && memberField.FieldConfig != nil && memberField.FieldConfig.Set != nil {
+				set := memberField.FieldConfig.Set
+				shouldIgnore := false
+				for _, value := range set {
+					if value.Ignore == true {
+						shouldIgnore = true
+					}
+				}
+				if shouldIgnore {
+					continue
+				}
+			}
+		}
 
 		out += fmt.Sprintf(
 			"%sif %s != nil {\n", indent, sourceAdaptedVarName,
