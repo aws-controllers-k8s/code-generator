@@ -81,32 +81,6 @@ func (m *Model) crdNames() []string {
 	return crdConfigs
 }
 
-func CheckIfFieldExists(
-	field map[string]*Field,
-	currValue string,
-) bool {
-	_, ok := field[currValue]
-	if ok {
-		return true
-	}
-	return false
-}
-
-func CheckType(
-	currValue string,
-	field map[string]*Field,
-) (passThisField *Field, ans bool) {
-	// Current field exists in CRD
-	// Check if the field is of type structure
-	typeOfField := field[currValue].ShapeRef.Shape.Type
-
-	if typeOfField != "structure" {
-		return nil, false
-	}
-	passThisField = field[currValue]
-	return passThisField, true
-}
-
 // GetCRDs returns a slice of `CRD` structs that describe the
 // top-level resources discovered by the code generator for an AWS service API
 func (m *Model) GetCRDs() ([]*CRD, error) {
@@ -225,17 +199,15 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 					}
 					toInjectNestedFields.Config = fieldConfig
 					alltoInjectNestedFields = append(alltoInjectNestedFields, toInjectNestedFields)
+					continue
 				}
 			} else {
 				// Spec field is not well defined
 				continue
 			}
 
-			// For custom fields that are defined as Nested fields, the addition of them as field is handled later
-			if alltoInjectNestedFields == nil {
-				memberNames := names.New(targetFieldName)
-				crd.AddSpecField(memberNames, memberShapeRef)
-			}
+			memberNames := names.New(targetFieldName)
+			crd.AddSpecField(memberNames, memberShapeRef)
 
 		}
 
@@ -348,55 +320,51 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 
 		for _, toInjectNestedFields := range alltoInjectNestedFields {
 
-			addThis := ""
+			newCustomField := ""
 			var previous *Field
-			var res bool
-
-			len := len(toInjectNestedFields.arr)
 
 			for n, value := range toInjectNestedFields.arr {
 				if n == 0 {
 					// first element is a field of CRD
 					fieldsInCRD := crd.SpecFields
 					parentName := crd.Names.Camel
-					if CheckIfFieldExists(fieldsInCRD, value) {
+					if _, ok := fieldsInCRD[value]; ok {
 						// Check if the field is of type structure
-						previous, res = CheckType(value, fieldsInCRD)
-						if res != true {
+						if fieldsInCRD[value].ShapeRef.Shape.Type != "structure" {
 							fmt.Printf("Cannot add new field here, %s is not of type Structure", parentName)
 							break
 						}
+						previous = fieldsInCRD[value]
 					}
-				} else if n < (len - 1) {
+				} else if n < (len(toInjectNestedFields.arr) - 1) {
 					fieldsInParent := previous.MemberFields
 					parentName := previous.Names.Camel
 					// Check if parentField contains current field
-					if CheckIfFieldExists(fieldsInParent, value) {
+					if _, ok := fieldsInParent[value]; ok {
 						// Check if the field is of type structure
-						previous, res = CheckType(value, fieldsInParent)
-						if res != true {
+						if fieldsInParent[value].ShapeRef.Shape.Type != "structure" {
 							fmt.Printf("Cannot add new field here, %s is not of type Structure", parentName)
 							break
 						}
+						previous = fieldsInParent[value]
 					}
 				} else {
 					// Last value, which is also the new custom field
-					addThis = value
+					newCustomField = value
 				}
 			}
 			// To add newField in its parentField's MemeberFields
-			fPath := addThis
-			memberNames := names.New(addThis)
+			fPath := newCustomField
+			memberNames := names.New(newCustomField)
 			typeOverride := *toInjectNestedFields.Config.Type
 			shapeRef := m.SDKAPI.GetShapeRefFromType(typeOverride)
-			fConfig := crd.cfg.GetFieldConfigByPath(crd.Names.Original, fPath)
-			f := NewField(crd, fPath, memberNames, shapeRef, fConfig)
+			f := NewField(crd, fPath, memberNames, shapeRef, toInjectNestedFields.Config)
 			crd.Fields[fPath] = f
 
-			previous.MemberFields[addThis] = f
+			previous.MemberFields[newCustomField] = f
 
 			// To add newField as a part of ShapeRef of its parentField
-			previous.ShapeRef.Shape.MemberRefs[addThis] = m.SDKAPI.GetShapeRefFromType(*toInjectNestedFields.Config.Type)
+			previous.ShapeRef.Shape.MemberRefs[newCustomField] = m.SDKAPI.GetShapeRefFromType(*toInjectNestedFields.Config.Type)
 		}
 
 	}
