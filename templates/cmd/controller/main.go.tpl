@@ -92,7 +92,7 @@ func main() {
 		Host:                    host,
 		MetricsBindAddress:      ackCfg.MetricsAddr,
 		LeaderElection:          ackCfg.EnableLeaderElection,
-		LeaderElectionID:        awsServiceAPIGroup,
+		LeaderElectionID:        "ack-"+awsServiceAPIGroup,
 		Namespace:               ackCfg.WatchNamespace,
 		LeaderElectionNamespace: ackCfg.LeaderElectionNamespace,
 	})
