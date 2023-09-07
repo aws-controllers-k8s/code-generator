@@ -121,3 +121,15 @@ serviceAccount:
   name: {{ .ServiceAccountName }}
   annotations: {}
     # eks.amazonaws.com/role-arn: arn:aws:iam::AWS_ACCOUNT_ID:role/IAM_ROLE_NAME
+
+# Configuration of the leader election. Required for running multiple instances of the
+# controller within the same cluster.
+# See https://kubernetes.io/docs/concepts/architecture/leases/#leader-election
+leaderElection:
+  # Enable Controller Leader Election. Set this to true to enable leader election
+  # for this controller.
+  enabled: false
+  # Leader election can be scoped to a specific namespace. By default, the controller
+  # will attempt to use the namespace of the service account mounted to the Controller
+  # pod.
+  namespace: ""

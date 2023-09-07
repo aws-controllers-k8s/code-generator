@@ -37,6 +37,8 @@ var (
 		"config/rbac/role-reader.yaml.tpl",
 		"config/rbac/role-writer.yaml.tpl",
 		"config/rbac/service-account.yaml.tpl",
+		"config/rbac/leader-election-role-binding.yaml.tpl",
+		"config/rbac/leader-election-role.yaml.tpl",
 		"config/rbac/kustomization.yaml.tpl",
 		"config/crd/kustomization.yaml.tpl",
 		"config/overlays/namespaced/kustomization.yaml.tpl",

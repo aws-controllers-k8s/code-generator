@@ -33,6 +33,8 @@ var (
 		"helm/templates/role-reader.yaml.tpl",
 		"helm/templates/role-writer.yaml.tpl",
 		"helm/templates/_controller-role-kind-patch.yaml.tpl",
+		"helm/templates/leader-election-role.yaml.tpl",
+		"helm/templates/leader-election-role-binding.yaml.tpl",
 	}
 	releaseIncludePaths = []string{
 		"config/controller/kustomization_def.yaml.tpl",
