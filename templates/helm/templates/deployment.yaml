@@ -48,7 +48,8 @@ spec:
         - "$(AWS_REGION)"
         - --aws-endpoint-url
         - "$(AWS_ENDPOINT_URL)"
-        - --enable-development-logging=$(ENABLE_DEVELOPMENT_LOGGING)
+        - --enable-development-logging
+        - "$(ENABLE_DEVELOPMENT_LOGGING)"
         - --log-level
         - "$(ACK_LOG_LEVEL)"
         - --resource-tags
@@ -57,7 +58,8 @@ spec:
         - "$(ACK_WATCH_NAMESPACE)"
         - --deletion-policy
         - "$(DELETION_POLICY)"
-        - --enable-leader-election=$(ENABLE_LEADER_ELECTION)
+        - --enable-leader-election
+        - "$(ENABLE_LEADER_ELECTION)"
         - --leader-election-namespace
         - "$(LEADER_ELECTION_NAMESPACE)"
 {{- if gt .Values.reconcile.defaultResyncPeriod 0.0 }}
