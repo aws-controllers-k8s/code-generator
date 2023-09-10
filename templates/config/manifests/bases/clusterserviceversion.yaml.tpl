@@ -12,6 +12,10 @@ metadata:
     createdAt: {{.CreatedAt}}
     support: {{.Annotations.Support}}
     certified: {{.Annotations.IsCertified}}
+  labels:
+    operatorframework.io/os.linux: supported
+    operatorframework.io/arch.amd64: supported
+    operatorframework.io/arch.arm64: supported
   name: ack-{{.ServicePackageName }}-controller.v0.0.0
   namespace: placeholder
 spec:
