@@ -91,7 +91,7 @@ spec:
           value: {{ include "watch-namespace" . }}
         - name: DELETION_POLICY
           value: {{ .Values.deletionPolicy }}
-        - name: ENABLED_LEADER_ELECTION
+        - name: ENABLE_LEADER_ELECTION
           value: {{ .Values.leaderElection.enabled | quote }}
         - name: LEADER_ELECTION_NAMESPACE
           value: {{ .Values.leaderElection.namespace | quote }}
