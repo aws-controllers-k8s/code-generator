@@ -32,6 +32,15 @@ deployment:
   # Which priorityClassName to set?
   # See: https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/#pod-priority
   priorityClassName: ""
+  # Specifies the hostname of the Pod.
+  # If not specified, the pod's hostname will be set to a system-defined value.
+  hostNetwork: false
+  # Set DNS policy for the pod.
+  # Defaults to "ClusterFirst".
+  # Valid values are 'ClusterFirstWithHostNet', 'ClusterFirst', 'Default' or 'None'.
+  # To have DNS options set along with hostNetwork, you have to specify DNS policy
+  # explicitly to 'ClusterFirstWithHostNet'.
+  dnsPolicy: ClusterFirst
   extraVolumes: []
   extraVolumeMounts: []
 
@@ -56,7 +65,7 @@ deployment:
 # If "installScope: cluster" then these labels will be applied to ClusterRole
 role:
   labels: {}
-  
+
 metrics:
   service:
     # Set to true to automatically create a Kubernetes Service resource for the
@@ -84,7 +93,7 @@ aws:
     # Secret stringData key that contains the credentials
     secretKey: "credentials"
     # Profile used for AWS credentials
-    profile: "default"  
+    profile: "default"
 
 # log level for the controller
 log:
