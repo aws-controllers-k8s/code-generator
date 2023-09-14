@@ -15,6 +15,10 @@ deployment:
   annotations: {}
   labels: {}
   containerPort: 8080
+  # Number of Deployment replicas
+  # This determines how many instances of the controller will be running. It's recommended
+  # to enable leader election if you need to increase the number of replicas > 1
+  replicas: 1
   # Which nodeSelector to set?
   # See: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector
   nodeSelector:
