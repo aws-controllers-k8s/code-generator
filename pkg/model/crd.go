@@ -626,6 +626,87 @@ func (r *CRD) addAdditionalPrinterColumns(additionalColumns []*ackgenconfig.Addi
 	}
 }
 
+// checkSpecOrStatus checks whether the new nested field is for Spec or Status struct
+// and returns the top level field accordingly
+func (crd *CRD) checkSpecOrStatus(
+	field string,
+) (*Field, bool) {
+	fSpec, okSpec := crd.SpecFields[field]
+	if okSpec {
+		return fSpec, okSpec
+	}
+	fStatus, okStatus := crd.StatusFields[field]
+	if okStatus {
+		return fStatus, okStatus
+	}
+	return nil, false
+}
+
+// addCustomNestedFields injects the provided customNestedFields into the
+// Spec or Status struct as a nested field. The customNestedFields are
+// identified by the field path. The field path is a dot separated string
+// that represents the path to the nested field. For example, if we want to
+// inject a field called "Password" into the "User" struct, the field path
+// would be "User.Password". The field path can be as deep as needed.
+func (crd *CRD) addCustomNestedFields(customNestedFields map[string]*ackgenconfig.FieldConfig) {
+	//  We have collected all the nested fields in `customNestedFields` map and now we can process
+	//  and validate that they indeed are inject-able (i.e. the parent field is of type struct)
+	// and inject them into the Spec or Status struct.
+	for customNestedField, customNestedFieldConfig := range customNestedFields {
+		fieldParts := strings.Split(customNestedField, ".")
+		// we know that the length of fieldParts is at least 2
+		// it is safe to access the first element.
+		topLevelField := fieldParts[0]
+
+		f, ok := crd.checkSpecOrStatus(topLevelField)
+
+		if ok && f.ShapeRef.Shape.Type != "structure" {
+			// We need to panic here because the user is providing wrong configuration.
+			msg := fmt.Sprintf("Expected parent field to be of type structure, but found %s", f.ShapeRef.Shape.Type)
+			panic(msg)
+		}
+
+		// If the provided top level field is not in the crd.SpecFields or crd.StatusFields...
+		if !ok {
+			// We need to panic here because the user is providing wrong configuration.
+			msg := fmt.Sprintf("Expected top level field %s to be present in Spec or Status", topLevelField)
+			panic(msg)
+		}
+
+		// We will have to keep track of the previous field in the path
+		// to check it's member fields.
+		parentField := f
+
+		// loop over the all left fieldParts except the last one
+		for _, currentFieldName := range fieldParts[1 : len(fieldParts)-1] {
+			// Check if parentField contains current field
+			currentField, ok := parentField.MemberFields[currentFieldName]
+			if !ok || currentField.ShapeRef.Shape.Type != "structure" {
+				// Check if the field exists AND is of type structure
+				msg := fmt.Sprintf("Cannot inject field, %s member doesn't exist or isn't a structure", currentFieldName)
+				panic(msg)
+			}
+			parentField = currentField
+		}
+
+		// arriving here means that successfully walked the path and
+		// parentField is the parent of the new field.
+
+		// the last part is the field name
+		fieldName := fieldParts[len(fieldParts)-1]
+		typeOverride := customNestedFieldConfig.Type
+		shapeRef := crd.sdkAPI.GetShapeRefFromType(*typeOverride)
+
+		// Create a new field with the provided field name and shapeRef
+		newCustomNestedField := NewField(crd, fieldName, names.New(fieldName), shapeRef, customNestedFieldConfig)
+
+		// Add the new field to the parentField
+		parentField.MemberFields[fieldName] = newCustomNestedField
+		// Add the new field to the parentField's shapeRef
+		parentField.ShapeRef.Shape.MemberRefs[fieldName] = crd.sdkAPI.GetShapeRefFromType(*customNestedFieldConfig.Type)
+	}
+}
+
 // ReconcileRequeuOnSuccessSeconds returns the duration after which to requeue
 // the custom resource as int
 func (r *CRD) ReconcileRequeuOnSuccessSeconds() int {

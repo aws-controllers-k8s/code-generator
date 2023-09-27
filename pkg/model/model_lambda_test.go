@@ -104,7 +104,7 @@ func TestLambda_Function(t *testing.T) {
 	assert.Equal(expStatusFieldCamel, attrCamelNames(statusFields))
 }
 
-func TestLambda_NestedFields_In_Type(t *testing.T) {
+func TestLambda_customNestedFields_Spec_Depth2(t *testing.T) {
 	// This test is to check if a custom field
 	// defined as a nestedField using `type:`,
 	// is nested properly inside its parentField
@@ -128,4 +128,53 @@ func TestLambda_NestedFields_In_Type(t *testing.T) {
 	// Check if Nested Field is inside its Parent Field
 	assert.Contains(codeField.MemberFields, "S3SHA256")
 	assert.Contains(codeField.ShapeRef.Shape.MemberRefs, "S3SHA256")
+}
+func TestLambda_customNestedFields_Spec_Depth3(t *testing.T) {
+	// This test is to check if a custom field
+	// defined as a nestedField using `type:`,
+	// is nested properly inside its parentField
+
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "lambda", &testutil.TestingModelOptions{
+		GeneratorConfigFile: "generator-with-custom-nested-types.yaml",
+	})
+
+	crds, err := g.GetCRDs()
+	require.Nil(err)
+
+	crd := getCRDByName("EventSourceMapping", crds)
+	require.NotNil(crd)
+
+	assert.Contains(crd.SpecFields, "DestinationConfig")
+	OnSuccessField := crd.SpecFields["DestinationConfig"].MemberFields["OnSuccess"]
+
+	assert.Contains(OnSuccessField.MemberFields, "New")
+	assert.Contains(OnSuccessField.ShapeRef.Shape.MemberRefs, "New")
+}
+
+func TestLambda_customNestedFields_Status_Depth3(t *testing.T) {
+	// This test is to check if a custom field
+	// defined as a nestedField using `type:`,
+	// is nested properly inside its parentField
+
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "lambda", &testutil.TestingModelOptions{
+		GeneratorConfigFile: "generator-with-custom-nested-types.yaml",
+	})
+
+	crds, err := g.GetCRDs()
+	require.Nil(err)
+
+	crd := getCRDByName("Function", crds)
+	require.NotNil(crd)
+
+	assert.Contains(crd.StatusFields, "ImageConfigResponse")
+	ErrorField := crd.StatusFields["ImageConfigResponse"].MemberFields["Error"]
+
+	assert.Contains(ErrorField.MemberFields, "New")
+	assert.Contains(ErrorField.ShapeRef.Shape.MemberRefs, "New")
 }

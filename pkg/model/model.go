@@ -49,11 +49,6 @@ type Model struct {
 	docCfg *ackgenconfig.DocumentationConfig
 }
 
-type Nested struct {
-	arr    []string
-	Config *ackgenconfig.FieldConfig
-}
-
 // MetaVars returns a MetaVars struct populated with metadata about the AWS
 // service API
 func (m *Model) MetaVars() templateset.MetaVars {
@@ -141,9 +136,16 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 			crd.AddSpecField(memberNames, memberShapeRef)
 		}
 
-		// Now any additional Spec fields that are required from other API
-		// operations.
-		var alltoInjectNestedFields []Nested
+		// A list of fields that should be processed after gathering
+		// the Spec and Status top level fields. The customNestedFields will be
+		// injected into the Spec or Status struct as a nested field.
+		//
+		// Note that we could reuse the Field struct here, but we don't because
+		// we don't need all the fields that the Field struct provides. We only
+		// need the field path and the FieldConfig. Using Field could lead to
+		// confusion.
+		customNestedFields := make(map[string]*ackgenconfig.FieldConfig)
+
 		for targetFieldName, fieldConfig := range m.cfg.GetFieldConfigs(crdName) {
 			if fieldConfig.IsReadOnly {
 				// It's a Status field...
@@ -182,25 +184,22 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 					panic(msg)
 				}
 			} else if fieldConfig.Type != nil {
+				// A nested field will always have a "." in the field path.
+				// Let's collect those fields and process them after we've
+				// gathered all the top level fields.
+				if strings.Contains(targetFieldName, ".") {
+					// This is a nested field
+					customNestedFields[targetFieldName] = fieldConfig
+					continue
+				}
+				// If we're here, we have a custom top level field (non-nested).
+
 				// We have a custom field that has a type override and has not
 				// been inferred via the normal Create Input shape or via the
 				// SourceFieldConfig. Manually construct the field and its
 				// shape reference here.
 				typeOverride := *fieldConfig.Type
 				memberShapeRef = m.SDKAPI.GetShapeRefFromType(typeOverride)
-
-				var toInjectNestedFields Nested
-				targetArray := strings.Split(targetFieldName, ".")
-
-				// Check if the custom field is nested
-				if len(targetArray) > 1 {
-					for _, newfield := range targetArray {
-						toInjectNestedFields.arr = append(toInjectNestedFields.arr, newfield)
-					}
-					toInjectNestedFields.Config = fieldConfig
-					alltoInjectNestedFields = append(alltoInjectNestedFields, toInjectNestedFields)
-					continue
-				}
 			} else {
 				// Spec field is not well defined
 				continue
@@ -298,6 +297,16 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 					panic(msg)
 				}
 			} else if fieldConfig.Type != nil {
+				// A nested field will always have a "." in the field path.
+				// Let's collect those fields and process them after we've
+				// gathered all the top level fields.
+				if strings.Contains(targetFieldName, ".") {
+					// This is a nested field
+					customNestedFields[targetFieldName] = fieldConfig
+					continue
+				}
+				// If we're here, we have a custom top level field (non-nested).
+
 				// We have a custom field that has a type override and has not
 				// been inferred via the normal Create Input shape or via the
 				// SourceFieldConfig. Manually construct the field and its
@@ -316,57 +325,9 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 		// Now add the additional printer columns that have been defined explicitly
 		// in additional_columns
 		crd.addAdditionalPrinterColumns(m.cfg.GetAdditionalColumns(crdName))
+		// Process the custom nested fields
+		crd.addCustomNestedFields(customNestedFields)
 		crds = append(crds, crd)
-
-		for _, toInjectNestedFields := range alltoInjectNestedFields {
-
-			newCustomField := ""
-			var previous *Field
-
-			for n, value := range toInjectNestedFields.arr {
-				if n == 0 {
-					// first element is a field of CRD
-					fieldsInCRD := crd.SpecFields
-					parentName := crd.Names.Camel
-					if _, ok := fieldsInCRD[value]; ok {
-						// Check if the field is of type structure
-						if fieldsInCRD[value].ShapeRef.Shape.Type != "structure" {
-							fmt.Printf("Cannot add new field here, %s is not of type Structure", parentName)
-							break
-						}
-						previous = fieldsInCRD[value]
-					}
-				} else if n < (len(toInjectNestedFields.arr) - 1) {
-					fieldsInParent := previous.MemberFields
-					parentName := previous.Names.Camel
-					// Check if parentField contains current field
-					if _, ok := fieldsInParent[value]; ok {
-						// Check if the field is of type structure
-						if fieldsInParent[value].ShapeRef.Shape.Type != "structure" {
-							fmt.Printf("Cannot add new field here, %s is not of type Structure", parentName)
-							break
-						}
-						previous = fieldsInParent[value]
-					}
-				} else {
-					// Last value, which is also the new custom field
-					newCustomField = value
-				}
-			}
-			// To add newField in its parentField's MemeberFields
-			fPath := newCustomField
-			memberNames := names.New(newCustomField)
-			typeOverride := *toInjectNestedFields.Config.Type
-			shapeRef := m.SDKAPI.GetShapeRefFromType(typeOverride)
-			f := NewField(crd, fPath, memberNames, shapeRef, toInjectNestedFields.Config)
-			crd.Fields[fPath] = f
-
-			previous.MemberFields[newCustomField] = f
-
-			// To add newField as a part of ShapeRef of its parentField
-			previous.ShapeRef.Shape.MemberRefs[newCustomField] = m.SDKAPI.GetShapeRefFromType(*toInjectNestedFields.Config.Type)
-		}
-
 	}
 	sort.Slice(crds, func(i, j int) bool {
 		return crds[i].Names.Camel < crds[j].Names.Camel
