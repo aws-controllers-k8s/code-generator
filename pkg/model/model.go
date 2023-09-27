@@ -136,8 +136,16 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 			crd.AddSpecField(memberNames, memberShapeRef)
 		}
 
-		// Now any additional Spec fields that are required from other API
-		// operations.
+		// A list of fields that should be processed after gathering
+		// the Spec and Status top level fields. The customNestedFields will be
+		// injected into the Spec or Status struct as a nested field.
+		//
+		// Note that we could reuse the Field struct here, but we don't because
+		// we don't need all the fields that the Field struct provides. We only
+		// need the field path and the FieldConfig. Using Field could lead to
+		// confusion.
+		customNestedFields := make(map[string]*ackgenconfig.FieldConfig)
+
 		for targetFieldName, fieldConfig := range m.cfg.GetFieldConfigs(crdName) {
 			if fieldConfig.IsReadOnly {
 				// It's a Status field...
@@ -176,6 +184,16 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 					panic(msg)
 				}
 			} else if fieldConfig.Type != nil {
+				// A nested field will always have a "." in the field path.
+				// Let's collect those fields and process them after we've
+				// gathered all the top level fields.
+				if strings.Contains(targetFieldName, ".") {
+					// This is a nested field
+					customNestedFields[targetFieldName] = fieldConfig
+					continue
+				}
+				// If we're here, we have a custom top level field (non-nested).
+
 				// We have a custom field that has a type override and has not
 				// been inferred via the normal Create Input shape or via the
 				// SourceFieldConfig. Manually construct the field and its
@@ -189,6 +207,7 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 
 			memberNames := names.New(targetFieldName)
 			crd.AddSpecField(memberNames, memberShapeRef)
+
 		}
 
 		// Now process the fields that will go into the Status struct. We want
@@ -278,6 +297,16 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 					panic(msg)
 				}
 			} else if fieldConfig.Type != nil {
+				// A nested field will always have a "." in the field path.
+				// Let's collect those fields and process them after we've
+				// gathered all the top level fields.
+				if strings.Contains(targetFieldName, ".") {
+					// This is a nested field
+					customNestedFields[targetFieldName] = fieldConfig
+					continue
+				}
+				// If we're here, we have a custom top level field (non-nested).
+
 				// We have a custom field that has a type override and has not
 				// been inferred via the normal Create Input shape or via the
 				// SourceFieldConfig. Manually construct the field and its
@@ -296,7 +325,8 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 		// Now add the additional printer columns that have been defined explicitly
 		// in additional_columns
 		crd.addAdditionalPrinterColumns(m.cfg.GetAdditionalColumns(crdName))
-
+		// Process the custom nested fields
+		crd.addCustomNestedFields(customNestedFields)
 		crds = append(crds, crd)
 	}
 	sort.Slice(crds, func(i, j int) bool {

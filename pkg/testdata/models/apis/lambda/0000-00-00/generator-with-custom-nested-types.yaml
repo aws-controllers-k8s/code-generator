@@ -1,0 +1,22 @@
+resources:
+  Function:
+    synced:
+      when:
+        - path: Status.State
+          in: [ "Active" ]
+    fields:
+      Code.S3SHA256:
+        type: string
+        compare:
+          is_ignored: true
+      ImageConfigResponse.Error.New:
+        is_read_only: true
+        type: string
+  EventSourceMapping:
+    fields:
+      DestinationConfig.OnSuccess.New:
+        type: string
+        compare:
+          is_ignored: true
+  
+  
