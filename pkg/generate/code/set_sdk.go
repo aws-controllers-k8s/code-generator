@@ -113,7 +113,6 @@ func SetSDK(
 		return ""
 	}
 	inputShape := op.InputRef.Shape
-
 	if inputShape == nil {
 		return ""
 	}
@@ -178,8 +177,6 @@ func SetSDK(
 	}
 
 	opConfig, override := cfg.GetOverrideValues(op.ExportedName)
-
-	// for create op: Member Names have Code
 	for memberIndex, memberName := range inputShape.MemberNames() {
 		if r.UnpacksAttributesMap() && memberName == "Attributes" {
 			continue
@@ -243,7 +240,6 @@ func SetSDK(
 		}
 
 		inSpec, inStatus := r.HasMember(fieldName, op.ExportedName)
-
 		if inSpec {
 			sourceAdaptedVarName += cfg.PrefixConfig.SpecField
 			f = r.SpecFields[fieldName]
@@ -254,11 +250,6 @@ func SetSDK(
 			// TODO(jaypipes): check generator config for exceptions?
 			continue
 		}
-
-		// setCfg := f.GetSetterConfig(opType)
-		// if setCfg != nil && setCfg.Ignore {
-		// 	continue
-		// }
 
 		sourceAdaptedVarName += "." + f.Names.Camel
 		sourceFieldPath := f.Names.Camel
@@ -1128,22 +1119,6 @@ func SetSDKForStruct(
 			}
 
 		}
-
-		// if r.Fields[targetFieldName] != nil {
-		// 	memberField := r.Fields[targetFieldName].MemberFields[memberName]
-		// 	if memberField != nil && memberField.FieldConfig != nil && memberField.FieldConfig.Set != nil {
-		// 		set := memberField.FieldConfig.Set
-		// 		shouldIgnore := false
-		// 		for _, value := range set {
-		// 			if value.Ignore == true {
-		// 				shouldIgnore = true
-		// 			}
-		// 		}
-		// 		if shouldIgnore {
-		// 			continue
-		// 		}
-		// 	}
-		// }
 
 		out += fmt.Sprintf(
 			"%sif %s != nil {\n", indent, sourceAdaptedVarName,
