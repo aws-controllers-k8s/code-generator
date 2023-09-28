@@ -196,6 +196,15 @@ func (f *Field) GetSetterConfig(opType OpType) *ackgenconfig.SetFieldConfig {
 	}
 	rmMethod := ResourceManagerMethodFromOpType(opType)
 	for _, setCfg := range f.FieldConfig.Set {
+		if setCfg == nil {
+			continue
+		}
+		if setCfg.Ignore == true {
+			return setCfg
+		}
+		if setCfg.Ignore == true || setCfg.To == nil {
+			continue
+		}
 		// If the Method attribute is nil, that means the setter config applies to
 		// all resource manager methods for this field.
 		if setCfg.Method == nil || strings.EqualFold(rmMethod, *setCfg.Method) {
