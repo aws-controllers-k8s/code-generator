@@ -151,7 +151,7 @@ spec:
       hostNetwork: {{ .Values.deployment.hostNetwork }}
       dnsPolicy: {{ .Values.deployment.dnsPolicy }}
       volumes:
-      {{- if .Values.aws.credentials.secretName -}}
+      {{- if .Values.aws.credentials.secretName }}
         - name: {{ .Values.aws.credentials.secretName }}
           secret:
             secretName: {{ .Values.aws.credentials.secretName }}
