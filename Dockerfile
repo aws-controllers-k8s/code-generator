@@ -1,7 +1,7 @@
 # Base image to use at runtime
 ARG base_image=public.ecr.aws/eks-distro-build-tooling/eks-distro-minimal-base-nonroot:2021-12-01-1638322424
 
-ARG TARGETARCH=amd64
+ARG target_arch=amd64
 
 # Golang image to use for compiling the manager
 ARG builder_image=public.ecr.aws/docker/library/golang
@@ -23,7 +23,7 @@ ARG work_dir=/github.com/aws-controllers-k8s/$service_alias-controller
 WORKDIR $work_dir
 ENV GOPROXY=https://proxy.golang.org|direct
 ENV GO111MODULE=on
-ENV GOARCH=$TARGETARCH
+ENV GOARCH=$target_arch
 ENV GOOS=linux
 ENV CGO_ENABLED=0
 ENV VERSION_PKG=github.com/aws-controllers-k8s/$service_alias-controller/pkg/version
