@@ -314,7 +314,7 @@ func SetSDK(
 
 		omitUnchangedFieldsOnUpdate := op == r.Ops.Update && r.OmitUnchangedFieldsOnUpdate()
 		if omitUnchangedFieldsOnUpdate {
-			// Don't add the field to the Payload of an API call if it's a Status field
+			// Don't add the field to Update operation Payload if it's a Status field
 			if inStatus {
 				continue
 			}
