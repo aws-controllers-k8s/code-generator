@@ -314,14 +314,16 @@ func SetSDK(
 
 		omitUnchangedFieldsOnUpdate := op == r.Ops.Update && r.OmitUnchangedFieldsOnUpdate()
 		if omitUnchangedFieldsOnUpdate {
-			fieldJSONPath := fmt.Sprintf("%s.%s", sourceAdaptedVarName[1:], f.Names.Camel)
-			out += fmt.Sprintf(
-				"%sif delta.DifferentAt(%q) {\n", indent, fieldJSONPath,
-			)
+			if inSpec {
+				fieldJSONPath := fmt.Sprintf("%s.%s", cfg.PrefixConfig.SpecField[1:], f.Names.Camel)
+				out += fmt.Sprintf(
+					"%sif delta.DifferentAt(%q) {\n", indent, fieldJSONPath,
+				)
 
-			// increase indentation level
-			indentLevel++
-			indent = "\t" + indent
+				// increase indentation level
+				indentLevel++
+				indent = "\t" + indent
+			}
 		}
 
 		out += fmt.Sprintf(
