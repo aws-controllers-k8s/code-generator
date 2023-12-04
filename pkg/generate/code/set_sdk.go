@@ -320,7 +320,6 @@ func SetSDK(
 			} else if inStatus {
 				fieldJSONPath = fmt.Sprintf("%s.%s", cfg.PrefixConfig.StatusField[1:], f.Names.Camel)
 			}
-			fieldJSONPath = fmt.Sprintf("%s.%s", cfg.PrefixConfig.SpecField[1:], f.Names.Camel)
 			out += fmt.Sprintf(
 				"%sif delta.DifferentAt(%q) {\n", indent, fieldJSONPath,
 			)
