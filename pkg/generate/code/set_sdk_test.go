@@ -1387,10 +1387,8 @@ func TestSetSDK_MQ_Broker_newUpdateRequest_OmitUnchangedValues(t *testing.T) {
 			res.SetAutoMinorVersionUpgrade(*r.ko.Spec.AutoMinorVersionUpgrade)
 		}
 	}
-	if delta.DifferentAt("Spec.BrokerID") {
-		if r.ko.Status.BrokerID != nil {
-			res.SetBrokerId(*r.ko.Status.BrokerID)
-		}
+	if r.ko.Status.BrokerID != nil {
+		res.SetBrokerId(*r.ko.Status.BrokerID)
 	}
 	if delta.DifferentAt("Spec.Configuration") {
 		if r.ko.Spec.Configuration != nil {
