@@ -314,11 +314,13 @@ func SetSDK(
 
 		omitUnchangedFieldsOnUpdate := op == r.Ops.Update && r.OmitUnchangedFieldsOnUpdate()
 		if omitUnchangedFieldsOnUpdate {
-			// Don't add the field to Update operation Payload if it's a Status field
-			if inStatus {
-				continue
+			var fieldJSONPath string
+			if inSpec {
+				fieldJSONPath = fmt.Sprintf("%s.%s", cfg.PrefixConfig.SpecField[1:], f.Names.Camel)
+			} else if inStatus {
+				fieldJSONPath = fmt.Sprintf("%s.%s", cfg.PrefixConfig.StatusField[1:], f.Names.Camel)
 			}
-			fieldJSONPath := fmt.Sprintf("%s.%s", cfg.PrefixConfig.SpecField[1:], f.Names.Camel)
+			fieldJSONPath = fmt.Sprintf("%s.%s", cfg.PrefixConfig.SpecField[1:], f.Names.Camel)
 			out += fmt.Sprintf(
 				"%sif delta.DifferentAt(%q) {\n", indent, fieldJSONPath,
 			)
