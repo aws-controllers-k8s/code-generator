@@ -190,7 +190,7 @@ func CompareResource(
 				firstResAdaptedVarName,
 				secondResAdaptedVarName,
 				fieldPath,
-				indentLevel,
+				indentLevel+1,
 			)
 		case "list":
 			// Returns Go code that compares all the elements of the slice fields...

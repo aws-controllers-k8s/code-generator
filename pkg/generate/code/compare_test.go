@@ -94,8 +94,12 @@ func TestCompareResource_S3_Bucket(t *testing.T) {
 					delta.Add("Spec.Logging.LoggingEnabled.TargetBucket", a.ko.Spec.Logging.LoggingEnabled.TargetBucket, b.ko.Spec.Logging.LoggingEnabled.TargetBucket)
 				}
 			}
-			if !reflect.DeepEqual(a.ko.Spec.Logging.LoggingEnabled.TargetGrants, b.ko.Spec.Logging.LoggingEnabled.TargetGrants) {
+			if len(a.ko.Spec.Logging.LoggingEnabled.TargetGrants) != len(b.ko.Spec.Logging.LoggingEnabled.TargetGrants) {
 				delta.Add("Spec.Logging.LoggingEnabled.TargetGrants", a.ko.Spec.Logging.LoggingEnabled.TargetGrants, b.ko.Spec.Logging.LoggingEnabled.TargetGrants)
+			} else if len(a.ko.Spec.Logging.LoggingEnabled.TargetGrants) > 0 {
+				if !reflect.DeepEqual(a.ko.Spec.Logging.LoggingEnabled.TargetGrants, b.ko.Spec.Logging.LoggingEnabled.TargetGrants) {
+					delta.Add("Spec.Logging.LoggingEnabled.TargetGrants", a.ko.Spec.Logging.LoggingEnabled.TargetGrants, b.ko.Spec.Logging.LoggingEnabled.TargetGrants)
+				}
 			}
 			if ackcompare.HasNilDifference(a.ko.Spec.Logging.LoggingEnabled.TargetPrefix, b.ko.Spec.Logging.LoggingEnabled.TargetPrefix) {
 				delta.Add("Spec.Logging.LoggingEnabled.TargetPrefix", a.ko.Spec.Logging.LoggingEnabled.TargetPrefix, b.ko.Spec.Logging.LoggingEnabled.TargetPrefix)
@@ -149,8 +153,12 @@ func TestCompareResource_Lambda_CodeSigningConfig(t *testing.T) {
 	if ackcompare.HasNilDifference(a.ko.Spec.AllowedPublishers, b.ko.Spec.AllowedPublishers) {
 		delta.Add("Spec.AllowedPublishers", a.ko.Spec.AllowedPublishers, b.ko.Spec.AllowedPublishers)
 	} else if a.ko.Spec.AllowedPublishers != nil && b.ko.Spec.AllowedPublishers != nil {
-		if !ackcompare.SliceStringPEqual(a.ko.Spec.AllowedPublishers.SigningProfileVersionARNs, b.ko.Spec.AllowedPublishers.SigningProfileVersionARNs) {
+		if len(a.ko.Spec.AllowedPublishers.SigningProfileVersionARNs) != len(b.ko.Spec.AllowedPublishers.SigningProfileVersionARNs) {
 			delta.Add("Spec.AllowedPublishers.SigningProfileVersionARNs", a.ko.Spec.AllowedPublishers.SigningProfileVersionARNs, b.ko.Spec.AllowedPublishers.SigningProfileVersionARNs)
+		} else if len(a.ko.Spec.AllowedPublishers.SigningProfileVersionARNs) > 0 {
+			if !ackcompare.SliceStringPEqual(a.ko.Spec.AllowedPublishers.SigningProfileVersionARNs, b.ko.Spec.AllowedPublishers.SigningProfileVersionARNs) {
+				delta.Add("Spec.AllowedPublishers.SigningProfileVersionARNs", a.ko.Spec.AllowedPublishers.SigningProfileVersionARNs, b.ko.Spec.AllowedPublishers.SigningProfileVersionARNs)
+			}
 		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.CodeSigningPolicies, b.ko.Spec.CodeSigningPolicies) {
@@ -253,16 +261,20 @@ func TestCompareResource_Lambda_Function(t *testing.T) {
 	if ackcompare.HasNilDifference(a.ko.Spec.Environment, b.ko.Spec.Environment) {
 		delta.Add("Spec.Environment", a.ko.Spec.Environment, b.ko.Spec.Environment)
 	} else if a.ko.Spec.Environment != nil && b.ko.Spec.Environment != nil {
-		if ackcompare.HasNilDifference(a.ko.Spec.Environment.Variables, b.ko.Spec.Environment.Variables) {
+		if len(a.ko.Spec.Environment.Variables) != len(b.ko.Spec.Environment.Variables) {
 			delta.Add("Spec.Environment.Variables", a.ko.Spec.Environment.Variables, b.ko.Spec.Environment.Variables)
-		} else if a.ko.Spec.Environment.Variables != nil && b.ko.Spec.Environment.Variables != nil {
+		} else if len(a.ko.Spec.Environment.Variables) > 0 {
 			if !ackcompare.MapStringStringPEqual(a.ko.Spec.Environment.Variables, b.ko.Spec.Environment.Variables) {
 				delta.Add("Spec.Environment.Variables", a.ko.Spec.Environment.Variables, b.ko.Spec.Environment.Variables)
 			}
 		}
 	}
-	if !reflect.DeepEqual(a.ko.Spec.FileSystemConfigs, b.ko.Spec.FileSystemConfigs) {
+	if len(a.ko.Spec.FileSystemConfigs) != len(b.ko.Spec.FileSystemConfigs) {
 		delta.Add("Spec.FileSystemConfigs", a.ko.Spec.FileSystemConfigs, b.ko.Spec.FileSystemConfigs)
+	} else if len(a.ko.Spec.FileSystemConfigs) > 0 {
+		if !reflect.DeepEqual(a.ko.Spec.FileSystemConfigs, b.ko.Spec.FileSystemConfigs) {
+			delta.Add("Spec.FileSystemConfigs", a.ko.Spec.FileSystemConfigs, b.ko.Spec.FileSystemConfigs)
+		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.FunctionName, b.ko.Spec.FunctionName) {
 		delta.Add("Spec.FunctionName", a.ko.Spec.FunctionName, b.ko.Spec.FunctionName)
@@ -281,11 +293,19 @@ func TestCompareResource_Lambda_Function(t *testing.T) {
 	if ackcompare.HasNilDifference(a.ko.Spec.ImageConfig, b.ko.Spec.ImageConfig) {
 		delta.Add("Spec.ImageConfig", a.ko.Spec.ImageConfig, b.ko.Spec.ImageConfig)
 	} else if a.ko.Spec.ImageConfig != nil && b.ko.Spec.ImageConfig != nil {
-		if !ackcompare.SliceStringPEqual(a.ko.Spec.ImageConfig.Command, b.ko.Spec.ImageConfig.Command) {
+		if len(a.ko.Spec.ImageConfig.Command) != len(b.ko.Spec.ImageConfig.Command) {
 			delta.Add("Spec.ImageConfig.Command", a.ko.Spec.ImageConfig.Command, b.ko.Spec.ImageConfig.Command)
+		} else if len(a.ko.Spec.ImageConfig.Command) > 0 {
+			if !ackcompare.SliceStringPEqual(a.ko.Spec.ImageConfig.Command, b.ko.Spec.ImageConfig.Command) {
+				delta.Add("Spec.ImageConfig.Command", a.ko.Spec.ImageConfig.Command, b.ko.Spec.ImageConfig.Command)
+			}
 		}
-		if !ackcompare.SliceStringPEqual(a.ko.Spec.ImageConfig.EntryPoint, b.ko.Spec.ImageConfig.EntryPoint) {
+		if len(a.ko.Spec.ImageConfig.EntryPoint) != len(b.ko.Spec.ImageConfig.EntryPoint) {
 			delta.Add("Spec.ImageConfig.EntryPoint", a.ko.Spec.ImageConfig.EntryPoint, b.ko.Spec.ImageConfig.EntryPoint)
+		} else if len(a.ko.Spec.ImageConfig.EntryPoint) > 0 {
+			if !ackcompare.SliceStringPEqual(a.ko.Spec.ImageConfig.EntryPoint, b.ko.Spec.ImageConfig.EntryPoint) {
+				delta.Add("Spec.ImageConfig.EntryPoint", a.ko.Spec.ImageConfig.EntryPoint, b.ko.Spec.ImageConfig.EntryPoint)
+			}
 		}
 		if ackcompare.HasNilDifference(a.ko.Spec.ImageConfig.WorkingDirectory, b.ko.Spec.ImageConfig.WorkingDirectory) {
 			delta.Add("Spec.ImageConfig.WorkingDirectory", a.ko.Spec.ImageConfig.WorkingDirectory, b.ko.Spec.ImageConfig.WorkingDirectory)
@@ -302,8 +322,12 @@ func TestCompareResource_Lambda_Function(t *testing.T) {
 			delta.Add("Spec.KMSKeyARN", a.ko.Spec.KMSKeyARN, b.ko.Spec.KMSKeyARN)
 		}
 	}
-	if !ackcompare.SliceStringPEqual(a.ko.Spec.Layers, b.ko.Spec.Layers) {
+	if len(a.ko.Spec.Layers) != len(b.ko.Spec.Layers) {
 		delta.Add("Spec.Layers", a.ko.Spec.Layers, b.ko.Spec.Layers)
+	} else if len(a.ko.Spec.Layers) > 0 {
+		if !ackcompare.SliceStringPEqual(a.ko.Spec.Layers, b.ko.Spec.Layers) {
+			delta.Add("Spec.Layers", a.ko.Spec.Layers, b.ko.Spec.Layers)
+		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.MemorySize, b.ko.Spec.MemorySize) {
 		delta.Add("Spec.MemorySize", a.ko.Spec.MemorySize, b.ko.Spec.MemorySize)
@@ -364,11 +388,19 @@ func TestCompareResource_Lambda_Function(t *testing.T) {
 	if ackcompare.HasNilDifference(a.ko.Spec.VPCConfig, b.ko.Spec.VPCConfig) {
 		delta.Add("Spec.VPCConfig", a.ko.Spec.VPCConfig, b.ko.Spec.VPCConfig)
 	} else if a.ko.Spec.VPCConfig != nil && b.ko.Spec.VPCConfig != nil {
-		if !ackcompare.SliceStringPEqual(a.ko.Spec.VPCConfig.SecurityGroupIDs, b.ko.Spec.VPCConfig.SecurityGroupIDs) {
+		if len(a.ko.Spec.VPCConfig.SecurityGroupIDs) != len(b.ko.Spec.VPCConfig.SecurityGroupIDs) {
 			delta.Add("Spec.VPCConfig.SecurityGroupIDs", a.ko.Spec.VPCConfig.SecurityGroupIDs, b.ko.Spec.VPCConfig.SecurityGroupIDs)
+		} else if len(a.ko.Spec.VPCConfig.SecurityGroupIDs) > 0 {
+			if !ackcompare.SliceStringPEqual(a.ko.Spec.VPCConfig.SecurityGroupIDs, b.ko.Spec.VPCConfig.SecurityGroupIDs) {
+				delta.Add("Spec.VPCConfig.SecurityGroupIDs", a.ko.Spec.VPCConfig.SecurityGroupIDs, b.ko.Spec.VPCConfig.SecurityGroupIDs)
+			}
 		}
-		if !ackcompare.SliceStringPEqual(a.ko.Spec.VPCConfig.SubnetIDs, b.ko.Spec.VPCConfig.SubnetIDs) {
+		if len(a.ko.Spec.VPCConfig.SubnetIDs) != len(b.ko.Spec.VPCConfig.SubnetIDs) {
 			delta.Add("Spec.VPCConfig.SubnetIDs", a.ko.Spec.VPCConfig.SubnetIDs, b.ko.Spec.VPCConfig.SubnetIDs)
+		} else if len(a.ko.Spec.VPCConfig.SubnetIDs) > 0 {
+			if !ackcompare.SliceStringPEqual(a.ko.Spec.VPCConfig.SubnetIDs, b.ko.Spec.VPCConfig.SubnetIDs) {
+				delta.Add("Spec.VPCConfig.SubnetIDs", a.ko.Spec.VPCConfig.SubnetIDs, b.ko.Spec.VPCConfig.SubnetIDs)
+			}
 		}
 	}
 `
@@ -404,8 +436,12 @@ func TestCompareResource_APIGatewayv2_Route(t *testing.T) {
 			delta.Add("Spec.APIKeyRequired", a.ko.Spec.APIKeyRequired, b.ko.Spec.APIKeyRequired)
 		}
 	}
-	if !ackcompare.SliceStringPEqual(a.ko.Spec.AuthorizationScopes, b.ko.Spec.AuthorizationScopes) {
+	if len(a.ko.Spec.AuthorizationScopes) != len(b.ko.Spec.AuthorizationScopes) {
 		delta.Add("Spec.AuthorizationScopes", a.ko.Spec.AuthorizationScopes, b.ko.Spec.AuthorizationScopes)
+	} else if len(a.ko.Spec.AuthorizationScopes) > 0 {
+		if !ackcompare.SliceStringPEqual(a.ko.Spec.AuthorizationScopes, b.ko.Spec.AuthorizationScopes) {
+			delta.Add("Spec.AuthorizationScopes", a.ko.Spec.AuthorizationScopes, b.ko.Spec.AuthorizationScopes)
+		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.AuthorizationType, b.ko.Spec.AuthorizationType) {
 		delta.Add("Spec.AuthorizationType", a.ko.Spec.AuthorizationType, b.ko.Spec.AuthorizationType)
@@ -435,16 +471,16 @@ func TestCompareResource_APIGatewayv2_Route(t *testing.T) {
 			delta.Add("Spec.OperationName", a.ko.Spec.OperationName, b.ko.Spec.OperationName)
 		}
 	}
-	if ackcompare.HasNilDifference(a.ko.Spec.RequestModels, b.ko.Spec.RequestModels) {
+	if len(a.ko.Spec.RequestModels) != len(b.ko.Spec.RequestModels) {
 		delta.Add("Spec.RequestModels", a.ko.Spec.RequestModels, b.ko.Spec.RequestModels)
-	} else if a.ko.Spec.RequestModels != nil && b.ko.Spec.RequestModels != nil {
+	} else if len(a.ko.Spec.RequestModels) > 0 {
 		if !ackcompare.MapStringStringPEqual(a.ko.Spec.RequestModels, b.ko.Spec.RequestModels) {
 			delta.Add("Spec.RequestModels", a.ko.Spec.RequestModels, b.ko.Spec.RequestModels)
 		}
 	}
-	if ackcompare.HasNilDifference(a.ko.Spec.RequestParameters, b.ko.Spec.RequestParameters) {
+	if len(a.ko.Spec.RequestParameters) != len(b.ko.Spec.RequestParameters) {
 		delta.Add("Spec.RequestParameters", a.ko.Spec.RequestParameters, b.ko.Spec.RequestParameters)
-	} else if a.ko.Spec.RequestParameters != nil && b.ko.Spec.RequestParameters != nil {
+	} else if len(a.ko.Spec.RequestParameters) > 0 {
 		if !reflect.DeepEqual(a.ko.Spec.RequestParameters, b.ko.Spec.RequestParameters) {
 			delta.Add("Spec.RequestParameters", a.ko.Spec.RequestParameters, b.ko.Spec.RequestParameters)
 		}
@@ -490,14 +526,22 @@ func TestCompareResource_IAM_OIDC_URL(t *testing.T) {
 	crd := testutil.GetCRDByName(t, g, "OpenIDConnectProvider")
 	require.NotNil(crd)
 	expected := `
-	if !ackcompare.SliceStringPEqual(a.ko.Spec.ClientIDList, b.ko.Spec.ClientIDList) {
+	if len(a.ko.Spec.ClientIDList) != len(b.ko.Spec.ClientIDList) {
 		delta.Add("Spec.ClientIDList", a.ko.Spec.ClientIDList, b.ko.Spec.ClientIDList)
+	} else if len(a.ko.Spec.ClientIDList) > 0 {
+		if !ackcompare.SliceStringPEqual(a.ko.Spec.ClientIDList, b.ko.Spec.ClientIDList) {
+			delta.Add("Spec.ClientIDList", a.ko.Spec.ClientIDList, b.ko.Spec.ClientIDList)
+		}
 	}
 	if !ackcompare.MapStringStringEqual(ToACKTags(a.ko.Spec.Tags), ToACKTags(b.ko.Spec.Tags)) {
 		delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
 	}
-	if !ackcompare.SliceStringPEqual(a.ko.Spec.ThumbprintList, b.ko.Spec.ThumbprintList) {
+	if len(a.ko.Spec.ThumbprintList) != len(b.ko.Spec.ThumbprintList) {
 		delta.Add("Spec.ThumbprintList", a.ko.Spec.ThumbprintList, b.ko.Spec.ThumbprintList)
+	} else if len(a.ko.Spec.ThumbprintList) > 0 {
+		if !ackcompare.SliceStringPEqual(a.ko.Spec.ThumbprintList, b.ko.Spec.ThumbprintList) {
+			delta.Add("Spec.ThumbprintList", a.ko.Spec.ThumbprintList, b.ko.Spec.ThumbprintList)
+		}
 	}
 `
 	assert.Equal(
