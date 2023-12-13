@@ -163,29 +163,22 @@ func CompareResource(
 		memberShapeRef := specField.ShapeRef
 		memberShape := memberShapeRef.Shape
 
-		// if ackcompare.HasNilDifference(a.ko.Spec.Name, b.ko.Spec.Name) {
-		//   delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
-		// }
-		nilCode := compareNil(
+		// Use len, bytes.Equal and HasNilDifference to fast compare types, and
+		// try to avoid deep comparison as much as possible.
+		fastComparisonOutput, needToCloseBlock := fastCompareTypes(
 			compareConfig,
 			memberShape,
 			deltaVarName,
+			fieldPath,
 			firstResAdaptedVarName,
 			secondResAdaptedVarName,
-			fieldPath,
 			indentLevel,
 		)
-
-		if nilCode != "" {
-			// else if a.ko.Spec.Name != nil && b.ko.Spec.Name != nil {
-			out += fmt.Sprintf(
-				"%s else if %s != nil && %s != nil {\n",
-				nilCode, firstResAdaptedVarName, secondResAdaptedVarName,
-			)
-			indentLevel++
-		}
+		out += fastComparisonOutput
 
 		switch memberShape.Type {
+		case "blob":
+			// We already handled the case of blobs above, so we can skip it here.
 		case "structure":
 			// Recurse through all the struct's fields and subfields, building
 			// nested conditionals and calls to `delta.Add()`...
@@ -197,7 +190,7 @@ func CompareResource(
 				firstResAdaptedVarName,
 				secondResAdaptedVarName,
 				fieldPath,
-				indentLevel,
+				indentLevel+1,
 			)
 		case "list":
 			// Returns Go code that compares all the elements of the slice fields...
@@ -209,7 +202,7 @@ func CompareResource(
 				firstResAdaptedVarName,
 				secondResAdaptedVarName,
 				fieldPath,
-				indentLevel,
+				indentLevel+1,
 			)
 		case "map":
 			// Returns Go code that compares all the elements of the map fields...
@@ -221,7 +214,7 @@ func CompareResource(
 				firstResAdaptedVarName,
 				secondResAdaptedVarName,
 				fieldPath,
-				indentLevel,
+				indentLevel+1,
 			)
 		default:
 			//   if *a.ko.Spec.Name != *b.ko.Spec.Name) {
@@ -234,15 +227,14 @@ func CompareResource(
 				firstResAdaptedVarName,
 				secondResAdaptedVarName,
 				fieldPath,
-				indentLevel,
+				indentLevel+1,
 			)
 		}
-		if nilCode != "" {
+		if needToCloseBlock {
 			// }
 			out += fmt.Sprintf(
 				"%s}\n", indent,
 			)
-			indentLevel--
 		}
 	}
 	return out
@@ -285,12 +277,8 @@ func compareNil(
 	indent := strings.Repeat("\t", indentLevel)
 
 	switch shape.Type {
-	case "list", "blob":
-		// for slice types, there is no nilability test. Instead, the normal
-		// value test checks length of slices.
-		return ""
 	case "boolean", "string", "character", "byte", "short", "integer", "long",
-		"float", "double", "timestamp", "structure", "map", "jsonvalue":
+		"float", "double", "timestamp", "structure", "jsonvalue":
 		// if ackcompare.HasNilDifference(a.ko.Spec.Name, b.ko.Spec.Name) {
 		out += fmt.Sprintf(
 			"%sif ackcompare.HasNilDifference(%s, %s) {\n",
@@ -353,11 +341,6 @@ func compareScalar(
 		// if *a.ko.Spec.Name != *b.ko.Spec.Name {
 		out += fmt.Sprintf(
 			"%sif *%s != *%s {\n",
-			indent, firstResVarName, secondResVarName,
-		)
-	case "blob":
-		out += fmt.Sprintf(
-			"%sif !bytes.Equal(%s, %s) {\n",
 			indent, firstResVarName, secondResVarName,
 		)
 	case "timestamp":
@@ -650,29 +633,20 @@ func CompareStruct(
 			continue
 		}
 
-		// if ackcompare.HasNilDifference(a.ko.Spec.Name, b.ko.Spec.Name == nil) {
-		//   delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
-		// }
-		nilCode := compareNil(
+		fastComparisonOutput, needToCloseBlock := fastCompareTypes(
 			compareConfig,
 			memberShape,
 			deltaVarName,
+			memberFieldPath,
 			firstResAdaptedVarName,
 			secondResAdaptedVarName,
-			memberFieldPath,
 			indentLevel,
 		)
-
-		if nilCode != "" {
-			// else if a.ko.Spec.Name != nil && b.ko.Spec.Name != nil {
-			out += fmt.Sprintf(
-				"%s else if %s != nil && %s != nil {\n",
-				nilCode, firstResAdaptedVarName, secondResAdaptedVarName,
-			)
-			indentLevel++
-		}
+		out += fastComparisonOutput
 
 		switch memberShape.Type {
+		case "blob":
+			// We already handled the case of blobs above, so we can skip it here.
 		case "structure":
 			// Recurse through all the struct's fields and subfields, building
 			// nested conditionals and calls to `delta.Add()`...
@@ -684,7 +658,7 @@ func CompareStruct(
 				firstResAdaptedVarName,
 				secondResAdaptedVarName,
 				memberFieldPath,
-				indentLevel,
+				indentLevel+1,
 			)
 		case "list":
 			// Returns Go code that compares all the elements of the slice fields...
@@ -696,7 +670,7 @@ func CompareStruct(
 				firstResAdaptedVarName,
 				secondResAdaptedVarName,
 				memberFieldPath,
-				indentLevel,
+				indentLevel+1,
 			)
 		case "map":
 			// Returns Go code that compares all the elements of the map fields...
@@ -708,7 +682,7 @@ func CompareStruct(
 				firstResAdaptedVarName,
 				secondResAdaptedVarName,
 				memberFieldPath,
-				indentLevel,
+				indentLevel+1,
 			)
 		default:
 			//   if *a.ko.Spec.Name != *b.ko.Spec.Name {
@@ -721,16 +695,169 @@ func CompareStruct(
 				firstResAdaptedVarName,
 				secondResAdaptedVarName,
 				memberFieldPath,
-				indentLevel,
+				indentLevel+1,
 			)
 		}
-		if nilCode != "" {
+		if needToCloseBlock {
 			// }
 			out += fmt.Sprintf(
 				"%s}\n", indent,
 			)
-			indentLevel--
 		}
 	}
 	return out
+}
+
+// fastCompareTypes outputs Go code that fast-compares two objects of the same
+// type, by leveraging nil check comparison and length checks. This is used
+// when we want to quickly determine if two objects are different, but don't
+// need to know the specific differences. For example, when determining if a
+// that an array of structs has changed, we don't need to know which structs
+// have changed, if the size of the array has changed.
+//
+// Generally, we can distinguish between the following cases:
+// 1. Both objects are structures or scalars type pointers.
+// 2. Both objects are collections (slices or  maps).
+// 3. Both objects are blobs.
+//
+// In the case of 1, we can use the HasNilDifference function to
+// eliminate early on the case where one of the objects is nil and other
+// is not.
+//
+// In the case of 2, we can use the built-in len function to eliminate
+// early on the case where the collections have different lengths.
+// The trick here is that len(nil) is 0, so we don't need to check for
+// nils explicitly.
+//
+// In the case of 3, we can use the bytes.Equal function to compare the
+// byte arrays. bytes.Equal works well with nil arrays too.
+// Output code will look something like this:
+//
+//	if ackcompare.HasNilDifference(a.ko.Spec.Name, b.ko.Spec.Name) {
+//	  delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
+//	} else if a.ko.Spec.Name != nil && b.ko.Spec.Name != nil {
+//	  if *a.ko.Spec.Name != *b.ko.Spec.Name) {
+//	    delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
+//	  }
+//	}
+//
+//	if len(a.ko.Spec.Tags) != len(b.ko.Spec.Tags) {
+//	  delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
+//	} else if len(a.ko.Spec.Tags) > 0 {
+//	  if !ackcompare.SliceStringPEqual(a.ko.Spec.Tags, b.ko.Spec.Tags) {
+//	    delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
+//	  }
+//	}
+func fastCompareTypes(
+	// struct informing code generator how to compare the field values.
+	compareConfig *ackgenconfig.CompareFieldConfig,
+	// AWSSDK Shape describing the type of the field being compared.
+	memberShape *awssdkmodel.Shape,
+	// String representing the name of the variable that is of type
+	// `*ackcompare.Delta`. We will generate Go code that calls the `Add()`
+	// method of this variable when differences between fields are detected.
+	deltaVarName string,
+	// String representing the json path of the field being compared, e.g.
+	// "Spec.Name".
+	fieldPath string,
+	// String representing the name of the variable that represents the first
+	// CR under comparison. This will typically be something like "a.ko". See
+	// `templates/pkg/resource/delta.go.tpl`.
+	firstResVarName string,
+	// String representing the name of the variable that represents the second
+	// CR under comparison. This will typically be something like "b.ko". See
+	// `templates/pkg/resource/delta.go.tpl`.
+	secondResVarName string,
+	// Number of levels of indentation to use
+	indentLevel int,
+) (string, bool) {
+	out := ""
+	needToCloseBlock := false
+	indent := strings.Repeat("\t", indentLevel)
+
+	switch memberShape.Type {
+	case "list", "map":
+		// Note once we eliminate the case of non equal sizes, we can
+		// safely assume that the objects have the same length and we can
+		// we can only iterate over them if they have more than 0 elements.
+		//
+		// if len(a.ko.Spec.Tags) != len(b.ko.Spec.Tags) {
+		//   delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
+		// } else len(a.ko.Spec.Tags) > 0 {
+		//    ...
+		// }
+		out += fmt.Sprintf(
+			"%sif len(%s) != len(%s) {\n",
+			indent,
+			firstResVarName,
+			secondResVarName,
+		)
+		out += fmt.Sprintf(
+			"%s\t%s.Add(\"%s\", %s, %s)\n",
+			indent,
+			deltaVarName,
+			fieldPath,
+			firstResVarName,
+			secondResVarName,
+		)
+		// For sure we are inside the else block of the nil/size check, so we need
+		// to increase the indentation level.
+		out += fmt.Sprintf(
+			"%s} else if len(%s) > 0 {\n",
+			indent,
+			firstResVarName,
+		)
+		// For sure we are inside the else block of the nil/size check, so we need
+		// to increase the indentation level and ask the caller to close the block.
+		needToCloseBlock = true
+	case "blob":
+		// Blob is a special case because we need to compare the byte arrays
+		// using the bytes.Equal function.
+		//
+		// if !bytes.Equal(a.ko.Spec.Certificate, b.ko.Spec.Certificate) {
+		//   delta.Add("Spec.Certificate", a.ko.Spec.Certificate, b.ko.Spec.Certificate)
+		// }
+		out += fmt.Sprintf(
+			"%sif !bytes.Equal(%s, %s) {\n",
+			indent,
+			firstResVarName,
+			secondResVarName,
+		)
+		out += fmt.Sprintf(
+			"%s\t%s.Add(\"%s\", %s, %s)\n",
+			indent,
+			deltaVarName,
+			fieldPath,
+			firstResVarName,
+			secondResVarName,
+		)
+		out += fmt.Sprintf(
+			"%s}\n", indent,
+		)
+	default:
+		// For any other type, we can use the HasNilDifference function to
+		// eliminate early on the case where one of the objects is nil and
+		// other is not.
+		out += compareNil(
+			compareConfig,
+			memberShape,
+			deltaVarName,
+			firstResVarName,
+			secondResVarName,
+			fieldPath,
+			indentLevel,
+		)
+
+		// if ackcompare.HasNilDifference(a.ko.Spec.Name, b.ko.Spec.Name) {
+		//   delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
+		// } else if a.ko.Spec.Name != nil && b.ko.Spec.Name != nil {
+		out += fmt.Sprintf(
+			" else if %s != nil && %s != nil {\n",
+			firstResVarName, secondResVarName,
+		)
+		// For sure we are inside the else block of the nil/size check, so we need
+		// to increase the indentation level and ask the caller to close the block.
+		needToCloseBlock = true
+	}
+	return out, needToCloseBlock
 }
