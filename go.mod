@@ -4,8 +4,8 @@ go 1.19
 
 require (
 	github.com/aws-controllers-k8s/pkg v0.0.7
-	github.com/aws-controllers-k8s/runtime v0.27.1
-	github.com/aws/aws-sdk-go v1.44.93
+	github.com/aws-controllers-k8s/runtime v0.28.0
+	github.com/aws/aws-sdk-go v1.49.0
 	github.com/dlclark/regexp2 v1.4.0 // indirect
 	// pin to v0.1.1 due to release problem with v0.1.2
 	github.com/gertd/go-pluralize v0.1.1
