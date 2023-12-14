@@ -50,8 +50,12 @@ func newResourceDelta(
 			delta.Add("Spec.ActionsEnabled", a.ko.Spec.ActionsEnabled, b.ko.Spec.ActionsEnabled)
 		}
 	}
-	if !ackcompare.SliceStringPEqual(a.ko.Spec.AlarmActions, b.ko.Spec.AlarmActions) {
+	if len(a.ko.Spec.AlarmActions) != len(b.ko.Spec.AlarmActions) {
 		delta.Add("Spec.AlarmActions", a.ko.Spec.AlarmActions, b.ko.Spec.AlarmActions)
+	} else if len(a.ko.Spec.AlarmActions) > 0 {
+		if !ackcompare.SliceStringPEqual(a.ko.Spec.AlarmActions, b.ko.Spec.AlarmActions) {
+			delta.Add("Spec.AlarmActions", a.ko.Spec.AlarmActions, b.ko.Spec.AlarmActions)
+		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.AlarmDescription, b.ko.Spec.AlarmDescription) {
 		delta.Add("Spec.AlarmDescription", a.ko.Spec.AlarmDescription, b.ko.Spec.AlarmDescription)
@@ -74,8 +78,12 @@ func newResourceDelta(
 			delta.Add("Spec.DatapointsToAlarm", a.ko.Spec.DatapointsToAlarm, b.ko.Spec.DatapointsToAlarm)
 		}
 	}
-	if !reflect.DeepEqual(a.ko.Spec.Dimensions, b.ko.Spec.Dimensions) {
+	if len(a.ko.Spec.Dimensions) != len(b.ko.Spec.Dimensions) {
 		delta.Add("Spec.Dimensions", a.ko.Spec.Dimensions, b.ko.Spec.Dimensions)
+	} else if len(a.ko.Spec.Dimensions) > 0 {
+		if !reflect.DeepEqual(a.ko.Spec.Dimensions, b.ko.Spec.Dimensions) {
+			delta.Add("Spec.Dimensions", a.ko.Spec.Dimensions, b.ko.Spec.Dimensions)
+		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.EvaluateLowSampleCountPercentile, b.ko.Spec.EvaluateLowSampleCountPercentile) {
 		delta.Add("Spec.EvaluateLowSampleCountPercentile", a.ko.Spec.EvaluateLowSampleCountPercentile, b.ko.Spec.EvaluateLowSampleCountPercentile)
@@ -98,8 +106,12 @@ func newResourceDelta(
 			delta.Add("Spec.ExtendedStatistic", a.ko.Spec.ExtendedStatistic, b.ko.Spec.ExtendedStatistic)
 		}
 	}
-	if !ackcompare.SliceStringPEqual(a.ko.Spec.InsufficientDataActions, b.ko.Spec.InsufficientDataActions) {
+	if len(a.ko.Spec.InsufficientDataActions) != len(b.ko.Spec.InsufficientDataActions) {
 		delta.Add("Spec.InsufficientDataActions", a.ko.Spec.InsufficientDataActions, b.ko.Spec.InsufficientDataActions)
+	} else if len(a.ko.Spec.InsufficientDataActions) > 0 {
+		if !ackcompare.SliceStringPEqual(a.ko.Spec.InsufficientDataActions, b.ko.Spec.InsufficientDataActions) {
+			delta.Add("Spec.InsufficientDataActions", a.ko.Spec.InsufficientDataActions, b.ko.Spec.InsufficientDataActions)
+		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.MetricName, b.ko.Spec.MetricName) {
 		delta.Add("Spec.MetricName", a.ko.Spec.MetricName, b.ko.Spec.MetricName)
@@ -108,8 +120,12 @@ func newResourceDelta(
 			delta.Add("Spec.MetricName", a.ko.Spec.MetricName, b.ko.Spec.MetricName)
 		}
 	}
-	if !reflect.DeepEqual(a.ko.Spec.Metrics, b.ko.Spec.Metrics) {
+	if len(a.ko.Spec.Metrics) != len(b.ko.Spec.Metrics) {
 		delta.Add("Spec.Metrics", a.ko.Spec.Metrics, b.ko.Spec.Metrics)
+	} else if len(a.ko.Spec.Metrics) > 0 {
+		if !reflect.DeepEqual(a.ko.Spec.Metrics, b.ko.Spec.Metrics) {
+			delta.Add("Spec.Metrics", a.ko.Spec.Metrics, b.ko.Spec.Metrics)
+		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.Name, b.ko.Spec.Name) {
 		delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
@@ -125,8 +141,12 @@ func newResourceDelta(
 			delta.Add("Spec.Namespace", a.ko.Spec.Namespace, b.ko.Spec.Namespace)
 		}
 	}
-	if !ackcompare.SliceStringPEqual(a.ko.Spec.OKActions, b.ko.Spec.OKActions) {
+	if len(a.ko.Spec.OKActions) != len(b.ko.Spec.OKActions) {
 		delta.Add("Spec.OKActions", a.ko.Spec.OKActions, b.ko.Spec.OKActions)
+	} else if len(a.ko.Spec.OKActions) > 0 {
+		if !ackcompare.SliceStringPEqual(a.ko.Spec.OKActions, b.ko.Spec.OKActions) {
+			delta.Add("Spec.OKActions", a.ko.Spec.OKActions, b.ko.Spec.OKActions)
+		}
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.Period, b.ko.Spec.Period) {
 		delta.Add("Spec.Period", a.ko.Spec.Period, b.ko.Spec.Period)

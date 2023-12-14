@@ -6,4 +6,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: public.ecr.aws/aws-controllers-k8s/cloudwatch-controller
-  newTag: 0.0.2
+  newTag: 0.0.3

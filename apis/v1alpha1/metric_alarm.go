@@ -99,10 +99,36 @@ type MetricAlarmSpec struct {
 	// so this number multiplied by Period cannot be more than 86,400 seconds.
 	// +kubebuilder:validation:Required
 	EvaluationPeriods *int64 `json:"evaluationPeriods"`
-	// The percentile statistic for the metric specified in MetricName. Specify
-	// a value between p0.0 and p100. When you call PutMetricAlarm and specify a
-	// MetricName, you must specify either Statistic or ExtendedStatistic, but not
-	// both.
+	// The extended statistic for the metric specified in MetricName. When you call
+	// PutMetricAlarm and specify a MetricName, you must specify either Statistic
+	// or ExtendedStatistic but not both.
+	//
+	// If you specify ExtendedStatistic, the following are valid values:
+	//
+	//   - p90
+	//
+	//   - tm90
+	//
+	//   - tc90
+	//
+	//   - ts90
+	//
+	//   - wm90
+	//
+	//   - IQM
+	//
+	//   - PR(n:m) where n and m are values of the metric
+	//
+	//   - TC(X%:X%) where X is between 10 and 90 inclusive.
+	//
+	//   - TM(X%:X%) where X is between 10 and 90 inclusive.
+	//
+	//   - TS(X%:X%) where X is between 10 and 90 inclusive.
+	//
+	//   - WM(X%:X%) where X is between 10 and 90 inclusive.
+	//
+	// For more information about these extended statistics, see CloudWatch statistics
+	// definitions (https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Statistics-definitions.html).
 	ExtendedStatistic *string `json:"extendedStatistic,omitempty"`
 	// The actions to execute when this alarm transitions to the INSUFFICIENT_DATA
 	// state from any other state. Each action is specified as an Amazon Resource
@@ -144,9 +170,9 @@ type MetricAlarmSpec struct {
 	// operation, you must specify either MetricName or a Metrics array.
 	//
 	// If you are creating an alarm based on a math expression, you cannot specify
-	// this parameter, or any of the Dimensions, Period, Namespace, Statistic, or
-	// ExtendedStatistic parameters. Instead, you specify all this information in
-	// the Metrics array.
+	// this parameter, or any of the Namespace, Dimensions, Period, Unit, Statistic,
+	// or ExtendedStatistic parameters. Instead, you specify all this information
+	// in the Metrics array.
 	MetricName *string `json:"metricName,omitempty"`
 	// An array of MetricDataQuery structures that enable you to create an alarm
 	// based on the result of a metric math expression. For each PutMetricAlarm
@@ -159,8 +185,8 @@ type MetricAlarmSpec struct {
 	// designate this expression by setting ReturnData to true for this object in
 	// the array. For more information, see MetricDataQuery (https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_MetricDataQuery.html).
 	//
-	// If you use the Metrics parameter, you cannot include the MetricName, Dimensions,
-	// Period, Namespace, Statistic, or ExtendedStatistic parameters of PutMetricAlarm
+	// If you use the Metrics parameter, you cannot include the Namespace, MetricName,
+	// Dimensions, Period, Unit, Statistic, or ExtendedStatistic parameters of PutMetricAlarm
 	// in the same operation. Instead, you retrieve the metrics you are using in
 	// your math expression as part of the Metrics array.
 	Metrics []*MetricDataQuery `json:"metrics,omitempty"`
@@ -234,7 +260,8 @@ type MetricAlarmSpec struct {
 	// but not both.
 	Statistic *string `json:"statistic,omitempty"`
 	// A list of key-value pairs to associate with the alarm. You can associate
-	// as many as 50 tags with an alarm.
+	// as many as 50 tags with an alarm. To be able to associate tags with the alarm
+	// when you create the alarm, you must have the cloudwatch:TagResource permission.
 	//
 	// Tags can help you organize and categorize your resources. You can also use
 	// them to scope user permissions by granting a user permission to access or
@@ -274,7 +301,9 @@ type MetricAlarmSpec struct {
 	// that an instance receives on all network interfaces. You can also specify
 	// a unit when you create a custom metric. Units help provide conceptual meaning
 	// to your data. Metric data points that specify a unit of measure, such as
-	// Percent, are aggregated separately.
+	// Percent, are aggregated separately. If you are creating an alarm based on
+	// a metric math expression, you can specify the unit for each metric (if needed)
+	// within the objects in the Metrics array.
 	//
 	// If you don't specify Unit, CloudWatch retrieves all unit types that have
 	// been published for the metric and attempts to evaluate the alarm. Usually,

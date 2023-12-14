@@ -113,10 +113,17 @@ spec:
                 format: int64
                 type: integer
               extendedStatistic:
-                description: The percentile statistic for the metric specified in
-                  MetricName. Specify a value between p0.0 and p100. When you call
-                  PutMetricAlarm and specify a MetricName, you must specify either
-                  Statistic or ExtendedStatistic, but not both.
+                description: "The extended statistic for the metric specified in MetricName.
+                  When you call PutMetricAlarm and specify a MetricName, you must
+                  specify either Statistic or ExtendedStatistic but not both. \n If
+                  you specify ExtendedStatistic, the following are valid values: \n
+                  - p90 \n - tm90 \n - tc90 \n - ts90 \n - wm90 \n - IQM \n - PR(n:m)
+                  where n and m are values of the metric \n - TC(X%:X%) where X is
+                  between 10 and 90 inclusive. \n - TM(X%:X%) where X is between 10
+                  and 90 inclusive. \n - TS(X%:X%) where X is between 10 and 90 inclusive.
+                  \n - WM(X%:X%) where X is between 10 and 90 inclusive. \n For more
+                  information about these extended statistics, see CloudWatch statistics
+                  definitions (https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Statistics-definitions.html)."
                 type: string
               insufficientDataActions:
                 description: "The actions to execute when this alarm transitions to
@@ -139,9 +146,9 @@ spec:
                 description: "The name for the metric associated with the alarm. For
                   each PutMetricAlarm operation, you must specify either MetricName
                   or a Metrics array. \n If you are creating an alarm based on a math
-                  expression, you cannot specify this parameter, or any of the Dimensions,
-                  Period, Namespace, Statistic, or ExtendedStatistic parameters. Instead,
-                  you specify all this information in the Metrics array."
+                  expression, you cannot specify this parameter, or any of the Namespace,
+                  Dimensions, Period, Unit, Statistic, or ExtendedStatistic parameters.
+                  Instead, you specify all this information in the Metrics array."
                 type: string
               metrics:
                 description: "An array of MetricDataQuery structures that enable you
@@ -152,11 +159,11 @@ spec:
                   array is the expression that the alarm watches. You designate this
                   expression by setting ReturnData to true for this object in the
                   array. For more information, see MetricDataQuery (https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_MetricDataQuery.html).
-                  \n If you use the Metrics parameter, you cannot include the MetricName,
-                  Dimensions, Period, Namespace, Statistic, or ExtendedStatistic parameters
-                  of PutMetricAlarm in the same operation. Instead, you retrieve the
-                  metrics you are using in your math expression as part of the Metrics
-                  array."
+                  \n If you use the Metrics parameter, you cannot include the Namespace,
+                  MetricName, Dimensions, Period, Unit, Statistic, or ExtendedStatistic
+                  parameters of PutMetricAlarm in the same operation. Instead, you
+                  retrieve the metrics you are using in your math expression as part
+                  of the Metrics array."
                 items:
                   description: "This structure is used in both GetMetricData and PutMetricAlarm.
                     The supported use of this structure is different for those two
@@ -290,13 +297,15 @@ spec:
                 type: string
               tags:
                 description: "A list of key-value pairs to associate with the alarm.
-                  You can associate as many as 50 tags with an alarm. \n Tags can
-                  help you organize and categorize your resources. You can also use
-                  them to scope user permissions by granting a user permission to
-                  access or change only resources with certain tag values. \n If you
-                  are using this operation to update an existing alarm, any tags you
-                  specify in this parameter are ignored. To change the tags of an
-                  existing alarm, use TagResource (https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_TagResource.html)
+                  You can associate as many as 50 tags with an alarm. To be able to
+                  associate tags with the alarm when you create the alarm, you must
+                  have the cloudwatch:TagResource permission. \n Tags can help you
+                  organize and categorize your resources. You can also use them to
+                  scope user permissions by granting a user permission to access or
+                  change only resources with certain tag values. \n If you are using
+                  this operation to update an existing alarm, any tags you specify
+                  in this parameter are ignored. To change the tags of an existing
+                  alarm, use TagResource (https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_TagResource.html)
                   or UntagResource (https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_UntagResource.html)."
                 items:
                   description: A key-value pair associated with a CloudWatch resource.
@@ -337,16 +346,18 @@ spec:
                   all network interfaces. You can also specify a unit when you create
                   a custom metric. Units help provide conceptual meaning to your data.
                   Metric data points that specify a unit of measure, such as Percent,
-                  are aggregated separately. \n If you don't specify Unit, CloudWatch
-                  retrieves all unit types that have been published for the metric
-                  and attempts to evaluate the alarm. Usually, metrics are published
-                  with only one unit, so the alarm works as intended. \n However,
-                  if the metric is published with multiple types of units and you
-                  don't specify a unit, the alarm's behavior is not defined and it
-                  behaves unpredictably. \n We recommend omitting Unit so that you
-                  don't inadvertently specify an incorrect unit that is not published
-                  for this metric. Doing so causes the alarm to be stuck in the INSUFFICIENT
-                  DATA state."
+                  are aggregated separately. If you are creating an alarm based on
+                  a metric math expression, you can specify the unit for each metric
+                  (if needed) within the objects in the Metrics array. \n If you don't
+                  specify Unit, CloudWatch retrieves all unit types that have been
+                  published for the metric and attempts to evaluate the alarm. Usually,
+                  metrics are published with only one unit, so the alarm works as
+                  intended. \n However, if the metric is published with multiple types
+                  of units and you don't specify a unit, the alarm's behavior is not
+                  defined and it behaves unpredictably. \n We recommend omitting Unit
+                  so that you don't inadvertently specify an incorrect unit that is
+                  not published for this metric. Doing so causes the alarm to be stuck
+                  in the INSUFFICIENT DATA state."
                 type: string
             required:
             - comparisonOperator

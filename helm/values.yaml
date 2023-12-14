@@ -4,7 +4,7 @@
 
 image:
   repository: public.ecr.aws/aws-controllers-k8s/cloudwatch-controller
-  tag: 0.0.2
+  tag: 0.0.3
   pullPolicy: IfNotPresent
   pullSecrets: []
 
@@ -15,6 +15,10 @@ deployment:
   annotations: {}
   labels: {}
   containerPort: 8080
+  # Number of Deployment replicas
+  # This determines how many instances of the controller will be running. It's recommended
+  # to enable leader election if you need to increase the number of replicas > 1
+  replicas: 1
   # Which nodeSelector to set?
   # See: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector
   nodeSelector:
@@ -28,6 +32,15 @@ deployment:
   # Which priorityClassName to set?
   # See: https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/#pod-priority
   priorityClassName: ""
+  # Specifies the hostname of the Pod.
+  # If not specified, the pod's hostname will be set to a system-defined value.
+  hostNetwork: false
+  # Set DNS policy for the pod.
+  # Defaults to "ClusterFirst".
+  # Valid values are 'ClusterFirstWithHostNet', 'ClusterFirst', 'Default' or 'None'.
+  # To have DNS options set along with hostNetwork, you have to specify DNS policy
+  # explicitly to 'ClusterFirstWithHostNet'.
+  dnsPolicy: ClusterFirst
   extraVolumes: []
   extraVolumeMounts: []
 
@@ -52,7 +65,7 @@ deployment:
 # If "installScope: cluster" then these labels will be applied to ClusterRole
 role:
   labels: {}
-  
+
 metrics:
   service:
     # Set to true to automatically create a Kubernetes Service resource for the
@@ -80,7 +93,7 @@ aws:
     # Secret stringData key that contains the credentials
     secretKey: "credentials"
     # Profile used for AWS credentials
-    profile: "default"  
+    profile: "default"
 
 # log level for the controller
 log:
@@ -121,3 +134,15 @@ serviceAccount:
   name: ack-cloudwatch-controller
   annotations: {}
     # eks.amazonaws.com/role-arn: arn:aws:iam::AWS_ACCOUNT_ID:role/IAM_ROLE_NAME
+
+# Configuration of the leader election. Required for running multiple instances of the
+# controller within the same cluster.
+# See https://kubernetes.io/docs/concepts/architecture/leases/#leader-election
+leaderElection:
+  # Enable Controller Leader Election. Set this to true to enable leader election
+  # for this controller.
+  enabled: false
+  # Leader election can be scoped to a specific namespace. By default, the controller
+  # will attempt to use the namespace of the service account mounted to the Controller
+  # pod.
+  namespace: ""

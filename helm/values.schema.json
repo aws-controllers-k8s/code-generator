@@ -47,6 +47,9 @@
           "minimum": 1,
           "maximum": 65535
         },
+        "replicas": {
+          "type": "integer"
+        },
         "nodeSelector": {
           "type": "object"
         },
@@ -227,6 +230,18 @@
         },
         "resourceResyncPeriods": {
           "type": "object"
+        }
+      },
+      "type": "object"
+    },
+    "leaderElection": {
+      "description": "Parameter to configure the controller's leader election system.",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "namespace": {
+          "type": "string"
         }
       },
       "type": "object"

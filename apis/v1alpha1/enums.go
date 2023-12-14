@@ -76,6 +76,7 @@ type MetricStreamOutputFormat string
 const (
 	MetricStreamOutputFormat_json             MetricStreamOutputFormat = "json"
 	MetricStreamOutputFormat_opentelemetry0_7 MetricStreamOutputFormat = "opentelemetry0.7"
+	MetricStreamOutputFormat_opentelemetry1_0 MetricStreamOutputFormat = "opentelemetry1.0"
 )
 
 type RecentlyActive string
