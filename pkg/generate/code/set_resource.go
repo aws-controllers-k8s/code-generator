@@ -962,6 +962,8 @@ func SetResourceIdentifiers(
 		case r.Ops.ReadMany != nil:
 			// If single lookups can only be done using ReadMany
 			op = r.Ops.ReadMany
+		default:
+			return ""
 		}
 	}
 	inputShape := op.InputRef.Shape
