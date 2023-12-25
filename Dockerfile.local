@@ -1,5 +1,5 @@
 # Base image to use at runtime
-ARG base_image=public.ecr.aws/eks-distro-build-tooling/eks-distro-minimal-base-nonroot:2023-08-24-1692903666.2023
+ARG base_image=public.ecr.aws/eks-distro-build-tooling/eks-distro-minimal-base-nonroot:2023-09-06-1694026927.2
 
 # Golang image to use for compiling the manager
 ARG builder_image=public.ecr.aws/docker/library/golang
