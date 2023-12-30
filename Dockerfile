@@ -1,7 +1,6 @@
 # Base image to use at runtime
 ARG base_image=public.ecr.aws/eks-distro-build-tooling/eks-distro-minimal-base-nonroot:2023-08-24-1692903666.2023
 
-ARG target_arch=amd64
 
 # Golang image to use for compiling the manager
 ARG builder_image=public.ecr.aws/docker/library/golang
@@ -13,6 +12,7 @@ ARG golang_version
 FROM $builder_image:$golang_version as builder
 
 ARG service_alias
+ARG target_arch=amd64
 # The tuple of controller image version information
 ARG service_controller_git_version
 ARG service_controller_git_commit
