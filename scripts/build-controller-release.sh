@@ -169,7 +169,7 @@ if [[ $RELEASE_VERSION != "$NON_RELEASE_VERSION" ]]; then
 fi
 
 if [ -z "$AWS_SDK_GO_VERSION" ]; then
-    AWS_SDK_GO_VERSION=$(go list -m -f '{{ .Version }}' -modfile "$SERVICE_CONTROLLER_SOURCE_PATH/go.mod" github.com/aws/aws-sdk-go)
+    AWS_SDK_GO_VERSION=$(cat "$SERVICE_CONTROLLER_SOURCE_PATH/apis/$ACK_GENERATE_API_VERSION/ack-generate-metadata.yaml" | yq ".aws_sdk_go_version" -r)
 fi
 
 # If there's a generator.yaml in the service's directory and the caller hasn't
