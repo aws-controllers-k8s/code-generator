@@ -1,0 +1,7 @@
+resources:
+  Cluster:
+    fields:
+      Version:
+        go_tag: json:"myCustomVersionName,omitempty"
+      Status:
+        go_tag: json:"clusterState,omitempty" yaml:"some_extra_tags"

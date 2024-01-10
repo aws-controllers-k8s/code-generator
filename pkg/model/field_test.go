@@ -254,6 +254,59 @@ func TestGetReferenceFieldName(t *testing.T) {
 	}
 }
 
+func TestGetGoTag(t *testing.T) {
+	require := require.New(t)
+	assert := assert.New(t)
+	g := testutil.NewModelForServiceWithOptions(t, "eks",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-gotag.yaml",
+		},
+	)
+
+	crds, err := g.GetCRDs()
+	require.Nil(err)
+
+	crd := getCRDByName("Cluster", crds)
+	require.NotNil(crd)
+
+	testCases := []struct {
+		name        string
+		field       *model.Field
+		expectedTag string
+	}{
+		{
+			name:        "not required spec field",
+			field:       crd.SpecFields["Logging"],
+			expectedTag: "`json:\"logging,omitempty\"`",
+		},
+		{
+			name:        "required spec field",
+			field:       crd.SpecFields["Name"],
+			expectedTag: "`json:\"name\"`",
+		},
+		{
+			name:        "spec field with go_tag override",
+			field:       crd.SpecFields["Version"],
+			expectedTag: "`json:\"myCustomVersionName,omitempty\"`",
+		},
+		{
+			// Status fields are not required, so they should always have omitempty directive
+			name:        "status field",
+			field:       crd.StatusFields["Endpoint"],
+			expectedTag: "`json:\"endpoint,omitempty\"`",
+		},
+		{
+			name:        "status field with go_tag override",
+			field:       crd.StatusFields["Status"],
+			expectedTag: "`json:\"clusterState,omitempty\" yaml:\"some_extra_tags\"`",
+		},
+	}
+	for _, tc := range testCases {
+		tag := tc.field.GetGoTag()
+		assert.Equal(tc.expectedTag, tag)
+	}
+}
+
 func TestReferenceFieldPath(t *testing.T) {
 	assert := assert.New(t)
 

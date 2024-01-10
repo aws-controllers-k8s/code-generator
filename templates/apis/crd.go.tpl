@@ -22,7 +22,7 @@ type {{ .CRD.Kind }}Spec struct {
 {{- if and ($field.IsRequired) (not $field.HasReference) -}}
     // +kubebuilder:validation:Required
 {{ end -}}
-    {{ $field.Names.Camel }} {{ $field.GoType }} `json:"{{ $field.Names.CamelLower }}{{- if or (not $field.IsRequired) ($field.HasReference) }},omitempty{{- end -}}"`
+    {{ $field.Names.Camel }} {{ $field.GoType }} {{ $field.GetGoTag }}
 {{- end }}
 }
 
@@ -44,7 +44,7 @@ type {{ .CRD.Kind }}Status struct {
 	{{ $field.GetDocumentation }}
 	{{- end }}
 	// +kubebuilder:validation:Optional
-	{{ $field.Names.Camel }} {{ $field.GoType }} `json:"{{ $field.Names.CamelLower }},omitempty"`
+	{{ $field.Names.Camel }} {{ $field.GoType }} {{ $field.GetGoTag }}
 {{- end }}
 }
 
