@@ -405,6 +405,30 @@ type FieldConfig struct {
 	// TODO(jaypipes,crtbry): Figure out if we can roll the CustomShape stuff
 	// into this type override...
 	Type *string `json:"type,omitempty"`
+	// GoTag is used to override the default Go tag injected into the fields of
+	// a generated go structure. This is useful if we want to override the json
+	// tag name or add an omitempty directive to the tag. If not specified,
+	// the default json tag is used, i.e. json:"<fieldName>,omitempty"
+	//
+	// The main reason behind introducing this feature is that, our naming utility
+	// package appends an underscore suffix to the field name if it is colliding with
+	// a Golang keyword (switch, if, else etc...). This is needed to avoid violating
+	// the Go language spec, when defining package names, variable names, etc.
+	// This functionality resulted in injecting the underscore suffix to the json tag
+	// as well, e.g. json:"type_,omitempty". Which is not ideal because it weirdens
+	// the experience for the users of the generated CRDs.
+	//
+	// One could argue that we should just modify the `names`` package to return an
+	// extra field indicating whether the field name is a Go keyword or not, or even
+	// better, return the correct go tag dirrctly. The reason why we should avoid
+	// such a change is that it would modify the already existing/generated code, which
+	// would break the compatibility for the existing CRDs. Without introducing some
+	// sort of mutating webhook to handle field name change, this is not a viable.
+	// We decided to introduce this feature to, at least, allow us to override the
+	// go tag for any new resource or fields that we generate in the future.
+	//
+	// (See https://github.com/aws-controllers-k8s/pkg/blob/main/names/names.go)
+	GoTag *string `json:"go_tag,omitempty"`
 }
 
 // GetFieldConfigs returns all FieldConfigs for a given resource as a map.

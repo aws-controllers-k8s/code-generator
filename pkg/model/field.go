@@ -216,6 +216,27 @@ func (f *Field) GetFieldDocsConfig() *ackgenconfig.FieldDocsConfig {
 	return resourceConfig.Fields[f.Path]
 }
 
+// GetGoTag returns the json tag for the field. If the field has a
+// FieldConfig with a GoTag attribute, the value of GoTag is returned.
+// Otherwise, we evaluate the field type and return the appropriate
+// json tag.
+func (f *Field) GetGoTag() string {
+	// First check if the field has a GoTag attribute in the FieldConfig
+	// a.k.a generator.yaml
+	if f.FieldConfig != nil && f.FieldConfig.GoTag != nil {
+		return fmt.Sprintf("`%s`", *f.FieldConfig.GoTag)
+	}
+
+	// If the field is not required, a reference field or part of the status
+	// object, we need to inject the `omitempty`` directive into the json tag.
+	if !f.IsRequired() || f.HasReference() || f.CRD.StatusFields[f.Names.Camel] != nil {
+		return fmt.Sprintf("`json:\"%s,omitempty\"`", f.Names.CamelLower)
+
+	}
+
+	return fmt.Sprintf("`json:\"%s\"`", f.Names.CamelLower)
+}
+
 // HasReference returns true if the supplied field *path* refers to a Field
 // that contains 'ReferencesConfig' i.e. has a corresponding reference field.
 // Ex:
