@@ -145,7 +145,9 @@ func (rm *resourceManager) sdkDelete(
 		exit(err)
 	}()
 
-{{- if .CRD.Ops.Delete }}
+{{ if .CRD.CustomDeleteMethodName }}
+	{{- template "sdk_delete_custom" . }}
+{{- else if .CRD.Ops.Delete }}
 {{- if $hookCode := Hook .CRD "sdk_delete_pre_build_request" }}
 {{ $hookCode }}
 {{- end }}

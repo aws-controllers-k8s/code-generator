@@ -75,6 +75,9 @@ type ResourceConfig struct {
 	// operation `notImplemented`. Custom read function allows the
 	// reconciler's progression.
 	ReadOperation *ReadOperationsConfig `json:"find_operation,omitempty"`
+	//DeleteOperation contains instructions for the code generator to generate
+	// Go code for the delete operation for the resource.
+	DeleteOperation *DeleteOperationsConfig `json:"delete_operation,omitempty"`
 	// Reconcile describes options for controlling the reconciliation
 	// logic for a particular resource.
 	Reconcile *ReconcileConfig `json:"reconcile,omitempty"`
@@ -344,6 +347,15 @@ type UpdateOperationConfig struct {
 type ReadOperationsConfig struct {
 	// CustomMethodName is a string for the method name to replace the
 	// sdkFind() method implementation for this resource
+	CustomMethodName string `json:"custom_method_name"`
+}
+
+// DeleteOperationsConfig contains instructions for the code generator to handle
+// custom delete operations for service APIs that have resources that have
+// difficult-to-standardize delete operations.
+type DeleteOperationsConfig struct {
+	// CustomMethodName is a string for the method name to replace the
+	// sdkDelete() method implementation for this resource
 	CustomMethodName string `json:"custom_method_name"`
 }
 
@@ -680,6 +692,19 @@ func (c *Config) GetCustomFindMethodName(resourceName string) string {
 	if found {
 		if rConfig.ReadOperation != nil {
 			return rConfig.ReadOperation.CustomMethodName
+		}
+	}
+	return ""
+}
+
+func (c *Config) GetCustomDeleteMethodName(resourceName string) string {
+	if c == nil {
+		return ""
+	}
+	rConfig, found := c.Resources[resourceName]
+	if found {
+		if rConfig.DeleteOperation != nil {
+			return rConfig.DeleteOperation.CustomMethodName
 		}
 	}
 	return ""
