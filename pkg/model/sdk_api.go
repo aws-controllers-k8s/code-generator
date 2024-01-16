@@ -78,12 +78,14 @@ func (a *SDKAPI) GetOperationMap(cfg *ackgenconfig.Config) *OperationMap {
 	// create an index of Operations by operation types and resource name
 	opMap := OperationMap{}
 	for opID, op := range a.API.Operations {
-		opTypeArray, resName := getOpTypeAndResourceName(opID, cfg)
-		for _, opType := range opTypeArray {
+		opTypes, opResourceNames := getOpTypesAndResourcesMapping(opID, cfg)
+		for _, opType := range opTypes {
 			if _, found := opMap[opType]; !found {
 				opMap[opType] = map[string]*awssdkmodel.Operation{}
 			}
-			opMap[opType][resName] = op
+			for _, resName := range opResourceNames {
+				opMap[opType][resName] = op
+			}
 		}
 	}
 
@@ -98,7 +100,7 @@ func (a *SDKAPI) GetOperationMap(cfg *ackgenconfig.Config) *OperationMap {
 	//
 	// see: https://github.com/aws-controllers-k8s/community/issues/1555
 	for opID, opCfg := range cfg.Operations {
-		if opCfg.ResourceName == "" {
+		if len(opCfg.ResourceName) == 0 {
 			continue
 		}
 		op, found := a.API.Operations[opID]
@@ -107,7 +109,9 @@ func (a *SDKAPI) GetOperationMap(cfg *ackgenconfig.Config) *OperationMap {
 		}
 		for _, operationType := range opCfg.OperationType {
 			opType := OpTypeFromString(operationType)
-			opMap[opType][opCfg.ResourceName] = op
+			for _, resName := range opCfg.ResourceName {
+				opMap[opType][resName] = op
+			}
 		}
 	}
 	a.opMap = &opMap
@@ -360,20 +364,23 @@ func NewSDKAPI(api *awssdkmodel.API, apiGroupSuffix string) *SDKAPI {
 }
 
 // Override the operation type and/or resource name, if specified in config
-func getOpTypeAndResourceName(opID string, cfg *ackgenconfig.Config) ([]OpType, string) {
+func getOpTypesAndResourcesMapping(opID string, cfg *ackgenconfig.Config) ([]OpType, []string) {
 	opType, resName := GetOpTypeAndResourceNameFromOpID(opID, cfg)
-	opTypes := []OpType{opType}
+	opConfig, exists := cfg.GetOperationConfig(opID)
 
-	if operationConfig, exists := cfg.GetOperationConfig(opID); exists {
-		if operationConfig.ResourceName != "" {
-			resName = operationConfig.ResourceName
-		}
-		for _, operationType := range operationConfig.OperationType {
-			opType = OpTypeFromString(operationType)
-			opTypes = append(opTypes, opType)
-		}
+	// The existance of the operation in the config file is not enough to
+	// override the operation type and/or resource name. The operation type
+	// and/or resource name must be specified in the config file.
+	if !exists || len(opConfig.ResourceName) == 0 || len(opConfig.OperationType) == 0 {
+		return []OpType{opType}, []string{resName}
 	}
-	return opTypes, resName
+
+	opTypes := []OpType{}
+	for _, operationType := range opConfig.OperationType {
+		opType = OpTypeFromString(operationType)
+		opTypes = append(opTypes, opType)
+	}
+	return []OpType{opType}, opConfig.ResourceName
 }
 
 // getMemberByPath returns a ShapeRef given a root Shape and a dot-notation
