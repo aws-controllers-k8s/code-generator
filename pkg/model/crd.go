@@ -724,6 +724,10 @@ func (r *CRD) CustomFindMethodName() string {
 	return r.cfg.GetCustomFindMethodName(r.Names.Original)
 }
 
+func (r *CRD) CustomDeleteMethodName() string {
+	return r.cfg.GetCustomDeleteMethodName(r.Names.Original)
+}
+
 // ListOpMatchFieldNames returns a slice of strings representing the field
 // names in the List operation's Output shape's element Shape that we should
 // check a corresponding value in the target Spec exists.
