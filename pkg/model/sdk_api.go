@@ -41,6 +41,7 @@ var (
 		"string":    "string",
 		"bool":      "boolean",
 		"time.Time": "timestamp",
+		"bytes":     "blob",
 	}
 )
 
@@ -140,7 +141,7 @@ func (a *SDKAPI) GetShapeRefFromType(
 	// first check to see if the element type is a scalar and if it is, just
 	// create a ShapeRef to represent the type.
 	switch elemType {
-	case "string", "bool", "int", "int64", "float64", "time.Time":
+	case "string", "bool", "int", "int64", "float64", "time.Time", "bytes":
 		sdkType, found := GoTypeToSDKShapeType[elemType]
 		if !found {
 			msg := fmt.Sprintf("GetShapeRefFromType: unsupported element type %s", elemType)
