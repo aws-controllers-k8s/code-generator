@@ -14,6 +14,8 @@
 package model
 
 import (
+	"fmt"
+
 	"github.com/aws-controllers-k8s/pkg/names"
 	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
 )
@@ -22,6 +24,7 @@ type Attr struct {
 	Names  names.Names
 	GoType string
 	Shape  *awssdkmodel.Shape
+	GoTag  string
 }
 
 func NewAttr(
@@ -34,4 +37,14 @@ func NewAttr(
 		GoType: goType,
 		Shape:  shape,
 	}
+}
+
+// GetGoTag returns the Go Tag to inject for this attribute. If the GoTag
+// field is not empty, it will be used. Otherwise, one will be generated
+// from the attribute's name.
+func (a *Attr) GetGoTag() string {
+	if a.GoTag != "" {
+		return a.GoTag
+	}
+	return fmt.Sprintf("`json:\"%s,omitempty\"`", a.Names.CamelLower)
 }

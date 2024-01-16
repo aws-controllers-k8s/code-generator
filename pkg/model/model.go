@@ -502,21 +502,32 @@ func (m *Model) processNestedFieldTypeDefs(
 				replaceSecretAttrGoType(crd, field, tdefs)
 			}
 			if field.FieldConfig.References != nil {
-				updateTypeDefAttributeWithReference(fieldPath, tdefs, crd)
+				updateTypeDefAttributeWithReference(crd, fieldPath, tdefs)
+			}
+			if field.FieldConfig.GoTag != nil {
+				setTypeDefAttributeGoTag(crd, fieldPath, field, tdefs)
 			}
 		}
 	}
 }
 
-// updateTypeDefAttributeWithReference adds a new AWSResourceReference attribute
-// for the corresponding attribute represented by fieldPath of nested field
-func updateTypeDefAttributeWithReference(fieldPath string, tdefs []*TypeDef, crd *CRD) {
+// getAttributeFromPath extracts the parent TypeDef and the target attribute for
+// the corresponding fieldPath of nested field. This function should only be
+// called for nested fieldPath. Non-nested fieldPath should be handled by higher
+// level functions.
+//
+// This function doesn't return an error "urgh" because a lot of the code
+// generation code is written in a way that panics are used to indicate
+// programmer error. This is one of those cases.
+//
+// NOTE(a-hilaly): Consider refactoring the code generation code to flow back
+// errors instead of panicking.
+func getAttributeFromPath(crd *CRD, fieldPath string, tdefs []*TypeDef) (parentTypeDef *TypeDef, target *Attr) {
 	fp := ackfp.FromString(fieldPath)
 	if fp.Size() < 2 {
-		// TypeDef should only be updated with Reference fields for nested fieldPath.
-		// For non-nested fieldPath, the references are added directly to the resource
-		// Spec.
-		return
+		// This function should only be called for nested fieldPath. Non-nested
+		// fieldPath should be handled by higher level functions.
+		return nil, nil
 	}
 	// First part of nested reference fieldPath is the name of top level Spec
 	// field. Ex: For 'ResourcesVpcConfig.SecurityGroupIds' fieldpath the
@@ -587,8 +598,25 @@ func updateTypeDefAttributeWithReference(fieldPath string, tdefs []*TypeDef, crd
 			" inside %s TypeDef to create reference for %s",
 			fieldName, parentFieldTypeDefName, fieldPath))
 	}
+	return parentFieldTypeDef, fieldAttr
+}
 
-	addReferenceAttribute(parentFieldTypeDef, fieldAttr)
+// setTypeDefAttributeGoTag sets the GoTag for the corresponding attribute
+// represented by fieldPath of nested field.
+func setTypeDefAttributeGoTag(crd *CRD, fieldPath string, f *Field, tdefs []*TypeDef) {
+	_, fieldAttr := getAttributeFromPath(crd, fieldPath, tdefs)
+	if fieldAttr != nil {
+		fieldAttr.GoTag = f.GetGoTag()
+	}
+}
+
+// updateTypeDefAttributeWithReference adds a new AWSResourceReference attribute
+// for the corresponding attribute represented by fieldPath of nested field
+func updateTypeDefAttributeWithReference(crd *CRD, fieldPath string, tdefs []*TypeDef) {
+	parentFieldTypeDef, fieldAttr := getAttributeFromPath(crd, fieldPath, tdefs)
+	if fieldAttr != nil && parentFieldTypeDef != nil {
+		addReferenceAttribute(parentFieldTypeDef, fieldAttr)
+	}
 }
 
 // addReferenceAttribute creates a corresponding reference attribute for

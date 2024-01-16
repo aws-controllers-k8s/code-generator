@@ -7,7 +7,7 @@ type {{ .Names.Camel }} struct {
 	{{- if $attr.Shape.Documentation }}
 	{{ $attr.Shape.Documentation }}
 	{{- end }}
-	{{ $attr.Names.Camel }} {{ $attr.GoType }} `json:"{{ $attr.Names.CamelLower }},omitempty"`
+	{{ $attr.Names.Camel }} {{ $attr.GoType }} {{ $attr.GetGoTag }}
 {{- end }}
 }
 {{- end -}}
