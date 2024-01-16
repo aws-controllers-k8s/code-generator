@@ -40,7 +40,7 @@ type OperationConfig struct {
 	OutputWrapperFieldPath string `json:"output_wrapper_field_path,omitempty"`
 	// Override for resource name in case of heuristic failure
 	// An example of this is correcting stutter when the resource logic doesn't properly determine the resource name
-	ResourceName string `json:"resource_name"`
+	ResourceName StringArray `json:"resource_name"`
 	// Override for operation type in case of heuristic failure
 	// An example of this is `Put...` or `Register...` API operations not being correctly classified as `Create` op type
 	// OperationType []string `json:"operation_type"`
@@ -59,8 +59,8 @@ func (c *Config) OperationIsIgnored(operation *awssdkmodel.Operation) bool {
 	return util.InStrings(operation.ExportedName, c.Ignore.Operations)
 }
 
-// UnmarshalJSON parses input for a either a string or
-// or a list and returns a StringArray.
+// UnmarshalJSON parses input for either a string or
+// a list and returns a StringArray.
 func (a *StringArray) UnmarshalJSON(b []byte) error {
 	var multi []string
 	err := json.Unmarshal(b, &multi)
