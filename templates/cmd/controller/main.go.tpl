@@ -4,7 +4,6 @@ package main
 
 import (
 	"os"
-	"strings"
 
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
 	ackcfg "github.com/aws-controllers-k8s/runtime/pkg/config"
@@ -92,24 +91,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	defaultNamesSpaces := make(map[string]ctrlrtcache.Config, 0)
-	if ackCfg.WatchNamespace != "" {
-		// If use has specified multiple namespaces, we need to watch all of them
-		// by adding them to the defaultNamesSpaces map.
-		namespaces := strings.Split(ackCfg.WatchNamespace, ",")
+	watchNamespaces := make(map[string]ctrlrtcache.Config, 0)
+	namespaces, err := ackCfg.GetWatchNamespaces()
+	if err != nil {
 		for _, namespace := range namespaces {
-			cleanedNamespace := strings.TrimSpace(namespace)
-			if cleanedNamespace == "" {
-				continue
-			}
-			defaultNamesSpaces[cleanedNamespace] = ctrlrtcache.Config{}
+			watchNamespaces[namespace] = ctrlrtcache.Config{}
 		}
 	}
 	mgr, err := ctrlrt.NewManager(ctrlrt.GetConfigOrDie(), ctrlrt.Options{
 		Scheme: scheme,
 		Cache: ctrlrtcache.Options{
 			Scheme:            scheme,
-			DefaultNamespaces: defaultNamesSpaces,
+			DefaultNamespaces: watchNamespaces,
 		},
 		WebhookServer: &ctrlrtwebhook.DefaultServer{
 			Options: ctrlrtwebhook.Options{

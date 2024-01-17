@@ -1,10 +1,10 @@
 module github.com/aws-controllers-k8s/code-generator
 
-go 1.19
+go 1.21
 
 require (
 	github.com/aws-controllers-k8s/pkg v0.0.7
-	github.com/aws-controllers-k8s/runtime v0.28.1-0.20240105002552-817088574ba0
+	github.com/aws-controllers-k8s/runtime v0.29.2
 	github.com/aws/aws-sdk-go v1.49.0
 	github.com/dlclark/regexp2 v1.4.0 // indirect
 	// pin to v0.1.1 due to release problem with v0.1.2
