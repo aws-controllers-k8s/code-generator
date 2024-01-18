@@ -11,7 +11,7 @@ rules:
   resources:
 {{- range $crdName := .CRDNames }}
   - {{ $crdName }}
-{{ end }}
+{{- end }}
   verbs:
   - create
   - delete
