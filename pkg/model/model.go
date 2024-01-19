@@ -581,7 +581,20 @@ func getAttributeFromPath(crd *CRD, fieldPath string, tdefs []*TypeDef) (parentT
 
 	var parentFieldTypeDef *TypeDef
 	for _, td := range tdefs {
-		if strings.EqualFold(td.Names.Original, parentFieldTypeDefName) {
+
+		fallbackName := ""
+		switch parentFieldShapeRef.Shape.Type {
+		case "list":
+			// e.g FunctionAssociationsList in CloudFront DistributionConfig.DefaultCacheBehavior.FunctionAssociations
+			fallbackName = parentFieldShapeRef.Shape.MemberRef.ShapeName
+			fallbackName = strings.TrimSuffix(fallbackName, "List")
+		default:
+			// NOTE(a-hilaly): Very likely that we will need to add more cases here
+			// as we encounter more special APIs in the future.
+		}
+
+		if strings.EqualFold(td.Names.Original, parentFieldTypeDefName) ||
+			(fallbackName != "" && strings.EqualFold(td.Names.Original, fallbackName)) {
 			parentFieldTypeDef = td
 			break
 		}
