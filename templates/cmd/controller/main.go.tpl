@@ -94,9 +94,16 @@ func main() {
 	watchNamespaces := make(map[string]ctrlrtcache.Config, 0)
 	namespaces, err := ackCfg.GetWatchNamespaces()
 	if err != nil {
-		for _, namespace := range namespaces {
-			watchNamespaces[namespace] = ctrlrtcache.Config{}
-		}
+		setupLog.Error(
+			err, "Unable to parse watch namespaces.",
+			"aws.service", ackCfg.WatchNamespace,
+		)
+		os.Exit(1)
+	}
+	{{/* If namespaces is an empty slice, then we watch all namespaces */}}
+	{{/* If namespaces is a slice with multiple elements, then we watch only those namespaces */}}
+	for _, namespace := range namespaces {
+		watchNamespaces[namespace] = ctrlrtcache.Config{}
 	}
 	mgr, err := ctrlrt.NewManager(ctrlrt.GetConfigOrDie(), ctrlrt.Options{
 		Scheme: scheme,
