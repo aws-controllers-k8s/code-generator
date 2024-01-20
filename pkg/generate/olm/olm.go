@@ -136,6 +136,18 @@ func DefaultServiceConfig() ServiceConfig {
 
 			InstallModes: []opsv1alpha1.InstallMode{
 				{
+					Type:      opsv1alpha1.InstallModeTypeOwnNamespace,
+					Supported: true,
+				},
+				{
+					Type:      opsv1alpha1.InstallModeTypeSingleNamespace,
+					Supported: true,
+				},
+				{
+					Type:      opsv1alpha1.InstallModeTypeMultiNamespace,
+					Supported: true,
+				},
+				{
 					Type:      opsv1alpha1.InstallModeTypeAllNamespaces,
 					Supported: true,
 				},

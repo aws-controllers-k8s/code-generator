@@ -16,8 +16,11 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrlrt "sigs.k8s.io/controller-runtime"
+	ctrlrtcache "sigs.k8s.io/controller-runtime/pkg/cache"
 	ctrlrtmetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
-	svcsdk "github.com/aws/aws-sdk-go/service/{{ .ServicePackageName }}"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	ctrlrtwebhook "sigs.k8s.io/controller-runtime/pkg/webhook"
+
 {{- /* Import the go types from service controllers whose resources are referenced in this service controller.
 If these referenced types are not added to scheme, this service controller will not be able to read
 resources across service controller. */ -}}
@@ -30,7 +33,9 @@ resources across service controller. */ -}}
 {{- end }}
 
 	svcresource "github.com/aws-controllers-k8s/{{ .ServicePackageName }}-controller/pkg/resource"
+	svcsdk "github.com/aws/aws-sdk-go/service/{{ .ServicePackageName }}"
 	svctypes "github.com/aws-controllers-k8s/{{ .ServicePackageName }}-controller/apis/{{ .APIVersion }}"
+
 	{{/* TODO(a-hilaly): import apis/* packages to register webhooks */}}
 	{{range $crdName := .SnakeCasedCRDNames }}_ "github.com/aws-controllers-k8s/{{ $servicePackageName }}-controller/pkg/resource/{{ $crdName }}"
 	{{end}}
@@ -86,14 +91,28 @@ func main() {
 		os.Exit(1)
 	}
 
+	watchNamespaces := make(map[string]ctrlrtcache.Config, 0)
+	namespaces, err := ackCfg.GetWatchNamespaces()
+	if err != nil {
+		for _, namespace := range namespaces {
+			watchNamespaces[namespace] = ctrlrtcache.Config{}
+		}
+	}
 	mgr, err := ctrlrt.NewManager(ctrlrt.GetConfigOrDie(), ctrlrt.Options{
-		Scheme:                  scheme,
-		Port:                    port,
-		Host:                    host,
-		MetricsBindAddress:      ackCfg.MetricsAddr,
+		Scheme: scheme,
+		Cache: ctrlrtcache.Options{
+			Scheme:            scheme,
+			DefaultNamespaces: watchNamespaces,
+		},
+		WebhookServer: &ctrlrtwebhook.DefaultServer{
+			Options: ctrlrtwebhook.Options{
+				Port: port,
+				Host: host,
+			},
+		},
+		Metrics:                 metricsserver.Options{BindAddress: ackCfg.MetricsAddr},
 		LeaderElection:          ackCfg.EnableLeaderElection,
-		LeaderElectionID:        "ack-"+awsServiceAPIGroup,
-		Namespace:               ackCfg.WatchNamespace,
+		LeaderElectionID:        "ack-" + awsServiceAPIGroup,
 		LeaderElectionNamespace: ackCfg.LeaderElectionNamespace,
 	})
 	if err != nil {
@@ -133,7 +152,6 @@ func main() {
 					err, "unable to register webhook "+webhook.UID(),
 					"aws.service", awsServiceAlias,
 				)
-
 			}
 		}
 	}
