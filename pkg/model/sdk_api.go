@@ -111,6 +111,11 @@ func (a *SDKAPI) GetOperationMap(cfg *ackgenconfig.Config) *OperationMap {
 		for _, operationType := range opCfg.OperationType {
 			opType := OpTypeFromString(operationType)
 			for _, resName := range opCfg.ResourceName {
+				resMap, ok := opMap[opType]
+				if !ok {
+					resMap = map[string]*awssdkmodel.Operation{}
+					opMap[opType] = resMap
+				}
 				opMap[opType][resName] = op
 			}
 		}
