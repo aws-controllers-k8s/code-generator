@@ -127,7 +127,7 @@ func FallBackFindServiceID(sdkDir, svcAlias string) (string, error) {
 			defer f.Close()
 			scanner := bufio.NewScanner(f)
 			for scanner.Scan() {
-				if strings.Contains(scanner.Text(), "serviceId") {
+				if strings.Contains(scanner.Text(), "serviceId") && !strings.Contains(scanner.Text(), "serviceIdentifier") {
 					getServiceID := strings.Split(scanner.Text(), ":")
 					re := regexp.MustCompile(`[," \t]`)
 					svcID := strings.ToLower(re.ReplaceAllString(getServiceID[1], ``))

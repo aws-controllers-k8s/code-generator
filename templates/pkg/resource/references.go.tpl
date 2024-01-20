@@ -27,7 +27,7 @@ import (
 {{- end }}
 {{- end }}
 
-	svcapitypes "github.com/aws-controllers-k8s/{{ .ServicePackageName }}-controller/apis/{{ .APIVersion }}"
+	svcapitypes "github.com/aws-controllers-k8s/{{ .ControllerName }}-controller/apis/{{ .APIVersion }}"
 )
 
 {{ if .CRD.HasReferenceFields -}}

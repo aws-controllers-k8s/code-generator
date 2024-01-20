@@ -2,7 +2,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: {{.ServicePackageName}}-leader-election-role
+  name: {{.ControllerName}}-leader-election-role
   namespace: ack-system
 rules:
 - apiGroups:

@@ -25,7 +25,7 @@ import (
 	svcsdk "github.com/aws/aws-sdk-go/service/{{ .ServicePackageName }}"
 	svcsdkapi "github.com/aws/aws-sdk-go/service/{{ .ServicePackageName }}/{{ .ServicePackageName }}iface"
 
-	svcapitypes "github.com/aws-controllers-k8s/{{ .ServicePackageName }}-controller/apis/{{ .APIVersion }}"
+	svcapitypes "github.com/aws-controllers-k8s/{{ .ControllerName }}-controller/apis/{{ .APIVersion }}"
 )
 
 var (
@@ -180,7 +180,7 @@ func (rm *resourceManager) Delete(
 // name for the resource
 func (rm *resourceManager) ARNFromName(name string) string {
 	return fmt.Sprintf(
-		"arn:aws:{{ .ServicePackageName }}:%s:%s:%s",
+		"arn:aws:{{ .ControllerName }}:%s:%s:%s",
 		rm.awsRegion,
 		rm.awsAccountID,
 		name,

@@ -52,8 +52,24 @@ type Model struct {
 // MetaVars returns a MetaVars struct populated with metadata about the AWS
 // service API
 func (m *Model) MetaVars() templateset.MetaVars {
+	controllerName := m.cfg.ControllerName
+	if controllerName == "" {
+		controllerName = m.servicePackageName
+	}
+	// NOTE(a-hilaly): I know this is a bit of a hack and it's confusing, but
+	// long time ago, we assumed that model_name is always equal to the service
+	// name. This is not the case anymore, prometheusservice and documentdb
+	// are examples of services that have different model names.
+	//
+	// TODO(a-hilaly): We should probably rework all this naming stuff to be
+	// more consistent. To whoever is reading this, I'm sorry.
+	servicePackageName := m.servicePackageName
+	if m.cfg.SDKNames.Package != "" {
+		servicePackageName = m.cfg.SDKNames.Package
+	}
 	return templateset.MetaVars{
-		ServicePackageName:      m.servicePackageName,
+		ControllerName:          controllerName,
+		ServicePackageName:      servicePackageName,
 		ServiceID:               m.SDKAPI.ServiceID(),
 		ServiceModelName:        m.cfg.SDKNames.Model,
 		APIGroup:                m.APIGroup(),
@@ -943,7 +959,11 @@ func (m *Model) APIGroup() string {
 	if m.SDKAPI.APIGroupSuffix != "" {
 		suffix = m.SDKAPI.APIGroupSuffix
 	}
-	return fmt.Sprintf("%s.%s", m.servicePackageName, suffix)
+	name := m.GetConfig().ControllerName
+	if name == "" {
+		name = m.servicePackageName
+	}
+	return fmt.Sprintf("%s.%s", name, suffix)
 }
 
 // ClientInterfaceTypeName returns the name of the aws-sdk-go primary API

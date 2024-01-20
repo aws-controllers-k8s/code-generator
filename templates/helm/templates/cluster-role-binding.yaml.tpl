@@ -6,7 +6,7 @@ metadata:
 roleRef:
   kind: ClusterRole
   apiGroup: rbac.authorization.k8s.io
-  name: ack-{{ .ServicePackageName }}-controller
+  name: ack-{{ .ControllerName }}-controller
 subjects:
 - kind: ServiceAccount
   name: {{ IncludeTemplate "service-account.name" }}
@@ -27,7 +27,7 @@ metadata:
 roleRef:
   kind: Role
   apiGroup: rbac.authorization.k8s.io
-  name: ack-{{ .ServicePackageName }}-controller
+  name: ack-{{ .ControllerName }}-controller
 subjects:
 - kind: ServiceAccount
   name: {{ "{{ $serviceAccountName }}" }}

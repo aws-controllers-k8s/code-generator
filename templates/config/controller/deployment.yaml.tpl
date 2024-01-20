@@ -6,20 +6,20 @@ metadata:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ack-{{ .ServicePackageName }}-controller
+  name: ack-{{ .ControllerName }}-controller
   namespace: ack-system
   labels:
-    app.kubernetes.io/name: ack-{{ .ServicePackageName }}-controller
+    app.kubernetes.io/name: ack-{{ .ControllerName }}-controller
     app.kubernetes.io/part-of: ack-system
 spec:
   selector:
     matchLabels:
-      app.kubernetes.io/name: ack-{{ .ServicePackageName }}-controller
+      app.kubernetes.io/name: ack-{{ .ControllerName }}-controller
   replicas: 1
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: ack-{{ .ServicePackageName }}-controller
+        app.kubernetes.io/name: ack-{{ .ControllerName }}-controller
     spec:
       containers:
       - command:

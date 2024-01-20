@@ -15,6 +15,6 @@ patches:
   target:
     group: apps
     kind: Deployment
-    name: ack-{{ .ServicePackageName }}-controller
+    name: ack-{{ .ControllerName }}-controller
     version: v1
 - path: user-env.yaml

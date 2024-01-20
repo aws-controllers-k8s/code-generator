@@ -6,10 +6,10 @@ patches:
     group: rbac.authorization.k8s.io
     version: v1
     kind: ClusterRole
-    name: ack-{{ .ServicePackageName }}-controller
+    name: ack-{{ .ControllerName }}-controller
 - path: role-binding.json
   target:
     group: rbac.authorization.k8s.io
     version: v1
     kind: ClusterRoleBinding
-    name: ack-{{ .ServicePackageName }}-controller-rolebinding
+    name: ack-{{ .ControllerName }}-controller-rolebinding

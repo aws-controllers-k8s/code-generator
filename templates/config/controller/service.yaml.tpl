@@ -1,11 +1,11 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: ack-{{ .ServicePackageName }}-metrics-service
+  name: ack-{{ .ControllerName }}-metrics-service
   namespace: ack-system
 spec:
   selector:
-    app.kubernetes.io/name: ack-{{ .ServicePackageName }}-controller
+    app.kubernetes.io/name: ack-{{ .ControllerName }}-controller
   ports:
     - name: metricsport
       port: 8080
