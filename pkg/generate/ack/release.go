@@ -26,13 +26,15 @@ var (
 	releaseTemplatePaths = []string{
 		"config/controller/kustomization.yaml.tpl",
 		"helm/templates/cluster-role-binding.yaml.tpl",
+		"helm/templates/cluster-role-controller.yaml.tpl",
 		"helm/Chart.yaml.tpl",
 		"helm/values.yaml.tpl",
 		"helm/values.schema.json",
 		"helm/templates/NOTES.txt.tpl",
 		"helm/templates/role-reader.yaml.tpl",
 		"helm/templates/role-writer.yaml.tpl",
-		"helm/templates/_controller-role-kind-patch.yaml.tpl",
+		"helm/templates/caches-role.yaml.tpl",
+		"helm/templates/caches-role-binding.yaml.tpl",
 		"helm/templates/leader-election-role.yaml.tpl",
 		"helm/templates/leader-election-role-binding.yaml.tpl",
 	}
