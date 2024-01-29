@@ -1,1 +1,1 @@
-arn:aws:iam::aws:policy/CloudWatchFullAccess
+arn:aws:iam::aws:policy/CloudWatchFullAccessV2
