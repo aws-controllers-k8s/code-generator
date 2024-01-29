@@ -10,7 +10,6 @@ rules:
   - cloudwatch.services.k8s.aws
   resources:
   - metricalarms
-
   verbs:
   - create
   - delete
