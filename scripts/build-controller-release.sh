@@ -245,15 +245,28 @@ controller-gen rbac:roleName="$K8S_RBAC_ROLE_NAME" paths=./... output:rbac:artif
 # controller-gen rbac outputs a ClusterRole definition in a
 # $config_output_dir/rbac/role.yaml file. We additionally add the ability by 
 # for the user to specify if they want the role to be ClusterRole or Role by specifying installation scope
-# in the helm values.yaml. We do this by having a custom helm template named _controller-role-kind-patch.yaml 
-# which utilizes the template language and adding the auto generated rules to that template. 
-tail -n +7  "$helm_output_dir/templates/role.yaml" >> "$helm_output_dir/templates/_controller-role-kind-patch.yaml"
+# in the helm values.yaml.
 
-# We have some other standard Role files for a reader and writer role, so here we rename 
-# the `_controller-role-kind-patch.yaml ` file to `cluster-role-controller.yaml` 
-# to better reflect what is in that file. 
-mv "$helm_output_dir/templates/_controller-role-kind-patch.yaml"  "$helm_output_dir/templates/cluster-role-controller.yaml"
+# NOTE(a-hilaly): This is some very bad bash-fu, i'm having thoughts about rewriting this hacky code
+# in Go or something else. Maybe we need to rework all our generation scripts to be more modular and
+# easier to maintain.
+
+# First we trim the first 6 lines of the role.yaml file (which is the apiVersion, kind, metadata ...)
+# this will leave us the rules section of the role.yaml file. We then append the rules section to the
+# _helpers-patch.yaml file which is a file that will be included in the _helpers.tpl file. This will
+# allow us to use the rules section in the _helpers.tpl file to generate the correct role/clusterrole.
+tail -n +7  "$helm_output_dir/templates/role.yaml" > "$helm_output_dir/templates/_helpers-patch.yaml"
+helpers_patch_path="$helm_output_dir/templates/_helpers-patch.yaml"
+
+# Some sed-fu to fill the "controller-role-rules" section. Urgh.
+sed '/SEDREPLACERULES/{
+    r '$helpers_patch_path'
+    d
+}' $helm_output_dir/templates/_helpers.tpl > $helm_output_dir/templates/_helpers-new.tpl
+mv $helm_output_dir/templates/_helpers-new.tpl $helm_output_dir/templates/_helpers.tpl
+
 rm "$helm_output_dir/templates/role.yaml"
+rm "$helpers_patch_path"
 
 popd 1>/dev/null
 
