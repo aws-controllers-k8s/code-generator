@@ -255,7 +255,7 @@ controller-gen rbac:roleName="$K8S_RBAC_ROLE_NAME" paths=./... output:rbac:artif
 # this will leave us the rules section of the role.yaml file. We then append the rules section to the
 # _helpers-patch.yaml file which is a file that will be included in the _helpers.tpl file. This will
 # allow us to use the rules section in the _helpers.tpl file to generate the correct role/clusterrole.
-tail -n +7  "$helm_output_dir/templates/role.yaml" > "$helm_output_dir/templates/_helpers-patch.yaml"
+tail -n +6  "$helm_output_dir/templates/role.yaml" > "$helm_output_dir/templates/_helpers-patch.yaml"
 helpers_patch_path="$helm_output_dir/templates/_helpers-patch.yaml"
 
 # Some sed-fu to fill the "controller-role-rules" section. Urgh.
