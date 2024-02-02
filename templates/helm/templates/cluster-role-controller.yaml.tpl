@@ -10,8 +10,9 @@ metadata:
     {{ "{{ $key }}: {{ $value | quote }}" }}
   {{ "{{- end }}" }}
 {{ "{{- $rules }}" }}
-{{ "{{ else if .Values.watchNamespace }}" }}
-{{ "{{ $namespaces := split \",\" .Values.watchNamespace }}" }}
+{{ "{{ else if eq .Values.installScope \"namespace\" }}" }}
+{{ "{{ $wn := include \"watch-namespace\" . }}" }}
+{{ "{{ $namespaces := split \",\" $wn }}" }}
 {{ "{{ range $namespaces }}" }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1

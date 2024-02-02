@@ -11,8 +11,9 @@ subjects:
 - kind: ServiceAccount
   name: {{ "{{ include \"service-account.name\" . }}" }}
   namespace: {{ "{{ .Release.Namespace }}" }}
-{{ "{{ else if .Values.watchNamespace }}" }}
-{{ "{{ $namespaces := split \",\" .Values.watchNamespace }}" }}
+{{ "{{ else if eq .Values.installScope \"namespace\" }}" }}
+{{ "{{ $wn := include \"watch-namespace\" . }}" }}
+{{ "{{ $namespaces := split \",\" $wn }}" }}
 {{ "{{ $fullname := include \"app.fullname\" .  }}" }}
 {{ "{{ $releaseNamespace := .Release.Namespace }}" }}
 {{ "{{ $serviceAccountName := include \"service-account.name\" .  }}" }}
