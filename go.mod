@@ -3,7 +3,7 @@ module github.com/aws-controllers-k8s/code-generator
 go 1.21
 
 require (
-	github.com/aws-controllers-k8s/pkg v0.0.8
+	github.com/aws-controllers-k8s/pkg v0.0.9
 	github.com/aws-controllers-k8s/runtime v0.29.2
 	github.com/aws/aws-sdk-go v1.49.0
 	github.com/dlclark/regexp2 v1.10.0 // indirect
