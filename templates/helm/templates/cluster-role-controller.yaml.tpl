@@ -1,5 +1,5 @@
 {{ "{{ $labels := .Values.role.labels }}" }}
-{{ "{{ $rules := include \"controller-role-rules\" . }}" }}
+{{ VarIncludeTemplate "rbacRules" "rbac-rules" }}
 {{ "{{ if eq .Values.installScope \"cluster\" }}" }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -9,9 +9,9 @@ metadata:
   {{ "{{- range $key, $value := $labels }}" }}
     {{ "{{ $key }}: {{ $value | quote }}" }}
   {{ "{{- end }}" }}
-{{ "{{- $rules }}" }}
+{{ "{{$rbacRules }}" }}
 {{ "{{ else if eq .Values.installScope \"namespace\" }}" }}
-{{ "{{ $wn := include \"watch-namespace\" . }}" }}
+{{ VarIncludeTemplate "wn" "watch-namespace" }}
 {{ "{{ $namespaces := split \",\" $wn }}" }}
 {{ "{{ range $namespaces }}" }}
 ---
@@ -24,6 +24,6 @@ metadata:
   {{ "{{- range $key, $value := $labels }}" }}
     {{ "{{ $key }}: {{ $value | quote }}" }}
   {{ "{{- end }}" }}
-{{ "{{- $rules }}" }}
+{{ "{{ $rbacRules }}" }}
 {{ "{{ end }}" }}
 {{ "{{ end }}" }}

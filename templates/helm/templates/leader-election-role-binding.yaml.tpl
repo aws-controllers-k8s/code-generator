@@ -14,6 +14,6 @@ roleRef:
   name: {{.ServicePackageName}}-leader-election-role
 subjects:
 - kind: ServiceAccount
-  name: {{ "{{ include \"service-account.name\" . }}" }}
+  name: {{ IncludeTemplate "service-account.name" }}
   namespace: {{ "{{ .Release.Namespace }}" }}
 {{- "{{- end }}" }}
