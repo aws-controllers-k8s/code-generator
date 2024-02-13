@@ -14,6 +14,7 @@
 package ack
 
 import (
+	"fmt"
 	"strings"
 	ttpl "text/template"
 
@@ -27,6 +28,7 @@ var (
 		"config/controller/kustomization.yaml.tpl",
 		"helm/templates/cluster-role-binding.yaml.tpl",
 		"helm/templates/cluster-role-controller.yaml.tpl",
+		"helm/templates/_helpers.tpl.tpl",
 		"helm/Chart.yaml.tpl",
 		"helm/values.yaml.tpl",
 		"helm/values.schema.json",
@@ -37,23 +39,47 @@ var (
 		"helm/templates/caches-role-binding.yaml.tpl",
 		"helm/templates/leader-election-role.yaml.tpl",
 		"helm/templates/leader-election-role-binding.yaml.tpl",
+		"helm/templates/deployment.yaml.tpl",
+		"helm/templates/metrics-service.yaml.tpl",
+		"helm/templates/service-account.yaml.tpl",
 	}
 	releaseIncludePaths = []string{
 		"config/controller/kustomization_def.yaml.tpl",
 	}
-	releaseCopyPaths = []string{
-		"helm/templates/_helpers.tpl",
-		"helm/templates/deployment.yaml",
-		"helm/templates/metrics-service.yaml",
-		"helm/templates/service-account.yaml",
-	}
-	releaseFuncMap = ttpl.FuncMap{
-		"ToLower": strings.ToLower,
-		"Empty": func(subject string) bool {
-			return strings.TrimSpace(subject) == ""
-		},
+	releaseCopyPaths = []string{}
+	releaseFuncMap   = func(serviceName string) ttpl.FuncMap {
+		return ttpl.FuncMap{
+			"ToLower": strings.ToLower,
+			"Empty": func(subject string) bool {
+				return strings.TrimSpace(subject) == ""
+			},
+			"DefineTemplate": func(templateName string) string {
+				// Returnes a statement that defines a new template name with unique
+				// prefix for the ACK controller.
+				// For example, if serviceName is "s3" and templateName is "app.name"
+				// it will return {{- define "ack-s3-controller.app.name" -}}
+				return fmt.Sprintf("{{- define \"%s\" -}}", prefixServiceTemplateName(serviceName, templateName))
+			},
+			"IncludeTemplate": func(templateName string) string {
+				// Returns a statement that includes a template defined with DefineTemplate.
+				// For example, if serviceName is "s3" and templateName is "app.name"
+				// it will return {{- include "ack-s3-controller.app.name" . -}}
+				return fmt.Sprintf("{{ include \"%s\" . }}", prefixServiceTemplateName(serviceName, templateName))
+			},
+			"VarIncludeTemplate": func(variableName, templateName string) string {
+				// Returns a statement that declares a variable and includes a template defined with
+				// DefineTemplate.
+				// For example, if variableName is appName, serviceName is "s3", and templateName is "app.name"
+				// it will return {{- $variable := include "ack-s3-controller.app.name" .app.name -}}
+				return fmt.Sprintf("{{ $%s := include \"%s\" . }}", variableName, prefixServiceTemplateName(serviceName, templateName))
+			},
+		}
 	}
 )
+
+func prefixServiceTemplateName(serviceName, templateName string) string {
+	return fmt.Sprintf("ack-%s-controller.%s", serviceName, templateName)
+}
 
 // Release returns a pointer to a TemplateSet containing all the templates for
 // generating an ACK service controller release (Helm artifacts, etc)
@@ -74,10 +100,10 @@ func Release(
 		templateBasePaths,
 		releaseIncludePaths,
 		releaseCopyPaths,
-		releaseFuncMap,
+		releaseFuncMap(m.MetaVars().ServicePackageName),
 	)
-
 	metaVars := m.MetaVars()
+
 	releaseVars := &templateReleaseVars{
 		metaVars,
 		ImageReleaseVars{

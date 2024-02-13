@@ -2,21 +2,21 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: {{ "{{ include \"app.fullname\" . }}" }}
+  name: {{ IncludeTemplate "app.fullname" }}
 roleRef:
   kind: ClusterRole
   apiGroup: rbac.authorization.k8s.io
   name: ack-{{ .ServicePackageName }}-controller
 subjects:
 - kind: ServiceAccount
-  name: {{ "{{ include \"service-account.name\" . }}" }}
+  name: {{ IncludeTemplate "service-account.name" }}
   namespace: {{ "{{ .Release.Namespace }}" }}
 {{ "{{ else if eq .Values.installScope \"namespace\" }}" }}
-{{ "{{ $wn := include \"watch-namespace\" . }}" }}
+{{ VarIncludeTemplate "wn" "watch-namespace" }}
 {{ "{{ $namespaces := split \",\" $wn }}" }}
-{{ "{{ $fullname := include \"app.fullname\" .  }}" }}
+{{ VarIncludeTemplate "fullname" "app.fullname" }}
 {{ "{{ $releaseNamespace := .Release.Namespace }}" }}
-{{ "{{ $serviceAccountName := include \"service-account.name\" .  }}" }}
+{{ VarIncludeTemplate "serviceAccountName" "service-account.name" }}
 {{ "{{ range $namespaces }}" }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
