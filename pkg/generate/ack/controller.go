@@ -51,6 +51,7 @@ var (
 		"pkg/resource/sdk_find_read_one.go.tpl",
 		"pkg/resource/sdk_find_get_attributes.go.tpl",
 		"pkg/resource/sdk_find_read_many.go.tpl",
+		"pkg/resource/sdk_find_read_many_pagination.go.tpl",
 		"pkg/resource/sdk_find_not_implemented.go.tpl",
 		"pkg/resource/sdk_update.go.tpl",
 		"pkg/resource/sdk_update_custom.go.tpl",
@@ -75,6 +76,9 @@ var (
 		},
 		"Nil": func() interface{} {
 			return nil
+		},
+		"GoCodeReadManyFind": func(r *ackmodel.CRD, sourceVarName string, targetVarName string, matchWith string, indentLevel int) string {
+			return code.FindInArray(r.Config(), r, ackmodel.OpTypeGet, sourceVarName, targetVarName, matchWith, indentLevel)
 		},
 		"ResourceExceptionCode": func(r *ackmodel.CRD, httpStatusCode int) string {
 			return r.ExceptionCode(httpStatusCode)
