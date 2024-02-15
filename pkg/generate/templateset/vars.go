@@ -16,6 +16,10 @@ package templateset
 // MetaVars contains template variables that most templates need access to
 // that describe the service alias, its package name, etc
 type MetaVars struct {
+	// ControllerName contains the exact string used to identify the ACK
+	// controller in the aws-controllers-k8s project. This name is used as the
+	// name of the ACK controller's module, repository and helm chart.
+	ControllerName string
 	// ServiceModelName contains the exact string used to identify the AWS
 	// service API in the aws-sdk-go's models/apis/ directory. Note that some
 	// APIs this name does not match the ServiceID. e.g. The AWS Step Functions

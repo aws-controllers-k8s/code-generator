@@ -99,7 +99,6 @@ func getLatestAPIVersion(apiVersions []ackmetadata.ServiceVersion) (string, erro
 
 // getServiceAccountName gets the service account name from the optional flag passed into ack-generate
 func getServiceAccountName() (string, error) {
-
 	if optServiceAccountName != "" {
 		return optServiceAccountName, nil
 	}

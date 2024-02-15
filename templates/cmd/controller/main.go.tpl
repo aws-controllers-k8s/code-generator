@@ -25,6 +25,7 @@ import (
 If these referenced types are not added to scheme, this service controller will not be able to read
 resources across service controller. */ -}}
 {{- $servicePackageName := .ServicePackageName }}
+{{- $controllerName := .ControllerName }}
 {{- $apiVersion := .APIVersion }}
 {{- range $referencedServiceName := .ReferencedServiceNames }}
 {{- if not (eq $referencedServiceName $servicePackageName) }}
@@ -32,19 +33,19 @@ resources across service controller. */ -}}
 {{- end }}
 {{- end }}
 
-	svcresource "github.com/aws-controllers-k8s/{{ .ServicePackageName }}-controller/pkg/resource"
+	svcresource "github.com/aws-controllers-k8s/{{ .ControllerName }}-controller/pkg/resource"
 	svcsdk "github.com/aws/aws-sdk-go/service/{{ .ServicePackageName }}"
-	svctypes "github.com/aws-controllers-k8s/{{ .ServicePackageName }}-controller/apis/{{ .APIVersion }}"
+	svctypes "github.com/aws-controllers-k8s/{{ .ControllerName }}-controller/apis/{{ .APIVersion }}"
 
 	{{/* TODO(a-hilaly): import apis/* packages to register webhooks */}}
-	{{range $crdName := .SnakeCasedCRDNames }}_ "github.com/aws-controllers-k8s/{{ $servicePackageName }}-controller/pkg/resource/{{ $crdName }}"
+	{{range $crdName := .SnakeCasedCRDNames }}_ "github.com/aws-controllers-k8s/{{ $controllerName }}-controller/pkg/resource/{{ $crdName }}"
 	{{end}}
-	"github.com/aws-controllers-k8s/{{ .ServicePackageName }}-controller/pkg/version"
+	"github.com/aws-controllers-k8s/{{ .ControllerName }}-controller/pkg/version"
 )
 
 var (
 	awsServiceAPIGroup      = "{{ .APIGroup }}"
-	awsServiceAlias	        = "{{ .ServicePackageName }}"
+	awsServiceAlias	        = "{{ .ControllerName }}"
 	awsServiceEndpointsID   = svcsdk.EndpointsID
 	scheme			        = runtime.NewScheme()
 	setupLog		        = ctrlrt.Log.WithName("setup")

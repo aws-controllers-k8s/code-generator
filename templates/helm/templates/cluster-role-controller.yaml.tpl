@@ -4,7 +4,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: ack-{{ .ServicePackageName }}-controller
+  name: ack-{{ .ControllerName }}-controller
   labels:
   {{ "{{- range $key, $value := $labels }}" }}
     {{ "{{ $key }}: {{ $value | quote }}" }}
@@ -18,7 +18,7 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: ack-{{ .ServicePackageName }}-controller
+  name: ack-{{ .ControllerName }}-controller
   namespace: {{ "{{ . }}" }}
   labels:
   {{ "{{- range $key, $value := $labels }}" }}

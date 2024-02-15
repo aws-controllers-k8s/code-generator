@@ -16,7 +16,7 @@ metadata:
     operatorframework.io/os.linux: supported
     operatorframework.io/arch.amd64: supported
     operatorframework.io/arch.arm64: supported
-  name: ack-{{.ServicePackageName }}-controller.v0.0.0
+  name: ack-{{.ControllerName }}-controller.v0.0.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -27,7 +27,7 @@ spec:
       name: {{ ToLower .Plural }}.{{$.APIGroup}}
       version: {{$.APIVersion}}
       displayName: {{.Kind}}
-      description: {{.Kind}} represents the state of an AWS {{$.ServicePackageName}} {{.Kind}} resource.
+      description: {{.Kind}} represents the state of an AWS {{$.ControllerName}} {{.Kind}} resource.
     {{- end}}
   description: '{{ .Description }}'
   displayName: {{ .DisplayName}}
@@ -46,7 +46,7 @@ spec:
     type: {{ .Type }}
   {{- end}}
   keywords:
-  - {{.ServicePackageName}}
+  - {{.ControllerName}}
   {{- range .Common.Keywords}}
   - {{ . }}
   {{- end}}

@@ -44,6 +44,14 @@ type Config struct {
 	// only the service model name, but also the iface name to `PipesAPI`. See
 	// https://github.com/aws/aws-sdk-go/blob/main/service/pipes/pipesiface/interface.go#L62
 	SDKNames SDKNames `json:"sdk_names"`
+	// ControllerName lets you specify a service alias override. This can be
+	// used to only override the controller name exposed to the user. Meaning that
+	// it will only change the module name, the import paths, and the controller
+	// name. This is useful when the service identifier is not very user friendly
+	// and you want to expose a more user friendly name to the user. e.g docdb ->
+	// documentdb.
+	// This will also change the helm chart and image names.
+	ControllerName string `json:"controller_name,omitempty"`
 }
 
 // SDKNames contains information on the SDK Client package. More precisely
@@ -56,6 +64,14 @@ type SDKNames struct {
 	// model name is `opensearch` and the service package is called
 	// `opensearchservice`.
 	Model string `json:"model_name,omitempty"`
+	// Package let you define the package name of the service client. This field
+	// is optional and only needed for services such as documentdb where the service
+	// controller is called `documentdb` and the package is called `docdb`.
+	//
+	// You might be wondering why not just use the `model_name` field... well the
+	// answer is prometheusservice... the model name is `amp` and the service package
+	// is called `prometheusservice`. :shrug:
+	Package string `json:"package_name,omitempty"`
 	// ClientInterface is the name of the interface that defines the "shape" of
 	// the a sdk service client. e.g PipesAPI, LambdaAPI, etc...
 	ClientInterface string `json:"client_interface,omitempty"`

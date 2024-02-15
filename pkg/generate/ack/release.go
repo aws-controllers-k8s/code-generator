@@ -100,7 +100,7 @@ func Release(
 		templateBasePaths,
 		releaseIncludePaths,
 		releaseCopyPaths,
-		releaseFuncMap(m.MetaVars().ServicePackageName),
+		releaseFuncMap(m.MetaVars().ControllerName),
 	)
 	metaVars := m.MetaVars()
 

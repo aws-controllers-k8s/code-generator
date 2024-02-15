@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ack-{{.ServicePackageName}}-controller
+  name: ack-{{.ControllerName}}-controller
   namespace: {{.Annotations.SuggestedNamespace}}
 spec:
   template:
@@ -10,8 +10,8 @@ spec:
       - name: controller
         envFrom:
           - configMapRef:
-              name: ack-{{.ServicePackageName}}-user-config
+              name: ack-{{.ControllerName}}-user-config
               optional: false
           - secretRef:
-              name: ack-{{.ServicePackageName}}-user-secrets
+              name: ack-{{.ControllerName}}-user-secrets
               optional: true
