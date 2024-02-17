@@ -290,6 +290,9 @@ if [[ $ACK_GENERATE_OLM == "true" ]]; then
     if [ -n "$ACK_DOCUMENTATION_CONFIG_PATH" ]; then
         ag_olm_args=("${ag_olm_args[@]}" --documentation-config-path "$ACK_DOCUMENTATION_CONFIG_PATH")
     fi
+    if [ -n "$ACK_GENERATE_CACHE_DIR" ]; then
+        ag_olm_args=("${ag_olm_args[@]}" --cache-dir "$ACK_GENERATE_CACHE_DIR")
+    fi
 
     $ACK_GENERATE_BIN_PATH olm "${ag_olm_args[@]}"
     "$SCRIPTS_DIR"/olm-create-bundle.sh "$SERVICE" "$RELEASE_VERSION"
