@@ -40,6 +40,7 @@ COPY $service_alias-controller/pkg $work_dir/pkg
 # Copy local runtime code to the container
 COPY runtime/pkg $work_dir/../runtime/pkg
 COPY runtime/apis $work_dir/../runtime/apis
+COPY runtime/mocks $work_dir/../runtime/mocks
 COPY runtime/go.mod $work_dir/../runtime/go.mod
 COPY runtime/go.sum $work_dir/../runtime/go.sum
 
@@ -52,9 +53,11 @@ RUN echo "replace github.com/aws-controllers-k8s/runtime => ../runtime" >> $work
 # cache deps before building and copying source so that we don't need to re-download as much
 # and so that source changes don't invalidate our downloaded layer
 WORKDIR $work_dir/../runtime
-RUN  go mod download
+RUN go mod tidy
+RUN go mod download
 WORKDIR $work_dir
-RUN  go mod download
+RUN go mod tidy
+RUN go mod download
 
 # Build
 RUN GIT_VERSION=$service_controller_git_version && \
