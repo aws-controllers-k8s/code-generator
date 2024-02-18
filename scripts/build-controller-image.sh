@@ -110,6 +110,7 @@ if ! docker build \
   --build-arg build_date="$BUILD_DATE" \
   --build-arg golang_version="${GOLANG_VERSION}" \
   --build-arg go_arch="$GOARCH" \
+  --progress plain \
   "${DOCKER_BUILD_CONTEXT}"; then
   exit 2
 fi
