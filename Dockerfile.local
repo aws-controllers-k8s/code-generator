@@ -32,6 +32,10 @@ COPY $service_alias-controller/ATTRIBUTION.md $work_dir/ATTRIBUTION.md
 # Copy the go.mod and go.sum files for the service controller
 COPY $service_alias-controller/go.mod $work_dir/go.mod
 COPY $service_alias-controller/go.sum $work_dir/go.sum
+# Copy the controller code
+COPY $service_alias-controller/apis $work_dir/apis
+COPY $service_alias-controller/cmd $work_dir/cmd
+COPY $service_alias-controller/pkg $work_dir/pkg
 
 # Copy local runtime code to the container
 COPY runtime/pkg $work_dir/../runtime/pkg
@@ -52,10 +56,6 @@ RUN  go mod download
 WORKDIR $work_dir
 RUN  go mod download
 
-# Now copy the go source code for the service controller...
-COPY $service_alias-controller/apis $work_dir/apis
-COPY $service_alias-controller/cmd $work_dir/cmd
-COPY $service_alias-controller/pkg $work_dir/pkg
 # Build
 RUN GIT_VERSION=$service_controller_git_version && \
     GIT_COMMIT=$service_controller_git_commit && \
