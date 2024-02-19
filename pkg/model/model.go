@@ -547,19 +547,36 @@ func getAttributeFromPath(crd *CRD, fieldPath string, tdefs []*TypeDef) (parentT
 	}
 	// First part of nested reference fieldPath is the name of top level Spec
 	// field. Ex: For 'ResourcesVpcConfig.SecurityGroupIds' fieldpath the
-	// specFieldName is 'ResourcesVpcConfig'
-	specFieldName := fp.Front()
-	var specField *Field
+	// topLevelFieldName is 'ResourcesVpcConfig'
+	topLevelFieldName := fp.Front()
+	var topLevelField *Field
+	foundInSpec := false
+	foundInStatus := false
 	for fName, field := range crd.SpecFields {
-		if strings.EqualFold(fName, specFieldName) {
-			specField = field
+		if strings.EqualFold(fName, topLevelFieldName) {
+			topLevelField = field
+			foundInSpec = true
 			break
 		}
 	}
-	if specField == nil {
-		panic(fmt.Sprintf("Unable to find a spec field with name %s"+
-			" to add reference for %s", specFieldName,
+	if !foundInSpec {
+		for fName, field := range crd.StatusFields {
+			if strings.EqualFold(fName, topLevelFieldName) {
+				topLevelField = field
+				foundInStatus = true
+			}
+		}
+	}
+	if !foundInSpec && !foundInStatus {
+		panic(fmt.Sprintf("Unable to find a spec or status field with name %s"+
+			" to add get attribute from %s", topLevelFieldName,
 			fieldPath))
+	}
+	if foundInSpec && foundInStatus {
+		panic(fmt.Sprintf(
+			"error getting attributes from %s: found a field with name %s in both spec and status",
+			fieldPath, topLevelFieldName,
+		))
 	}
 
 	// Create a new fieldPath starting with ShapeName of Spec Field
@@ -568,17 +585,17 @@ func getAttributeFromPath(crd *CRD, fieldPath string, tdefs []*TypeDef) (parentT
 	// the beginning of field path and leave rest of nested member names as is.
 	// Ex: ResourcesVpcConfig.SecurityGroupIDs will become VPCConfigRequest.SecurityGroupIDs
 	// for Cluster resource in eks-controller.
-	specFieldShapeRef := specField.ShapeRef
+	specFieldShapeRef := topLevelField.ShapeRef
 	specFieldShapeName := specFieldShapeRef.ShapeName
 	switch shapeType := specFieldShapeRef.Shape.Type; shapeType {
 	case "list":
-		specFieldShapeName = specField.ShapeRef.Shape.MemberRef.ShapeName
-		specFieldShapeRef = &specField.ShapeRef.Shape.MemberRef
+		specFieldShapeName = topLevelField.ShapeRef.Shape.MemberRef.ShapeName
+		specFieldShapeRef = &topLevelField.ShapeRef.Shape.MemberRef
 	case "map":
-		specFieldShapeName = specField.ShapeRef.Shape.ValueRef.ShapeName
-		specFieldShapeRef = &specField.ShapeRef.Shape.ValueRef
+		specFieldShapeName = topLevelField.ShapeRef.Shape.ValueRef.ShapeName
+		specFieldShapeRef = &topLevelField.ShapeRef.Shape.ValueRef
 	}
-	fieldShapePath := strings.Replace(fieldPath, specFieldName, specFieldShapeName, 1)
+	fieldShapePath := strings.Replace(fieldPath, topLevelFieldName, specFieldShapeName, 1)
 	fsp := ackfp.FromString(fieldShapePath)
 
 	// "fieldName" is the member name for which reference field will be created.
