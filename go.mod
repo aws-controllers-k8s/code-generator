@@ -4,7 +4,7 @@ go 1.21
 
 require (
 	github.com/aws-controllers-k8s/pkg v0.0.9
-	github.com/aws-controllers-k8s/runtime v0.30.0
+	github.com/aws-controllers-k8s/runtime v0.30.1-0.20240217174305-eb1315466efb
 	github.com/aws/aws-sdk-go v1.49.0
 	github.com/dlclark/regexp2 v1.10.0 // indirect
 	// pin to v0.1.1 due to release problem with v0.1.2
@@ -20,7 +20,7 @@ require (
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/mod v0.14.0
 	k8s.io/apimachinery v0.29.0
-	sigs.k8s.io/controller-runtime v0.17.0
+	sigs.k8s.io/controller-runtime v0.17.2
 )
 
 require (
