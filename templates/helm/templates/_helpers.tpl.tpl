@@ -44,7 +44,8 @@
 
 {{ "{{/* The path the shared credentials file is mounted */}}" }}
 {{ DefineTemplate "aws.credentials.path" }}
-{{ "{{- printf \"%s/%s\" (include \"aws.credentials.secret_mount_path\" .) .Values.aws.credentials.secretKey -}}" }}
+{{ VarIncludeTemplate "secret_mount_path" "aws.credentials.secret_mount_path" }}
+{{ "{{- printf \"%s/%s\" $secret_mount_path .Values.aws.credentials.secretKey -}}" }}
 {{ "{{- end -}}" }}
 
 {{ "{{/* The rules a of ClusterRole or Role */}}" }}
