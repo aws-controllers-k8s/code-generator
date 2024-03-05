@@ -39,6 +39,8 @@ spec:
         - --enable-leader-election=$(ENABLE_LEADER_ELECTION)
         - --leader-election-namespace
         - "$(LEADER_ELECTION_NAMESPACE)"
+        - --reconcile-default-max-concurrent-syncs
+        - "$(RECONCILE_DEFAULT_MAX_CONCURRENT_SYNCS)"
         image: controller:latest
         name: controller
         ports:
@@ -72,6 +74,8 @@ spec:
           value: "false"
         - name: LEADER_ELECTION_NAMESPACE
           value: "ack-system"
+        - name: "RECONCILE_DEFAULT_MAX_CONCURRENT_SYNCS"
+          value: "1"
         securityContext:
           allowPrivilegeEscalation: false
           privileged: false
