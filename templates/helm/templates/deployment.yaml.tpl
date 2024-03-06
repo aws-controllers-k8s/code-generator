@@ -64,7 +64,7 @@ spec:
         - --leader-election-namespace
         - "$(LEADER_ELECTION_NAMESPACE)"
 {{ "{{- end }}" }}
-{{ "{{- if gt .Values.reconcile.defaultResyncPeriod 0.0 }}" }}
+{{ "{{- if gt (int .Values.reconcile.defaultResyncPeriod) 0 }}" }}
         - --reconcile-default-resync-seconds
         - "$(RECONCILE_DEFAULT_RESYNC_SECONDS)"
 {{ "{{- end }}" }}
@@ -99,7 +99,7 @@ spec:
           value: {{ "{{ .Values.log.level | quote }}" }}
         - name: ACK_RESOURCE_TAGS
           value: {{ "{{ join \",\" .Values.resourceTags | quote }}" }}
-{{ "{{- if gt .Values.reconcile.defaultResyncPeriod 0.0 }}" }}
+{{ "{{- if gt (int .Values.reconcile.defaultResyncPeriod) 0 }}" }}
         - name: RECONCILE_DEFAULT_RESYNC_SECONDS
           value: {{ "{{ .Values.reconcile.defaultResyncPeriod | quote }}" }}
 {{ "{{- end }}" }}
