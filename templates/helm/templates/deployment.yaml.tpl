@@ -73,11 +73,11 @@ spec:
         - {{ "\"$(RECONCILE_RESOURCE_RESYNC_SECONDS_{{ $key | upper }})\"" }}
 {{ "{{- end }}" }}
 {{ "{{- if gt (int .Values.reconcile.defaultMaxConcurrentSyncs) 0 }}" }}
-        - --reconcile-default-max-concurrenct-syncs
+        - --reconcile-default-max-concurrent-syncs
         - "$(RECONCILE_DEFAULT_MAX_CONCURRENT_SYNCS)"
 {{ "{{- end }}" }}
 {{ "{{- range $key, $value := .Values.reconcile.resourceMaxConcurrentSyncs }}" }}
-        - --reconcile-resource-max-concurrenct-syncs
+        - --reconcile-resource-max-concurrent-syncs
         - {{ "\"$(RECONCILE_RESOURCE_MAX_CONCURRENT_SYNCS_{{ $key | upper }})\"" }}
 {{ "{{- end }}" }}
         image: {{ "{{ .Values.image.repository }}:{{ .Values.image.tag }}" }}
