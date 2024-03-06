@@ -72,6 +72,14 @@ spec:
         - --reconcile-resource-resync-seconds
         - {{ "\"$(RECONCILE_RESOURCE_RESYNC_SECONDS_{{ $key | upper }})\"" }}
 {{ "{{- end }}" }}
+{{ "{{- if gt (int .Values.reconcile.defaultMaxConcurrentSyncs) 0 }}" }}
+        - --reconcile-default-max-concurrenct-syncs
+        - "$(RECONCILE_DEFAULT_MAX_CONCURRENT_SYNCS)"
+{{ "{{- end }}" }}
+{{ "{{- range $key, $value := .Values.reconcile.resourceMaxConcurrentSyncs }}" }}
+        - --reconcile-resource-max-concurrenct-syncs
+        - {{ "\"$(RECONCILE_RESOURCE_MAX_CONCURRENT_SYNCS_{{ $key | upper }})\"" }}
+{{ "{{- end }}" }}
         image: {{ "{{ .Values.image.repository }}:{{ .Values.image.tag }}" }}
         imagePullPolicy: {{ "{{ .Values.image.pullPolicy }}" }}
         name: controller
@@ -105,6 +113,14 @@ spec:
 {{ "{{- end }}" }}
 {{ "{{- range $key, $value := .Values.reconcile.resourceResyncPeriods }}" }}
         - name: {{ "RECONCILE_RESOURCE_RESYNC_SECONDS_{{ $key | upper }}" }}
+          value: {{ "{{ $key }}={{ $value }}" }}
+{{ "{{- end }}" }}
+{{ "{{- if gt (int .Values.reconcile.defaultMaxConcurrentSyncs) 0 }}" }}
+        - name: RECONCILE_DEFAULT_MAX_CONCURRENT_SYNCS
+          value: {{ "{{ .Values.reconcile.defaultMaxConcurrentSyncs | quote }}" }}
+{{ "{{- end }}" }}
+{{ "{{- range $key, $value := .Values.reconcile.resourceMaxConcurrentSyncs }}" }}
+        - name: {{ "RECONCILE_RESOURCE_MAX_CONCURRENT_SYNCS_{{ $key | upper }}" }}
           value: {{ "{{ $key }}={{ $value }}" }}
 {{ "{{- end }}" }}
         {{ "{{- if .Values.aws.credentials.secretName }}" }}

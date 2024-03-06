@@ -128,6 +128,12 @@ reconcile:
   # An object representing the reconcile resync configuration for each specific resource.
   resourceResyncPeriods: {}
 
+  # The default number of concurrent syncs that a reconciler can perform.
+  defaultMaxConcurrentSyncs: 1
+  # An object representing the reconcile max concurrent syncs configuration for each specific
+  # resource.
+  resourceMaxConcurrentSyncs: {}
+
 serviceAccount:
   # Specifies whether a service account should be created
   create: true
