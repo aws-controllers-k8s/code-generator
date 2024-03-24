@@ -148,6 +148,12 @@ func TestShapeRef(t *testing.T) {
 						},
 					},
 				},
+				"WeirdlycasEdType": &awssdkmodel.ShapeRef{
+					ShapeName: "WeirdlycasEdType",
+					Shape: &awssdkmodel.Shape{
+						Type: "string",
+					},
+				},
 			},
 		},
 	}
@@ -220,4 +226,11 @@ func TestShapeRef(t *testing.T) {
 
 	// Calling ShapeRef should not modify the original Path
 	require.Equal("Author.Books.ChapterPageCounts.PageCount", p.String())
+
+	// Case-insensitive comparisons...
+	p = fieldpath.FromString("Author.WeirdlyCasedType")
+	ref = p.ShapeRef(authShapeRef)
+	require.NotNil(ref)
+	require.Equal("WeirdlycasEdType", ref.ShapeName)
+	require.Equal("string", ref.Shape.Type)
 }
