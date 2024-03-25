@@ -242,7 +242,17 @@ func memberShapeRef(
 	}
 	switch shapeRef.Shape.Type {
 	case "structure":
-		return shapeRef.Shape.MemberRefs[memberName]
+		// We are looking for a member of a structure. Since the ACK fields and
+		// the AWS SDK fields may have different casing (e.g AWSVPCConfiguration
+		// and AwsVpcConfiguration) we need to perform a case insensitive
+		// comparison to find the correct member reference.
+		for memberRefName, memberRefShape := range shapeRef.Shape.MemberRefs {
+			if strings.EqualFold(memberRefName, memberName) {
+				return memberRefShape
+			}
+		}
+		// If no matching member is found, return nil.
+		return nil
 	case "list":
 		return memberShapeRef(&shapeRef.Shape.MemberRef, memberName)
 	case "map":
