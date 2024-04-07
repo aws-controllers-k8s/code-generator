@@ -1113,11 +1113,16 @@ func SetSDKForStruct(
 			mf, ok := f.MemberFields[memberName]
 			if ok {
 				setCfg = mf.GetSetterConfig(op)
-				if setCfg != nil && setCfg.Ignore {
+				if setCfg != nil && setCfg.IgnoreSDKSetter() {
 					continue
 				}
 			}
 
+		}
+
+		fallBackName := r.GetMatchingInputShapeFieldName(op, targetFieldName)
+		if fallBackName == memberName {
+			// TODO: implement @AmineHilaly
 		}
 
 		out += fmt.Sprintf(

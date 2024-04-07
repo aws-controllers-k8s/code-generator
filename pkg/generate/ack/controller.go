@@ -135,7 +135,7 @@ var (
 			if ok {
 				setCfg = f.GetSetterConfig(ackmodel.OpTypeList)
 			}
-			if setCfg != nil && setCfg.Ignore {
+			if setCfg != nil && setCfg.IgnoreResourceSetter() {
 				return ""
 			}
 			return code.SetResourceForStruct(r.Config(), r, targetVarName, targetShapeRef, setCfg, sourceVarName, sourceShapeRef, "", model.OpTypeList, indentLevel)

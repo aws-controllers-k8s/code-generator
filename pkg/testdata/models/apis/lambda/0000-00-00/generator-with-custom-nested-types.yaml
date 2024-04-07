@@ -9,6 +9,9 @@ resources:
         type: string
         compare:
           is_ignored: true
+        set:
+        - ignore: true
+          method: Create
       ImageConfigResponse.Error.New:
         is_read_only: true
         type: string

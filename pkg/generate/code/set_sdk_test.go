@@ -2190,3 +2190,180 @@ func TestSetSDK_IAM_User_NewPath(t *testing.T) {
 		code.SetSDK(crd.Config(), crd, model.OpTypeUpdate, "r.ko", "res", 1),
 	)
 }
+
+func TestSetSDK_Lambda_Ignore_Code_SHA256(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "lambda", &testutil.TestingModelOptions{
+		GeneratorConfigFile: "generator-lambda-ignore-code-sha256.yaml",
+	})
+
+	crd := testutil.GetCRDByName(t, g, "Function")
+	require.NotNil(crd)
+
+	expected := `
+	if r.ko.Spec.Code != nil {
+		f0 := &svcsdk.FunctionCode{}
+		if r.ko.Spec.Code.ImageURI != nil {
+			f0.SetImageUri(*r.ko.Spec.Code.ImageURI)
+		}
+		if r.ko.Spec.Code.S3Bucket != nil {
+			f0.SetS3Bucket(*r.ko.Spec.Code.S3Bucket)
+		}
+		if r.ko.Spec.Code.S3Key != nil {
+			f0.SetS3Key(*r.ko.Spec.Code.S3Key)
+		}
+		if r.ko.Spec.Code.S3ObjectVersion != nil {
+			f0.SetS3ObjectVersion(*r.ko.Spec.Code.S3ObjectVersion)
+		}
+		if r.ko.Spec.Code.ZipFile != nil {
+			f0.SetZipFile(r.ko.Spec.Code.ZipFile)
+		}
+		res.SetCode(f0)
+	}
+	if r.ko.Spec.CodeSigningConfigARN != nil {
+		res.SetCodeSigningConfigArn(*r.ko.Spec.CodeSigningConfigARN)
+	}
+	if r.ko.Spec.DeadLetterConfig != nil {
+		f2 := &svcsdk.DeadLetterConfig{}
+		if r.ko.Spec.DeadLetterConfig.TargetARN != nil {
+			f2.SetTargetArn(*r.ko.Spec.DeadLetterConfig.TargetARN)
+		}
+		res.SetDeadLetterConfig(f2)
+	}
+	if r.ko.Spec.Description != nil {
+		res.SetDescription(*r.ko.Spec.Description)
+	}
+	if r.ko.Spec.Environment != nil {
+		f4 := &svcsdk.Environment{}
+		if r.ko.Spec.Environment.Variables != nil {
+			f4f0 := map[string]*string{}
+			for f4f0key, f4f0valiter := range r.ko.Spec.Environment.Variables {
+				var f4f0val string
+				f4f0val = *f4f0valiter
+				f4f0[f4f0key] = &f4f0val
+			}
+			f4.SetVariables(f4f0)
+		}
+		res.SetEnvironment(f4)
+	}
+	if r.ko.Spec.FileSystemConfigs != nil {
+		f5 := []*svcsdk.FileSystemConfig{}
+		for _, f5iter := range r.ko.Spec.FileSystemConfigs {
+			f5elem := &svcsdk.FileSystemConfig{}
+			if f5iter.ARN != nil {
+				f5elem.SetArn(*f5iter.ARN)
+			}
+			if f5iter.LocalMountPath != nil {
+				f5elem.SetLocalMountPath(*f5iter.LocalMountPath)
+			}
+			f5 = append(f5, f5elem)
+		}
+		res.SetFileSystemConfigs(f5)
+	}
+	if r.ko.Spec.FunctionName != nil {
+		res.SetFunctionName(*r.ko.Spec.FunctionName)
+	}
+	if r.ko.Spec.Handler != nil {
+		res.SetHandler(*r.ko.Spec.Handler)
+	}
+	if r.ko.Spec.ImageConfig != nil {
+		f8 := &svcsdk.ImageConfig{}
+		if r.ko.Spec.ImageConfig.Command != nil {
+			f8f0 := []*string{}
+			for _, f8f0iter := range r.ko.Spec.ImageConfig.Command {
+				var f8f0elem string
+				f8f0elem = *f8f0iter
+				f8f0 = append(f8f0, &f8f0elem)
+			}
+			f8.SetCommand(f8f0)
+		}
+		if r.ko.Spec.ImageConfig.EntryPoint != nil {
+			f8f1 := []*string{}
+			for _, f8f1iter := range r.ko.Spec.ImageConfig.EntryPoint {
+				var f8f1elem string
+				f8f1elem = *f8f1iter
+				f8f1 = append(f8f1, &f8f1elem)
+			}
+			f8.SetEntryPoint(f8f1)
+		}
+		if r.ko.Spec.ImageConfig.WorkingDirectory != nil {
+			f8.SetWorkingDirectory(*r.ko.Spec.ImageConfig.WorkingDirectory)
+		}
+		res.SetImageConfig(f8)
+	}
+	if r.ko.Spec.KMSKeyARN != nil {
+		res.SetKMSKeyArn(*r.ko.Spec.KMSKeyARN)
+	}
+	if r.ko.Spec.Layers != nil {
+		f10 := []*string{}
+		for _, f10iter := range r.ko.Spec.Layers {
+			var f10elem string
+			f10elem = *f10iter
+			f10 = append(f10, &f10elem)
+		}
+		res.SetLayers(f10)
+	}
+	if r.ko.Spec.MemorySize != nil {
+		res.SetMemorySize(*r.ko.Spec.MemorySize)
+	}
+	if r.ko.Spec.PackageType != nil {
+		res.SetPackageType(*r.ko.Spec.PackageType)
+	}
+	if r.ko.Spec.Publish != nil {
+		res.SetPublish(*r.ko.Spec.Publish)
+	}
+	if r.ko.Spec.Role != nil {
+		res.SetRole(*r.ko.Spec.Role)
+	}
+	if r.ko.Spec.Runtime != nil {
+		res.SetRuntime(*r.ko.Spec.Runtime)
+	}
+	if r.ko.Spec.Tags != nil {
+		f16 := map[string]*string{}
+		for f16key, f16valiter := range r.ko.Spec.Tags {
+			var f16val string
+			f16val = *f16valiter
+			f16[f16key] = &f16val
+		}
+		res.SetTags(f16)
+	}
+	if r.ko.Spec.Timeout != nil {
+		res.SetTimeout(*r.ko.Spec.Timeout)
+	}
+	if r.ko.Spec.TracingConfig != nil {
+		f18 := &svcsdk.TracingConfig{}
+		if r.ko.Spec.TracingConfig.Mode != nil {
+			f18.SetMode(*r.ko.Spec.TracingConfig.Mode)
+		}
+		res.SetTracingConfig(f18)
+	}
+	if r.ko.Spec.VPCConfig != nil {
+		f19 := &svcsdk.VpcConfig{}
+		if r.ko.Spec.VPCConfig.SecurityGroupIDs != nil {
+			f19f0 := []*string{}
+			for _, f19f0iter := range r.ko.Spec.VPCConfig.SecurityGroupIDs {
+				var f19f0elem string
+				f19f0elem = *f19f0iter
+				f19f0 = append(f19f0, &f19f0elem)
+			}
+			f19.SetSecurityGroupIds(f19f0)
+		}
+		if r.ko.Spec.VPCConfig.SubnetIDs != nil {
+			f19f1 := []*string{}
+			for _, f19f1iter := range r.ko.Spec.VPCConfig.SubnetIDs {
+				var f19f1elem string
+				f19f1elem = *f19f1iter
+				f19f1 = append(f19f1, &f19f1elem)
+			}
+			f19.SetSubnetIds(f19f1)
+		}
+		res.SetVpcConfig(f19)
+	}
+`
+	assert.Equal(
+		expected,
+		code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1),
+	)
+}
