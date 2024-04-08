@@ -122,7 +122,7 @@ var (
 			return code.SetSDK(r.Config(), r, ackmodel.OpTypeDelete, sourceVarName, targetVarName, indentLevel)
 		},
 		"GoCodeSetSDKForStruct": func(r *ackmodel.CRD, targetFieldName string, targetVarName string, targetShapeRef *awssdkmodel.ShapeRef, sourceFieldPath string, sourceVarName string, indentLevel int) string {
-			return code.SetSDKForStruct(r.Config(), r, targetFieldName, targetVarName, targetShapeRef, sourceFieldPath, sourceVarName, indentLevel)
+			return code.SetSDKForStruct(r.Config(), r, targetFieldName, targetVarName, targetShapeRef, sourceFieldPath, sourceVarName, model.OpTypeList, indentLevel)
 		},
 		"GoCodeSetResourceForStruct": func(r *ackmodel.CRD, targetFieldName string, targetVarName string, targetShapeRef *awssdkmodel.ShapeRef, sourceVarName string, sourceShapeRef *awssdkmodel.ShapeRef, indentLevel int) string {
 			var setCfg *ackgenconfig.SetFieldConfig = nil
@@ -135,7 +135,7 @@ var (
 			if ok {
 				setCfg = f.GetSetterConfig(ackmodel.OpTypeList)
 			}
-			if setCfg != nil && setCfg.Ignore {
+			if setCfg != nil && setCfg.IgnoreResourceSetter() {
 				return ""
 			}
 			return code.SetResourceForStruct(r.Config(), r, targetVarName, targetShapeRef, setCfg, sourceVarName, sourceShapeRef, "", model.OpTypeList, indentLevel)

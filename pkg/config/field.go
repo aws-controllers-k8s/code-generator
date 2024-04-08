@@ -14,6 +14,7 @@
 package config
 
 import (
+	"encoding/json"
 	"strings"
 )
 
@@ -226,7 +227,38 @@ type SetFieldConfig struct {
 	//           - method: Update
 	//			   ignore: true
 	// ```
-	Ignore bool `json:"ignore,omitempty"`
+	Ignore BoolOrString `json:"ignore,omitempty"`
+}
+
+// IgnoreResourceSetter returns true if the field should be ignored when setting
+// the resource's field value from the SDK output shape.
+func (s *SetFieldConfig) IgnoreResourceSetter() bool {
+	if s.Ignore.Bool != nil {
+		return *s.Ignore.Bool
+	}
+	if s.Ignore.String != nil {
+		return strings.EqualFold(*s.Ignore.String, "from") || strings.EqualFold(*s.Ignore.String, "all")
+	}
+	return false
+}
+
+// IgnoreSDKSetter returns true if the field should be ignored when setting the
+// SDK field value from the resource's field.
+func (s *SetFieldConfig) IgnoreSDKSetter() bool {
+	if s.Ignore.Bool != nil {
+		return false
+	}
+	if s.Ignore.String != nil {
+		return strings.EqualFold(*s.Ignore.String, "to") || strings.EqualFold(*s.Ignore.String, "all")
+	}
+	return false
+}
+
+// IsAllIgnored returns true if the field should be ignored when setting the
+// resource's field value from the SDK output shape and when setting the SDK
+// field value from the resource's field.
+func (s *SetFieldConfig) IsAllIgnored() bool {
+	return s.IgnoreResourceSetter() && s.IgnoreSDKSetter()
 }
 
 // CompareFieldConfig informs the code generator how to compare two values of a
@@ -483,6 +515,34 @@ func (c *Config) GetLateInitConfigByPath(resourceName string, fieldPath string) 
 		if strings.EqualFold(fPath, fieldPath) {
 			return fConfig.LateInitialize
 		}
+	}
+	return nil
+}
+
+// BoolOrString is a type that can be unmarshalled from either a boolean or a
+// string.
+type BoolOrString struct {
+	// Bool is the boolean value of the field. This field is non-nil if the
+	// field was unmarshalled from a boolean value.
+	Bool *bool
+	// String is the string value of the field. This field is non-nil if the
+	// field was unmarshalled from a string value.
+	String *string
+}
+
+// UnmarshalJSON unmarshals a BoolOrString from a YAML/JSON byte slice.
+func (a *BoolOrString) UnmarshalJSON(b []byte) error {
+	var str string
+	err := json.Unmarshal(b, &str)
+	if err != nil {
+		var boolean bool
+		err := json.Unmarshal(b, &boolean)
+		if err != nil {
+			return err
+		}
+		a.Bool = &boolean
+	} else {
+		a.String = &str
 	}
 	return nil
 }

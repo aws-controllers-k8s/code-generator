@@ -345,6 +345,7 @@ func SetSDK(
 					sourceFieldPath,
 					sourceAdaptedVarName,
 					memberShapeRef,
+					opType,
 					indentLevel+1,
 				)
 				out += setSDKForScalar(
@@ -928,6 +929,7 @@ func setSDKForContainer(
 	sourceVarName string,
 	// ShapeRef of the target struct field
 	targetShapeRef *awssdkmodel.ShapeRef,
+	op model.OpType,
 	indentLevel int,
 ) string {
 	switch targetShapeRef.Shape.Type {
@@ -939,6 +941,7 @@ func setSDKForContainer(
 			targetShapeRef,
 			sourceFieldPath,
 			sourceVarName,
+			op,
 			indentLevel,
 		)
 	case "list":
@@ -949,6 +952,7 @@ func setSDKForContainer(
 			targetShapeRef,
 			sourceFieldPath,
 			sourceVarName,
+			op,
 			indentLevel,
 		)
 	case "map":
@@ -959,6 +963,7 @@ func setSDKForContainer(
 			targetShapeRef,
 			sourceFieldPath,
 			sourceVarName,
+			op,
 			indentLevel,
 		)
 	default:
@@ -1082,6 +1087,7 @@ func SetSDKForStruct(
 	sourceFieldPath string,
 	// The struct or struct field that we access our source value from
 	sourceVarName string,
+	op model.OpType,
 	indentLevel int,
 ) string {
 	out := ""
@@ -1095,6 +1101,29 @@ func SetSDKForStruct(
 		cleanMemberName := cleanMemberNames.Camel
 		sourceAdaptedVarName := sourceVarName + "." + cleanMemberName
 		memberFieldPath := sourceFieldPath + "." + cleanMemberName
+
+		// todo: To make `ignore` functionality work for all fields that has `ignore` set to `true`,
+		// we need to add the below logic inside `SetSDK` function.
+
+		// To check if the field member has `ignore` set to `true`.
+		// This condition currently applies only for members of a field whose shape is `structure`
+		var setCfg *ackgenconfig.SetFieldConfig
+		f, ok := r.Fields[targetFieldName]
+		if ok {
+			mf, ok := f.MemberFields[memberName]
+			if ok {
+				setCfg = mf.GetSetterConfig(op)
+				if setCfg != nil && setCfg.IgnoreSDKSetter() {
+					continue
+				}
+			}
+
+		}
+
+		fallBackName := r.GetMatchingInputShapeFieldName(op, targetFieldName)
+		if fallBackName == memberName {
+			// TODO: implement @AmineHilaly
+		}
 
 		out += fmt.Sprintf(
 			"%sif %s != nil {\n", indent, sourceAdaptedVarName,
@@ -1119,6 +1148,7 @@ func SetSDKForStruct(
 					memberFieldPath,
 					sourceAdaptedVarName,
 					memberShapeRef,
+					op,
 					indentLevel+1,
 				)
 				out += setSDKForScalar(
@@ -1176,6 +1206,7 @@ func setSDKForSlice(
 	sourceFieldPath string,
 	// The struct or struct field that we access our source value from
 	sourceVarName string,
+	op model.OpType,
 	indentLevel int,
 ) string {
 	out := ""
@@ -1209,6 +1240,7 @@ func setSDKForSlice(
 		sourceFieldPath,
 		iterVarName,
 		&targetShape.MemberRef,
+		op,
 		indentLevel+1,
 	)
 	addressOfVar := ""
@@ -1239,6 +1271,7 @@ func setSDKForMap(
 	sourceFieldPath string,
 	// The struct or struct field that we access our source value from
 	sourceVarName string,
+	op model.OpType,
 	indentLevel int,
 ) string {
 	out := ""
@@ -1273,6 +1306,7 @@ func setSDKForMap(
 		sourceFieldPath,
 		valIterVarName,
 		&targetShape.ValueRef,
+		op,
 		indentLevel+1,
 	)
 	addressOfVar := ""

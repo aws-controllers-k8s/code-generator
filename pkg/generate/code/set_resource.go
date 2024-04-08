@@ -231,7 +231,7 @@ func SetResource(
 		// field value...
 		setCfg := f.GetSetterConfig(opType)
 
-		if setCfg != nil && setCfg.Ignore {
+		if setCfg != nil && setCfg.IgnoreResourceSetter() {
 			continue
 		}
 
@@ -588,7 +588,7 @@ func setResourceReadMany(
 		// field value...
 		setCfg := f.GetSetterConfig(model.OpTypeList)
 
-		if setCfg != nil && setCfg.Ignore {
+		if setCfg != nil && setCfg.IgnoreResourceSetter() {
 			continue
 		}
 
