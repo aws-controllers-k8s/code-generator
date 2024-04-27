@@ -11,7 +11,7 @@ ARG golang_version
 FROM $builder_image:$golang_version as builder
 
 ARG service_alias
-ARG target_arch=amd64
+ARG TARGETARCH
 # The tuple of controller image version information
 ARG service_controller_git_version
 ARG service_controller_git_commit
@@ -22,7 +22,7 @@ ARG work_dir=/github.com/aws-controllers-k8s/$service_alias-controller
 WORKDIR $work_dir
 ENV GOPROXY=https://proxy.golang.org|direct
 ENV GO111MODULE=on
-ENV GOARCH=$target_arch
+ENV GOARCH=$TARGETARCH
 ENV GOOS=linux
 ENV CGO_ENABLED=0
 ENV VERSION_PKG=github.com/aws-controllers-k8s/$service_alias-controller/pkg/version
