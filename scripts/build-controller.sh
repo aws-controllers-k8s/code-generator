@@ -93,7 +93,7 @@ run:
  
 from the root directory or install ack-generate using:
 
-   go get -u -tags codegen github.com/aws-controllers-k8s/code-generator/cmd/ack-generate" 1>&2
+   go install -tags codegen github.com/aws-controllers-k8s/code-generator/cmd/ack-generate@latest" 1>&2
         exit 1;
     fi
 fi
