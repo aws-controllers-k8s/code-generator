@@ -153,3 +153,10 @@ leaderElection:
   # will attempt to use the namespace of the service account mounted to the Controller
   # pod.
   namespace: ""
+
+# Configuration for feature gates.  These are optional controller features that
+# can be individually enabled ("true") or disabled ("false") by adding an item to the
+# featureGates array in the form of featureGateName=(true|false).
+featureGates: []
+  # - featureGate1=true
+  # - featureGate2=false

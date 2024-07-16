@@ -80,6 +80,11 @@ spec:
         - --reconcile-resource-max-concurrent-syncs
         - {{ "\"$(RECONCILE_RESOURCE_MAX_CONCURRENT_SYNCS_{{ $key | upper }})\"" }}
 {{ "{{- end }}" }}
+{{ "{{- range $key, $value := .Values.featureGates }}" }}
+{{ "{{- if .Values.featureGates}}" }}
+        - --feature-gates
+        - "$(FEATURE_GATES)"
+{{ "{{- end }}" }}
         image: {{ "{{ .Values.image.repository }}:{{ .Values.image.tag }}" }}
         imagePullPolicy: {{ "{{ .Values.image.pullPolicy }}" }}
         name: controller
@@ -122,6 +127,10 @@ spec:
 {{ "{{- range $key, $value := .Values.reconcile.resourceMaxConcurrentSyncs }}" }}
         - name: {{ "RECONCILE_RESOURCE_MAX_CONCURRENT_SYNCS_{{ $key | upper }}" }}
           value: {{ "{{ $key }}={{ $value }}" }}
+{{ "{{- end }}" }}
+{{ "{{- if .Values.featureGates}}" }}
+        - name: FEATURE_GATES
+          value: {{ "{{ join \",\" .Values.featureGates | quote }}" }}
 {{ "{{- end }}" }}
         {{ "{{- if .Values.aws.credentials.secretName }}" }}
         - name: AWS_SHARED_CREDENTIALS_FILE
