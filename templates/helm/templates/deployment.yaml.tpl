@@ -80,7 +80,6 @@ spec:
         - --reconcile-resource-max-concurrent-syncs
         - {{ "\"$(RECONCILE_RESOURCE_MAX_CONCURRENT_SYNCS_{{ $key | upper }})\"" }}
 {{ "{{- end }}" }}
-{{ "{{- range $key, $value := .Values.featureGates }}" }}
 {{ "{{- if .Values.featureGates}}" }}
         - --feature-gates
         - "$(FEATURE_GATES)"
