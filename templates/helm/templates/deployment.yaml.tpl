@@ -129,7 +129,7 @@ spec:
 {{ "{{- end }}" }}
 {{ "{{- if .Values.featureGates}}" }}
         - name: FEATURE_GATES
-          value: {{ "{{ join \",\" .Values.featureGates | quote }}" }}
+          value: {{ IncludeTemplate "feature-gates" }}
 {{ "{{- end }}" }}
         {{ "{{- if .Values.aws.credentials.secretName }}" }}
         - name: AWS_SHARED_CREDENTIALS_FILE
