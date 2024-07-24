@@ -269,10 +269,10 @@
     }
   },
   "featureGates": {
-    "type": "array",
-    "items": {
-      "type": "string",
-      "pattern": "(^$|^.*=.*$)"
+    "description": "Feature gates settings",
+    "type": "object",
+    "additionalProperties": {
+      "type": "boolean"
     }
   },
   "required": [
