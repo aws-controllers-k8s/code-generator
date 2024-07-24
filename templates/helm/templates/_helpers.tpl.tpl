@@ -53,7 +53,7 @@
 SEDREPLACERULES
 {{ "{{- end }}" }}
 
-{{ "{{/* Convert k/v map to string like: "key1=value1,key2=value2,..." */}}" }}
+{{ "{{/* Convert k/v map to string like: \"key1=value1,key2=value2,...\" */}}" }}
 {{ DefineTemplate "feature-gates" }}
 {{ "{{- $list := list -}}" }}
 {{ "{{- range $k, $v := .Values.featureGates -}}" }}
