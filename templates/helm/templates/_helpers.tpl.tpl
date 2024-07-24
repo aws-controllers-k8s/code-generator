@@ -59,5 +59,5 @@ SEDREPLACERULES
 {{ "{{- range $k, $v := .Values.featureGates -}}" }}
 {{ "{{- $list = append $list (printf \"%s=%s\" $k ( $v | toString)) -}}" }}
 {{ "{{- end -}}" }}
-{{ "{{ join "," $list }}" }}
+{{ "{{ join \",\" $list }}" }}
 {{ "{{- end -}}" }}
