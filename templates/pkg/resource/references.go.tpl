@@ -70,7 +70,6 @@ func (rm *resourceManager) ResolveReferences(
 {{ if not .CRD.HasReferenceFields -}}
 	return res, false, nil
 {{ else -}}
-	namespace := res.MetaObject().GetNamespace()
 	ko := rm.concreteResource(res).ko
 
 	resourceHasReferences := false
@@ -80,7 +79,7 @@ func (rm *resourceManager) ResolveReferences(
 {{- end }}
 	{{ range $fieldName, $field := .CRD.Fields -}}
 	{{ if $field.HasReference -}}
-	if fieldHasReferences, err := rm.resolveReferenceFor{{ $field.FieldPathWithUnderscore }}(ctx, apiReader, namespace, ko); err != nil {
+	if fieldHasReferences, err := rm.resolveReferenceFor{{ $field.FieldPathWithUnderscore }}(ctx, apiReader, ko); err != nil {
 		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
 	} else {
 		resourceHasReferences = resourceHasReferences || fieldHasReferences
@@ -117,7 +116,6 @@ func validateReferenceFields(ko *svcapitypes.{{ .CRD.Names.Camel }}) error {
 func (rm *resourceManager) resolveReferenceFor{{ $field.FieldPathWithUnderscore }}(
 	ctx context.Context,
 	apiReader client.Reader,
-	namespace string,
 	ko *svcapitypes.{{ .CRD.Names.Camel }},
 ) (hasReferences bool, err error) {
 {{ GoCodeResolveReference $field "ko" 1 }}

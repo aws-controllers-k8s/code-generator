@@ -136,6 +136,10 @@ func Test_ResolveReferencesForField_SingleReference(t *testing.T) {
 		if arr.Name == nil || *arr.Name == "" {
 			return hasReferences, fmt.Errorf("provided resource reference is nil or empty: APIRef")
 		}
+		namespace := ko.ObjectMeta.GetNamespace()
+		if arr.Namespace != nil && *arr.Namespace != "" {
+			namespace = *arr.Namespace
+		}
 		obj := &svcapitypes.API{}
 		if err := getReferencedResourceState_API(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
 			return hasReferences, err
@@ -165,6 +169,10 @@ func Test_ResolveReferencesForField_ReferencingARN(t *testing.T) {
 		arr := ko.Spec.PermissionsBoundaryRef.From
 		if arr.Name == nil || *arr.Name == "" {
 			return hasReferences, fmt.Errorf("provided resource reference is nil or empty: PermissionsBoundaryRef")
+		}
+		namespace := ko.ObjectMeta.GetNamespace()
+		if arr.Namespace != nil && *arr.Namespace != "" {
+			namespace = *arr.Namespace
 		}
 		obj := &svcapitypes.Policy{}
 		if err := getReferencedResourceState_Policy(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
@@ -196,6 +204,10 @@ func Test_ResolveReferencesForField_SliceOfReferences(t *testing.T) {
 			arr := f0iter.From
 			if arr.Name == nil || *arr.Name == "" {
 				return hasReferences, fmt.Errorf("provided resource reference is nil or empty: SecurityGroupRefs")
+			}
+			namespace := ko.ObjectMeta.GetNamespace()
+			if arr.Namespace != nil && *arr.Namespace != "" {
+				namespace = *arr.Namespace
 			}
 			obj := &ec2apitypes.SecurityGroup{}
 			if err := getReferencedResourceState_SecurityGroup(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
@@ -232,6 +244,10 @@ func Test_ResolveReferencesForField_NestedSingleReference(t *testing.T) {
 			if arr.Name == nil || *arr.Name == "" {
 				return hasReferences, fmt.Errorf("provided resource reference is nil or empty: JWTConfiguration.IssuerRef")
 			}
+			namespace := ko.ObjectMeta.GetNamespace()
+			if arr.Namespace != nil && *arr.Namespace != "" {
+				namespace = *arr.Namespace
+			}
 			obj := &svcapitypes.API{}
 			if err := getReferencedResourceState_API(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
 				return hasReferences, err
@@ -267,6 +283,10 @@ func Test_ResolveReferencesForField_SingleReference_DeeplyNested(t *testing.T) {
 				if arr.Name == nil || *arr.Name == "" {
 					return hasReferences, fmt.Errorf("provided resource reference is nil or empty: Logging.LoggingEnabled.TargetBucketRef")
 				}
+				namespace := ko.ObjectMeta.GetNamespace()
+				if arr.Namespace != nil && *arr.Namespace != "" {
+					namespace = *arr.Namespace
+				}
 				obj := &svcapitypes.Bucket{}
 				if err := getReferencedResourceState_Bucket(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
 					return hasReferences, err
@@ -301,6 +321,10 @@ func Test_ResolveReferencesForField_SingleReference_WithinSlice(t *testing.T) {
 			arr := f0iter.GatewayRef.From
 			if arr.Name == nil || *arr.Name == "" {
 				return hasReferences, fmt.Errorf("provided resource reference is nil or empty: Routes.GatewayRef")
+			}
+			namespace := ko.ObjectMeta.GetNamespace()
+			if arr.Namespace != nil && *arr.Namespace != "" {
+				namespace = *arr.Namespace
 			}
 			obj := &svcapitypes.InternetGateway{}
 			if err := getReferencedResourceState_InternetGateway(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
@@ -339,6 +363,10 @@ func Test_ResolveReferencesForField_SingleReference_WithinMultipleSlices(t *test
 							arr := f1iter.ValueRef.From
 							if arr.Name == nil || *arr.Name == "" {
 								return hasReferences, fmt.Errorf("provided resource reference is nil or empty: Notification.LambdaFunctionConfigurations.Filter.Key.FilterRules.ValueRef")
+							}
+							namespace := ko.ObjectMeta.GetNamespace()
+							if arr.Namespace != nil && *arr.Namespace != "" {
+								namespace = *arr.Namespace
 							}
 							obj := &svcapitypes.Bucket{}
 							if err := getReferencedResourceState_Bucket(ctx, apiReader, obj, *arr.Name, namespace); err != nil {

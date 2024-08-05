@@ -211,6 +211,11 @@ func ResolveReferencesForField(field *model.Field, sourceVarName string, indentL
 			outPrefix += fmt.Sprintf("%s\treturn hasReferences, fmt.Errorf(\"provided resource reference is nil or empty: %s\")\n", innerIndent, field.ReferenceFieldPath())
 			outPrefix += fmt.Sprintf("%s}\n", innerIndent)
 
+			outPrefix += fmt.Sprintf("%snamespace := ko.ObjectMeta.GetNamespace()\n", innerIndent)
+			outPrefix += fmt.Sprintf("%sif arr.Namespace != nil && *arr.Namespace != \"\" {\n", innerIndent)
+			outPrefix += fmt.Sprintf("%s\tnamespace = *arr.Namespace\n", innerIndent)
+			outPrefix += fmt.Sprintf("%s}\n", innerIndent)
+
 			outPrefix += getReferencedStateForField(field, innerIndentLevel)
 
 			concreteValueAccessor := buildIndexBasedFieldAccessor(field, sourceVarName, indexVarFmt)
