@@ -71,8 +71,8 @@ github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 h1:0CwZNZbxp69SHPd
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5/go.mod h1:wHh0iHkYZB8zMSxRWpUBQtwG5a7fFgvEO+odwuTv2gs=
 github.com/asaskevich/govalidator v0.0.0-20180720115003-f9ffefc3facf/go.mod h1:lB+ZfQJz7igIIfQNfa7Ml4HSf2uFQQRzpGGRXenZAgY=
 github.com/asaskevich/govalidator v0.0.0-20190424111038-f61b66f89f4a/go.mod h1:lB+ZfQJz7igIIfQNfa7Ml4HSf2uFQQRzpGGRXenZAgY=
-github.com/aws-controllers-k8s/pkg v0.0.12 h1:3OKUJ39brSqHQPIbR3QCqiqY6K60w7Oso/Q3+ji60nY=
-github.com/aws-controllers-k8s/pkg v0.0.12/go.mod h1:VvdjLWmR6IJ3KU8KByKiq/lJE8M+ur2piXysXKTGUS0=
+github.com/aws-controllers-k8s/pkg v0.0.13 h1:g84kszxcP0eVKOlllM4kN6iB7XU1zQJYaleLgBgtbAU=
+github.com/aws-controllers-k8s/pkg v0.0.13/go.mod h1:VvdjLWmR6IJ3KU8KByKiq/lJE8M+ur2piXysXKTGUS0=
 github.com/aws-controllers-k8s/runtime v0.36.0 h1:XEMVGfUwsT9QMShihuCLHlape+daJWyYtXj45s/iJiU=
 github.com/aws-controllers-k8s/runtime v0.36.0/go.mod h1:gI2pWb20UGLP2SnHf1a1VzTd7iVVy+/I9VAzT0Y+Dew=
 github.com/aws/aws-sdk-go v1.49.0 h1:g9BkW1fo9GqKfwg2+zCD+TW/D36Ux+vtfJ8guF4AYmY=
