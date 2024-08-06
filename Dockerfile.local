@@ -15,14 +15,14 @@ ARG service_alias
 ARG service_controller_git_version
 ARG service_controller_git_commit
 ARG build_date
-ARG target_arch=amd64
+ARG TARGETARCH
 # The directory within the builder container into which we will copy our
 # service controller code.
 ARG work_dir=/github.com/aws-controllers-k8s/$service_alias-controller
 WORKDIR $work_dir
 ENV GOPROXY=https://proxy.golang.org|direct
 ENV GO111MODULE=on
-ENV GOARCH=$target_arch
+ENV GOARCH=$TARGETARCH
 ENV GOOS=linux
 ENV CGO_ENABLED=0
 ENV VERSION_PKG=github.com/aws-controllers-k8s/$service_alias-controller/pkg/version
