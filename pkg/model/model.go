@@ -16,6 +16,7 @@ package model
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 
@@ -395,6 +396,11 @@ func (m *Model) IsShapeUsedInCRDs(shapeName string) bool {
 	return false
 }
 
+// IsMarkerShape return true if the supplied shape name is a marker shape
+func (m *Model) IsMarkerShape(shapeName string) bool {
+	return slices.Contains(m.cfg.MarkerShapes, shapeName)
+}
+
 // GetTypeDefs returns a slice of `TypeDef` pointers
 func (m *Model) GetTypeDefs() ([]*TypeDef, error) {
 	if m.typeDefs != nil {
@@ -471,6 +477,12 @@ func (m *Model) getShapeCleanGoType(shape *awssdkmodel.Shape) string {
 		// otherwise there is no DeepCopy support
 		return "*metav1.Time"
 	case "structure":
+		if len(shape.MemberRefs) == 0 {
+			if m.cfg.IsMarkerShape(shape.ShapeName) {
+				return "[]byte"
+			}
+			panic(fmt.Sprintf("structure %s has no fields, either configure it as a `marker_shape` or manually set the field type", shape.ShapeName))
+		}
 		// There are shapes that are called things like DBProxyStatus that are
 		// fields in a DBProxy CRD... we need to ensure the type names don't
 		// conflict. Also, the name of the Go type in the generated code is

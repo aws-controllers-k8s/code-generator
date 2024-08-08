@@ -1388,8 +1388,13 @@ func varEmptyConstructorK8sType(
 
 	switch shape.Type {
 	case "structure":
-		// f0 := &svcapitypes.BookData{}
-		out += fmt.Sprintf("%s%s := &%s{}\n", indent, varName, goType)
+		if r.Config().IsMarkerShape(shape.ShapeName) {
+			// f0 := []byte{}
+			out += fmt.Sprintf("%s%s := []byte{}\n", indent, varName)
+		} else {
+			// f0 := &svcapitypes.BookData{}
+			out += fmt.Sprintf("%s%s := &%s{}\n", indent, varName, goType)
+		}
 	case "list", "map":
 		// f0 := []*string{}
 		out += fmt.Sprintf("%s%s := %s{}\n", indent, varName, goType)
