@@ -25,6 +25,8 @@ type Config struct {
 	// Resources contains generator instructions for individual CRDs within an
 	// API
 	Resources map[string]ResourceConfig `json:"resources"`
+	// MarkerShapes contains fields associated with empty structs used as markers
+	MarkerShapes []string `json:"marker_shapes,omitempty"`
 	// CRDs to ignore. ACK generator would skip these resources.
 	Ignore IgnoreSpec `json:"ignore"`
 	// Contains generator instructions for individual API operations.
@@ -149,6 +151,17 @@ func (c *Config) GetCustomMapFieldMembers() []string {
 	}
 
 	return members
+}
+
+// HasShapeAsMarker returns true if the given shape is setup as marker_shape in config,
+// otherwise returns false
+func (c *Config) HasShapeAsMarker(shapeName string) bool {
+	for _, markerShape := range c.MarkerShapes {
+		if markerShape == shapeName {
+			return true
+		}
+	}
+	return false
 }
 
 // New returns a new Config object given a supplied
