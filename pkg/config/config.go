@@ -153,9 +153,9 @@ func (c *Config) GetCustomMapFieldMembers() []string {
 	return members
 }
 
-// IsMarkerShape returns true if a given shape name is a marker shape,
+// HasShapeAsMarker returns true if the given shape is setup as marker_shape in config,
 // otherwise returns false
-func (c *Config) IsMarkerShape(shapeName string) bool {
+func (c *Config) HasShapeAsMarker(shapeName string) bool {
 	for _, markerShape := range c.MarkerShapes {
 		if markerShape == shapeName {
 			return true

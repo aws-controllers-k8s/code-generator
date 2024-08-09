@@ -1388,7 +1388,7 @@ func varEmptyConstructorK8sType(
 
 	switch shape.Type {
 	case "structure":
-		if r.Config().IsMarkerShape(shape.ShapeName) {
+		if r.Config().HasShapeAsMarker(shape.ShapeName) {
 			// f0 := []byte{}
 			out += fmt.Sprintf("%s%s := []byte{}\n", indent, varName)
 		} else {
