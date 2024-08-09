@@ -656,17 +656,23 @@ func (crd *CRD) addCustomNestedFields(customNestedFields map[string]*ackgenconfi
 		topLevelField := fieldParts[0]
 
 		f, ok := crd.checkSpecOrStatus(topLevelField)
-
-		if ok && f.ShapeRef.Shape.Type != "structure" {
-			// We need to panic here because the user is providing wrong configuration.
-			msg := fmt.Sprintf("Expected parent field to be of type structure, but found %s", f.ShapeRef.Shape.Type)
+		if !ok {
+			msg := fmt.Sprintf("Expected top level field %s to be present in Spec or Status", topLevelField)
 			panic(msg)
 		}
 
-		// If the provided top level field is not in the crd.SpecFields or crd.StatusFields...
-		if !ok {
-			// We need to panic here because the user is providing wrong configuration.
-			msg := fmt.Sprintf("Expected top level field %s to be present in Spec or Status", topLevelField)
+		shape := f.ShapeRef.Shape
+		isValidShapeType := func(shape *awssdkmodel.Shape) bool {
+			if shape.Type == "structure" ||
+				(shape.Type == "list" && shape.MemberRef.Shape.Type == "structure") ||
+				(shape.Type == "map" && shape.ValueRef.Shape.Type == "structure") {
+				return true
+			}
+			return false
+		}
+
+		if !isValidShapeType(shape) {
+			msg := fmt.Sprintf("Expected top level field %s to be of type structure, []structure or map[]structure, but found %s", topLevelField, shape.Type)
 			panic(msg)
 		}
 
@@ -676,13 +682,20 @@ func (crd *CRD) addCustomNestedFields(customNestedFields map[string]*ackgenconfi
 
 		// loop over the all left fieldParts except the last one
 		for _, currentFieldName := range fieldParts[1 : len(fieldParts)-1] {
-			// Check if parentField contains current field
 			currentField, ok := parentField.MemberFields[currentFieldName]
-			if !ok || currentField.ShapeRef.Shape.Type != "structure" {
-				// Check if the field exists AND is of type structure
-				msg := fmt.Sprintf("Cannot inject field, %s member doesn't exist or isn't a structure", currentFieldName)
+			shape := currentField.ShapeRef.Shape
+
+			// if the parentField doesn't contain the current field
+			if !ok {
+				msg := fmt.Sprintf("Cannot inject field, nested field %s doesn't exist", currentFieldName)
 				panic(msg)
 			}
+
+			if !isValidShapeType(shape) {
+				msg := fmt.Sprintf("Expected nested field %s to be of type structure, []structure or map[]structure, but found %s", currentFieldName, shape.Type)
+				panic(msg)
+			}
+
 			parentField = currentField
 		}
 
