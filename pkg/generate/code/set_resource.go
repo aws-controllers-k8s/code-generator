@@ -1301,6 +1301,20 @@ func SetResourceForStruct(
 	var sourceAdaptedVarName, qualifiedTargetVar string
 
 	for _, targetMemberName := range targetShape.MemberNames() {
+		// To check if the field member has `ignore` set to `true`.
+		// This condition currently applies only for members of a field whose shape is `structure`.
+		var setCfg *ackgenconfig.SetFieldConfig
+		f, ok := r.Fields[targetFieldPath]
+		if ok {
+			mf, ok := f.MemberFields[targetMemberName]
+			if ok {
+				setCfg = mf.GetSetterConfig(op)
+				if setCfg != nil && setCfg.IgnoreResourceSetter() {
+					continue
+				}
+			}
+		}
+
 		sourceMemberShapeRef = sourceShape.MemberRefs[targetMemberName]
 		if sourceMemberShapeRef == nil {
 			continue
