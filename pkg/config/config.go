@@ -25,6 +25,8 @@ type Config struct {
 	// Resources contains generator instructions for individual CRDs within an
 	// API
 	Resources map[string]ResourceConfig `json:"resources"`
+	// EmptyShapes contains fields associated with empty struct types
+	EmptyShapes []string `json:"empty_shapes,omitempty"`
 	// CRDs to ignore. ACK generator would skip these resources.
 	Ignore IgnoreSpec `json:"ignore"`
 	// Contains generator instructions for individual API operations.
@@ -149,6 +151,17 @@ func (c *Config) GetCustomMapFieldMembers() []string {
 	}
 
 	return members
+}
+
+// HasEmptyShape returns true if the given shape is setup as empty_shape in config,
+// otherwise returns false
+func (c *Config) HasEmptyShape(shapeName string) bool {
+	for _, emptyShape := range c.EmptyShapes {
+		if emptyShape == shapeName {
+			return true
+		}
+	}
+	return false
 }
 
 // New returns a new Config object given a supplied
