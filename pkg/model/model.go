@@ -471,6 +471,12 @@ func (m *Model) getShapeCleanGoType(shape *awssdkmodel.Shape) string {
 		// otherwise there is no DeepCopy support
 		return "*metav1.Time"
 	case "structure":
+		if len(shape.MemberRefs) == 0 {
+			if m.cfg.HasEmptyShape(shape.ShapeName) {
+				return "map[string]*string"
+			}
+			panic(fmt.Sprintf("structure %s has no fields, either configure it as a `empty_shape` or manually set the field type", shape.ShapeName))
+		}
 		// There are shapes that are called things like DBProxyStatus that are
 		// fields in a DBProxy CRD... we need to ensure the type names don't
 		// conflict. Also, the name of the Go type in the generated code is
