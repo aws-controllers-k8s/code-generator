@@ -1,0 +1,43 @@
+ignore:
+  field_paths:
+    - RuleGroup.Rules.Statement.AndStatement
+    - RuleGroup.Rules.Statement.OrStatement
+    - RuleGroup.Rules.Statement.NotStatement
+    - RuleGroup.Rules.Statement.ManagedRuleGroupStatement.ScopeDownStatement
+    - RuleGroup.Rules.Statement.RateBasedStatement.ScopeDownStatement
+empty_shapes:
+  - All
+  - Method
+  - UriPath
+  - QueryString
+  - AllQueryArguments
+  - RateLimitIP
+  - RateLimitForwardedIP
+  - RateLimitHTTPMethod
+  - NoneAction
+operations:
+  GetRuleGroup:
+    output_wrapper_field_path: RuleGroup
+resources:
+  RuleGroup:
+    fields:
+      Rules.Statement.AndStatement:
+        type: string
+        set:
+          - ignore: "all"
+      Rules.Statement.OrStatement:
+        type: string
+        set:
+          - ignore: "all"
+      Rules.Statement.NotStatement:
+        type: string
+        set:
+          - ignore: "all"
+      Rules.Statement.ManagedRuleGroupStatement.ScopeDownStatement:
+        type: string
+        set:
+          - ignore: "all"
+      Rules.Statement.RateBasedStatement.ScopeDownStatement:
+        type: string
+        set:
+          - ignore: "all"
