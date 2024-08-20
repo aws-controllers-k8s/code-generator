@@ -5,7 +5,7 @@ go 1.22.0
 toolchain go1.22.4
 
 require (
-	github.com/aws-controllers-k8s/pkg v0.0.14
+	github.com/aws-controllers-k8s/pkg v0.0.15
 	github.com/aws-controllers-k8s/runtime v0.37.1
 	github.com/aws/aws-sdk-go v1.49.0
 	github.com/dlclark/regexp2 v1.10.0 // indirect

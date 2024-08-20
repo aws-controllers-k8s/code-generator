@@ -6498,7 +6498,7 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 					f9elemf7.SizeConstraintStatement = f9elemf7f12
 				}
 				if f9iter.Statement.SqliMatchStatement != nil {
-					f9elemf7f13 := &svcapitypes.SQLiMatchStatement{}
+					f9elemf7f13 := &svcapitypes.SQLIMatchStatement{}
 					if f9iter.Statement.SqliMatchStatement.FieldToMatch != nil {
 						f9elemf7f13f0 := &svcapitypes.FieldToMatch{}
 						if f9iter.Statement.SqliMatchStatement.FieldToMatch.AllQueryArguments != nil {
@@ -6673,10 +6673,10 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 						}
 						f9elemf7f13.TextTransformations = f9elemf7f13f2
 					}
-					f9elemf7.SQLiMatchStatement = f9elemf7f13
+					f9elemf7.SQLIMatchStatement = f9elemf7f13
 				}
 				if f9iter.Statement.XssMatchStatement != nil {
-					f9elemf7f14 := &svcapitypes.XssMatchStatement{}
+					f9elemf7f14 := &svcapitypes.XSSMatchStatement{}
 					if f9iter.Statement.XssMatchStatement.FieldToMatch != nil {
 						f9elemf7f14f0 := &svcapitypes.FieldToMatch{}
 						if f9iter.Statement.XssMatchStatement.FieldToMatch.AllQueryArguments != nil {
@@ -6848,7 +6848,7 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 						}
 						f9elemf7f14.TextTransformations = f9elemf7f14f1
 					}
-					f9elemf7.XssMatchStatement = f9elemf7f14
+					f9elemf7.XSSMatchStatement = f9elemf7f14
 				}
 				f9elem.Statement = f9elemf7
 			}
