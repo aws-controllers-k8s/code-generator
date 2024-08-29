@@ -354,6 +354,20 @@ type ReferencesConfig struct {
 	// Resource mentions the K8s resource which is read to resolve the
 	// reference
 	Resource string `json:"resource"`
+	// SkipResourceStateValidations if true, skips state validations performed during
+	// ResolveReferences step, that ensure the referenced resource exists in AWS and is synced.
+	// This is needed when multiple resources reference each other in a cyclic manner,
+	// as otherwise they will never sync due to circular ResourceReferenceNotSynced errors.
+	//
+	// see: https://github.com/aws-controllers-k8s/community/issues/2119
+	//
+	// N.B. when setting this field to true, the developer is responsible to amend the sdkCreate
+	// and/or sdkUpdate functions of the referencing resource, in order to correctly wait on the
+	// desired state of the referenced resource, before SDK API calls that require the latter.
+	// In the future, we could consider generating this logic, but for now this is a niche use case.
+	//
+	// see: https://github.com/aws-controllers-k8s/ec2-controller/blob/main/pkg/resource/security_group/sdk.go
+	SkipResourceStateValidations bool `json:"skip_resource_state_validations"`
 	// Path refers to the the path of field which should be copied
 	// to resolve the reference
 	Path string `json:"path"`
