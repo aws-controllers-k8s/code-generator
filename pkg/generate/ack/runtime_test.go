@@ -96,6 +96,7 @@ func (rmf *fakeRMF) ManagerFor(
 	*session.Session,
 	ackv1alpha1.AWSAccountID,
 	ackv1alpha1.AWSRegion,
+	ackv1alpha1.AWSResourceName,
 ) (acktypes.AWSResourceManager, error) {
 	return nil, nil
 }
