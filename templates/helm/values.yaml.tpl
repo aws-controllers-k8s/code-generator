@@ -158,4 +158,7 @@ leaderElection:
 # can be individually enabled ("true") or disabled ("false") by adding key/value
 # pairs below.
 featureGates:
-  CARMv2: false
+  # Enables the Service level granularity for CARM. See https://github.com/aws-controllers-k8s/community/issues/2031
+  ServiceLevelCARM: false
+  # Enables the Team level granularity for CARM. See https://github.com/aws-controllers-k8s/community/issues/2031
+  TeamLevelCARM: false
