@@ -1,11 +1,13 @@
 # Base image to use at runtime
-ARG base_image=public.ecr.aws/eks-distro-build-tooling/eks-distro-minimal-base-nonroot:2024-04-01-1711929684.2
+ARG base_image=public.ecr.aws/eks-distro-build-tooling/eks-distro-minimal-base-nonroot
 
 # Golang image to use for compiling the manager
 ARG builder_image=public.ecr.aws/docker/library/golang
 
 # Version of Golang
 ARG golang_version
+# Version of eks-distro
+ARG eks_distro_version
 
 # Build the manager binary
 FROM $builder_image:$golang_version as builder
@@ -49,7 +51,7 @@ RUN GIT_VERSION=$service_controller_git_version && \
     -X ${VERSION_PKG}.BuildDate=${BUILD_DATE}" \
     -a -o $work_dir/bin/controller $work_dir/cmd/controller/main.go
 
-FROM $base_image
+FROM $base_image:$eks_distro_version
 ARG base_image
 LABEL org.opencontainers.image.base.name=$base_image
 ARG service_alias
