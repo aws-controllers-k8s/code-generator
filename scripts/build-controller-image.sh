@@ -5,6 +5,7 @@ set -eo pipefail
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 SCRIPTS_DIR=$DIR
 ROOT_DIR=$DIR/..
+TEST_INFRA_DIR=$ROOT_DIR/../test-infra
 DOCKERFILE_PATH=$ROOT_DIR/Dockerfile
 ACK_DIR=$ROOT_DIR/..
 DOCKERFILE=${DOCKERFILE:-"$DOCKERFILE_PATH"}
@@ -88,9 +89,10 @@ if ! is_public_ecr_logged_in; then
   aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
 fi
 
-pushd "$ROOT_DIR" 1>/dev/null
-  # Get the golang version from the code-generator
-  GOLANG_VERSION=${GOLANG_VERSION:-"$(go list -f {{.GoVersion}} -m)"}
+pushd "$TEST_INFRA_DIR" 1>/dev/null
+  # Get the golang version from build_config.yaml
+  GOLANG_VERSION=$(cat build_config.yaml | yq .go_version)
+  BASE_IMAGE_VERSION=$(cat build_config.yaml | yq .eks_distro_version) 
 popd 1>/dev/null
 
 # if local build
@@ -109,6 +111,7 @@ if ! docker build \
   --build-arg service_controller_git_commit="$SERVICE_CONTROLLER_GIT_COMMIT" \
   --build-arg build_date="$BUILD_DATE" \
   --build-arg golang_version="${GOLANG_VERSION}" \
+  --build-arg eks_distro_version="${BASE_IMAGE_VERSION}" \
   --build-arg go_arch="$GOARCH" \
   --progress plain \
   "${DOCKER_BUILD_CONTEXT}"; then
