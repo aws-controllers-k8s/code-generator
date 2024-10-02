@@ -91,6 +91,7 @@ fi
 pushd "$ROOT_DIR" 1>/dev/null
   # Get the golang version from the code-generator
   GOLANG_VERSION=${GOLANG_VERSION:-"$(go list -f {{.GoVersion}} -m)"}
+  BASE_IMAGE_VERSION=${BASE_IMAGE_VERSION:-"$(echo 2024-08-13-1723575672.2)"}
 popd 1>/dev/null
 
 # if local build
@@ -109,6 +110,7 @@ if ! docker build \
   --build-arg service_controller_git_commit="$SERVICE_CONTROLLER_GIT_COMMIT" \
   --build-arg build_date="$BUILD_DATE" \
   --build-arg golang_version="${GOLANG_VERSION}" \
+  --build-arg eks_distro_version="${BASE_IMAGE_VERSION}" \
   --build-arg go_arch="$GOARCH" \
   --progress plain \
   "${DOCKER_BUILD_CONTEXT}"; then
