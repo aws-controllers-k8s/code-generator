@@ -162,3 +162,5 @@ featureGates:
   ServiceLevelCARM: false
   # Enables the Team level granularity for CARM. See https://github.com/aws-controllers-k8s/community/issues/2031
   TeamLevelCARM: false
+  # Enable ReadOnlyResources feature/annotation. 
+  ReadOnlyResources: false
