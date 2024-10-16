@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"io/ioutil"
-	"os"
-	"path/filepath"
 	"strings"
 	"unicode"
 
@@ -53,12 +51,12 @@ func (Obj *ServiceObjV2) CapitaliseName(name *string) string {
 
 }
 
-func ReadV2file(serviceAlias string) (*ServiceObjV2, error) {
+func ReadV2file(filepath string) (*ServiceObjV2, error) {
 
 	var Obj ServiceObjV2
 
-	dir, _ := os.Getwd()
-	filepath := filepath.Join(dir + "/apiv2/" + serviceAlias + ".json")
+	// dir, _ := os.Getwd()
+	// filepath := filepath.Join(dir + "/apiv2/" + serviceAlias + ".json")
 
 	file, err := ioutil.ReadFile(filepath)
 
