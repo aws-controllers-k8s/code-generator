@@ -31,6 +31,7 @@ import (
 
 const (
 	sdkRepoURL             = "https://github.com/aws/aws-sdk-go"
+	sdkRepoURLV2           = "https://github.com/aws/aws-sdk-go-v2"
 	defaultGitCloneTimeout = 180 * time.Second
 	defaultGitFetchTimeout = 30 * time.Second
 )
@@ -112,17 +113,18 @@ func EnsureRepo(
 	}
 
 	// Clone repository if it doesn't exist
-	sdkDir := filepath.Join(srcPath, "aws-sdk-go")
+
+	sdkDir := filepath.Join(srcPath, "aws-sdk-go-v2")
 	if _, err = os.Stat(sdkDir); os.IsNotExist(err) {
 
 		ctx, cancel := context.WithTimeout(ctx, defaultGitCloneTimeout)
 		defer cancel()
-		err = util.CloneRepository(ctx, sdkDir, sdkRepoURL)
+		err = util.CloneRepository(ctx, sdkDir, sdkRepoURLV2)
 		if err != nil {
 			// See https://github.com/aws-controllers-k8s/community/issues/1642
 			if errors.Is(err, context.DeadlineExceeded) {
 				err = fmt.Errorf("%w: take too long to clone aws sdk repo, "+
-					"please consider manually 'git clone %s' to cache dir %s", err, sdkRepoURL, sdkDir)
+					"please consider manually 'git clone %s' to cache dir %s", err, sdkRepoURLV2, sdkDir)
 			}
 			return "", fmt.Errorf("cannot clone repository: %v", err)
 		}
@@ -136,6 +138,7 @@ func EnsureRepo(
 		if err != nil {
 			return "", fmt.Errorf("cannot fetch tags: %v", err)
 		}
+
 	}
 
 	// get sdkVersion and ensure it prefix
@@ -208,7 +211,7 @@ func getSDKVersionFromGoMod(goModPath string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	sdkModule := strings.TrimPrefix(sdkRepoURL, "https://")
+	sdkModule := strings.TrimPrefix(sdkRepoURLV2, "https://")
 	for _, require := range goMod.Require {
 		if require.Mod.Path == sdkModule {
 			return require.Mod.Version, nil
