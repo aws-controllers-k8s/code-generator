@@ -27,6 +27,7 @@ import (
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
 
+	"github.com/aws-controllers-k8s/code-generator/apiv2"
 	awssdkmodel "github.com/aws-controllers-k8s/code-generator/pkg/api"
 )
 
@@ -122,6 +123,28 @@ func (h *Helper) API(serviceModelName string) (*model.SDKAPI, error) {
 	return nil, ErrServiceNotFound
 }
 
+// AWS-SDK-GO-V2
+func (h *Helper) APIV2(serviceModelName string) (*model.SDKAPI, error) {
+
+	modelPath := h.ModelAndDocsPathV2(serviceModelName)
+
+	apis := apiv2.CollectApis(modelPath)
+
+	for _, api := range apis {
+
+		_ = api.ServicePackageDoc()
+		sdkapi := model.NewSDKAPI(api, h.APIGroupSuffix)
+
+		h.InjectCustomShapes(sdkapi)
+
+		return sdkapi, nil
+
+	}
+
+	return nil, ErrServiceNotFound
+
+}
+
 // ModelAndDocsPath returns two string paths to the supplied service's API and
 // doc JSON files
 func (h *Helper) ModelAndDocsPath(
@@ -140,6 +163,16 @@ func (h *Helper) ModelAndDocsPath(
 	modelPath := filepath.Join(versionPath, "api-2.json")
 	docsPath := filepath.Join(versionPath, "docs-2.json")
 	return modelPath, docsPath, nil
+}
+
+// AWS-SDK-GO-V2
+func (h *Helper) ModelAndDocsPathV2(serviceModelName string) string {
+
+	modelPath := filepath.Join(
+		h.basePath, "codegen", "sdk-codegen", "aws-models", serviceModelName, ".json",
+	)
+
+	return modelPath
 }
 
 // FirstAPIVersion returns the first found API version for a service API.

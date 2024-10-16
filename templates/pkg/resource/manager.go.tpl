@@ -23,6 +23,8 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	svcsdk "github.com/aws/aws-sdk-go/service/{{ .ServicePackageName }}"
+	svcsdkV2{{ .ServicePackageName }} "github.com/aws/aws-sdk-go-v2/service/{{ .ServicePackageName }}"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	svcsdkapi "github.com/aws/aws-sdk-go/service/{{ .ServicePackageName }}/{{ .ServicePackageName }}iface"
 
 	svcapitypes "github.com/aws-controllers-k8s/{{ .ControllerName }}-controller/apis/{{ .APIVersion }}"
@@ -66,6 +68,13 @@ type resourceManager struct {
 	// sdk is a pointer to the AWS service API interface exposed by the
 	// aws-sdk-go/services/{alias}/{alias}iface package.
 	sdkapi svcsdkapi.{{ .ClientInterfaceTypeName }}
+
+	// This is for AWS-SDK-GO-V2
+	config aws.Config
+
+	// clientV2 is the AWS SDK V2 Client object used to communicate with the backend AWS Service API
+	// This is for AWS-SDK-GO-V2
+	clientV2 *svcsdkV2{{ .ServicePackageName }}.Client
 }
 
 // concreteResource returns a pointer to a resource from the supplied
@@ -314,6 +323,7 @@ func (rm *resourceManager) EnsureTags(
 
 // newResourceManager returns a new struct implementing
 // acktypes.AWSResourceManager
+// This is for AWS-SDK-GO-V2 - Created newResourceManager With AWS sdk-Go-ClientV2
 func newResourceManager(
 	cfg ackcfg.Config,
 	log logr.Logger,
@@ -322,6 +332,8 @@ func newResourceManager(
 	sess *session.Session,
 	id ackv1alpha1.AWSAccountID,
 	region ackv1alpha1.AWSRegion,
+	config aws.Config,
+	clientV2 *svcsdkV2{{ .ServicePackageName }}.Client,
 ) (*resourceManager, error) {
 	return &resourceManager{
 		cfg: cfg,
@@ -332,6 +344,8 @@ func newResourceManager(
 		awsRegion: region,
 		sess:		 sess,
 		sdkapi:	   svcsdk.New(sess),
+		config: 	config,
+		clientV2:	clientV2, 
 	}, nil
 }
 
