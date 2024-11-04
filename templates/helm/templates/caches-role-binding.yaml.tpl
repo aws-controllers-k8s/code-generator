@@ -8,7 +8,7 @@ roleRef:
   name: ack-namespaces-cache-{{ .ControllerName }}-controller
 subjects:
 - kind: ServiceAccount
-  name: ack-{{ .ControllerName }}-controller
+  name: {{ IncludeTemplate "service-account.name" }}
   namespace: {{ "{{ .Release.Namespace }}" }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -22,5 +22,5 @@ roleRef:
   name: ack-configmaps-cache-{{ .ControllerName }}-controller
 subjects:
 - kind: ServiceAccount
-  name: ack-{{ .ControllerName }}-controller
+  name: {{ IncludeTemplate "service-account.name" }}
   namespace: {{ "{{ .Release.Namespace }}" }}
