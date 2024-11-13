@@ -3147,6 +3147,83 @@ func TestSetResource_EC2_SecurityGroups_SetResourceIdentifiers(t *testing.T) {
 	)
 }
 
+func TestSetResource_EKS_Cluster_PopulateResourceFromAnnotation(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "eks")
+
+	crd := testutil.GetCRDByName(t, g, "Cluster")
+	require.NotNil(crd)
+
+	expected := `
+	tmp, ok := fields["name"]
+	if !ok {
+		return ackerrors.MissingNameIdentifier
+	}
+	r.ko.Spec.Name = &tmp
+
+`	
+	assert.Equal(
+		expected,
+		code.PopulateResourceFromAnnotation(crd.Config(), crd, "fields", "r.ko", 1),
+	)
+}
+
+func TestSetResource_SageMaker_ModelPackage_PopulateResourceFromAnnotation(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "sagemaker")
+
+	crd := testutil.GetCRDByName(t, g, "ModelPackage")
+	require.NotNil(crd)
+
+	expected := `
+	tmp, ok := identifier["arn"]
+	if !ok {
+		return ackerrors.MissingNameIdentifier
+	}
+
+	if r.ko.Status.ACKResourceMetadata == nil {
+		r.ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
+	}
+	arn := ackv1alpha1.AWSResourceName(tmp)
+	r.ko.Status.ACKResourceMetadata.ARN = &arn
+`
+	assert.Equal(
+		expected,
+		code.PopulateResourceFromAnnotation(crd.Config(), crd, "identifier", "r.ko", 1),
+	)
+}
+
+func TestSetResource_APIGWV2_ApiMapping_PopulateResourceFromAnnotation(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "apigatewayv2")
+
+	crd := testutil.GetCRDByName(t, g, "ApiMapping")
+	require.NotNil(crd)
+
+	expected := `
+	tmp, ok := fields["apiMappingID"]
+	if !ok {
+		return ackerrors.MissingNameIdentifier
+	}
+	r.ko.Status.APIMappingID = &tmp
+
+	f1, f1ok := fields["domainName"]
+	if f1ok {
+		r.ko.Spec.DomainName = &f1
+	}
+`
+	assert.Equal(
+		expected,
+		code.PopulateResourceFromAnnotation(crd.Config(), crd, "fields", "r.ko", 1),
+	)
+}
+
 func TestSetResource_IAM_Role_NestedSetConfig(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
