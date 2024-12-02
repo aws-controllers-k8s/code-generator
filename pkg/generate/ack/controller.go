@@ -167,6 +167,9 @@ var (
 		"GoCodeSetResourceIdentifiers": func(r *ackmodel.CRD, sourceVarName string, targetVarName string, indentLevel int) string {
 			return code.SetResourceIdentifiers(r.Config(), r, sourceVarName, targetVarName, indentLevel)
 		},
+		"GoCodePopulateResourceFromAnnotation": func(r *ackmodel.CRD, sourceVarName string, targetVarName string, indentLevel int) string {
+			return code.PopulateResourceFromAnnotation(r.Config(), r, sourceVarName, targetVarName, indentLevel)
+		},
 		"GoCodeFindLateInitializedFieldNames": func(r *ackmodel.CRD, resVarName string, indentLevel int) string {
 			return code.FindLateInitializedFieldNames(r.Config(), r, resVarName, indentLevel)
 		},

@@ -751,6 +751,30 @@ func identifierNameOrIDGuardConstructor(
 	return out
 }
 
+// requiredFieldGuardContructor returns Go code checking if user provided
+// the required field for a read, or returning an error here
+// and returns a `MissingNameIdentifier` error:
+//
+//	if fields[${requiredField}] == "" {
+//	 return ackerrors.MissingNameIdentifier
+//	}
+func requiredFieldGuardContructor(
+	// String representing the fields map that contains the required
+	// fields for adoption
+	sourceVarName string,
+	// String representing the name of the required field
+	requiredField string,
+	// Number of levels of indentation to use
+	indentLevel int,
+) string {
+	indent := strings.Repeat("\t", indentLevel)
+	out := fmt.Sprintf("%stmp, ok := %s[\"%s\"]\n", indent, sourceVarName, requiredField)
+	out += fmt.Sprintf("%sif !ok {\n", indent)
+	out += fmt.Sprintf("%s\treturn ackerrors.MissingNameIdentifier\n", indent)
+	out += fmt.Sprintf("%s}\n", indent)
+	return out
+}
+
 // SetResourceGetAttributes returns the Go code that sets the Status fields
 // from the Output shape returned from a resource's GetAttributes operation.
 //
@@ -1101,6 +1125,243 @@ func SetResourceIdentifiers(
 	return primaryKeyConditionalOut + primaryKeyOut + additionalKeyOut
 }
 
+// PopulateResourceFromAnnotation returns the Go code that sets an empty CR object with
+// Spec and Status field values that correspond to the primary identifier (be
+// that an ARN, ID or Name) and any other "additional keys" required for the AWS
+// service to uniquely identify the object.
+//
+// The method will attempt to look for the field denoted with a value of true
+// for `is_primary_key`, or will use the ARN if the resource has a value of true
+// for `is_arn_primary_key`. Otherwise, the method will attempt to use the
+// `ReadOne` operation, if present, falling back to using `ReadMany`.
+// If it detects the operation uses an ARN to identify the resource it will read
+// it from the metadata status field. Otherwise it will use any field with a
+// name that matches the primary identifier from the operation, pulling from
+// top-level spec or status fields.
+//
+// An example of code with no additional keys:
+//
+// ```
+//	tmp, ok := field["brokerID"]
+//	if  !ok {
+//		return ackerrors.MissingNameIdentifier
+//	}
+//	r.ko.Status.BrokerID = &tmp
+//
+// ```
+//
+// An example of code with additional keys:
+//
+// ```
+//
+//	tmp, ok := field["resourceID"]
+//	if  !ok {
+//		return ackerrors.MissingNameIdentifier
+//	}
+//
+// r.ko.Spec.ResourceID = &tmp
+//
+// f0, f0ok := fields["scalableDimension"]
+//
+//	if f0ok {
+//		  r.ko.Spec.ScalableDimension = &f0
+//	}
+//
+// f1, f1ok := fields["serviceNamespace"]
+//
+//	if f1ok {
+//		  r.ko.Spec.ServiceNamespace = &f1
+//	}
+//
+// ```
+// An example of code that uses the ARN:
+//
+// ```
+//	tmpArn, ok := field["arn"]
+//  if !ok {
+//		return ackerrors.MissingNameIdentifier
+//	}
+//	if r.ko.Status.ACKResourceMetadata == nil {
+//		r.ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
+//	}
+//	arn := ackv1alpha1.AWSResourceName(tmp)
+//  
+//  r.ko.Status.ACKResourceMetadata.ARN = &arn
+//
+//  f0, f0ok := fields["modelPackageName"]
+//
+//	if f0ok {
+//		r.ko.Spec.ModelPackageName = &f0
+//	}
+//
+// ```
+func PopulateResourceFromAnnotation(
+	cfg *ackgenconfig.Config,
+	r *model.CRD,
+	// String representing the name of the variable that we will grab the Input
+	// shape from. This will likely be "fields" since in the templates that
+	// call this method, the "source variable" is the CRD struct which is used
+	// to populate the target variable, which is the struct of unique
+	// identifiers
+	sourceVarName string,
+	// String representing the name of the variable that we will be **setting**
+	// with values we get from the Output shape. This will likely be
+	// "r.ko" since that is the name of the "target variable" that the
+	// templates that call this method use for the Input shape.
+	targetVarName string,
+	// Number of levels of indentation to use
+	indentLevel int,
+) string {
+	op := r.Ops.ReadOne
+	if op == nil {
+		switch {
+		case r.Ops.GetAttributes != nil:
+			// If single lookups can only be done with GetAttributes
+			op = r.Ops.GetAttributes
+		case r.Ops.ReadMany != nil:
+			// If single lookups can only be done using ReadMany
+			op = r.Ops.ReadMany
+		default:
+			return ""
+		}
+	}
+	inputShape := op.InputRef.Shape
+	if inputShape == nil {
+		return ""
+	}
+
+	primaryKeyOut := ""
+	additionalKeyOut := "\n"
+
+	indent := strings.Repeat("\t", indentLevel)
+	arnOut := "\n"
+	out := "\n"
+	// Check if the CRD defines the primary keys
+	primaryKeyConditionalOut := "\n"
+	primaryKeyConditionalOut += requiredFieldGuardContructor(sourceVarName, "arn", indentLevel)
+	arnOut += ackResourceMetadataGuardConstructor(fmt.Sprintf("%s.Status", targetVarName), indentLevel)
+	arnOut += fmt.Sprintf(
+		"%sarn := ackv1alpha1.AWSResourceName(tmp)\n",
+		indent,
+	)
+	arnOut += fmt.Sprintf(
+		"%s%s.Status.ACKResourceMetadata.ARN = &arn\n",
+		indent, targetVarName,
+	)
+	if r.IsARNPrimaryKey() {
+		return primaryKeyConditionalOut + arnOut
+	}
+	primaryField, err := r.GetPrimaryKeyField()
+	if err != nil {
+		panic(err)
+	}
+
+	var primaryCRField, primaryShapeField string
+	isPrimarySet := primaryField != nil
+	if isPrimarySet {
+		memberPath, _ := findFieldInCR(cfg, r, primaryField.Names.Original)
+		primaryKeyOut += requiredFieldGuardContructor(sourceVarName, primaryField.Names.CamelLower, indentLevel)
+		targetVarPath := fmt.Sprintf("%s%s", targetVarName, memberPath)
+		primaryKeyOut += setResourceIdentifierPrimaryIdentifierAnn(cfg, r,
+			primaryField,
+			targetVarPath,
+			sourceVarName,
+			indentLevel,
+		)
+	} else {
+		primaryCRField, primaryShapeField = FindPrimaryIdentifierFieldNames(cfg, r, op)
+		if primaryShapeField == PrimaryIdentifierARNOverride {
+			return primaryKeyConditionalOut + arnOut
+		}
+	}
+
+	paginatorFieldLookup := []string{
+		"NextToken",
+		"MaxResults",
+	}
+
+
+	for memberIndex, memberName := range inputShape.MemberNames() {
+		if util.InStrings(memberName, paginatorFieldLookup) {
+			continue
+		}
+
+		inputShapeRef := inputShape.MemberRefs[memberName]
+		inputMemberShape := inputShapeRef.Shape
+
+		// Only strings and list of strings are currently accepted as valid
+		// inputs for additional key fields
+		if inputMemberShape.Type != "string" &&
+			(inputMemberShape.Type != "list" ||
+				inputMemberShape.MemberRef.Shape.Type != "string") {
+			continue
+		}
+
+		if r.IsSecretField(memberName) {
+			// Secrets cannot be used as fields in identifiers
+			continue
+		}
+
+		if r.IsPrimaryARNField(memberName) {
+			continue
+		}
+
+		// Handles field renames, if applicable
+		fieldName := cfg.GetResourceFieldName(
+			r.Names.Original,
+			op.ExportedName,
+			memberName,
+		)
+
+		// Check to see if we've already set the field as the primary identifier
+		if isPrimarySet && fieldName == primaryField.Names.Camel {
+			continue
+		}
+
+		isPrimaryIdentifier := fieldName == primaryShapeField
+
+		searchField := ""
+		if isPrimaryIdentifier {
+			searchField = primaryCRField
+		} else {
+			searchField = fieldName
+		}
+
+		memberPath, targetField := findFieldInCR(cfg, r, searchField)
+		if targetField == nil || (isPrimarySet && targetField == primaryField) {
+			continue
+		}
+
+		switch targetField.ShapeRef.Shape.Type {
+		case "list", "structure", "map":
+			panic("primary identifier '" + targetField.Path + "' must be a scalar type since NameOrID is a string")
+		default:
+			break
+		}
+
+		targetVarPath := fmt.Sprintf("%s%s", targetVarName, memberPath)
+		if isPrimaryIdentifier {
+			primaryKeyOut += requiredFieldGuardContructor(sourceVarName, targetField.Names.CamelLower, indentLevel)
+			primaryKeyOut += setResourceIdentifierPrimaryIdentifierAnn(cfg, r,
+				targetField,
+				targetVarPath,
+				sourceVarName,
+				indentLevel)
+		} else {
+			additionalKeyOut += setResourceIdentifierAdditionalKeyAnn(
+				cfg, r,
+				memberIndex,
+				targetField,
+				targetVarPath,
+				sourceVarName,
+				names.New(fieldName).CamelLower,
+				indentLevel)
+		}
+	}
+
+	return out + primaryKeyOut + additionalKeyOut
+}
+
 // findFieldInCR will search for a given field, by its name, in a CR and returns
 // the member path and Field type if one is found.
 func findFieldInCR(
@@ -1152,6 +1413,34 @@ func setResourceIdentifierPrimaryIdentifier(
 	)
 }
 
+// AnotherOne returns a string of Go code that sets
+// the primary identifier Spec or Status field on a given resource to the value
+// in the identifier `NameOrID` field:
+//
+// r.ko.Status.BrokerID = &identifier.NameOrID
+func setResourceIdentifierPrimaryIdentifierAnn(
+	cfg *ackgenconfig.Config,
+	r *model.CRD,
+	// The field that will be set on the target variable
+	targetField *model.Field,
+	// The variable name that we want to set a value to
+	targetVarName string,
+	// The struct or struct field that we access our source value from
+	sourceVarName string,
+	// Number of levels of indentation to use
+	indentLevel int,
+) string {
+	adaptedMemberPath := fmt.Sprintf("&tmp")
+	qualifiedTargetVar := fmt.Sprintf("%s.%s", targetVarName, targetField.Path)
+
+	return setResourceForScalar(
+		qualifiedTargetVar,
+		adaptedMemberPath,
+		targetField.ShapeRef,
+		indentLevel,
+	)
+}
+
 // setResourceIdentifierAdditionalKey returns a string of Go code that sets a
 // Spec or Status field on a given resource to the value in the identifier's
 // `AdditionalKeys` mapping:
@@ -1182,6 +1471,44 @@ func setResourceIdentifierAdditionalKey(
 
 	fieldIndexName := fmt.Sprintf("f%d", fieldIndex)
 	sourceAdaptedVarName := fmt.Sprintf("%s.AdditionalKeys[\"%s\"]", sourceVarName, sourceVarKey)
+
+	// TODO(RedbackThomson): If the identifiers don't exist, we should be
+	// throwing an error accessible to the user
+	additionalKeyOut += fmt.Sprintf("%s%s, %sok := %s\n", indent, fieldIndexName, fieldIndexName, sourceAdaptedVarName)
+	additionalKeyOut += fmt.Sprintf("%sif %sok {\n", indent, fieldIndexName)
+	qualifiedTargetVar := fmt.Sprintf("%s.%s", targetVarName, targetField.Path)
+	additionalKeyOut += setResourceForScalar(
+		qualifiedTargetVar,
+		fmt.Sprintf("&%s", fieldIndexName),
+		targetField.ShapeRef,
+		indentLevel+1,
+	)
+	additionalKeyOut += fmt.Sprintf("%s}\n", indent)
+
+	return additionalKeyOut
+}
+
+func setResourceIdentifierAdditionalKeyAnn(
+	cfg *ackgenconfig.Config,
+	r *model.CRD,
+	fieldIndex int,
+	// The field that will be set on the target variable
+	targetField *model.Field,
+	// The variable name that we want to set a value to
+	targetVarName string,
+	// The struct or struct field that we access our source value from
+	sourceVarName string,
+	// The key in the `AdditionalKeys` map storing the source variable
+	sourceVarKey string,
+	// Number of levels of indentation to use
+	indentLevel int,
+) string {
+	indent := strings.Repeat("\t", indentLevel)
+
+	additionalKeyOut := ""
+
+	fieldIndexName := fmt.Sprintf("f%d", fieldIndex)
+	sourceAdaptedVarName := fmt.Sprintf("%s[\"%s\"]", sourceVarName, sourceVarKey)
 
 	// TODO(RedbackThomson): If the identifiers don't exist, we should be
 	// throwing an error accessible to the user
