@@ -1,5 +1,5 @@
 apiVersion: v1
-name: {{ .ControllerName }}-chart
+name: {{ .ControllerName }}-controller
 description: A Helm chart for the ACK service controller for {{ .Metadata.Service.FullName }} ({{ .Metadata.Service.ShortName }})
 version: {{ .ReleaseVersion }}
 appVersion: {{ .ReleaseVersion }}
