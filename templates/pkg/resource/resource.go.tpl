@@ -85,7 +85,13 @@ func (r *resource) SetIdentifiers(identifier *ackv1alpha1.AWSIdentifiers) error 
 // PopulateResourceFromAnnotation populates the fields passed from adoption annotation 
 // 
 func (r *resource) PopulateResourceFromAnnotation(fields map[string]string) error {
+{{- if $hookCode := Hook .CRD "pre_populate_resource_from_annotation" }}
+{{ $hookCode }}
+{{- end }}
 {{- GoCodePopulateResourceFromAnnotation .CRD "fields" "r.ko" 1}}
+{{- if $hookCode := Hook .CRD "post_populate_resource_from_annotation" }}
+{{ $hookCode }}
+{{- end }}
 	return nil
 }
 
