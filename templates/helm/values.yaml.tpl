@@ -164,3 +164,5 @@ featureGates:
   TeamLevelCARM: false
   # Enable ReadOnlyResources feature/annotation. 
   ReadOnlyResources: false
+  # Enable ResourceAdoption feature/annotation. 
+  ResourceAdoption: false
