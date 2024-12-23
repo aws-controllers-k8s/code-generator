@@ -30,7 +30,7 @@ import (
 )
 
 const (
-	sdkRepoURL             = "https://github.com/aws/aws-sdk-go"
+	// sdkRepoURL             = "https://github.com/aws/aws-sdk-go"
 	sdkRepoURLV2           = "https://github.com/aws/aws-sdk-go-v2"
 	defaultGitCloneTimeout = 180 * time.Second
 	defaultGitFetchTimeout = 30 * time.Second
@@ -113,10 +113,8 @@ func EnsureRepo(
 	}
 
 	// Clone repository if it doesn't exist
-
 	sdkDir := filepath.Join(srcPath, "aws-sdk-go-v2")
 	if _, err = os.Stat(sdkDir); os.IsNotExist(err) {
-
 		ctx, cancel := context.WithTimeout(ctx, defaultGitCloneTimeout)
 		defer cancel()
 		err = util.CloneRepository(ctx, sdkDir, sdkRepoURLV2)

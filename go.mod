@@ -25,10 +25,14 @@ require (
 	sigs.k8s.io/controller-runtime v0.19.0
 )
 
+replace github.com/aws-controllers-k8s/runtime => github.com/michaelhtm/ack-runtime v0.40.1-0.20250103184439-808a0d98774f
+
 require (
 	dario.cat/mergo v1.0.0 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/ProtonMail/go-crypto v0.0.0-20230828082145-3c4c8a2d2371 // indirect
+	github.com/aws/aws-sdk-go-v2 v1.32.6 // indirect
+	github.com/aws/smithy-go v1.22.1 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect

@@ -10,11 +10,10 @@ import (
 	ackcfg "github.com/aws-controllers-k8s/runtime/pkg/config"
 	ackmetrics "github.com/aws-controllers-k8s/runtime/pkg/metrics"
 	acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
-	"github.com/aws/aws-sdk-go/aws/session"
+	awscfg "github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/go-logr/logr"
-	"github.com/aws/aws-sdk-go-v2/aws"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	svcsdkV2{{ .ServicePackageName }} "github.com/aws/aws-sdk-go-v2/service/{{ .ServicePackageName }}"
 	svcresource "github.com/aws-controllers-k8s/{{ .ControllerName }}-controller/pkg/resource"
 )
 
@@ -36,13 +35,15 @@ func (f *resourceManagerFactory) ResourceDescriptor() acktypes.AWSResourceDescri
 // supplied AWS account
 func (f *resourceManagerFactory) ManagerFor(
 	cfg ackcfg.Config,
+	clientcfg awscfg.Config,
 	log logr.Logger,
 	metrics *ackmetrics.Metrics,
 	rr acktypes.Reconciler,
-	sess *session.Session,
 	id ackv1alpha1.AWSAccountID,
 	region ackv1alpha1.AWSRegion,
-	config aws.Config,
+	roleARN ackv1alpha1.AWSResourceName,
+	endpointURL string,
+	gvk schema.GroupVersionKind,
 ) (acktypes.AWSResourceManager, error) {
 	rmId := fmt.Sprintf("%s/%s", id, region)
 	f.RLock()
@@ -56,11 +57,7 @@ func (f *resourceManagerFactory) ManagerFor(
 	f.Lock()
 	defer f.Unlock()
 
-	// This is for AWS-SDK-GO-V2
-	// Create a client for {{ .ServicePackageName }}
-	clientV2 := svcsdkV2{{ .ServicePackageName }}.NewFromConfig(config)
-
-	rm, err := newResourceManager(cfg, log, metrics, rr, sess, id, region,config, clientV2)
+	rm, err := newResourceManager(cfg, clientcfg, log, metrics, rr, id, region)
 	if err != nil {
 		return nil, err
 	}

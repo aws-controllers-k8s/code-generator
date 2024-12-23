@@ -76,7 +76,7 @@ func NewModelForServiceWithOptions(t *testing.T, servicePackageName string, opti
 	}
 	options.SetDefaults()
 
-	generatorConfigPath := filepath.Join(path, "models", "apis", servicePackageName, options.ServiceAPIVersion, options.GeneratorConfigFile)
+	generatorConfigPath := filepath.Join(path, "codegen", "sdk-codegen", "aws-models", servicePackageName+".json")
 	if _, err := os.Stat(generatorConfigPath); os.IsNotExist(err) {
 		t.Fatalf("Could not find generator file %q", generatorConfigPath)
 	}
@@ -86,7 +86,7 @@ func NewModelForServiceWithOptions(t *testing.T, servicePackageName string, opti
 	}
 	sdkHelper := acksdk.NewHelper(path, cfg)
 	sdkHelper.WithAPIVersion(options.ServiceAPIVersion)
-	sdkAPI, err := sdkHelper.API(servicePackageName)
+	sdkAPI, err := sdkHelper.APIV2(servicePackageName)
 	if err != nil {
 		t.Fatal(err)
 	}

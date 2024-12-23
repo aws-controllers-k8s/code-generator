@@ -833,7 +833,7 @@ func fastCompareTypes(
 		)
 		out += fmt.Sprintf(
 			"%s}\n", indent,
-		)
+		)		
 	default:
 		// For any other type, we can use the HasNilDifference function to
 		// eliminate early on the case where one of the objects is nil and

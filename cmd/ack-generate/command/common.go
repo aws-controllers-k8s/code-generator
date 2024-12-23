@@ -62,7 +62,8 @@ func loadModel(svcAlias string, apiVersion string, apiGroup string, defaultCfg a
 			return nil, err
 		}
 		// Retry using path found by querying service ID
-		sdkAPI, err = sdkHelper.API(retryModelName)
+		// sdkAPI, err = sdkHelper.API(retryModelName)
+		sdkAPI, err = sdkHelper.APIV2(retryModelName)
 		if err != nil {
 			return nil, fmt.Errorf("service %s not found", svcAlias)
 		}

@@ -262,6 +262,7 @@ func Controller(
 			if target == "tags.go.tpl" && crd.Config().TagsAreIgnored(crd.Names.Original) {
 				continue
 			}
+
 			outPath := filepath.Join("pkg/resource", crd.Names.Snake, strings.TrimSuffix(target, ".tpl"))
 			tplPath := filepath.Join("pkg/resource", target)
 			crdVars := &templateCRDVars{
