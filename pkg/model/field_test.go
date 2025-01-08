@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/aws-controllers-k8s/code-generator/pkg/api"
 	"github.com/aws-controllers-k8s/pkg/names"
-	"github.com/aws/aws-sdk-go/private/model/api"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

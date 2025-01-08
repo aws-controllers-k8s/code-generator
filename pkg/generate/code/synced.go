@@ -21,7 +21,7 @@ import (
 	"github.com/aws-controllers-k8s/code-generator/pkg/fieldpath"
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 
-	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
+	awssdkmodel "github.com/aws-controllers-k8s/code-generator/pkg/api"
 )
 
 // ResourceIsSynced returns the Go code that verifies whether a resource is synced or
