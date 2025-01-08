@@ -17,7 +17,7 @@ import (
 	"encoding/json"
 	"strings"
 
-	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
+	awssdkmodel "github.com/aws-controllers-k8s/code-generator/pkg/api"
 )
 
 // Path provides a JSONPath-like struct and field-member "route" to a

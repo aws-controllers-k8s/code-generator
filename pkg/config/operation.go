@@ -16,7 +16,7 @@ package config
 import (
 	"encoding/json"
 
-	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
+	awssdkmodel "github.com/aws-controllers-k8s/code-generator/pkg/api"
 
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
 )
