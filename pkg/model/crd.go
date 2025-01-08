@@ -19,8 +19,8 @@ import (
 	"sort"
 	"strings"
 
+	awssdkmodel "github.com/aws-controllers-k8s/code-generator/pkg/api"
 	"github.com/aws-controllers-k8s/pkg/names"
-	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
 	"github.com/gertd/go-pluralize"
 
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/config"

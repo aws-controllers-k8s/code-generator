@@ -19,13 +19,13 @@ import (
 	"strings"
 	ttpl "text/template"
 
+	awssdkmodel "github.com/aws-controllers-k8s/code-generator/pkg/api"
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/fieldpath"
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate/code"
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate/templateset"
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
-	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
 )
 
 var (

@@ -17,7 +17,7 @@ import (
 	"errors"
 	"fmt"
 
-	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
+	awssdkmodel "github.com/aws-controllers-k8s/code-generator/pkg/api"
 
 	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
 )

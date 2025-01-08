@@ -17,7 +17,7 @@ import (
 	"fmt"
 	"testing"
 
-	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
+	awssdkmodel "github.com/aws-controllers-k8s/code-generator/pkg/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 

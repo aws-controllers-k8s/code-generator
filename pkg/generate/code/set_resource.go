@@ -18,8 +18,8 @@ import (
 	"sort"
 	"strings"
 
+	awssdkmodel "github.com/aws-controllers-k8s/code-generator/pkg/api"
 	"github.com/aws-controllers-k8s/pkg/names"
-	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
 
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/fieldpath"
@@ -1142,6 +1142,7 @@ func SetResourceIdentifiers(
 // An example of code with no additional keys:
 //
 // ```
+//
 //	tmp, ok := field["brokerID"]
 //	if  !ok {
 //		return ackerrors.MissingNameIdentifier
@@ -1177,22 +1178,23 @@ func SetResourceIdentifiers(
 // An example of code that uses the ARN:
 //
 // ```
-//	tmpArn, ok := field["arn"]
-//  if !ok {
-//		return ackerrors.MissingNameIdentifier
-//	}
-//	if r.ko.Status.ACKResourceMetadata == nil {
-//		r.ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
-//	}
-//	arn := ackv1alpha1.AWSResourceName(tmp)
-//  
-//  r.ko.Status.ACKResourceMetadata.ARN = &arn
 //
-//  f0, f0ok := fields["modelPackageName"]
+//		tmpArn, ok := field["arn"]
+//	 if !ok {
+//			return ackerrors.MissingNameIdentifier
+//		}
+//		if r.ko.Status.ACKResourceMetadata == nil {
+//			r.ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
+//		}
+//		arn := ackv1alpha1.AWSResourceName(tmp)
 //
-//	if f0ok {
-//		r.ko.Spec.ModelPackageName = &f0
-//	}
+//	 r.ko.Status.ACKResourceMetadata.ARN = &arn
+//
+//	 f0, f0ok := fields["modelPackageName"]
+//
+//		if f0ok {
+//			r.ko.Spec.ModelPackageName = &f0
+//		}
 //
 // ```
 func PopulateResourceFromAnnotation(
@@ -1279,7 +1281,6 @@ func PopulateResourceFromAnnotation(
 		"NextToken",
 		"MaxResults",
 	}
-
 
 	for memberIndex, memberName := range inputShape.MemberNames() {
 		if util.InStrings(memberName, paginatorFieldLookup) {
