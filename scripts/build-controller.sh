@@ -242,6 +242,7 @@ popd 1>/dev/null
 
 echo "Running gofmt against generated code for $SERVICE"
 gofmt -w "$SERVICE_CONTROLLER_SOURCE_PATH"
+goimports -w "$SERVICE_CONTROLLER_SOURCE_PATH"
 
 echo "Updating additional GitHub repository maintenance files"
 cp "$ROOT_DIR"/CODE_OF_CONDUCT.md "$SERVICE_CONTROLLER_SOURCE_PATH"/CODE_OF_CONDUCT.md

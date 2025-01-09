@@ -141,7 +141,7 @@ func SetSDK(
 		//     res.SetAttributes(attrMap)
 		// }
 		fieldConfigs := cfg.GetFieldConfigs(r.Names.Original)
-		out += fmt.Sprintf("%sattrMap := map[string]*string{}\n", indent)
+		out += fmt.Sprintf("%sattrMap := map[string]string{}\n", indent)
 		sortedAttrFieldNames := []string{}
 		for fName, fConfig := range fieldConfigs {
 			if fConfig.IsAttribute {
@@ -159,7 +159,7 @@ func SetSDK(
 					indent, sourceAdaptedVarName,
 				)
 				out += fmt.Sprintf(
-					"%s\tattrMap[\"%s\"] = %s\n",
+					"%s\tattrMap[\"%s\"] = *%s\n",
 					indent, fieldName, sourceAdaptedVarName,
 				)
 				out += fmt.Sprintf(
@@ -170,7 +170,8 @@ func SetSDK(
 		out += fmt.Sprintf(
 			"%sif len(attrMap) > 0 {\n", indent,
 		)
-		out += fmt.Sprintf("\t%s%s.SetAttributes(attrMap)\n", indent, targetVarName)
+		// Set<Field> no longer exist in aws-sdk-go-v2
+		out += fmt.Sprintf("\t%s%s.Attributes = attrMap\n", indent, targetVarName)
 		out += fmt.Sprintf(
 			"%s}\n", indent,
 		)
@@ -196,12 +197,13 @@ func SetSDK(
 					panic("Member type not handled")
 				}
 
-				out += fmt.Sprintf("%s%s.Set%s(%s)\n", indent, targetVarName, memberName, value)
+				out += fmt.Sprintf("%s%s.%s = %s\n", indent, targetVarName, memberName, value)
 				continue
 			}
 		}
 
 		if r.IsPrimaryARNField(memberName) {
+
 			// if ko.Status.ACKResourceMetadata != nil && ko.Status.ACKResourceMetadata.ARN != nil {
 			//     res.SetTopicArn(string(*ko.Status.ACKResourceMetadata.ARN))
 			// }
@@ -210,7 +212,7 @@ func SetSDK(
 				indent, sourceVarName, sourceVarName,
 			)
 			out += fmt.Sprintf(
-				"%s\t%s.Set%s(string(*%s.Status.ACKResourceMetadata.ARN))\n",
+				"%s\t%s.%s = (*string)(%s.Status.ACKResourceMetadata.ARN)\n",
 				indent, targetVarName, memberName, sourceVarName,
 			)
 			out += fmt.Sprintf(
@@ -330,7 +332,18 @@ func SetSDK(
 
 		switch memberShape.Type {
 		case "list", "structure", "map":
-			{
+			// leveraging the ToStringSlice to convert from list of string pointers to list of strings
+			// ditto for maps
+			if memberShape.Type == "list" &&
+				memberShape.MemberRef.Shape.Type == "string" &&
+				!memberShape.MemberRef.Shape.IsEnum() {
+				out += fmt.Sprintf("%s\t%s.%s = aws.ToStringSlice(%s)\n", indent, targetVarName, memberName, sourceAdaptedVarName)
+			} else if memberShape.Type == "map" &&
+				memberShape.KeyRef.Shape.Type == "string" &&
+				memberShape.ValueRef.Shape.Type == "string" {
+				out += fmt.Sprintf("%s\t%s.%s = aws.ToStringMap(%s)\n", indent, targetVarName, memberName, sourceAdaptedVarName)
+			} else {
+
 				memberVarName := fmt.Sprintf("f%d", memberIndex)
 				out += varEmptyConstructorSDKType(
 					cfg, r,
@@ -476,7 +489,7 @@ func SetSDKGetAttributes(
 				indent, sourceVarName, sourceVarName,
 			)
 			out += fmt.Sprintf(
-				"%s\t%s.Set%s(string(*%s.Status.ACKResourceMetadata.ARN))\n",
+				"%s\t%s.%s = (string(*%s.Status.ACKResourceMetadata.ARN))\n",
 				indent, targetVarName, memberName, sourceVarName,
 			)
 			nameField := r.SpecIdentifierField()
@@ -518,15 +531,15 @@ func SetSDKGetAttributes(
 			// reference to when constructing the values of the []*string or
 			// *string members.
 			if memberShapeRef.Shape.Type == "list" {
-				out += fmt.Sprintf("%s\ttmpVals := []*string{}\n", indent)
+				out += fmt.Sprintf("%s\ttmpVals := []svcsdktypes.%s{}\n", indent, memberShapeRef.Shape.MemberRef.ShapeName)
 				for x, overrideValue := range overrideValues {
-					out += fmt.Sprintf("%s\ttmpVal%d := \"%s\"\n", indent, x, overrideValue)
-					out += fmt.Sprintf("%s\ttmpVals = append(tmpVals, &tmpVal%d)\n", indent, x)
+					out += fmt.Sprintf("%s\ttmpVal%d := svcsdktypes.%s%s\n", indent, x, memberShapeRef.Shape.MemberRef.ShapeName, overrideValue)
+					out += fmt.Sprintf("%s\ttmpVals = append(tmpVals, tmpVal%d)\n", indent, x)
 				}
-				out += fmt.Sprintf("%s\t%s.Set%s(tmpVals)\n", indent, targetVarName, memberName)
+				out += fmt.Sprintf("%s\t%s.%s = tmpVals\n", indent, targetVarName, memberName)
 			} else {
-				out += fmt.Sprintf("%s\ttmpVal := \"%s\"\n", indent, overrideValues[0])
-				out += fmt.Sprintf("%s\t%s.Set%s(&tmpVal)\n", indent, targetVarName, memberName)
+				out += fmt.Sprintf("%s\ttmpVal := svcsdktypes.%s%s\n", indent, memberShapeRef.Shape.MemberRef.ShapeName, overrideValues[0])
+				out += fmt.Sprintf("%s\t%s.%s = tmpVal\n", indent, targetVarName, memberName)
 			}
 			out += fmt.Sprintf("%s}\n", indent)
 			continue
@@ -659,7 +672,7 @@ func SetSDKSetAttributes(
 				indent, sourceVarName, sourceVarName,
 			)
 			out += fmt.Sprintf(
-				"%s\t%s.Set%s(string(*%s.Status.ACKResourceMetadata.ARN))\n",
+				"%s\t%s.%s = (string(*%s.Status.ACKResourceMetadata.ARN))\n",
 				indent, targetVarName, memberName, sourceVarName,
 			)
 			nameField := r.SpecIdentifierField()
@@ -703,7 +716,7 @@ func SetSDKSetAttributes(
 			// }
 			// res.SetAttributes(attrMap)
 			fieldConfigs := cfg.GetFieldConfigs(r.Names.Original)
-			out += fmt.Sprintf("%sattrMap := map[string]*string{}\n", indent)
+			out += fmt.Sprintf("%sattrMap := map[string]string{}\n", indent)
 			sortedAttrFieldNames := []string{}
 			for fName, fConfig := range fieldConfigs {
 				if fConfig.IsAttribute {
@@ -721,7 +734,7 @@ func SetSDKSetAttributes(
 						indent, sourceAdaptedVarName,
 					)
 					out += fmt.Sprintf(
-						"%s\tattrMap[\"%s\"] = %s\n",
+						"%s\tattrMap[\"%s\"] = *%s\n",
 						indent, fieldName, sourceAdaptedVarName,
 					)
 					out += fmt.Sprintf(
@@ -732,7 +745,7 @@ func SetSDKSetAttributes(
 			out += fmt.Sprintf(
 				"%sif len(attrMap) > 0 {\n", indent,
 			)
-			out += fmt.Sprintf("\t%s%s.SetAttributes(attrMap)\n", indent, targetVarName)
+			out += fmt.Sprintf("\t%s%s.Attributes = attrMap\n", indent, targetVarName)
 			out += fmt.Sprintf(
 				"%s}\n", indent,
 			)
@@ -881,8 +894,7 @@ func setSDKReadMany(
 				indentLevel+1,
 			)
 
-			//  f0 = append(f0, sourceVarName)
-			out += fmt.Sprintf("%s\t%s = append(%s, %s)\n", indent,
+			out += fmt.Sprintf("%s\t%s = append(%s, *%s)\n", indent,
 				memberVarName, memberVarName, resVarPath)
 
 			// res.SetIds(f0)
@@ -1135,7 +1147,15 @@ func SetSDKForStruct(
 		)
 		switch memberShape.Type {
 		case "list", "structure", "map":
-			{
+			if memberShape.Type == "list" &&
+				memberShape.MemberRef.Shape.Type == "string" &&
+				!memberShape.MemberRef.Shape.IsEnum() {
+				out += fmt.Sprintf("%s\t%s.%s = aws.ToStringSlice(%s)\n", indent, targetVarName, memberName, sourceAdaptedVarName)
+			} else if memberShape.Type == "map" &&
+				memberShape.KeyRef.Shape.Type == "string" &&
+				memberShape.ValueRef.Shape.Type == "string" {
+				out += fmt.Sprintf("%s\t%s.%s = aws.ToStringMap(%s)\n", indent, targetVarName, memberName, sourceAdaptedVarName)
+			} else {
 				memberVarName := fmt.Sprintf(
 					"%sf%d",
 					targetVarName, memberIndex,
@@ -1177,6 +1197,7 @@ func SetSDKForStruct(
 					indentLevel,
 				)
 			} else {
+
 				out += setSDKForScalar(
 					cfg, r,
 					memberName,
@@ -1248,15 +1269,14 @@ func setSDKForSlice(
 		op,
 		indentLevel+1,
 	)
-	addressOfVar := ""
-	switch targetShape.MemberRef.Shape.Type {
-	case "structure", "list", "map":
-		break
-	default:
-		addressOfVar = "&"
-	}
 	//  f0 = append(f0, elem0)
-	out += fmt.Sprintf("%s\t%s = append(%s, %s%s)\n", indent, targetVarName, targetVarName, addressOfVar, elemVarName)
+	setPointer := ""
+	if (targetShape.MemberRef.Shape.Type == "string" && !targetShape.MemberRef.Shape.IsEnum()) || targetShape.MemberRef.Shape.Type == "structure" {
+		setPointer = "*"
+	} else if targetShape.MemberRef.Shape.IsEnum() {
+		elemVarName = fmt.Sprintf("svcsdktypes.%s(%s)", targetShape.MemberRef.ShapeName, elemVarName)
+	}
+	out += fmt.Sprintf("%s\t%s = append(%s, %s%s)\n", indent, targetVarName, targetVarName, setPointer, elemVarName)
 	out += fmt.Sprintf("%s}\n", indent)
 	return out
 }
@@ -1281,48 +1301,13 @@ func setSDKForMap(
 ) string {
 	out := ""
 	indent := strings.Repeat("\t", indentLevel)
-	targetShape := targetShapeRef.Shape
 
 	valIterVarName := fmt.Sprintf("%svaliter", targetVarName)
 	keyVarName := fmt.Sprintf("%skey", targetVarName)
-	valVarName := fmt.Sprintf("%sval", targetVarName)
 	// for f0key, f0valiter := range r.ko.Spec.Tags {
 	out += fmt.Sprintf("%sfor %s, %s := range %s {\n", indent, keyVarName, valIterVarName, sourceVarName)
-	//		f0elem := string{}
-	out += varEmptyConstructorSDKType(
-		cfg, r,
-		valVarName,
-		targetShape.ValueRef.Shape,
-		indentLevel+1,
-	)
-	//  f0val = *f0valiter
-	//
-	// or
-	//
-	//  f0val.SetMyField(*f0valiter)
-	containerFieldName := ""
-	if targetShape.ValueRef.Shape.Type == "structure" {
-		containerFieldName = targetFieldName
-	}
-	out += setSDKForContainer(
-		cfg, r,
-		containerFieldName,
-		valVarName,
-		sourceFieldPath,
-		valIterVarName,
-		&targetShape.ValueRef,
-		op,
-		indentLevel+1,
-	)
-	addressOfVar := ""
-	switch targetShape.ValueRef.Shape.Type {
-	case "structure", "list", "map":
-		break
-	default:
-		addressOfVar = "&"
-	}
 	// f0[f0key] = f0val
-	out += fmt.Sprintf("%s\t%s[%s] = %s%s\n", indent, targetVarName, keyVarName, addressOfVar, valVarName)
+	out += fmt.Sprintf("%s\t%s[%s] = *%s\n", indent, targetVarName, keyVarName, valIterVarName)
 	out += fmt.Sprintf("%s}\n", indent)
 	return out
 }
@@ -1339,15 +1324,32 @@ func varEmptyConstructorSDKType(
 	out := ""
 	indent := strings.Repeat("\t", indentLevel)
 	goType := shape.GoTypeWithPkgName()
-	keepPointer := (shape.Type == "list" || shape.Type == "map")
-	goType = model.ReplacePkgName(goType, r.SDKAPIPackageName(), "svcsdk", keepPointer)
+	goType = model.ReplacePkgName(goType, r.SDKAPIPackageName(), "svcsdktypes", false)
 	switch shape.Type {
 	case "structure":
 		// f0 := &svcsdk.BookData{}
-		out += fmt.Sprintf("%s%s := &%s{}\n", indent, varName, goType)
-	case "list", "map":
-		// f0 := []*string{}
+
+		// This is for AWS-SDK-GO-V2
+		if goType == ".Tag" {
+			out += fmt.Sprintf("%s%s := %s{}\n", indent, varName, goType)
+		} else {
+			out += fmt.Sprintf("%s%s := &%s{}\n", indent, varName, goType)
+		}
+	case "list":
+		if shape.MemberRef.Shape != nil && shape.MemberRef.Shape.IsEnum() {
+			goType = "[]svcsdktypes." + shape.MemberRef.ShapeName
+		}
 		out += fmt.Sprintf("%s%s := %s{}\n", indent, varName, goType)
+	case "map":
+		// f0 := []*string{}
+
+		if goType == "[]*string" || goType == "[]*int32" || goType == "[]*int64" {
+
+			out += fmt.Sprintf("%s%s := %s{}\n", indent, varName, strings.ReplaceAll(goType, "*", ""))
+		} else {
+			out += fmt.Sprintf("%s%s := %s{}\n", indent, varName, goType)
+		}
+
 	default:
 		// var f0 string
 		out += fmt.Sprintf("%svar %s %s\n", indent, varName, goType)
@@ -1404,8 +1406,8 @@ func varEmptyConstructorK8sType(
 		// f0 := []*string{}
 		out += fmt.Sprintf("%s%s := %s{}\n", indent, varName, goType)
 	default:
-		// var f0 string
-		out += fmt.Sprintf("%svar %s %s\n", indent, varName, goType)
+		// var f0 *string
+		out += fmt.Sprintf("%svar %s *%s\n", indent, varName, goType)
 	}
 	return out
 }
@@ -1439,14 +1441,39 @@ func setSDKForScalar(
 	} else if shapeRef.UseIndirection() {
 		setTo = "*" + setTo
 	}
-	if targetVarType == "structure" {
-		out += fmt.Sprintf("%s%s.Set%s(%s)\n", indent, targetVarName, targetFieldName, setTo)
-	} else {
+
+	if targetFieldName == "" {
+		out += fmt.Sprintf("%s%s = %s\n", indent, targetVarName, setTo)
+	} else if shape.IsEnum() {
+		// 	//out += fmt.Sprintf("%s%s.Set%s(%s)\n", indent, targetVarName, targetFieldName, setTo)
+		out += fmt.Sprintf("%s.%s = svcsdktypes.%s(%s)", targetVarName, targetFieldName, shape.ShapeName, setTo)
+
+		// This is edge case in ECR controller where ImageScanningConfiguration.ScanOnPush is bool not *bool
+	} else if targetVarType == "structure" && shape.Type == "boolean" && targetFieldName == "ScanOnPush" {
 		targetVarPath := targetVarName
 		if targetFieldName != "" {
 			targetVarPath += "." + targetFieldName
 		}
 		out += fmt.Sprintf("%s%s = %s\n", indent, targetVarPath, setTo)
+	} else if targetVarType == "structure" && shape.Type == "boolean" {
+		targetVarPath := targetVarName
+		if targetFieldName != "" {
+			targetVarPath += "." + targetFieldName
+		}
+		out += fmt.Sprintf("%s%s = %s\n", indent, targetVarPath, strings.TrimPrefix(setTo, "*"))
+	} else if shape.Type == "integer" {
+		targetVarPath := targetVarName
+		if targetFieldName != "" {
+			targetVarPath += "." + targetFieldName
+		}
+		out += fmt.Sprintf("%stemp := int32(%s)\n", indent, setTo)
+		out += fmt.Sprintf("%s%s = &temp\n", indent, targetVarPath)
+	} else {
+		targetVarPath := targetVarName
+		if targetFieldName != "" {
+			targetVarPath += "." + targetFieldName
+		}
+		out += fmt.Sprintf("%s%s = %s\n", indent, targetVarPath, strings.TrimPrefix(setTo, "*"))
 	}
 	return out
 }

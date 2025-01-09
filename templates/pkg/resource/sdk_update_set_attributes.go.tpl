@@ -34,7 +34,7 @@ func (rm *resourceManager) sdkUpdate(
 	// contain any useful information. Instead, below, we'll be returning a
 	// DeepCopy of the supplied desired state, which should be fine because
 	// that desired state has been constructed from a call to GetAttributes...
-	_, respErr := rm.sdkapi.{{ .CRD.Ops.SetAttributes.ExportedName }}WithContext(ctx, input)
+	_, respErr := rm.sdkapi.{{ .CRD.Ops.SetAttributes.ExportedName }}(ctx, input)
 {{- if $hookCode := Hook .CRD "sdk_update_post_request" }}
 {{ $hookCode }}
 {{- end }}
