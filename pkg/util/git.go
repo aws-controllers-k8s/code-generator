@@ -105,9 +105,11 @@ func CheckoutRepositoryTag(repo *git.Repository, tag string) error {
 	if err != nil {
 		return err
 	}
+	// AWS-SDK-GO-V2 - Hash value for tag not found, hence use tagName to checkout
 	err = wt.Checkout(&git.CheckoutOptions{
 		// Checkout only take hashes or branch names.
-		Hash: tagRef.Hash(),
+		Branch: tagRef.Name(),
+		Force:  true,
 	})
 	return err
 }
