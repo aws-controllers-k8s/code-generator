@@ -5,6 +5,10 @@ ignore:
   shape_names:
     # These shapes are structs with no members...
     - SSES3
+  field_paths:
+    - CreateBucketConfiguration.Bucket
+    - CreateBucketConfiguration.Location
+    - BucketLoggingStatus.LoggingEnabled.TargetObjectKeyFormat
 resources:
   Bucket:
     renames:

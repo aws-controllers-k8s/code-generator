@@ -124,6 +124,13 @@ func TestCompareResource_S3_Bucket(t *testing.T) {
 			delta.Add("Spec.ObjectLockEnabledForBucket", a.ko.Spec.ObjectLockEnabledForBucket, b.ko.Spec.ObjectLockEnabledForBucket)
 		}
 	}
+	if ackcompare.HasNilDifference(a.ko.Spec.ObjectOwnership, b.ko.Spec.ObjectOwnership) {
+		delta.Add("Spec.ObjectOwnership", a.ko.Spec.ObjectOwnership, b.ko.Spec.ObjectOwnership)
+	} else if a.ko.Spec.ObjectOwnership != nil && b.ko.Spec.ObjectOwnership != nil {
+		if *a.ko.Spec.ObjectOwnership != *b.ko.Spec.ObjectOwnership {
+			delta.Add("Spec.ObjectOwnership", a.ko.Spec.ObjectOwnership, b.ko.Spec.ObjectOwnership)
+		}
+	}
 	if ackcompare.HasNilDifference(a.ko.Spec.Tagging, b.ko.Spec.Tagging) {
 		delta.Add("Spec.Tagging", a.ko.Spec.Tagging, b.ko.Spec.Tagging)
 	} else if a.ko.Spec.Tagging != nil && b.ko.Spec.Tagging != nil {

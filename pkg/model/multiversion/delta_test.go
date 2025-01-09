@@ -435,6 +435,15 @@ func TestAreEqualShapes_ECR_Repository(t *testing.T) {
 	model := testutil.NewModelForServiceWithOptions(t, "ecr", &testutil.TestingModelOptions{})
 	crds, err := model.GetCRDs()
 	require.Nil(err)
+	str := ""
+	fmt.Println()
+	fmt.Println()
+	fmt.Println()
+	fmt.Println()
+	for _, crd := range crds {
+		str += crd.Names.Original + "  "
+	}
+	require.Equal(str, "")
 	require.Len(crds, 1)
 	repositoryCRD := crds[0]
 

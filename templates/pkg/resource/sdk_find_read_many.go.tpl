@@ -33,7 +33,7 @@ func (rm *resourceManager) sdkFind(
 {{- end }}
 	rm.metrics.RecordAPICall("READ_MANY", "{{ .CRD.Ops.ReadMany.ExportedName }}", err)
 	if err != nil {
-		if if strings.Contains(err.Error(), "{{ ResourceExceptionCode .CRD 404 }}" {{ GoCodeSetExceptionMessageCheck .CRD 404 }}) {
+		if strings.Contains(err.Error(), "{{ ResourceExceptionCode .CRD 404 }}" {{ GoCodeSetExceptionMessageCheck .CRD 404 }}) {
 			return nil, ackerr.NotFound
 		}
 		return nil, err

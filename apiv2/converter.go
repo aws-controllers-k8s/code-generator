@@ -110,6 +110,9 @@ func BuildAPI(shapes map[string]Shape, serviceAlias string) (*api.API, error) {
 			AddKeyAndValueRef(newApi.Shapes[name], name, shape, serviceAlias)
 		case "enum":
 			AddEnumRef(newApi.Shapes[name], shape)
+		case "union":
+			newApi.Shapes[name].Type = "structure"
+			AddMemberRefs(newApi.Shapes[name], shape, serviceAlias)
 		}
 
 	}
@@ -119,9 +122,11 @@ func BuildAPI(shapes map[string]Shape, serviceAlias string) (*api.API, error) {
 
 func createApiOperation(shape Shape, name, serviceAlias string) *api.Operation {
 
+	doc, _ := shape.Traits["smithy.api#documentation"].(string)
+
 	newOperation := &api.Operation{
 		Name:          name,
-		Documentation: api.AppendDocstring("", shape.Traits["smithy.api#documentation"].(string)),
+		Documentation: doc,
 	}
 
 	if hasPrefix(shape.InputRef.ShapeName, serviceAlias) {

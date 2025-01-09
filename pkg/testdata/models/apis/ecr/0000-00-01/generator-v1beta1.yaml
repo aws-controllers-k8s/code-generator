@@ -25,3 +25,7 @@ resources:
         - Name
     update_operation:
       custom_method_name: customUpdateRepository
+ignore:
+  resources:
+  - PullThroughCacheRule
+  - RepositoryCreationTemplate
