@@ -94,7 +94,7 @@ func (h *Helper) WithAPIVersion(apiVersion string) {
 // APIV2 returns the aws-sdk-go-v2 API model for a supplied service model name.
 func (h *Helper) APIV2(serviceModelName string) (*model.SDKAPI, error) {
 	modelPath := h.ModelAndDocsPath(serviceModelName)
-	apis, err := apiv2.ConvertApiV2Shapes(modelPath)
+	apis, err := apiv2.ConvertApiV2Shapes(serviceModelName, modelPath)
 	if err != nil {
 		return nil, err
 	}
