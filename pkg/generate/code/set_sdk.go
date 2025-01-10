@@ -500,7 +500,7 @@ func SetSDKGetAttributes(
 					"%s} else {\n", indent,
 				)
 				out += fmt.Sprintf(
-					"%s\t%s.Set%s(rm.ARNFromName(*%s.Spec.%s))\n",
+					"%s\t%s.%s = rm.ARNFromName(*%s.Spec.%s)\n",
 					indent, targetVarName, memberName, sourceVarName, *nameField,
 				)
 			}
@@ -1259,22 +1259,25 @@ func setSDKForSlice(
 	if targetShape.MemberRef.Shape.Type == "structure" {
 		containerFieldName = targetFieldName
 	}
-	out += setSDKForContainer(
-		cfg, r,
-		containerFieldName,
-		elemVarName,
-		sourceFieldPath,
-		iterVarName,
-		&targetShape.MemberRef,
-		op,
-		indentLevel+1,
-	)
+	if targetShape.MemberRef.Shape.IsEnum() {
+		out += fmt.Sprintf("%s\t%s = string(*%s)\n", indent, elemVarName, iterVarName)
+		elemVarName = fmt.Sprintf("svcsdktypes.%s(%s)", targetShape.MemberRef.ShapeName, elemVarName)
+	} else {
+		out += setSDKForContainer(
+			cfg, r,
+			containerFieldName,
+			elemVarName,
+			sourceFieldPath,
+			iterVarName,
+			&targetShape.MemberRef,
+			op,
+			indentLevel+1,
+		)
+	}
 	//  f0 = append(f0, elem0)
 	setPointer := ""
 	if (targetShape.MemberRef.Shape.Type == "string" && !targetShape.MemberRef.Shape.IsEnum()) || targetShape.MemberRef.Shape.Type == "structure" {
 		setPointer = "*"
-	} else if targetShape.MemberRef.Shape.IsEnum() {
-		elemVarName = fmt.Sprintf("svcsdktypes.%s(%s)", targetShape.MemberRef.ShapeName, elemVarName)
 	}
 	out += fmt.Sprintf("%s\t%s = append(%s, %s%s)\n", indent, targetVarName, targetVarName, setPointer, elemVarName)
 	out += fmt.Sprintf("%s}\n", indent)
@@ -1301,13 +1304,40 @@ func setSDKForMap(
 ) string {
 	out := ""
 	indent := strings.Repeat("\t", indentLevel)
+	targetShape := targetShapeRef.Shape
 
 	valIterVarName := fmt.Sprintf("%svaliter", targetVarName)
 	keyVarName := fmt.Sprintf("%skey", targetVarName)
+	valVarName := fmt.Sprintf("%sval", targetVarName)
 	// for f0key, f0valiter := range r.ko.Spec.Tags {
 	out += fmt.Sprintf("%sfor %s, %s := range %s {\n", indent, keyVarName, valIterVarName, sourceVarName)
+	out += varEmptyConstructorSDKType(
+		cfg, r,
+		valVarName,
+		targetShape.ValueRef.Shape,
+		indentLevel+1,
+	)
+	//  f0val = *f0valiter
+	//
+	// or
+	//
+	//  f0val.SetMyField(*f0valiter)
+	containerFieldName := ""
+	if targetShape.ValueRef.Shape.Type == "structure" {
+		containerFieldName = targetFieldName
+	}
+	out += setSDKForContainer(
+		cfg, r,
+		containerFieldName,
+		valVarName,
+		sourceFieldPath,
+		valIterVarName,
+		&targetShape.ValueRef,
+		op,
+		indentLevel+1,
+	)
 	// f0[f0key] = f0val
-	out += fmt.Sprintf("%s\t%s[%s] = *%s\n", indent, targetVarName, keyVarName, valIterVarName)
+	out += fmt.Sprintf("%s\t%s[%s] = *%s\n", indent, targetVarName, keyVarName, valVarName)
 	out += fmt.Sprintf("%s}\n", indent)
 	return out
 }
@@ -1324,6 +1354,9 @@ func varEmptyConstructorSDKType(
 	out := ""
 	indent := strings.Repeat("\t", indentLevel)
 	goType := shape.GoTypeWithPkgName()
+	if shape.Type == "integer" && shape.HasDefaultValue() {
+		goType = strings.TrimSuffix(goType, "64") + "32"
+	}
 	goType = model.ReplacePkgName(goType, r.SDKAPIPackageName(), "svcsdktypes", false)
 	switch shape.Type {
 	case "structure":
@@ -1336,6 +1369,9 @@ func varEmptyConstructorSDKType(
 			out += fmt.Sprintf("%s%s := &%s{}\n", indent, varName, goType)
 		}
 	case "list":
+		if goType == "[]int64" && shape.MemberRef.Shape.HasDefaultValue() {
+			goType = "[]int32"
+		}
 		if shape.MemberRef.Shape != nil && shape.MemberRef.Shape.IsEnum() {
 			goType = "[]svcsdktypes." + shape.MemberRef.ShapeName
 		}
@@ -1441,38 +1477,28 @@ func setSDKForScalar(
 	} else if shapeRef.UseIndirection() {
 		setTo = "*" + setTo
 	}
+	targetVarPath := targetVarName
+	if targetFieldName != "" {
+		targetVarPath += "." + targetFieldName
+	}
 
-	if targetFieldName == "" {
-		out += fmt.Sprintf("%s%s = %s\n", indent, targetVarName, setTo)
-	} else if shape.IsEnum() {
-		// 	//out += fmt.Sprintf("%s%s.Set%s(%s)\n", indent, targetVarName, targetFieldName, setTo)
-		out += fmt.Sprintf("%s.%s = svcsdktypes.%s(%s)", targetVarName, targetFieldName, shape.ShapeName, setTo)
-
-		// This is edge case in ECR controller where ImageScanningConfiguration.ScanOnPush is bool not *bool
-	} else if targetVarType == "structure" && shape.Type == "boolean" && targetFieldName == "ScanOnPush" {
-		targetVarPath := targetVarName
-		if targetFieldName != "" {
-			targetVarPath += "." + targetFieldName
-		}
-		out += fmt.Sprintf("%s%s = %s\n", indent, targetVarPath, setTo)
-	} else if targetVarType == "structure" && shape.Type == "boolean" {
-		targetVarPath := targetVarName
-		if targetFieldName != "" {
-			targetVarPath += "." + targetFieldName
-		}
-		out += fmt.Sprintf("%s%s = %s\n", indent, targetVarPath, strings.TrimPrefix(setTo, "*"))
-	} else if shape.Type == "integer" {
-		targetVarPath := targetVarName
-		if targetFieldName != "" {
-			targetVarPath += "." + targetFieldName
-		}
+	if shape.Type == "integer" {
+		out += fmt.Sprintf("%sif %s > math.MaxInt32 || %s < math.MinInt32 {\n", indent, setTo, setTo)
+		out += fmt.Sprintf("%s\treturn nil, fmt.Errorf(\"field is too large\")\n", indent)
+		out += fmt.Sprintf("%s}\n", indent)
 		out += fmt.Sprintf("%stemp := int32(%s)\n", indent, setTo)
-		out += fmt.Sprintf("%s%s = &temp\n", indent, targetVarPath)
-	} else {
-		targetVarPath := targetVarName
-		if targetFieldName != "" {
-			targetVarPath += "." + targetFieldName
+		if shape.HasDefaultValue() {
+			out += fmt.Sprintf("%s%s = temp\n", indent, targetVarPath)
+		} else {
+			out += fmt.Sprintf("%s%s = &temp\n", indent, targetVarPath)
 		}
+	} else if shape.IsEnum() {
+		out += fmt.Sprintf("%s%s = svcsdktypes.%s(%s)\n", indent, targetVarPath, shape.ShapeName, setTo)
+	} else if shape.HasDefaultValue() {
+		out += fmt.Sprintf("%s%s = %s\n", indent, targetVarPath, setTo)
+	} else if shape.Type == "timestamp" {
+		out += fmt.Sprintf("%s%s = &%s\n", indent, targetVarPath, strings.TrimPrefix(setTo, "*"))
+	} else {
 		out += fmt.Sprintf("%s%s = %s\n", indent, targetVarPath, strings.TrimPrefix(setTo, "*"))
 	}
 	return out

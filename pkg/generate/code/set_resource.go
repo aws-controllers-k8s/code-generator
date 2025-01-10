@@ -317,17 +317,19 @@ func SetResource(
 		// Enum types are just strings at the end of the day
 		// so we want to check if they are empty before deciding
 		// to assign them to the resource field
-		if targetMemberShape.IsEnum() {
+		if sourceMemberShapeRef.Shape.IsEnum() {
 
 			out += fmt.Sprintf(
 				"%sif %s != \"\" {\n", indent, sourceAdaptedVarName,
 			)
-		} else if !targetMemberShape.HasDefaultValue() {
+		} else if !sourceMemberShapeRef.Shape.HasDefaultValue() {
 			// The fields that have a default value (boolean and integer)
 			// are not pointers, so we won't need to check if they are nil
 			out += fmt.Sprintf(
 				"%sif %s != nil {\n", indent, sourceAdaptedVarName,
 			)
+		} else {
+			indentLevel -= 1
 		}
 
 		qualifiedTargetVar := fmt.Sprintf(
@@ -387,7 +389,7 @@ func SetResource(
 				indentLevel+1,
 			)
 		}
-		if targetMemberShape.IsEnum() || !targetMemberShape.HasDefaultValue() {
+		if sourceMemberShapeRef.Shape.IsEnum() || !sourceMemberShapeRef.Shape.HasDefaultValue() {
 			out += fmt.Sprintf(
 				"%s} else {\n", indent,
 			)
@@ -399,6 +401,8 @@ func SetResource(
 			out += fmt.Sprintf(
 				"%s}\n", indent,
 			)
+		} else {
+			indentLevel += 1
 		}
 	}
 	return out
@@ -636,16 +640,18 @@ func setResourceReadMany(
 		// Enum types are just strings at the end of the day
 		// so we want to check if they are empty before deciding
 		// to assign them to the resource field
-		if sourceMemberShape.IsEnum() {
+		if targetMemberShapeRef.Shape.IsEnum() {
 
 			out += fmt.Sprintf(
 				"%sif %s != \"\" {\n", innerForIndent, sourceAdaptedVarName,
 			)
-		} else if !sourceMemberShape.HasDefaultValue() {
+		} else if !targetMemberShapeRef.Shape.HasDefaultValue() {
 			out += fmt.Sprintf(
 				"%sif %s != nil {\n", innerForIndent, sourceAdaptedVarName,
 			)
 
+		} else {
+			indentLevel -= 1
 		}
 
 		//ex: r.ko.Spec.CacheClusterID
@@ -729,18 +735,20 @@ func setResourceReadMany(
 				flIndentLvl+1,
 			)
 		}
-		if sourceMemberShape.IsEnum() || !sourceMemberShape.HasDefaultValue() {
+		if targetMemberShapeRef.Shape.IsEnum() || !targetMemberShapeRef.Shape.HasDefaultValue() {
 			out += fmt.Sprintf(
-				"%s} else {\n", indent,
+				"%s} else {\n", innerForIndent,
 			)
 
 			out += fmt.Sprintf(
-				"%s%s%s.%s = nil\n", indent, indent,
+				"%s\t%s.%s = nil\n", innerForIndent,
 				targetAdaptedVarName, f.Names.Camel,
 			)
 			out += fmt.Sprintf(
-				"%s}\n", indent,
+				"%s}\n", innerForIndent,
 			)
+		} else {
+			indentLevel += 1
 		}
 	}
 	// When we don't have custom matching/filtering logic for the list
@@ -1748,6 +1756,8 @@ func SetResourceForStruct(
 			out += fmt.Sprintf(
 				"%sif %s != nil {\n", indent, sourceAdaptedVarName,
 			)
+		} else {
+			indentLevel -= 1
 		}
 
 		qualifiedTargetVar = fmt.Sprintf(
@@ -1806,6 +1816,8 @@ func SetResourceForStruct(
 			out += fmt.Sprintf(
 				"%s}\n", indent,
 			)
+		} else {
+			indentLevel += 1
 		}
 	}
 	if len(targetShape.MemberNames()) == 0 {
@@ -1831,25 +1843,44 @@ func SetResourceForStruct(
 				fp := fieldpath.FromString(*setCfg.From)
 				sourceMemberShapeRef = fp.ShapeRef(sourceShapeRef)
 				if sourceMemberShapeRef != nil && sourceMemberShapeRef.Shape != nil {
-					names := names.New(sourceMemberShapeRef.LocationName)
-					sourceAdaptedVarName = sourceVarName + "." + names.Camel
-					out += fmt.Sprintf(
-						"%sif %s != nil {\n", indent, sourceAdaptedVarName,
-					)
+					name := names.New(sourceMemberShapeRef.LocationName)
+					if len(sourceShape.MemberRefs) > 0 {
+						for s, sh := range sourceShape.MemberRefs {
+							name = names.New(s)
+							sourceMemberShapeRef = sh
+						}
+					}
+					sourceAdaptedVarName = sourceVarName + "." + name.Camel
+					if sourceShape.IsEnum() {
+						out += fmt.Sprintf(
+							"%sif %s != \"\" {\n", indent, sourceAdaptedVarName,
+						)
+					} else if !sourceShape.HasDefaultValue() {
+						// The fields that have a default value (boolean and integer)
+						// are not pointers, so we won't need to check if they are nil
+						out += fmt.Sprintf(
+							"%sif %s != nil {\n", indent, sourceAdaptedVarName,
+						)
+					} else {
+						indentLevel -= 1
+					}
 					qualifiedTargetVar = targetVarName
 
 					// Use setResourceForScalar and dereference sourceAdaptedVarName
 					// because primitives are being set.
-					sourceAdaptedVarName = "*" + sourceAdaptedVarName
 					out += setResourceForScalar(
 						qualifiedTargetVar,
 						sourceAdaptedVarName,
 						sourceMemberShapeRef,
 						indentLevel+1,
 					)
-					out += fmt.Sprintf(
-						"%s}\n", indent,
-					)
+					if sourceShape.IsEnum() || !sourceShape.HasDefaultValue() {
+						out += fmt.Sprintf(
+							"%s}\n", indent,
+						)
+					} else {
+						indentLevel += 1
+					}
 				}
 			}
 		}
@@ -2054,21 +2085,21 @@ func setResourceForScalar(
 	}
 
 	targetVar = strings.TrimPrefix(targetVar, ".")
-	switch shape.Type {
-	case "list":
-		out += fmt.Sprintf("%s%s = %s\n", indent, targetVar, setTo)
-	case "integer":
-		out += fmt.Sprintf("%s%stemp := int64(*%s)\n", indent, shape.ShapeName, setTo)
-		out += fmt.Sprintf("%s%s = &%stemp\n", indent, targetVar, shape.ShapeName)
-	default:
+	if shape.Type == "integer" {
 		if shape.HasDefaultValue() {
-			out += fmt.Sprintf("%s%s = &%s\n", indent, targetVar, setTo)
-		} else if shape.IsEnum() {
-			out += fmt.Sprintf("%s%s = aws.String(string(%s))\n", indent, targetVar, strings.TrimPrefix(setTo, "*"))
+			out += fmt.Sprintf("%stemp := int64(%s)\n", indent, setTo)
 		} else {
-			out += fmt.Sprintf("%s%s = %s\n", indent, targetVar, setTo)
+			out += fmt.Sprintf("%stemp := int64(*%s)\n", indent, setTo)
 		}
+		out += fmt.Sprintf("%s%s = &temp\n", indent, targetVar)
+	} else if shape.IsEnum() {
+		out += fmt.Sprintf("%s%s = aws.String(string(%s))\n", indent, targetVar, strings.TrimPrefix(setTo, "*"))
+	} else if shape.HasDefaultValue() {
+		out += fmt.Sprintf("%s%s = &%s\n", indent, targetVar, setTo)
+	} else {
+		out += fmt.Sprintf("%s%s = %s\n", indent, targetVar, strings.TrimPrefix(setTo, "*"))
 	}
+
 	return out
 }
 

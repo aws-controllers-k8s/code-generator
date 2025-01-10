@@ -26,5 +26,15 @@ resources:
             - 1
             - 2
   CodeSigningConfig:
-    tags:
-      ignore: true
+    fields:
+      Tags:
+        compare:
+          is_ignored: true
+ignore:
+  field_paths:
+    - CreateFunctionInput.Architectures
+    - CreateFunctionInput.LoggingConfig
+    - CreateFunctionInput.EphemeralStorage   
+    - FunctionCode.SourceKMSKeyArn
+    - CreateFunctionInput.SnapStart
+    - CreateFunctionInput.VpcConfig.Ipv6AllowedForDualStack
