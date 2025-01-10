@@ -78,7 +78,7 @@ func TestSNS_Topic(t *testing.T) {
 	// So, we expect that the normal logic in CRD.ExceptionCode(404)
 	// identifies the above as the 404 Not Found error with a code of
 	// "NotFound"
-	assert.Equal("NotFound", crd.ExceptionCode(404))
+	assert.Equal("NotFoundException", crd.ExceptionCode(404))
 
 	// The SNS Topic API is a little weird. There are Create and Delete
 	// operations ("CreateTopic", "DeleteTopic") but there is no ReadOne

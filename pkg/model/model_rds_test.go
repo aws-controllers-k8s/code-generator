@@ -91,7 +91,7 @@ func TestRDS_DBInstance(t *testing.T) {
 	//
 	// Which clearly indicates it is the 404 HTTP fault for this resource even
 	// though the "code" is "DBInstanceNotFound"
-	assert.Equal("DBInstanceNotFound", crd.ExceptionCode(404))
+	assert.Equal("DBInstanceNotFoundFault", crd.ExceptionCode(404))
 
 	specFields := crd.SpecFields
 	statusFields := crd.StatusFields
@@ -148,6 +148,7 @@ func TestRDS_DBInstance(t *testing.T) {
 
 	expStatusFieldCamel := []string{
 		"AssociatedRoles",
+		"AutomaticRestartTime",
 		"CACertificateIdentifier",
 		"DBIResourceID",
 		"DBInstancePort",

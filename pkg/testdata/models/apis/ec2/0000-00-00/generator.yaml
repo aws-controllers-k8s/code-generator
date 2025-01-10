@@ -8,6 +8,18 @@ ignore:
     - RunInstancesInput.AdditionalInfo
     - RunInstancesInput.ClientToken
     - RunInstancesInput.DryRun
+    - LaunchTemplate.Operator
+    - Instance.CpuOptions.AmdSevSnp
+    - Instance.CurrentInstanceBootMode
+    - Instance.Ipv6Address
+    - Instance.MaintenanceOptions
+    - Instance.MetadataOptions.InstanceMetadataTags
+    - Instance.NetworkPerformanceOptions
+    - Instance.Operator
+    - Instance.PrivateDnsNameOptions
+    - Instance.Placement.GroupId
+    - Instance.TpmSupport
+    - InstanceIpv6Address.IsPrimaryIpv6
   resource_names:
     - AccountAttribute
     - CapacityReservation

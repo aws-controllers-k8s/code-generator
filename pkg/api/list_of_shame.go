@@ -309,9 +309,6 @@ var shamelist = persistAPITypes{
 		"DetachVolume": {
 			output: true,
 		},
-		"RunInstances": {
-			output: true,
-		},
 	},
 	"EFS": {
 		"CreateFileSystem": {
@@ -459,7 +456,6 @@ var shamelist = persistAPITypes{
 	},
 	"MQ": {
 		"CreateBroker": {
-			input:  true,
 			output: true,
 		},
 		"CreateConfiguration": {

@@ -40,7 +40,7 @@ func TestFieldDocumentation(t *testing.T) {
 	require.NotNil(ltdField.ShapeRef)
 
 	require.Equal(
-		"// The desired Kubernetes version for your cluster. If you don't specify a value\n// here, the latest version available in Amazon EKS is used.",
+		"// The desired Kubernetes version for your cluster. If you don't specify a value\n// here, the default version available in Amazon EKS is used.\n// \n// The default version might not be the latest version available.",
 		ltdField.GetDocumentation(),
 	)
 

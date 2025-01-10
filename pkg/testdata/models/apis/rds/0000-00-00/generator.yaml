@@ -18,6 +18,8 @@ resources:
             from: DBSecurityGroupName
           - method: ReadOne
             from: DBSecurityGroupName
+      tags:
+        ignore: true
   DBSubnetGroup:
     fields:
       Name:
@@ -35,3 +37,58 @@ resources:
         DeleteDBSubnetGroup:
           input_fields:
             DBSubnetGroupName: Name
+ignore:
+  field_paths:
+  - CreateDBInstanceInput.ActivityStreamEngineNativeAuditFieldsIncluded
+  - CreateDBInstanceOutput.DBInstance.ActivityStreamEngineNativeAuditFieldsIncluded
+  - CreateDBInstanceOutput.DBInstance.ActivityStreamKinesisStreamName
+  - CreateDBInstanceInput.ActivityStreamKmsKeyId
+  - CreateDBInstanceOutput.DBInstance.ActivityStreamKmsKeyId
+  - CreateDBInstanceOutput.DBInstance.ActivityStreamMode
+  - CreateDBInstanceOutput.DBInstance.ActivityStreamPolicyStatus
+  - CreateDBInstanceOutput.DBInstance.ActivityStreamStatus
+  - CreateDBInstanceInput.AutomaticRestartTime
+  # - CreateDBInstanceOutput.DBInstance..AutomaticRestartTime
+  - CreateDBInstanceInput.AutomationMode
+  - CreateDBInstanceOutput.DBInstance.AutomationMode
+  - CreateDBInstanceInput.AwsBackupRecoveryPointArn
+  - CreateDBInstanceOutput.DBInstance.AwsBackupRecoveryPointArn
+  - CreateDBInstanceInput.BackupTarget
+  - CreateDBInstanceOutput.DBInstance.BackupTarget
+  - CreateDBInstanceInput.CACertificateIdentifier
+  - CreateDBInstanceInput.DatabaseInsightsMode
+  - CreateDBInstanceInput.DedicatedLogVolume
+  - CreateDBInstanceInput.DomainAuthSecretArn
+  - CreateDBInstanceInput.DomainDnsIps
+  - CreateDBInstanceInput.DomainFqdn
+  - CreateDBInstanceInput.DomainOu
+  - CreateDBInstanceInput.EnableCustomerOwnedIp
+  - CreateDBInstanceInput.ManageMasterUserPassword
+  - CreateDBInstanceInput.MasterUserSecretKmsKeyId
+  - CreateDBInstanceInput.MultiTenant
+  - CreateDBInstanceInput.NcharCharacterSetName
+  - CreateDBInstanceInput.NetworkType
+  - CreateDBInstanceInput.CustomIamInstanceProfile
+  - CreateDBInstanceOutput.DBInstance.CustomIamInstanceProfile
+  - CreateDBInstanceInput.DBSystemId
+  - CreateDBInstanceInput.EngineLifecycleSupport
+  - CreateDBInstanceInput.StorageThroughput
+  - CreateDBInstanceOutput.DBInstance.CertificateDetails
+  - CreateDBInstanceOutput.DBInstance.CustomerOwnedIpEnabled
+  - CreateDBInstanceOutput.DBInstance.DBInstanceAutomatedBackupsReplications
+  - CreateDBInstanceOutput.DBInstance.DBSystemId
+  - CreateDBInstanceOutput.DBInstance.DatabaseInsightsMode
+  - CreateDBInstanceOutput.DBInstance.DedicatedLogVolume
+  - CreateDBInstanceOutput.DBInstance.EngineLifecycleSupport
+  - CreateDBInstanceOutput.DBInstance.IsStorageConfigUpgradeAvailable
+  - CreateDBInstanceOutput.DBInstance.MasterUserSecret
+  - CreateDBInstanceOutput.DBInstance.MultiTenant
+  - CreateDBInstanceOutput.DBInstance.NcharCharacterSetName
+  - CreateDBInstanceOutput.DBInstance.NetworkType
+  - CreateDBInstanceOutput.DBInstance.PercentProgress
+  - CreateDBInstanceOutput.DBInstance.ReadReplicaSourceDBClusterIdentifier
+  - CreateDBInstanceOutput.DBInstance.ReplicaMode
+  - CreateDBInstanceOutput.DBInstance.ResumeFullAutomationModeTime
+  - CreateDBInstanceOutput.DBInstance.TagList
+  - CreateDBInstanceOutput.DBInstance.StorageThroughput
+  - CreateDBSubnetGroupOutput.DBSubnetGroup.SupportedNetworkTypes

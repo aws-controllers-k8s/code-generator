@@ -31,10 +31,6 @@ resources:
         is_attribute: true
       CreatedTimestamp:
         is_attribute: true
-        is_read_only: true
-      LastModifiedTimestamp:
-        is_attribute: true
-        is_read_only: true
       QueueArn:
         is_attribute: true
         is_read_only: true

@@ -2,6 +2,10 @@ ignore:
   resources:
     - Configuration
     - User
+  field_paths:
+    - CreateBrokerInput.DataReplicationMode
+    - CreateBrokerInput.DataReplicationPrimaryBrokerArn
+    - User.ReplicationUser
 resources:
   Broker:
     hooks:
