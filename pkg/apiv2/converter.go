@@ -5,15 +5,20 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/aws-controllers-k8s/code-generator/pkg/api"
 )
 
+// API holds all the shapes defined in the <service>.json
+// api model file provided by aws-sdk-go-v2
 type API struct {
-	Shapes map[string]Shape
+	Shapes map[string]Shape `json:"shapes"`
 }
 
+// Shape contains the definition of a resource, field,
+// operation, etc.
 type Shape struct {
 	Type       string
 	Traits     map[string]interface{}
@@ -26,6 +31,7 @@ type Shape struct {
 	ErrorRefs  []ShapeRef           `json:"errors"`
 }
 
+// ShapeRef defines the usage of a shape within the API
 type ShapeRef struct {
 	API       *API   `json:"-"`
 	Shape     *Shape `json:"-"`
@@ -33,8 +39,9 @@ type ShapeRef struct {
 	Traits    map[string]interface{}
 }
 
-func ConvertApiV2Shapes(modelPath string) (map[string]*api.API, error) {
-
+// ConvertAPIV2Shapes loads the V2 api model file, and later translates that
+// structure into the v1 API structure.
+func ConvertApiV2Shapes(serviceAlias, modelPath string) (map[string]*api.API, error) {
 	// Read the json file
 	file, err := os.ReadFile(modelPath)
 	if err != nil {
@@ -48,15 +55,14 @@ func ConvertApiV2Shapes(modelPath string) (map[string]*api.API, error) {
 		return nil, fmt.Errorf("error unmarshalling file: %v", err)
 	}
 
-	serviceAlias := extractServiceAlias(modelPath)
-
-	newApi, err := BuildAPI(customAPI.Shapes, serviceAlias)
+	// build V1 API structure
+	newApi, err := buildAPI(customAPI.Shapes, serviceAlias)
 	if err != nil {
 		return nil, fmt.Errorf("error building api: %v", err)
 	}
 
-	newApi.StrictServiceId = true
-
+	// Setup the API (make sure the shapes of refs are in the right place)
+	// (documentation is clear among the shapes)
 	err = newApi.Setup()
 	if err != nil {
 		return nil, fmt.Errorf("error setting up api: %v", err)
@@ -69,17 +75,19 @@ func ConvertApiV2Shapes(modelPath string) (map[string]*api.API, error) {
 
 // This function tries to translate the API from sdk go v2
 // into the struct for sdk go v1
-func BuildAPI(shapes map[string]Shape, serviceAlias string) (*api.API, error) {
+func buildAPI(shapes map[string]Shape, serviceAlias string) (*api.API, error) {
 
 	newApi := api.API{
-		Metadata:   api.Metadata{},
-		Operations: map[string]*api.Operation{},
-		Shapes:     map[string]*api.Shape{},
+		Metadata:        api.Metadata{},
+		Operations:      map[string]*api.Operation{},
+		Shapes:          map[string]*api.Shape{},
+		StrictServiceId: true,
 	}
 
 	for shapeName, shape := range shapes {
-
-		name := removeNamePrefix(shapeName, serviceAlias)
+		name := removeShapeNamePrefix(shapeName, serviceAlias)
+		// handling the creation of service and operation types
+		// differently
 		if shape.Type != "service" && shape.Type != "operation" {
 			newShape, err := createApiShape(shape)
 			if err != nil {
@@ -88,6 +96,7 @@ func BuildAPI(shapes map[string]Shape, serviceAlias string) (*api.API, error) {
 			newApi.Shapes[name] = newShape
 		}
 
+		// Ignoring types String, Integer, and boolean since they will be added as MemberRefs
 		switch shape.Type {
 		case "service":
 			serviceId, ok := shape.Traits["aws.api#service"].(map[string]interface{})["sdkId"]
@@ -103,16 +112,18 @@ func BuildAPI(shapes map[string]Shape, serviceAlias string) (*api.API, error) {
 		case "operation":
 			newApi.Operations[name] = createApiOperation(shape, name, serviceAlias)
 		case "structure":
-			AddMemberRefs(newApi.Shapes[name], shape, serviceAlias)
+			addMemberRefs(newApi.Shapes[name], shape, serviceAlias)
 		case "list":
-			AddMemberRef(newApi.Shapes[name], name, shape, serviceAlias)
+			addMemberRef(newApi.Shapes[name], shape, serviceAlias)
 		case "map":
-			AddKeyAndValueRef(newApi.Shapes[name], name, shape, serviceAlias)
+			addKeyAndValueRef(newApi.Shapes[name], shape, serviceAlias)
 		case "enum":
-			AddEnumRef(newApi.Shapes[name], shape)
+			newApi.Shapes[name].Type = "string"
+			addEnumRef(newApi.Shapes[name], shape)
+		// Union, introduced in S3 model file, is a structure
 		case "union":
 			newApi.Shapes[name].Type = "structure"
-			AddMemberRefs(newApi.Shapes[name], shape, serviceAlias)
+			addMemberRefs(newApi.Shapes[name], shape, serviceAlias)
 		}
 
 	}
@@ -121,22 +132,22 @@ func BuildAPI(shapes map[string]Shape, serviceAlias string) (*api.API, error) {
 }
 
 func createApiOperation(shape Shape, name, serviceAlias string) *api.Operation {
-
+	// Some operations may not have documentation
 	doc, _ := shape.Traits["smithy.api#documentation"].(string)
 
 	newOperation := &api.Operation{
 		Name:          name,
-		Documentation: doc,
+		Documentation: api.AppendDocstring("", doc),
 	}
 
 	if hasPrefix(shape.InputRef.ShapeName, serviceAlias) {
-		inputName := removeNamePrefix(shape.InputRef.ShapeName, serviceAlias)
+		inputName := removeShapeNamePrefix(shape.InputRef.ShapeName, serviceAlias)
 		newOperation.InputRef = api.ShapeRef{
 			ShapeName: inputName,
 		}
 	}
 	if hasPrefix(shape.OutputRef.ShapeName, serviceAlias) {
-		outputName := removeNamePrefix(shape.OutputRef.ShapeName, serviceAlias)
+		outputName := removeShapeNamePrefix(shape.OutputRef.ShapeName, serviceAlias)
 		newOperation.OutputRef = api.ShapeRef{
 			ShapeName: outputName,
 		}
@@ -144,7 +155,7 @@ func createApiOperation(shape Shape, name, serviceAlias string) *api.Operation {
 
 	for _, err := range shape.ErrorRefs {
 		newOperation.ErrorRefs = append(newOperation.ErrorRefs, api.ShapeRef{
-			ShapeName: removeNamePrefix(err.ShapeName, serviceAlias),
+			ShapeName: removeShapeNamePrefix(err.ShapeName, serviceAlias),
 		})
 	}
 
@@ -152,16 +163,9 @@ func createApiOperation(shape Shape, name, serviceAlias string) *api.Operation {
 }
 
 func createApiShape(shape Shape) (*api.Shape, error) {
-
 	isException := shape.IsException()
-
-	shapeType := shape.Type
-	if shapeType == "enum" {
-		shapeType = "string"
-	}
-
 	apiShape := &api.Shape{
-		Type:       shapeType,
+		Type:       shape.Type,
 		Exception:  isException,
 		MemberRefs: make(map[string]*api.ShapeRef),
 		MemberRef:  api.ShapeRef{},
@@ -169,6 +173,8 @@ func createApiShape(shape Shape) (*api.Shape, error) {
 		ValueRef:   api.ShapeRef{},
 		Required:   []string{},
 	}
+	// Shapes that are default so far are booleans and
+	// integers that are non pointers in the service API
 	val, ok := shape.Traits["smithy.api#default"]
 	if ok {
 		apiShape.DefaultValue = &val
@@ -195,61 +201,55 @@ func createApiShape(shape Shape) (*api.Shape, error) {
 			}
 		}
 	}
+	documentation, _ := shape.Traits["smithy.api#documentation"].(string)
+	apiShape.Documentation = api.AppendDocstring("", documentation)
 
 	return apiShape, nil
 }
 
-func AddMemberRefs(apiShape *api.Shape, shape Shape, serviceAlias string) {
-
-	var documentation string
+func addMemberRefs(apiShape *api.Shape, shape Shape, serviceAlias string) {
 	for memberName, member := range shape.MemberRefs {
 		if !hasPrefix(member.ShapeName, serviceAlias) {
 			continue
 		}
-		shapeNameClean := removeNamePrefix(member.ShapeName, serviceAlias)
-		if member.Traits["smithy.api#documentation"] != nil {
-			documentation = api.AppendDocstring("", member.Traits["smithy.api#documentation"].(string))
-		}
-		if member.IsRequired() {
+		shapeNameClean := removeShapeNamePrefix(member.ShapeName, serviceAlias)
+		documentation, _ := member.Traits["smithy.api#documentation"].(string)
+		if member.isRequired() {
 			apiShape.Required = append(apiShape.Required, memberName)
 		}
 		apiShape.MemberRefs[memberName] = &api.ShapeRef{
 			ShapeName:     shapeNameClean,
-			Documentation: documentation,
+			Documentation: api.AppendDocstring("", documentation),
 		}
 	}
-
-	if shape.Traits["smithy.api#documentation"] != nil {
-		documentation = api.AppendDocstring("", shape.Traits["smithy.api#documentation"].(string))
-	}
-	// Add the documentation to the shape
-	apiShape.Documentation = documentation
+	slices.Sort(apiShape.Required)
 }
 
-func AddMemberRef(apiShape *api.Shape, shapeName string, shape Shape, serviceAlias string) {
+func addMemberRef(apiShape *api.Shape, shape Shape, serviceAlias string) {
 
 	apiShape.MemberRef = api.ShapeRef{
-		ShapeName: removeNamePrefix(shape.MemberRef.ShapeName, serviceAlias),
+		ShapeName: removeShapeNamePrefix(shape.MemberRef.ShapeName, serviceAlias),
 	}
 }
 
-func AddKeyAndValueRef(apiShape *api.Shape, shapeName string, shape Shape, serviceAlias string) {
+func addKeyAndValueRef(apiShape *api.Shape, shape Shape, serviceAlias string) {
 
 	apiShape.KeyRef = api.ShapeRef{
-		ShapeName: removeNamePrefix(shape.KeyRef.ShapeName, serviceAlias),
+		ShapeName: removeShapeNamePrefix(shape.KeyRef.ShapeName, serviceAlias),
 	}
 	apiShape.ValueRef = api.ShapeRef{
-		ShapeName: removeNamePrefix(shape.ValueRef.ShapeName, serviceAlias),
+		ShapeName: removeShapeNamePrefix(shape.ValueRef.ShapeName, serviceAlias),
 	}
 }
 
-func AddEnumRef(apiShape *api.Shape, shape Shape) {
+func addEnumRef(apiShape *api.Shape, shape Shape) {
 	for memberName := range shape.MemberRefs {
 		apiShape.Enum = append(apiShape.Enum, memberName)
 	}
+	slices.Sort(apiShape.Enum)
 }
 
-func (s ShapeRef) IsRequired() bool {
+func (s ShapeRef) isRequired() bool {
 	_, ok := s.Traits["smithy.api#required"]
 	return ok
 }
@@ -266,24 +266,10 @@ func hasPrefix(name, alias string) bool {
 	return strings.HasPrefix(name, prefix)
 }
 
-func removeNamePrefix(name, alias string) string {
-
+func removeShapeNamePrefix(name, alias string) string {
 	toTrim := fmt.Sprintf("com.amazonaws.%s#", alias)
 
 	newName := strings.TrimPrefix(name, toTrim)
 
 	return newName
-}
-
-func extractServiceAlias(modelPath string) string {
-	// Split the path into parts
-	parts := strings.Split(modelPath, "/")
-
-	// Get the last part
-	lastPart := parts[len(parts)-1]
-
-	// Split the last part by "." to get the service alias
-	serviceAlias := strings.Split(lastPart, ".")[0]
-
-	return serviceAlias
 }
