@@ -27,13 +27,13 @@ func (rm *resourceManager) sdkFind(
 {{ $hookCode }}
 {{- end }}
 	var resp {{ .CRD.GetOutputShapeGoType .CRD.Ops.ReadMany }}
-	resp, err = rm.sdkapi.{{ .CRD.Ops.ReadMany.ExportedName }}WithContext(ctx, input)
+	resp, err = rm.sdkapi.{{ .CRD.Ops.ReadMany.ExportedName }}(ctx, input)
 {{- if $hookCode := Hook .CRD "sdk_read_many_post_request" }}
 {{ $hookCode }}
 {{- end }}
 	rm.metrics.RecordAPICall("READ_MANY", "{{ .CRD.Ops.ReadMany.ExportedName }}", err)
 	if err != nil {
-		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "{{ ResourceExceptionCode .CRD 404 }}" {{ GoCodeSetExceptionMessageCheck .CRD 404 }}{
+		if strings.Contains(err.Error(), "{{ ResourceExceptionCode .CRD 404 }}" {{ GoCodeSetExceptionMessageCheck .CRD 404 }}) {
 			return nil, ackerr.NotFound
 		}
 		return nil, err

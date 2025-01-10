@@ -8,3 +8,7 @@ resources:
         DescribeRepositories:
           input_fields:
             RepositoryName: Name
+ignore:
+  resources:
+  - PullThroughCacheRule
+  - RepositoryCreationTemplate

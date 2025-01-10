@@ -10,8 +10,9 @@ import (
 	ackcfg "github.com/aws-controllers-k8s/runtime/pkg/config"
 	ackmetrics "github.com/aws-controllers-k8s/runtime/pkg/metrics"
 	acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
-	"github.com/aws/aws-sdk-go/aws/session"
+	awscfg "github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/go-logr/logr"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	svcresource "github.com/aws-controllers-k8s/{{ .ControllerName }}-controller/pkg/resource"
 )
@@ -29,23 +30,22 @@ type resourceManagerFactory struct {
 func (f *resourceManagerFactory) ResourceDescriptor() acktypes.AWSResourceDescriptor {
 	return &resourceDescriptor{}
 }
-
+// This is for AWS-SDK-GO-V2 -- added sdk go V2 config as a parameter
 // ManagerFor returns a resource manager object that can manage resources for a
 // supplied AWS account
 func (f *resourceManagerFactory) ManagerFor(
 	cfg ackcfg.Config,
+	clientcfg awscfg.Config,
 	log logr.Logger,
 	metrics *ackmetrics.Metrics,
 	rr acktypes.Reconciler,
-	sess *session.Session,
 	id ackv1alpha1.AWSAccountID,
 	region ackv1alpha1.AWSRegion,
 	roleARN ackv1alpha1.AWSResourceName,
+	endpointURL string,
+	gvk schema.GroupVersionKind,
 ) (acktypes.AWSResourceManager, error) {
-	// We use the account ID, region, and role ARN to uniquely identify a
-	// resource manager. This helps us to avoid creating multiple resource
-	// managers for the same account/region/roleARN combination.
-	rmId := fmt.Sprintf("%s/%s/%s", id, region, roleARN)
+	rmId := fmt.Sprintf("%s/%s", id, region)
 	f.RLock()
 	rm, found := f.rmCache[rmId]
 	f.RUnlock()
@@ -57,7 +57,7 @@ func (f *resourceManagerFactory) ManagerFor(
 	f.Lock()
 	defer f.Unlock()
 
-	rm, err := newResourceManager(cfg, log, metrics, rr, sess, id, region)
+	rm, err := newResourceManager(cfg, clientcfg, log, metrics, rr, id, region)
 	if err != nil {
 		return nil, err
 	}

@@ -34,7 +34,7 @@ func (rm *resourceManager) sdkUpdate(
 {{- end }}
 
 	var resp {{ .CRD.GetOutputShapeGoType .CRD.Ops.Update }}; _ = resp;
-	resp, err = rm.sdkapi.{{ .CRD.Ops.Update.ExportedName }}WithContext(ctx, input)
+	resp, err = rm.sdkapi.{{ .CRD.Ops.Update.ExportedName }}(ctx, input)
 {{- if $hookCode := Hook .CRD "sdk_update_post_request" }}
 {{ $hookCode }}
 {{- end }}

@@ -69,5 +69,9 @@ func (r *CRD) ExceptionCode(httpStatusCode int) string {
 			}
 		}
 	}
-	return "UNKNOWN"
+
+	// This is for AWS-SDK-GO-V2
+	//return "UNKNOWN"
+
+	return r.Names.Original + "NotFound"
 }

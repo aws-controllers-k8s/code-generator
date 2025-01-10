@@ -19,9 +19,9 @@ import (
 	"sort"
 	"strings"
 
-	awssdkmodel "github.com/aws-controllers-k8s/code-generator/pkg/api"
 	"github.com/aws-controllers-k8s/pkg/names"
-
+	
+	awssdkmodel "github.com/aws-controllers-k8s/code-generator/pkg/api"
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/config"
 	ackfp "github.com/aws-controllers-k8s/code-generator/pkg/fieldpath"
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate/templateset"
@@ -473,7 +473,7 @@ func (m *Model) getShapeCleanGoType(shape *awssdkmodel.Shape) string {
 	case "structure":
 		if len(shape.MemberRefs) == 0 {
 			if m.cfg.HasEmptyShape(shape.ShapeName) {
-				return "map[string]*string"
+				return "map[string]string"
 			}
 			panic(fmt.Sprintf("structure %s has no fields, either configure it as a `empty_shape` or manually set the field type", shape.ShapeName))
 		}

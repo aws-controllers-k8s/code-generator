@@ -96,16 +96,16 @@ func (f *Field) GetDocumentation() string {
 
 	hasShapeDoc := false
 	var prepend strings.Builder
-	var out strings.Builder
+	out := ""
 
 	if f.ShapeRef != nil {
 		if f.ShapeRef.Documentation != "" {
 			hasShapeDoc = true
-			out.WriteString(f.ShapeRef.Documentation)
+			out += f.ShapeRef.Documentation
 		}
 	}
 	if cfg == nil {
-		return out.String()
+		return out
 	}
 
 	// Ensure configuration has exclusive options
@@ -119,9 +119,9 @@ func (f *Field) GetDocumentation() string {
 
 	if cfg.Append != nil {
 		if hasShapeDoc {
-			out.WriteString("\n//\n")
+			out += "\n//\n"
 		}
-		out.WriteString(f.formatUserProvidedDocstring(*cfg.Append))
+		out += f.formatUserProvidedDocstring(*cfg.Append)
 	}
 
 	if cfg.Prepend != nil {
@@ -131,7 +131,7 @@ func (f *Field) GetDocumentation() string {
 		}
 	}
 
-	return prepend.String() + out.String()
+	return prepend.String() + out
 }
 
 // formatUserProvidedDocstring sanitises a doc string provided by the user so
@@ -456,7 +456,6 @@ func newFieldRecurse(
 				cleanMemberNames := names.New(memberName)
 				memberPath := path + "." + cleanMemberNames.Camel
 				memberShape := containerShape.MemberRefs[memberName]
-
 				// Check to see if we have seen this shape before in the stack
 				// and panic. Cyclic references are not supported
 				if _, ok := nestedParentFields[memberShape.ShapeName]; ok {

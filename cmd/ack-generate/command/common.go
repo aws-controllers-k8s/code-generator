@@ -51,14 +51,19 @@ func loadModel(svcAlias string, apiVersion string, apiGroup string, defaultCfg a
 	}
 
 	sdkHelper := acksdk.NewHelper(sdkDir, cfg)
-	sdkAPI, err := sdkHelper.API(modelName)
+	//sdkAPI, err := sdkHelper.API(modelName)
+
+	// AWS-SDK-GO-V2
+	sdkAPI, err := sdkHelper.APIV2(svcAlias)
+
 	if err != nil {
 		retryModelName, err := FallBackFindServiceID(sdkDir, svcAlias)
 		if err != nil {
 			return nil, err
 		}
 		// Retry using path found by querying service ID
-		sdkAPI, err = sdkHelper.API(retryModelName)
+		// sdkAPI, err = sdkHelper.API(retryModelName)
+		sdkAPI, err = sdkHelper.APIV2(retryModelName)
 		if err != nil {
 			return nil, fmt.Errorf("service %s not found", svcAlias)
 		}

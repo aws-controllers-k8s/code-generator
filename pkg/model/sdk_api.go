@@ -35,10 +35,12 @@ var (
 	// GoTypeToSDKShapeType is a map of Go types to aws-sdk-go
 	// private/model/api.Shape types
 	GoTypeToSDKShapeType = map[string]string{
-		"int":       "integer",
+		"int": "integer",
+		// This is for AWS-SDK-GO-V2
 		"int64":     "integer",
-		"float64":   "float",
-		"string":    "string",
+		"float64": "float",
+		"string":  "string",
+		// This is for AWS-SDK-GO-V2 still under test
 		"bool":      "boolean",
 		"time.Time": "timestamp",
 		"bytes":     "blob",
@@ -193,6 +195,7 @@ func (a *SDKAPI) GetShapeRefFromType(
 // GetCustomShapeRef finds a ShapeRef for a custom shape using either its member
 // or its value shape name.
 func (a *SDKAPI) GetCustomShapeRef(shapeName string) *awssdkmodel.ShapeRef {
+
 	customList := a.getCustomListRef(shapeName)
 	if customList != nil {
 		return customList
@@ -202,7 +205,9 @@ func (a *SDKAPI) GetCustomShapeRef(shapeName string) *awssdkmodel.ShapeRef {
 
 // getCustomListRef finds a ShapeRef for a supplied custom list field
 func (a *SDKAPI) getCustomListRef(memberShapeName string) *awssdkmodel.ShapeRef {
+
 	for _, shape := range a.CustomShapes {
+
 		if shape.MemberShapeName != nil && *shape.MemberShapeName == memberShapeName {
 			return shape.ShapeRef
 		}
@@ -226,13 +231,17 @@ func (a *SDKAPI) GetInputShapeRef(
 	opID string,
 	path string,
 ) (*awssdkmodel.ShapeRef, bool) {
+
 	op, ok := a.API.Operations[opID]
+
 	if !ok {
 		return nil, false
 	}
 	if path == "." {
+
 		return &op.InputRef, true
 	}
+
 	return getMemberByPath(op.InputRef.Shape, path)
 }
 
@@ -397,17 +406,24 @@ func getMemberByPath(
 	shape *awssdkmodel.Shape,
 	path string,
 ) (*awssdkmodel.ShapeRef, bool) {
+
 	elements := strings.Split(path, ".")
+
 	last := len(elements) - 1
+
 	for x, elem := range elements {
+
 		if elem == "" {
 			continue
 		}
 		if shape == nil {
 			return nil, false
 		}
+
 		shapeRef, ok := shape.MemberRefs[elem]
+
 		if !ok {
+
 			return nil, false
 		}
 		if x == last {
