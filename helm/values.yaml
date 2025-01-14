@@ -4,7 +4,7 @@
 
 image:
   repository: public.ecr.aws/aws-controllers-k8s/cloudwatch-controller
-  tag: 1.0.0
+  tag: 1.0.1
   pullPolicy: IfNotPresent
   pullSecrets: []
 
@@ -164,3 +164,5 @@ featureGates:
   TeamLevelCARM: false
   # Enable ReadOnlyResources feature/annotation. 
   ReadOnlyResources: false
+  # Enable ResourceAdoption feature/annotation. 
+  ResourceAdoption: false
