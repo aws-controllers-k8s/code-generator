@@ -99,7 +99,7 @@ func NewAPIVersionManager(
 			return nil, err
 		}
 
-		sdkAPI, err := sdkAPIHelper.APIV2(servicePackageName)
+		sdkAPI, err := sdkAPIHelper.API(servicePackageName)
 		if err != nil {
 			return nil, err
 		}

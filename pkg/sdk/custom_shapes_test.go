@@ -67,7 +67,7 @@ func s3SDKAPI(t *testing.T, cfg config.Config) *model.SDKAPI {
 	}
 	path := filepath.Clean("../testdata")
 	sdkHelper := sdk.NewHelper(path, cfg)
-	s3, err := sdkHelper.APIV2("s3")
+	s3, err := sdkHelper.API("s3")
 	if err != nil {
 		t.Fatal(err)
 	}
