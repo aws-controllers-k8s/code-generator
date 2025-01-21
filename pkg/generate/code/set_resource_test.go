@@ -1223,7 +1223,7 @@ func TestSetResource_APIGWV2_ApiMapping_SetResourceIdentifiers(t *testing.T) {
 
 	f1, f1ok := identifier.AdditionalKeys["domainName"]
 	if f1ok {
-		r.ko.Spec.DomainName = &f1
+		r.ko.Spec.DomainName = aws.String(f1)
 	}
 `
 	assert.Equal(
@@ -1390,7 +1390,7 @@ func TestSetResource_APIGWV2_ApiMapping_PopulateResourceFromAnnotation(t *testin
 
 	f1, f1ok := fields["domainName"]
 	if f1ok {
-		r.ko.Spec.DomainName = &f1
+		r.ko.Spec.DomainName = aws.String(f1)
 	}
 `
 	assert.Equal(

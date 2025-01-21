@@ -1,6 +1,6 @@
-
-
 package api
+
+import "fmt"
 
 // IoSuffix represents map of service to shape names that
 // are suffixed with `Input`, `Output` string and are not
@@ -12,11 +12,13 @@ type IoSuffix map[string]map[string]struct{}
 // names that contain "Input" and "Output" name as suffix.
 func (i IoSuffix) LegacyIOSuffix(a *API, shapeName string) bool {
 	names, ok := i[a.name]
+	fmt.Println(shapeName, ok, a.name)
 	if !ok {
 		return false
 	}
 
 	_, ok = names[shapeName]
+	fmt.Println(shapeName, ok)
 	return ok
 }
 
@@ -115,6 +117,16 @@ var legacyIOSuffixed = IoSuffix{
 		"BatchInferenceJobInput":  struct{}{},
 		"BatchInferenceJobOutput": struct{}{},
 		"DatasetExportJobOutput":  struct{}{},
+	},
+
+	"OpenSearchService": {
+		"AIMLOptionsInput":                           struct{}{},
+		"AdvancedSecurityOptionsInput":              struct{}{},
+		"NaturalLanguageQueryGenerationOptionsInput": struct{}{},
+		"JWTOptionsInput":                            struct{}{},
+		"SAMLOptionsInput":                           struct{}{},
+		"AutoTuneOptionsInput":                       struct{}{},
+		"IdentityCenterOptionsInput":                 struct{}{},
 	},
 
 	"MWAA": {

@@ -322,7 +322,7 @@ func SetResource(
 			out += fmt.Sprintf(
 				"%sif %s != \"\" {\n", indent, sourceAdaptedVarName,
 			)
-		} else if !sourceMemberShapeRef.Shape.HasDefaultValue() {
+		} else if !sourceMemberShapeRef.HasDefaultValue() {
 			// The fields that have a default value (boolean and integer)
 			// are not pointers, so we won't need to check if they are nil
 			out += fmt.Sprintf(
@@ -340,14 +340,24 @@ func SetResource(
 		case "list", "map", "structure":
 			// if lists are made of strings, or maps are made of string-to-string, we want to leverage
 			// the aws-sdk-go-v2 provided function to convert from pointer to non-pointer
-			if targetMemberShape.Type == "list" &&
-				targetMemberShape.MemberRef.Shape.Type == "string" &&
-				!targetMemberShape.MemberRef.Shape.IsEnum() {
-				out += fmt.Sprintf("%s\t%s = aws.StringSlice(%s)\n", indent, qualifiedTargetVar, sourceAdaptedVarName)
-			} else if targetMemberShape.Type == "map" &&
-				targetMemberShape.KeyRef.Shape.Type == "string" &&
-				targetMemberShape.ValueRef.Shape.Type == "string" {
-				out += fmt.Sprintf("%s\t%s = aws.StringMap(%s)\n", indent, qualifiedTargetVar, sourceAdaptedVarName)
+			if sourceMemberShapeRef.Shape.Type == "list" &&
+				!sourceMemberShapeRef.Shape.MemberRef.Shape.IsEnum() &&
+				(sourceMemberShapeRef.Shape.MemberRef.Shape.Type == "string" || sourceMemberShapeRef.Shape.MemberRef.Shape.Type == "long") {
+				if sourceMemberShapeRef.Shape.MemberRef.Shape.Type == "string" {
+					out += fmt.Sprintf("%s\t%s = aws.StringSlice(%s)\n", indent, qualifiedTargetVar, sourceAdaptedVarName)
+				} else {
+					out += fmt.Sprintf("%s\t%s = aws.Int64Slice(%s)\n", indent, qualifiedTargetVar, sourceAdaptedVarName)
+
+				}
+			} else if sourceMemberShapeRef.Shape.Type == "map" &&
+				sourceMemberShapeRef.Shape.KeyRef.Shape.Type == "string" &&
+				(sourceMemberShapeRef.Shape.ValueRef.Shape.Type == "string" || sourceMemberShapeRef.Shape.ValueRef.Shape.Type == "boolean") {
+				if sourceMemberShapeRef.Shape.ValueRef.Shape.Type == "string" {
+					out += fmt.Sprintf("%s\t%s = aws.StringMap(%s)\n", indent, qualifiedTargetVar, sourceAdaptedVarName)
+				} else {
+					out += fmt.Sprintf("%s\t%s = aws.BoolMap(%s)\n", indent, qualifiedTargetVar, sourceAdaptedVarName)
+
+				}
 			} else {
 				memberVarName := fmt.Sprintf("f%d", memberIndex)
 				out += varEmptyConstructorK8sType(
@@ -373,6 +383,7 @@ func SetResource(
 					memberVarName,
 					sourceMemberShapeRef,
 					indentLevel+1,
+					false,
 				)
 			}
 		default:
@@ -387,9 +398,10 @@ func SetResource(
 				sourceAdaptedVarName,
 				sourceMemberShapeRef,
 				indentLevel+1,
+				false,
 			)
 		}
-		if sourceMemberShapeRef.Shape.IsEnum() || !sourceMemberShapeRef.Shape.HasDefaultValue() {
+		if sourceMemberShapeRef.Shape.IsEnum() || !sourceMemberShapeRef.HasDefaultValue() {
 			out += fmt.Sprintf(
 				"%s} else {\n", indent,
 			)
@@ -645,7 +657,7 @@ func setResourceReadMany(
 			out += fmt.Sprintf(
 				"%sif %s != \"\" {\n", innerForIndent, sourceAdaptedVarName,
 			)
-		} else if !targetMemberShapeRef.Shape.HasDefaultValue() {
+		} else if !targetMemberShapeRef.HasDefaultValue() {
 			out += fmt.Sprintf(
 				"%sif %s != nil {\n", innerForIndent, sourceAdaptedVarName,
 			)
@@ -663,13 +675,23 @@ func setResourceReadMany(
 			// if lists are made of strings, or maps are made of string-to-string, we want to leverage
 			// the aws-sdk-go-v2 provided function to convert from pointer to non-pointer collection
 			if sourceMemberShape.Type == "list" &&
-				sourceMemberShape.MemberRef.Shape.Type == "string" &&
-				!sourceMemberShape.MemberRef.Shape.IsEnum() {
-				out += fmt.Sprintf("%s\t%s = aws.StringSlice(%s)\n", indent, qualifiedTargetVar, sourceAdaptedVarName)
+				!sourceMemberShape.MemberRef.Shape.IsEnum() &&
+				(sourceMemberShapeRef.Shape.MemberRef.Shape.Type == "string" || sourceMemberShapeRef.Shape.MemberRef.Shape.Type == "long") {
+				if sourceMemberShapeRef.Shape.MemberRef.Shape.Type == "string" {
+					out += fmt.Sprintf("%s\t%s = aws.StringSlice(%s)\n", indent, qualifiedTargetVar, sourceAdaptedVarName)
+				} else {
+					out += fmt.Sprintf("%s\t%s = aws.Int64Slice(%s)\n", indent, qualifiedTargetVar, sourceAdaptedVarName)
+
+				}
 			} else if sourceMemberShape.Type == "map" &&
 				sourceMemberShape.KeyRef.Shape.Type == "string" &&
-				sourceMemberShape.ValueRef.Shape.Type == "string" {
-				out += fmt.Sprintf("%s\t%s = aws.StringMap(%s)\n", indent, qualifiedTargetVar, sourceAdaptedVarName)
+				(sourceMemberShape.ValueRef.Shape.Type == "string" || sourceMemberShape.ValueRef.Shape.Type == "boolean") {
+				if sourceMemberShape.ValueRef.Shape.Type == "string" {
+					out += fmt.Sprintf("%s\t%s = aws.StringMap(%s)\n", indent, qualifiedTargetVar, sourceAdaptedVarName)
+				} else {
+					out += fmt.Sprintf("%s\t%s = aws.BoolMap(%s)\n", indent, qualifiedTargetVar, sourceAdaptedVarName)
+
+				}
 			} else {
 				memberVarName := fmt.Sprintf("f%d", memberIndex)
 				out += varEmptyConstructorK8sType(
@@ -695,6 +717,7 @@ func setResourceReadMany(
 					memberVarName,
 					sourceMemberShapeRef,
 					flIndentLvl+1,
+					false,
 				)
 			}
 		default:
@@ -733,9 +756,10 @@ func setResourceReadMany(
 				sourceAdaptedVarName,
 				sourceMemberShapeRef,
 				flIndentLvl+1,
+				false,
 			)
 		}
-		if targetMemberShapeRef.Shape.IsEnum() || !targetMemberShapeRef.Shape.HasDefaultValue() {
+		if targetMemberShapeRef.Shape.IsEnum() || !targetMemberShapeRef.HasDefaultValue() {
 			out += fmt.Sprintf(
 				"%s} else {\n", innerForIndent,
 			)
@@ -1492,6 +1516,7 @@ func setResourceIdentifierPrimaryIdentifier(
 		adaptedMemberPath,
 		targetField.ShapeRef,
 		indentLevel,
+		false,
 	)
 }
 
@@ -1520,6 +1545,7 @@ func setResourceIdentifierPrimaryIdentifierAnn(
 		adaptedMemberPath,
 		targetField.ShapeRef,
 		indentLevel,
+		false,
 	)
 }
 
@@ -1559,12 +1585,13 @@ func setResourceIdentifierAdditionalKey(
 	additionalKeyOut += fmt.Sprintf("%s%s, %sok := %s\n", indent, fieldIndexName, fieldIndexName, sourceAdaptedVarName)
 	additionalKeyOut += fmt.Sprintf("%sif %sok {\n", indent, fieldIndexName)
 	qualifiedTargetVar := fmt.Sprintf("%s.%s", targetVarName, targetField.Path)
-	additionalKeyOut += setResourceForScalar(
-		qualifiedTargetVar,
-		fmt.Sprintf("&%s", fieldIndexName),
-		targetField.ShapeRef,
-		indentLevel+1,
-	)
+	additionalKeyOut += fmt.Sprintf("%s\t%s = aws.String(%s)\n", indent, qualifiedTargetVar, fieldIndexName)
+	// additionalKeyOut += setResourceForScalar(
+	// 	qualifiedTargetVar,
+	// 	fmt.Sprintf("&%s", fieldIndexName),
+	// 	targetField.ShapeRef,
+	// 	indentLevel+1,
+	// )
 	additionalKeyOut += fmt.Sprintf("%s}\n", indent)
 
 	return additionalKeyOut
@@ -1597,12 +1624,13 @@ func setResourceIdentifierAdditionalKeyAnn(
 	additionalKeyOut += fmt.Sprintf("%s%s, %sok := %s\n", indent, fieldIndexName, fieldIndexName, sourceAdaptedVarName)
 	additionalKeyOut += fmt.Sprintf("%sif %sok {\n", indent, fieldIndexName)
 	qualifiedTargetVar := fmt.Sprintf("%s.%s", targetVarName, targetField.Path)
-	additionalKeyOut += setResourceForScalar(
-		qualifiedTargetVar,
-		fmt.Sprintf("&%s", fieldIndexName),
-		targetField.ShapeRef,
-		indentLevel+1,
-	)
+	additionalKeyOut += fmt.Sprintf("%s\t%s = aws.String(%s)\n", indent, qualifiedTargetVar, fieldIndexName)
+	// additionalKeyOut += setResourceForScalar(
+	// 	qualifiedTargetVar,
+	// 	fieldIndexName,
+	// 	targetField.ShapeRef,
+	// 	indentLevel+1,
+	// )
 	additionalKeyOut += fmt.Sprintf("%s}\n", indent)
 
 	return additionalKeyOut
@@ -1677,6 +1705,7 @@ func setResourceForContainer(
 			sourceVarName,
 			sourceShapeRef,
 			indentLevel,
+			false,
 		)
 	}
 }
@@ -1750,7 +1779,7 @@ func SetResourceForStruct(
 			out += fmt.Sprintf(
 				"%sif %s != \"\" {\n", indent, sourceAdaptedVarName,
 			)
-		} else if !sourceMemberShape.HasDefaultValue() {
+		} else if !sourceMemberShapeRef.HasDefaultValue() {
 			// The fields that have a default value (boolean and integer)
 			// are not pointers, so we won't need to check if they are nil
 			out += fmt.Sprintf(
@@ -1771,12 +1800,21 @@ func SetResourceForStruct(
 		case "list", "structure", "map":
 			if sourceMemberShape.Type == "list" &&
 				!sourceMemberShape.MemberRef.Shape.IsEnum() &&
-				sourceMemberShape.MemberRef.Shape.Type == "string" {
-				out += fmt.Sprintf("%s\t%s = aws.StringSlice(%s)\n", indent, qualifiedTargetVar, sourceAdaptedVarName)
+				(sourceMemberShapeRef.Shape.MemberRef.Shape.Type == "string" || sourceMemberShapeRef.Shape.MemberRef.Shape.Type == "long") {
+				if sourceMemberShapeRef.Shape.MemberRef.Shape.Type == "string" {
+					out += fmt.Sprintf("%s\t%s = aws.StringSlice(%s)\n", indent, qualifiedTargetVar, sourceAdaptedVarName)
+				} else {
+					out += fmt.Sprintf("%s\t%s = aws.Int64Slice(%s)\n", indent, qualifiedTargetVar, sourceAdaptedVarName)
+
+				}
 			} else if sourceMemberShape.Type == "map" &&
 				sourceMemberShape.KeyRef.Shape.Type == "string" &&
-				sourceMemberShape.ValueRef.Shape.Type == "string" {
-				out += fmt.Sprintf("%s\t%s = aws.StringMap(%s)\n", indent, qualifiedTargetVar, sourceAdaptedVarName)
+				(sourceMemberShape.ValueRef.Shape.Type == "string" || sourceMemberShape.ValueRef.Shape.Type == "boolean") {
+				if sourceMemberShape.ValueRef.Shape.Type == "string" {
+					out += fmt.Sprintf("%s\t%s = aws.StringMap(%s)\n", indent, qualifiedTargetVar, sourceAdaptedVarName)
+				} else if sourceMemberShape.ValueRef.Shape.Type == "boolean" {
+					out += fmt.Sprintf("%s\t%s = aws.BoolMap(%s)\n", indent, qualifiedTargetVar, sourceAdaptedVarName)
+				}
 			} else {
 				out += varEmptyConstructorK8sType(
 					cfg, r,
@@ -1802,6 +1840,7 @@ func SetResourceForStruct(
 					indexedVarName,
 					sourceMemberShapeRef,
 					indentLevel+1,
+					false,
 				)
 			}
 		default:
@@ -1810,9 +1849,10 @@ func SetResourceForStruct(
 				sourceAdaptedVarName,
 				sourceMemberShapeRef,
 				indentLevel+1,
+				false,
 			)
 		}
-		if sourceMemberShape.IsEnum() || !sourceMemberShape.HasDefaultValue() {
+		if sourceMemberShape.IsEnum() || !sourceMemberShapeRef.HasDefaultValue() {
 			out += fmt.Sprintf(
 				"%s}\n", indent,
 			)
@@ -1855,7 +1895,7 @@ func SetResourceForStruct(
 						out += fmt.Sprintf(
 							"%sif %s != \"\" {\n", indent, sourceAdaptedVarName,
 						)
-					} else if !sourceShape.HasDefaultValue() {
+					} else if !sourceShapeRef.HasDefaultValue() {
 						// The fields that have a default value (boolean and integer)
 						// are not pointers, so we won't need to check if they are nil
 						out += fmt.Sprintf(
@@ -1868,13 +1908,17 @@ func SetResourceForStruct(
 
 					// Use setResourceForScalar and dereference sourceAdaptedVarName
 					// because primitives are being set.
+					if !sourceMemberShapeRef.HasDefaultValue() {
+						sourceAdaptedVarName = "*" + sourceAdaptedVarName
+					}
 					out += setResourceForScalar(
 						qualifiedTargetVar,
 						sourceAdaptedVarName,
 						sourceMemberShapeRef,
 						indentLevel+1,
+						false,
 					)
-					if sourceShape.IsEnum() || !sourceShape.HasDefaultValue() {
+					if sourceShape.IsEnum() || !sourceShapeRef.HasDefaultValue() {
 						out += fmt.Sprintf(
 							"%s}\n", indent,
 						)
@@ -1959,6 +2003,7 @@ func setResourceForSlice(
 				fmt.Sprintf("*%s.%s", iterVarName, *targetSetCfg.From),
 				sourceMemberShapeRef,
 				indentLevel+1,
+				true,
 			)
 		} else {
 			// This is a bug in the code generation if this occurs...
@@ -2028,6 +2073,28 @@ func setResourceForMap(
 	valVarName := fmt.Sprintf("%sval", targetVarName)
 	// for f0key, f0valiter := range resp.Tags {
 	out += fmt.Sprintf("%sfor %s, %s := range %s {\n", indent, keyVarName, valIterVarName, sourceVarName)
+	containerFieldName := ""
+	if sourceShape.ValueRef.Shape.Type == "structure" {
+		containerFieldName = targetFieldName
+	}
+	if sourceShape.ValueRef.Shape.Type == "list" &&
+		!sourceShape.ValueRef.Shape.MemberRef.Shape.IsEnum() &&
+		sourceShape.ValueRef.Shape.MemberRef.Shape.Type == "string" {
+		out += fmt.Sprintf("%s\t%s[%s] = aws.StringSlice(%s)\n", indent, targetVarName, keyVarName, valIterVarName)
+		out += fmt.Sprintf("%s}\n", indent)
+		return out
+	} else if sourceShape.ValueRef.Shape.Type == "map" &&
+		sourceShape.ValueRef.Shape.KeyRef.Shape.Type == "string" {
+		if sourceShape.ValueRef.Shape.ValueRef.Shape.Type == "string" {
+			out += fmt.Sprintf("%s\t%s[%s] = aws.StringMap(%s)\n", indent, targetVarName, keyVarName, valIterVarName)
+			out += fmt.Sprintf("%s}\n", indent)
+			return out
+		} else if sourceShape.ValueRef.Shape.ValueRef.Shape.Type == "boolean" {
+			out += fmt.Sprintf("%s\t%s[%s] = aws.BoolMap(%s)\n", indent, targetVarName, keyVarName, valIterVarName)
+			out += fmt.Sprintf("%s}\n", indent)
+			return out
+		}
+	}
 	//		f0elem := string{}
 	out += varEmptyConstructorK8sType(
 		cfg, r,
@@ -2036,10 +2103,6 @@ func setResourceForMap(
 		indentLevel+1,
 	)
 	//  f0val = *f0valiter
-	containerFieldName := ""
-	if sourceShape.ValueRef.Shape.Type == "structure" {
-		containerFieldName = targetFieldName
-	}
 	out += setResourceForContainer(
 		cfg, r,
 		containerFieldName,
@@ -2075,6 +2138,7 @@ func setResourceForScalar(
 	sourceVar string,
 	shapeRef *awssdkmodel.ShapeRef,
 	indentLevel int,
+	isListMember bool,
 ) string {
 	out := ""
 	indent := strings.Repeat("\t", indentLevel)
@@ -2086,15 +2150,14 @@ func setResourceForScalar(
 
 	targetVar = strings.TrimPrefix(targetVar, ".")
 	if shape.Type == "integer" {
-		if shape.HasDefaultValue() {
-			out += fmt.Sprintf("%stemp := int64(%s)\n", indent, setTo)
-		} else {
-			out += fmt.Sprintf("%stemp := int64(*%s)\n", indent, setTo)
+		if !shapeRef.HasDefaultValue() && !isListMember {
+			setTo = "*" + setTo
 		}
-		out += fmt.Sprintf("%s%s = &temp\n", indent, targetVar)
+		out += fmt.Sprintf("%s%stemp := int64(%s)\n", indent, shapeRef.LocationName, setTo)
+		out += fmt.Sprintf("%s%s = &%stemp\n", indent, targetVar, shapeRef.LocationName)
 	} else if shape.IsEnum() {
 		out += fmt.Sprintf("%s%s = aws.String(string(%s))\n", indent, targetVar, strings.TrimPrefix(setTo, "*"))
-	} else if shape.HasDefaultValue() {
+	} else if shapeRef.HasDefaultValue() {
 		out += fmt.Sprintf("%s%s = &%s\n", indent, targetVar, setTo)
 	} else {
 		out += fmt.Sprintf("%s%s = %s\n", indent, targetVar, strings.TrimPrefix(setTo, "*"))

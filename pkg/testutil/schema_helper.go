@@ -86,7 +86,7 @@ func NewModelForServiceWithOptions(t *testing.T, servicePackageName string, opti
 	}
 	sdkHelper := acksdk.NewHelper(path, cfg)
 	sdkHelper.WithAPIVersion(options.ServiceAPIVersion)
-	sdkAPI, err := sdkHelper.APIV2(servicePackageName)
+	sdkAPI, err := sdkHelper.API(servicePackageName)
 	if err != nil {
 		t.Fatal(err)
 	}

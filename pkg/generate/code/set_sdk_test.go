@@ -85,6 +85,424 @@ func TestSetSDK_APIGWv2_Route_Create(t *testing.T) {
 	)
 }
 
+func TestSetSDK_OpenSearch_Domain_Create(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "opensearch")
+
+	crd := testutil.GetCRDByName(t, g, "Domain")
+	require.NotNil(crd)
+
+	expected := `
+	if r.ko.Spec.AIMLOptions != nil {
+		f0 := &svcsdktypes.AIMLOptionsInput{}
+		if r.ko.Spec.AIMLOptions.NATuralLanguageQueryGenerationOptions != nil {
+			f0f0 := &svcsdktypes.NaturalLanguageQueryGenerationOptionsInput{}
+			if r.ko.Spec.AIMLOptions.NATuralLanguageQueryGenerationOptions.DesiredState != nil {
+				f0f0.DesiredState = svcsdktypes.NaturalLanguageQueryGenerationDesiredState(*r.ko.Spec.AIMLOptions.NATuralLanguageQueryGenerationOptions.DesiredState)
+			}
+			f0.NaturalLanguageQueryGenerationOptions = f0f0
+		}
+		res.AIMLOptions = f0
+	}
+	if r.ko.Spec.AccessPolicies != nil {
+		res.AccessPolicies = r.ko.Spec.AccessPolicies
+	}
+	if r.ko.Spec.AdvancedOptions != nil {
+		res.AdvancedOptions = aws.ToStringMap(r.ko.Spec.AdvancedOptions)
+	}
+	if r.ko.Spec.AdvancedSecurityOptions != nil {
+		f3 := &svcsdktypes.AdvancedSecurityOptionsInput{}
+		if r.ko.Spec.AdvancedSecurityOptions.AnonymousAuthEnabled != nil {
+			f3.AnonymousAuthEnabled = r.ko.Spec.AdvancedSecurityOptions.AnonymousAuthEnabled
+		}
+		if r.ko.Spec.AdvancedSecurityOptions.Enabled != nil {
+			f3.Enabled = r.ko.Spec.AdvancedSecurityOptions.Enabled
+		}
+		if r.ko.Spec.AdvancedSecurityOptions.InternalUserDatabaseEnabled != nil {
+			f3.InternalUserDatabaseEnabled = r.ko.Spec.AdvancedSecurityOptions.InternalUserDatabaseEnabled
+		}
+		if r.ko.Spec.AdvancedSecurityOptions.JWTOptions != nil {
+			f3f3 := &svcsdktypes.JWTOptionsInput{}
+			if r.ko.Spec.AdvancedSecurityOptions.JWTOptions.Enabled != nil {
+				f3f3.Enabled = r.ko.Spec.AdvancedSecurityOptions.JWTOptions.Enabled
+			}
+			if r.ko.Spec.AdvancedSecurityOptions.JWTOptions.PublicKey != nil {
+				f3f3.PublicKey = r.ko.Spec.AdvancedSecurityOptions.JWTOptions.PublicKey
+			}
+			if r.ko.Spec.AdvancedSecurityOptions.JWTOptions.RolesKey != nil {
+				f3f3.RolesKey = r.ko.Spec.AdvancedSecurityOptions.JWTOptions.RolesKey
+			}
+			if r.ko.Spec.AdvancedSecurityOptions.JWTOptions.SubjectKey != nil {
+				f3f3.SubjectKey = r.ko.Spec.AdvancedSecurityOptions.JWTOptions.SubjectKey
+			}
+			f3.JWTOptions = f3f3
+		}
+		if r.ko.Spec.AdvancedSecurityOptions.MasterUserOptions != nil {
+			f3f4 := &svcsdktypes.MasterUserOptions{}
+			if r.ko.Spec.AdvancedSecurityOptions.MasterUserOptions.MasterUserARN != nil {
+				f3f4.MasterUserARN = r.ko.Spec.AdvancedSecurityOptions.MasterUserOptions.MasterUserARN
+			}
+			if r.ko.Spec.AdvancedSecurityOptions.MasterUserOptions.MasterUserName != nil {
+				f3f4.MasterUserName = r.ko.Spec.AdvancedSecurityOptions.MasterUserOptions.MasterUserName
+			}
+			if r.ko.Spec.AdvancedSecurityOptions.MasterUserOptions.MasterUserPassword != nil {
+				tmpSecret, err := rm.rr.SecretValueFromReference(ctx, r.ko.Spec.AdvancedSecurityOptions.MasterUserOptions.MasterUserPassword)
+				if err != nil {
+					return nil, ackrequeue.Needed(err)
+				}
+				if tmpSecret != "" {
+					f3f4.MasterUserPassword = aws.String(tmpSecret)
+				}
+			}
+			f3.MasterUserOptions = f3f4
+		}
+		if r.ko.Spec.AdvancedSecurityOptions.SAMLOptions != nil {
+			f3f5 := &svcsdktypes.SAMLOptionsInput{}
+			if r.ko.Spec.AdvancedSecurityOptions.SAMLOptions.Enabled != nil {
+				f3f5.Enabled = r.ko.Spec.AdvancedSecurityOptions.SAMLOptions.Enabled
+			}
+			if r.ko.Spec.AdvancedSecurityOptions.SAMLOptions.IDp != nil {
+				f3f5f1 := &svcsdktypes.SAMLIdp{}
+				if r.ko.Spec.AdvancedSecurityOptions.SAMLOptions.IDp.EntityID != nil {
+					f3f5f1.EntityId = r.ko.Spec.AdvancedSecurityOptions.SAMLOptions.IDp.EntityID
+				}
+				if r.ko.Spec.AdvancedSecurityOptions.SAMLOptions.IDp.MetadataContent != nil {
+					f3f5f1.MetadataContent = r.ko.Spec.AdvancedSecurityOptions.SAMLOptions.IDp.MetadataContent
+				}
+				f3f5.Idp = f3f5f1
+			}
+			if r.ko.Spec.AdvancedSecurityOptions.SAMLOptions.MasterBackendRole != nil {
+				f3f5.MasterBackendRole = r.ko.Spec.AdvancedSecurityOptions.SAMLOptions.MasterBackendRole
+			}
+			if r.ko.Spec.AdvancedSecurityOptions.SAMLOptions.MasterUserName != nil {
+				f3f5.MasterUserName = r.ko.Spec.AdvancedSecurityOptions.SAMLOptions.MasterUserName
+			}
+			if r.ko.Spec.AdvancedSecurityOptions.SAMLOptions.RolesKey != nil {
+				f3f5.RolesKey = r.ko.Spec.AdvancedSecurityOptions.SAMLOptions.RolesKey
+			}
+			if r.ko.Spec.AdvancedSecurityOptions.SAMLOptions.SessionTimeoutMinutes != nil {
+				if *r.ko.Spec.AdvancedSecurityOptions.SAMLOptions.SessionTimeoutMinutes > math.MaxInt32 || *r.ko.Spec.AdvancedSecurityOptions.SAMLOptions.SessionTimeoutMinutes < math.MinInt32 {
+					return nil, fmt.Errorf("field is too large")
+				}
+				temp := int32(*r.ko.Spec.AdvancedSecurityOptions.SAMLOptions.SessionTimeoutMinutes)
+				f3f5.SessionTimeoutMinutes = &temp
+			}
+			if r.ko.Spec.AdvancedSecurityOptions.SAMLOptions.SubjectKey != nil {
+				f3f5.SubjectKey = r.ko.Spec.AdvancedSecurityOptions.SAMLOptions.SubjectKey
+			}
+			f3.SAMLOptions = f3f5
+		}
+		res.AdvancedSecurityOptions = f3
+	}
+	if r.ko.Spec.AutoTuneOptions != nil {
+		f4 := &svcsdktypes.AutoTuneOptionsInput{}
+		if r.ko.Spec.AutoTuneOptions.DesiredState != nil {
+			f4.DesiredState = svcsdktypes.AutoTuneDesiredState(*r.ko.Spec.AutoTuneOptions.DesiredState)
+		}
+		if r.ko.Spec.AutoTuneOptions.MaintenanceSchedules != nil {
+			f4f1 := []svcsdktypes.AutoTuneMaintenanceSchedule{}
+			for _, f4f1iter := range r.ko.Spec.AutoTuneOptions.MaintenanceSchedules {
+				f4f1elem := &svcsdktypes.AutoTuneMaintenanceSchedule{}
+				if f4f1iter.CronExpressionForRecurrence != nil {
+					f4f1elem.CronExpressionForRecurrence = f4f1iter.CronExpressionForRecurrence
+				}
+				if f4f1iter.Duration != nil {
+					f4f1elemf1 := &svcsdktypes.Duration{}
+					if f4f1iter.Duration.Unit != nil {
+						f4f1elemf1.Unit = svcsdktypes.TimeUnit(*f4f1iter.Duration.Unit)
+					}
+					if f4f1iter.Duration.Value != nil {
+						f4f1elemf1.Value = f4f1iter.Duration.Value
+					}
+					f4f1elem.Duration = f4f1elemf1
+				}
+				if f4f1iter.StartAt != nil {
+					f4f1elem.StartAt = &f4f1iter.StartAt.Time
+				}
+				f4f1 = append(f4f1, *f4f1elem)
+			}
+			f4.MaintenanceSchedules = f4f1
+		}
+		if r.ko.Spec.AutoTuneOptions.UseOffPeakWindow != nil {
+			f4.UseOffPeakWindow = r.ko.Spec.AutoTuneOptions.UseOffPeakWindow
+		}
+		res.AutoTuneOptions = f4
+	}
+	if r.ko.Spec.ClusterConfig != nil {
+		f5 := &svcsdktypes.ClusterConfig{}
+		if r.ko.Spec.ClusterConfig.ColdStorageOptions != nil {
+			f5f0 := &svcsdktypes.ColdStorageOptions{}
+			if r.ko.Spec.ClusterConfig.ColdStorageOptions.Enabled != nil {
+				f5f0.Enabled = r.ko.Spec.ClusterConfig.ColdStorageOptions.Enabled
+			}
+			f5.ColdStorageOptions = f5f0
+		}
+		if r.ko.Spec.ClusterConfig.DedicatedMasterCount != nil {
+			if *r.ko.Spec.ClusterConfig.DedicatedMasterCount > math.MaxInt32 || *r.ko.Spec.ClusterConfig.DedicatedMasterCount < math.MinInt32 {
+				return nil, fmt.Errorf("field is too large")
+			}
+			temp := int32(*r.ko.Spec.ClusterConfig.DedicatedMasterCount)
+			f5.DedicatedMasterCount = &temp
+		}
+		if r.ko.Spec.ClusterConfig.DedicatedMasterEnabled != nil {
+			f5.DedicatedMasterEnabled = r.ko.Spec.ClusterConfig.DedicatedMasterEnabled
+		}
+		if r.ko.Spec.ClusterConfig.DedicatedMasterType != nil {
+			f5.DedicatedMasterType = svcsdktypes.OpenSearchPartitionInstanceType(*r.ko.Spec.ClusterConfig.DedicatedMasterType)
+		}
+		if r.ko.Spec.ClusterConfig.InstanceCount != nil {
+			if *r.ko.Spec.ClusterConfig.InstanceCount > math.MaxInt32 || *r.ko.Spec.ClusterConfig.InstanceCount < math.MinInt32 {
+				return nil, fmt.Errorf("field is too large")
+			}
+			temp := int32(*r.ko.Spec.ClusterConfig.InstanceCount)
+			f5.InstanceCount = &temp
+		}
+		if r.ko.Spec.ClusterConfig.InstanceType != nil {
+			f5.InstanceType = svcsdktypes.OpenSearchPartitionInstanceType(*r.ko.Spec.ClusterConfig.InstanceType)
+		}
+		if r.ko.Spec.ClusterConfig.MultiAZWithStandbyEnabled != nil {
+			f5.MultiAZWithStandbyEnabled = r.ko.Spec.ClusterConfig.MultiAZWithStandbyEnabled
+		}
+		if r.ko.Spec.ClusterConfig.NodeOptions != nil {
+			f5f7 := []svcsdktypes.NodeOption{}
+			for _, f5f7iter := range r.ko.Spec.ClusterConfig.NodeOptions {
+				f5f7elem := &svcsdktypes.NodeOption{}
+				if f5f7iter.NodeConfig != nil {
+					f5f7elemf0 := &svcsdktypes.NodeConfig{}
+					if f5f7iter.NodeConfig.Count != nil {
+						if *f5f7iter.NodeConfig.Count > math.MaxInt32 || *f5f7iter.NodeConfig.Count < math.MinInt32 {
+							return nil, fmt.Errorf("field is too large")
+						}
+						temp := int32(*f5f7iter.NodeConfig.Count)
+						f5f7elemf0.Count = &temp
+					}
+					if f5f7iter.NodeConfig.Enabled != nil {
+						f5f7elemf0.Enabled = f5f7iter.NodeConfig.Enabled
+					}
+					if f5f7iter.NodeConfig.Type != nil {
+						f5f7elemf0.Type = svcsdktypes.OpenSearchPartitionInstanceType(*f5f7iter.NodeConfig.Type)
+					}
+					f5f7elem.NodeConfig = f5f7elemf0
+				}
+				if f5f7iter.NodeType != nil {
+					f5f7elem.NodeType = svcsdktypes.NodeOptionsNodeType(*f5f7iter.NodeType)
+				}
+				f5f7 = append(f5f7, *f5f7elem)
+			}
+			f5.NodeOptions = f5f7
+		}
+		if r.ko.Spec.ClusterConfig.WarmCount != nil {
+			if *r.ko.Spec.ClusterConfig.WarmCount > math.MaxInt32 || *r.ko.Spec.ClusterConfig.WarmCount < math.MinInt32 {
+				return nil, fmt.Errorf("field is too large")
+			}
+			temp := int32(*r.ko.Spec.ClusterConfig.WarmCount)
+			f5.WarmCount = &temp
+		}
+		if r.ko.Spec.ClusterConfig.WarmEnabled != nil {
+			f5.WarmEnabled = r.ko.Spec.ClusterConfig.WarmEnabled
+		}
+		if r.ko.Spec.ClusterConfig.WarmType != nil {
+			f5.WarmType = svcsdktypes.OpenSearchWarmPartitionInstanceType(*r.ko.Spec.ClusterConfig.WarmType)
+		}
+		if r.ko.Spec.ClusterConfig.ZoneAwarenessConfig != nil {
+			f5f11 := &svcsdktypes.ZoneAwarenessConfig{}
+			if r.ko.Spec.ClusterConfig.ZoneAwarenessConfig.AvailabilityZoneCount != nil {
+				if *r.ko.Spec.ClusterConfig.ZoneAwarenessConfig.AvailabilityZoneCount > math.MaxInt32 || *r.ko.Spec.ClusterConfig.ZoneAwarenessConfig.AvailabilityZoneCount < math.MinInt32 {
+					return nil, fmt.Errorf("field is too large")
+				}
+				temp := int32(*r.ko.Spec.ClusterConfig.ZoneAwarenessConfig.AvailabilityZoneCount)
+				f5f11.AvailabilityZoneCount = &temp
+			}
+			f5.ZoneAwarenessConfig = f5f11
+		}
+		if r.ko.Spec.ClusterConfig.ZoneAwarenessEnabled != nil {
+			f5.ZoneAwarenessEnabled = r.ko.Spec.ClusterConfig.ZoneAwarenessEnabled
+		}
+		res.ClusterConfig = f5
+	}
+	if r.ko.Spec.CognitoOptions != nil {
+		f6 := &svcsdktypes.CognitoOptions{}
+		if r.ko.Spec.CognitoOptions.Enabled != nil {
+			f6.Enabled = r.ko.Spec.CognitoOptions.Enabled
+		}
+		if r.ko.Spec.CognitoOptions.IdentityPoolID != nil {
+			f6.IdentityPoolId = r.ko.Spec.CognitoOptions.IdentityPoolID
+		}
+		if r.ko.Spec.CognitoOptions.RoleARN != nil {
+			f6.RoleArn = r.ko.Spec.CognitoOptions.RoleARN
+		}
+		if r.ko.Spec.CognitoOptions.UserPoolID != nil {
+			f6.UserPoolId = r.ko.Spec.CognitoOptions.UserPoolID
+		}
+		res.CognitoOptions = f6
+	}
+	if r.ko.Spec.DomainEndpointOptions != nil {
+		f7 := &svcsdktypes.DomainEndpointOptions{}
+		if r.ko.Spec.DomainEndpointOptions.CustomEndpoint != nil {
+			f7.CustomEndpoint = r.ko.Spec.DomainEndpointOptions.CustomEndpoint
+		}
+		if r.ko.Spec.DomainEndpointOptions.CustomEndpointCertificateARN != nil {
+			f7.CustomEndpointCertificateArn = r.ko.Spec.DomainEndpointOptions.CustomEndpointCertificateARN
+		}
+		if r.ko.Spec.DomainEndpointOptions.CustomEndpointEnabled != nil {
+			f7.CustomEndpointEnabled = r.ko.Spec.DomainEndpointOptions.CustomEndpointEnabled
+		}
+		if r.ko.Spec.DomainEndpointOptions.EnforceHTTPS != nil {
+			f7.EnforceHTTPS = r.ko.Spec.DomainEndpointOptions.EnforceHTTPS
+		}
+		if r.ko.Spec.DomainEndpointOptions.TLSSecurityPolicy != nil {
+			f7.TLSSecurityPolicy = svcsdktypes.TLSSecurityPolicy(*r.ko.Spec.DomainEndpointOptions.TLSSecurityPolicy)
+		}
+		res.DomainEndpointOptions = f7
+	}
+	if r.ko.Spec.Name != nil {
+		res.DomainName = r.ko.Spec.Name
+	}
+	if r.ko.Spec.EBSOptions != nil {
+		f9 := &svcsdktypes.EBSOptions{}
+		if r.ko.Spec.EBSOptions.EBSEnabled != nil {
+			f9.EBSEnabled = r.ko.Spec.EBSOptions.EBSEnabled
+		}
+		if r.ko.Spec.EBSOptions.IOPS != nil {
+			if *r.ko.Spec.EBSOptions.IOPS > math.MaxInt32 || *r.ko.Spec.EBSOptions.IOPS < math.MinInt32 {
+				return nil, fmt.Errorf("field is too large")
+			}
+			temp := int32(*r.ko.Spec.EBSOptions.IOPS)
+			f9.Iops = &temp
+		}
+		if r.ko.Spec.EBSOptions.Throughput != nil {
+			if *r.ko.Spec.EBSOptions.Throughput > math.MaxInt32 || *r.ko.Spec.EBSOptions.Throughput < math.MinInt32 {
+				return nil, fmt.Errorf("field is too large")
+			}
+			temp := int32(*r.ko.Spec.EBSOptions.Throughput)
+			f9.Throughput = &temp
+		}
+		if r.ko.Spec.EBSOptions.VolumeSize != nil {
+			if *r.ko.Spec.EBSOptions.VolumeSize > math.MaxInt32 || *r.ko.Spec.EBSOptions.VolumeSize < math.MinInt32 {
+				return nil, fmt.Errorf("field is too large")
+			}
+			temp := int32(*r.ko.Spec.EBSOptions.VolumeSize)
+			f9.VolumeSize = &temp
+		}
+		if r.ko.Spec.EBSOptions.VolumeType != nil {
+			f9.VolumeType = svcsdktypes.VolumeType(*r.ko.Spec.EBSOptions.VolumeType)
+		}
+		res.EBSOptions = f9
+	}
+	if r.ko.Spec.EncryptionAtRestOptions != nil {
+		f10 := &svcsdktypes.EncryptionAtRestOptions{}
+		if r.ko.Spec.EncryptionAtRestOptions.Enabled != nil {
+			f10.Enabled = r.ko.Spec.EncryptionAtRestOptions.Enabled
+		}
+		if r.ko.Spec.EncryptionAtRestOptions.KMSKeyID != nil {
+			f10.KmsKeyId = r.ko.Spec.EncryptionAtRestOptions.KMSKeyID
+		}
+		res.EncryptionAtRestOptions = f10
+	}
+	if r.ko.Spec.EngineVersion != nil {
+		res.EngineVersion = r.ko.Spec.EngineVersion
+	}
+	if r.ko.Spec.IPAddressType != nil {
+		res.IPAddressType = svcsdktypes.IPAddressType(*r.ko.Spec.IPAddressType)
+	}
+	if r.ko.Spec.IdentityCenterOptions != nil {
+		f13 := &svcsdktypes.IdentityCenterOptionsInput{}
+		if r.ko.Spec.IdentityCenterOptions.EnabledAPIAccess != nil {
+			f13.EnabledAPIAccess = r.ko.Spec.IdentityCenterOptions.EnabledAPIAccess
+		}
+		if r.ko.Spec.IdentityCenterOptions.IdentityCenterInstanceARN != nil {
+			f13.IdentityCenterInstanceARN = r.ko.Spec.IdentityCenterOptions.IdentityCenterInstanceARN
+		}
+		if r.ko.Spec.IdentityCenterOptions.RolesKey != nil {
+			f13.RolesKey = svcsdktypes.RolesKeyIdCOption(*r.ko.Spec.IdentityCenterOptions.RolesKey)
+		}
+		if r.ko.Spec.IdentityCenterOptions.SubjectKey != nil {
+			f13.SubjectKey = svcsdktypes.SubjectKeyIdCOption(*r.ko.Spec.IdentityCenterOptions.SubjectKey)
+		}
+		res.IdentityCenterOptions = f13
+	}
+	if r.ko.Spec.LogPublishingOptions != nil {
+		f14 := map[string]svcsdktypes.LogPublishingOption{}
+		for f14key, f14valiter := range r.ko.Spec.LogPublishingOptions {
+			f14val := &svcsdktypes.LogPublishingOption{}
+			if f14valiter.CloudWatchLogsLogGroupARN != nil {
+				f14val.CloudWatchLogsLogGroupArn = f14valiter.CloudWatchLogsLogGroupARN
+			}
+			if f14valiter.Enabled != nil {
+				f14val.Enabled = f14valiter.Enabled
+			}
+			f14[f14key] = *f14val
+		}
+		res.LogPublishingOptions = f14
+	}
+	if r.ko.Spec.NodeToNodeEncryptionOptions != nil {
+		f15 := &svcsdktypes.NodeToNodeEncryptionOptions{}
+		if r.ko.Spec.NodeToNodeEncryptionOptions.Enabled != nil {
+			f15.Enabled = r.ko.Spec.NodeToNodeEncryptionOptions.Enabled
+		}
+		res.NodeToNodeEncryptionOptions = f15
+	}
+	if r.ko.Spec.OffPeakWindowOptions != nil {
+		f16 := &svcsdktypes.OffPeakWindowOptions{}
+		if r.ko.Spec.OffPeakWindowOptions.Enabled != nil {
+			f16.Enabled = r.ko.Spec.OffPeakWindowOptions.Enabled
+		}
+		if r.ko.Spec.OffPeakWindowOptions.OffPeakWindow != nil {
+			f16f1 := &svcsdktypes.OffPeakWindow{}
+			if r.ko.Spec.OffPeakWindowOptions.OffPeakWindow.WindowStartTime != nil {
+				f16f1f0 := &svcsdktypes.WindowStartTime{}
+				if r.ko.Spec.OffPeakWindowOptions.OffPeakWindow.WindowStartTime.Hours != nil {
+					f16f1f0.Hours = *r.ko.Spec.OffPeakWindowOptions.OffPeakWindow.WindowStartTime.Hours
+				}
+				if r.ko.Spec.OffPeakWindowOptions.OffPeakWindow.WindowStartTime.Minutes != nil {
+					f16f1f0.Minutes = *r.ko.Spec.OffPeakWindowOptions.OffPeakWindow.WindowStartTime.Minutes
+				}
+				f16f1.WindowStartTime = f16f1f0
+			}
+			f16.OffPeakWindow = f16f1
+		}
+		res.OffPeakWindowOptions = f16
+	}
+	if r.ko.Spec.SoftwareUpdateOptions != nil {
+		f17 := &svcsdktypes.SoftwareUpdateOptions{}
+		if r.ko.Spec.SoftwareUpdateOptions.AutoSoftwareUpdateEnabled != nil {
+			f17.AutoSoftwareUpdateEnabled = r.ko.Spec.SoftwareUpdateOptions.AutoSoftwareUpdateEnabled
+		}
+		res.SoftwareUpdateOptions = f17
+	}
+	if r.ko.Spec.Tags != nil {
+		f18 := []svcsdktypes.Tag{}
+		for _, f18iter := range r.ko.Spec.Tags {
+			f18elem := &svcsdktypes.Tag{}
+			if f18iter.Key != nil {
+				f18elem.Key = f18iter.Key
+			}
+			if f18iter.Value != nil {
+				f18elem.Value = f18iter.Value
+			}
+			f18 = append(f18, *f18elem)
+		}
+		res.TagList = f18
+	}
+	if r.ko.Spec.VPCOptions != nil {
+		f19 := &svcsdktypes.VPCOptions{}
+		if r.ko.Spec.VPCOptions.SecurityGroupIDs != nil {
+			f19.SecurityGroupIds = aws.ToStringSlice(r.ko.Spec.VPCOptions.SecurityGroupIDs)
+		}
+		if r.ko.Spec.VPCOptions.SubnetIDs != nil {
+			f19.SubnetIds = aws.ToStringSlice(r.ko.Spec.VPCOptions.SubnetIDs)
+		}
+		res.VPCOptions = f19
+	}
+`
+	assert.Equal(
+		expected,
+		code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1),
+	)
+}
+
 func TestSetSDK_DynamoDB_Table_Create(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)

@@ -54,15 +54,6 @@ var shamelist = persistAPITypes{
 		"CreateModel": {
 			output: true,
 		},
-		"CreateResource": {
-			output: true,
-		},
-		"CreateRestApi": {
-			output: true,
-		},
-		"CreateStage": {
-			output: true,
-		},
 		"CreateUsagePlan": {
 			output: true,
 		},
@@ -99,9 +90,6 @@ var shamelist = persistAPITypes{
 		"GetDomainName": {
 			output: true,
 		},
-		"GetIntegration": {
-			output: true,
-		},
 		"GetIntegrationResponse": {
 			output: true,
 		},
@@ -114,16 +102,7 @@ var shamelist = persistAPITypes{
 		"GetModel": {
 			output: true,
 		},
-		"GetResource": {
-			output: true,
-		},
-		"GetRestApi": {
-			output: true,
-		},
 		"GetSdkType": {
-			output: true,
-		},
-		"GetStage": {
 			output: true,
 		},
 		"GetUsage": {
@@ -136,9 +115,6 @@ var shamelist = persistAPITypes{
 			output: true,
 		},
 		"ImportRestApi": {
-			output: true,
-		},
-		"PutIntegration": {
 			output: true,
 		},
 		"PutIntegrationResponse": {
@@ -180,9 +156,6 @@ var shamelist = persistAPITypes{
 		"UpdateDomainName": {
 			output: true,
 		},
-		"UpdateIntegration": {
-			output: true,
-		},
 		"UpdateIntegrationResponse": {
 			output: true,
 		},
@@ -193,15 +166,6 @@ var shamelist = persistAPITypes{
 			output: true,
 		},
 		"UpdateModel": {
-			output: true,
-		},
-		"UpdateResource": {
-			output: true,
-		},
-		"UpdateRestApi": {
-			output: true,
-		},
-		"UpdateStage": {
 			output: true,
 		},
 		"UpdateUsage": {
@@ -310,31 +274,6 @@ var shamelist = persistAPITypes{
 			output: true,
 		},
 	},
-	"EFS": {
-		"CreateFileSystem": {
-			output: true,
-		},
-		"CreateMountTarget": {
-			output: true,
-		},
-	},
-	"ElastiCache": {
-		"AddTagsToResource": {
-			output: true,
-		},
-		"ListTagsForResource": {
-			output: true,
-		},
-		"ModifyCacheParameterGroup": {
-			output: true,
-		},
-		"RemoveTagsFromResource": {
-			output: true,
-		},
-		"ResetCacheParameterGroup": {
-			output: true,
-		},
-	},
 	"ElasticBeanstalk": {
 		"ComposeEnvironments": {
 			output: true,
@@ -408,45 +347,7 @@ var shamelist = persistAPITypes{
 			output: true,
 		},
 	},
-	"KMS": {
-		"ListGrants": {
-			output: true,
-		},
-		"ListRetirableGrants": {
-			output: true,
-		},
-	},
 	"Lambda": {
-		"CreateAlias": {
-			output: true,
-		},
-		"CreateEventSourceMapping": {
-			output: true,
-		},
-		"CreateFunction": {
-			output: true,
-		},
-		"DeleteEventSourceMapping": {
-			output: true,
-		},
-		"GetAlias": {
-			output: true,
-		},
-		"GetEventSourceMapping": {
-			output: true,
-		},
-		"GetFunctionConfiguration": {
-			output: true,
-		},
-		"PublishVersion": {
-			output: true,
-		},
-		"UpdateAlias": {
-			output: true,
-		},
-		"UpdateEventSourceMapping": {
-			output: true,
-		},
 		"UpdateFunctionCode": {
 			output: true,
 		},
@@ -455,21 +356,12 @@ var shamelist = persistAPITypes{
 		},
 	},
 	"MQ": {
-		"CreateBroker": {
-			output: true,
-		},
 		"CreateConfiguration": {
 			input:  true,
 			output: true,
 		},
 		"CreateUser": {
 			input: true,
-		},
-		"DeleteBroker": {
-			output: true,
-		},
-		"DescribeBroker": {
-			output: true,
 		},
 		"DescribeUser": {
 			output: true,
@@ -487,10 +379,6 @@ var shamelist = persistAPITypes{
 			output: true,
 		},
 		"ListUsers": {
-			output: true,
-		},
-		"UpdateBroker": {
-			input:  true,
 			output: true,
 		},
 		"UpdateConfiguration": {

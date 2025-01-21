@@ -30,6 +30,7 @@ type ShapeRef struct {
 	API           *API   `json:"-"`
 	Shape         *Shape `json:"-"`
 	Documentation string `json:"-"`
+	DefaultValue  string `json:"-"`
 	ShapeName     string `json:"shape"`
 	Location      string
 	LocationName  string
@@ -81,8 +82,8 @@ type ShapeRef struct {
 type Shape struct {
 	API           *API `json:"-"`
 	ShapeName     string
-	Documentation string       `json:"-"`
-	DefaultValue  *interface{} `json:"-"`
+	Documentation string `json:"-"`
+	DefaultValue  string `json:"-"`
 
 	// References of struct members will include their originally modeled
 	// member name for cross references.
@@ -421,13 +422,13 @@ func goType(s *Shape, withPkgName bool) string {
 		return "aws.JSONValue"
 	case "list":
 		return "[]" + goType(s.MemberRef.Shape, withPkgName)
-	case "boolean":
+	case "boolean", "primitiveBoolean":
 		return "*bool"
 	case "string", "character":
 		return "*string"
 	case "blob":
 		return "[]byte"
-	case "byte", "short", "integer", "long":
+	case "byte", "short", "integer", "long", "primitiveInteger":
 		return "*int64"
 	case "float", "double":
 		return "*float64"
@@ -1055,8 +1056,12 @@ func (s *Shape) IsEnum() bool {
 }
 
 // HasDefaultValue returns whether this shape has a default value
+func (s *ShapeRef) HasDefaultValue() bool {
+	return s.DefaultValue != "<nil>" && s.Shape.HasDefaultValue()
+}
+
 func (s *Shape) HasDefaultValue() bool {
-	return s.DefaultValue != nil
+	return s.DefaultValue != ""
 }
 
 // IsRequired returns if member is a required field. Required fields are fields

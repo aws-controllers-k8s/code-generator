@@ -39,7 +39,7 @@ func lambdaSDKAPI(t *testing.T, cfg config.Config) *model.SDKAPI {
 	}
 	path := filepath.Clean("../testdata")
 	sdkHelper := sdk.NewHelper(path, cfg)
-	lambda, err := sdkHelper.APIV2("lambda")
+	lambda, err := sdkHelper.API("lambda")
 	if err != nil {
 		t.Fatal(err)
 	}
