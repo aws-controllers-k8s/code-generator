@@ -34,8 +34,6 @@ type Shape struct {
 
 // ShapeRef defines the usage of a shape within the API
 type ShapeRef struct {
-	API       *API   `json:"-"`
-	Shape     *Shape `json:"-"`
 	ShapeName string `json:"target"`
 	Traits    map[string]interface{}
 }
