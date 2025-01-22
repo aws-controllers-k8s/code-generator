@@ -328,23 +328,6 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 {{- end }}
 }
 
-{{- if .CRD.HasImmutableFieldChanges }}
-// getImmutableFieldChanges returns list of immutable fields from the
-func (rm *resourceManager) getImmutableFieldChanges(
-	delta *ackcompare.Delta,
-) []string {
-	var fields []string;
-{{- $prefixConfig := .CRD.Config.PrefixConfig }}
-	{{- range $immutableField := .CRD.GetImmutableFieldPaths }}
-{{- $specPrefix := $prefixConfig.SpecField }}
-		if delta.DifferentAt("{{ TrimPrefix $specPrefix "." }}.{{$immutableField}}") {
-			fields = append(fields,"{{$immutableField}}")
-		}
-	{{- end }}
-
-	return fields
-}
-{{- end }}
 {{- if $hookCode := Hook .CRD "sdk_file_end" }}
 {{ $hookCode }}
 {{- end }}
