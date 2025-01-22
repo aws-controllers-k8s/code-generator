@@ -350,7 +350,7 @@ func SetSDK(
 			} else {
 
 				memberVarName := fmt.Sprintf("f%d", memberIndex)
-				
+
 				// fmt.Println(memberShape.ShapeName)
 				out += varEmptyConstructorSDKType(
 					cfg, r,
@@ -365,6 +365,7 @@ func SetSDK(
 					sourceFieldPath,
 					sourceAdaptedVarName,
 					memberShapeRef,
+					false,
 					opType,
 					indentLevel+1,
 				)
@@ -375,6 +376,7 @@ func SetSDK(
 					inputShape.Type,
 					sourceFieldPath,
 					memberVarName,
+					false,
 					memberShapeRef,
 					indentLevel+1,
 				)
@@ -396,6 +398,7 @@ func SetSDK(
 					inputShape.Type,
 					sourceFieldPath,
 					sourceAdaptedVarName,
+					false,
 					memberShapeRef,
 					indentLevel+1,
 				)
@@ -578,6 +581,7 @@ func SetSDKGetAttributes(
 			inputShape.Type,
 			cleanMemberName,
 			sourceVarPath,
+			false,
 			field.ShapeRef,
 			indentLevel+1,
 		)
@@ -788,6 +792,7 @@ func SetSDKSetAttributes(
 			inputShape.Type,
 			cleanMemberName,
 			sourceVarPath,
+			false,
 			field.ShapeRef,
 			indentLevel+1,
 		)
@@ -901,6 +906,8 @@ func setSDKReadMany(
 				indentLevel+1,
 			)
 
+			/// fix here something is very wrong!!!
+
 			out += fmt.Sprintf("%s\t%s = append(%s, *%s)\n", indent,
 				memberVarName, memberVarName, resVarPath)
 
@@ -912,6 +919,7 @@ func setSDKReadMany(
 				inputShape.Type,
 				sourceVarName,
 				memberVarName,
+				false,
 				memberShapeRef,
 				indentLevel+1,
 			)
@@ -925,6 +933,7 @@ func setSDKReadMany(
 				inputShape.Type,
 				sourceVarName,
 				resVarPath,
+				false,
 				memberShapeRef,
 				indentLevel+1,
 			)
@@ -954,6 +963,7 @@ func setSDKForContainer(
 	sourceVarName string,
 	// ShapeRef of the target struct field
 	targetShapeRef *awssdkmodel.ShapeRef,
+	isListMember bool,
 	op model.OpType,
 	indentLevel int,
 ) string {
@@ -1018,6 +1028,7 @@ func setSDKForContainer(
 			targetShapeRef.Shape.Type,
 			sourceFieldPath,
 			sourceVarName,
+			isListMember,
 			targetShapeRef,
 			indentLevel,
 		)
@@ -1185,6 +1196,7 @@ func SetSDKForStruct(
 					memberFieldPath,
 					sourceAdaptedVarName,
 					memberShapeRef,
+					false,
 					op,
 					indentLevel+1,
 				)
@@ -1195,6 +1207,7 @@ func SetSDKForStruct(
 					targetShape.Type,
 					memberFieldPath,
 					memberVarName,
+					false,
 					memberShapeRef,
 					indentLevel+1,
 				)
@@ -1217,6 +1230,7 @@ func SetSDKForStruct(
 					targetShape.Type,
 					memberFieldPath,
 					sourceAdaptedVarName,
+					false,
 					memberShapeRef,
 					indentLevel+1,
 				)
@@ -1282,6 +1296,7 @@ func setSDKForSlice(
 			sourceFieldPath,
 			iterVarName,
 			&targetShape.MemberRef,
+			true,
 			op,
 			indentLevel+1,
 		)
@@ -1363,12 +1378,13 @@ func setSDKForMap(
 		sourceFieldPath,
 		valIterVarName,
 		&targetShape.ValueRef,
+		false,
 		op,
 		indentLevel+1,
 	)
 
 	dereference := "*"
-	if !targetShapeRef.HasDefaultValue() || targetShape.Type != "structure" {
+	if !targetShapeRef.HasDefaultValue() && targetShape.ValueRef.Shape.Type != "structure" {
 		dereference = ""
 	}
 	// f0[f0key] = f0val
@@ -1389,8 +1405,8 @@ func varEmptyConstructorSDKType(
 	out := ""
 	indent := strings.Repeat("\t", indentLevel)
 	goType := shape.GoTypeWithPkgName()
-	if shape.Type == "integer" && shape.HasDefaultValue() {
-		goType = strings.TrimSuffix(goType, "64") + "32"
+	if shape.Type == "integer" {
+		goType = "int32"
 	}
 	goType = model.ReplacePkgName(goType, r.SDKAPIPackageName(), "svcsdktypes", false)
 	switch shape.Type {
@@ -1404,23 +1420,23 @@ func varEmptyConstructorSDKType(
 			out += fmt.Sprintf("%s%s := &%s{}\n", indent, varName, goType)
 		}
 	case "list":
-		if goType == "[]int64" && shape.MemberRef.Shape.HasDefaultValue() {
+		if shape.MemberRef.Shape.Type == "integer" {
 			goType = "[]int32"
 		}
-		if shape.MemberRef.Shape != nil && shape.MemberRef.Shape.IsEnum() {
+		if shape.MemberRef.Shape.IsEnum() {
 			goType = "[]svcsdktypes." + shape.MemberRef.ShapeName
+		} else if shape.MemberRef.Shape.Type == "string" {
+			goType = "[]string"
 		}
 		out += fmt.Sprintf("%s%s := %s{}\n", indent, varName, goType)
 	case "map":
 		// f0 := []*string{}
 
-		if goType == "[]*string" || goType == "[]*int32" || goType == "[]*int64" {
-
-			out += fmt.Sprintf("%s%s := %s{}\n", indent, varName, strings.ReplaceAll(goType, "*", ""))
-		} else {
-			out += fmt.Sprintf("%s%s := %s{}\n", indent, varName, goType)
+		if goType == "map[string][]*string" || goType == "map[string][]*int32" || goType == "map[string][]*int64" {
+			goType = "map[string][]" + strings.TrimPrefix(goType, "map[string][]*")
 		}
-
+		out += fmt.Sprintf("%s%s := %s{}\n", indent, varName, goType)
+		
 	default:
 		// var f0 string
 		out += fmt.Sprintf("%svar %s %s\n", indent, varName, goType)
@@ -1500,6 +1516,7 @@ func setSDKForScalar(
 	sourceFieldPath string,
 	// The struct or struct field that we access our source value from
 	sourceVarName string,
+	isListMember bool,
 	shapeRef *awssdkmodel.ShapeRef,
 	indentLevel int,
 ) string {
@@ -1521,9 +1538,10 @@ func setSDKForScalar(
 		out += fmt.Sprintf("%sif %s > math.MaxInt32 || %s < math.MinInt32 {\n", indent, setTo, setTo)
 		out += fmt.Sprintf("%s\treturn nil, fmt.Errorf(\"field is too large\")\n", indent)
 		out += fmt.Sprintf("%s}\n", indent)
-		tempVar := shapeRef.LocationName + "temp"
+		ogShapeName := names.New(shapeRef.OrigShapeName)
+		tempVar := ogShapeName.CamelLower + "Copy"
 		out += fmt.Sprintf("%s%s := int32(%s)\n", indent, tempVar, setTo)
-		if !shape.HasDefaultValue() {
+		if !shape.HasDefaultValue() && !isListMember {
 			tempVar = "&" + tempVar
 		}
 		out += fmt.Sprintf("%s%s = %s\n", indent, targetVarPath, tempVar)
