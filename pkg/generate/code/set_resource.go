@@ -2122,40 +2122,6 @@ func setResourceForScalar(
 
 	}
 
-	switch shape.Type {
-	case "list":
-		out += fmt.Sprintf("%s%s = %s\n", indent, targetVar, setTo)
-	case "integer":
-		out += fmt.Sprintf("%s%stemp := int64(*%s)\n", indent, shape.ShapeName, setTo)
-		out += fmt.Sprintf("%s%s = &%stemp\n", indent, targetVar, shape.ShapeName)
-	default:
-		if shape.HasDefaultValue() {
-			out += fmt.Sprintf("%s%s = &%s\n", indent, targetVar, setTo)
-		} else if shape.IsEnum() {
-			out += fmt.Sprintf("%s%s = aws.String(string(%s))\n", indent, targetVar, strings.TrimPrefix(setTo, "*"))
-		} else {
-			out += fmt.Sprintf("%s%s = %s\n", indent, targetVar, setTo)
-		}
-	}
-
-	// This is for AWS-SDK-GO-V2
-	// if shape.IsEnum() {
-	// 	out += fmt.Sprintf("%s%s = aws.String(string(%s))\n", indent, targetVar, strings.TrimPrefix(setTo, "*"))
-	// 	// } else if shape.Type == "integer" {
-
-	// 	// 	out += fmt.Sprintf("%s%s := int64(%s)\n", indent, "number", setTo)
-	// 	// 	out += fmt.Sprintf("%s%s = &%s\n", indent, targetVar, "number")
-
-	// 	// This is for edge case - in efs  controller
-	// 	// targetvar is int64 and rest of targetvar are *int64 - EFS controller
-	// } else if shape.HasDefaultValue() {
-	// 	out += fmt.Sprintf("%s%s = &%s\n", indent, targetVar, setTo)
-	// } else if shape.Type == "integer" {
-	// 	out += fmt.Sprintf("%stemp := int64(*%s)\n", indent, setTo)
-	// 	out += fmt.Sprintf("%s%s = &temp\n", indent, targetVar)
-	// }else {
-	// 	out += fmt.Sprintf("%s%s = %s\n", indent, targetVar, setTo)
-	// }
 	address := ""
 
 	if shape.Type == "long" && isListMember {
