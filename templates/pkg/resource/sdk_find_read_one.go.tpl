@@ -34,10 +34,10 @@ func (rm *resourceManager) sdkFind(
 {{- end }}
 	rm.metrics.RecordAPICall("READ_ONE", "{{ .CRD.Ops.ReadOne.ExportedName }}", err)
 	if err != nil {
-		if reqErr, ok := ackerr.AWSRequestFailure(err); ok && reqErr.StatusCode() == 404 {
+		if reqErr, ok := ackerr.AWSRequestFailure(err); ok && reqErr.ErrorFault() == 404 {
 			return nil, ackerr.NotFound
         }
-		if strings.Contains(err.Error(), "{{ ResourceExceptionCode .CRD 404 }}" {{ GoCodeSetExceptionMessageCheck .CRD 404 }}) {
+		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.ErrorCode() == "{{ ResourceExceptionCode .CRD 404 }}" {{ GoCodeSetExceptionMessageCheck .CRD 404 }} {
 			return nil, ackerr.NotFound
 		}
 		return nil, err

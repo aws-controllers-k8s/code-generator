@@ -184,10 +184,10 @@ func TestSetSDK_OpenSearch_Domain_Create(t *testing.T) {
 			}
 			if r.ko.Spec.AdvancedSecurityOptions.SAMLOptions.SessionTimeoutMinutes != nil {
 				if *r.ko.Spec.AdvancedSecurityOptions.SAMLOptions.SessionTimeoutMinutes > math.MaxInt32 || *r.ko.Spec.AdvancedSecurityOptions.SAMLOptions.SessionTimeoutMinutes < math.MinInt32 {
-					return nil, fmt.Errorf("field is too large")
+					return nil, fmt.Errorf("error: field SessionTimeoutMinutes is of type int32")
 				}
-				temp := int32(*r.ko.Spec.AdvancedSecurityOptions.SAMLOptions.SessionTimeoutMinutes)
-				f3f5.SessionTimeoutMinutes = &temp
+				sessionTimeoutMinutesCopy := int32(*r.ko.Spec.AdvancedSecurityOptions.SAMLOptions.SessionTimeoutMinutes)
+				f3f5.SessionTimeoutMinutes = &sessionTimeoutMinutesCopy
 			}
 			if r.ko.Spec.AdvancedSecurityOptions.SAMLOptions.SubjectKey != nil {
 				f3f5.SubjectKey = r.ko.Spec.AdvancedSecurityOptions.SAMLOptions.SubjectKey
@@ -225,26 +225,23 @@ func TestSetSDK_OpenSearch_Domain_Create(t *testing.T) {
 			}
 			f4.MaintenanceSchedules = f4f1
 		}
-		if r.ko.Spec.AutoTuneOptions.UseOffPeakWindow != nil {
-			f4.UseOffPeakWindow = r.ko.Spec.AutoTuneOptions.UseOffPeakWindow
-		}
-		res.AutoTuneOptions = f4
-	}
-	if r.ko.Spec.ClusterConfig != nil {
-		f5 := &svcsdktypes.ClusterConfig{}
-		if r.ko.Spec.ClusterConfig.ColdStorageOptions != nil {
-			f5f0 := &svcsdktypes.ColdStorageOptions{}
-			if r.ko.Spec.ClusterConfig.ColdStorageOptions.Enabled != nil {
-				f5f0.Enabled = r.ko.Spec.ClusterConfig.ColdStorageOptions.Enabled
+		if r.ko.Spec.LaunchTemplateData.CapacityReservationSpecification != nil {
+			f2f1 := &svcsdk.LaunchTemplateCapacityReservationSpecificationRequest{}
+			if r.ko.Spec.LaunchTemplateData.CapacityReservationSpecification.CapacityReservationPreference != nil {
+				f2f1.SetCapacityReservationPreference(*r.ko.Spec.LaunchTemplateData.CapacityReservationSpecification.CapacityReservationPreference)
 			}
-			f5.ColdStorageOptions = f5f0
-		}
-		if r.ko.Spec.ClusterConfig.DedicatedMasterCount != nil {
-			if *r.ko.Spec.ClusterConfig.DedicatedMasterCount > math.MaxInt32 || *r.ko.Spec.ClusterConfig.DedicatedMasterCount < math.MinInt32 {
-				return nil, fmt.Errorf("field is too large")
+			if r.ko.Spec.LaunchTemplateData.CapacityReservationSpecification.CapacityReservationTarget != nil {
+				f2f1f1 := &svcsdk.CapacityReservationTarget{}
+				if r.ko.Spec.LaunchTemplateData.CapacityReservationSpecification.CapacityReservationTarget.CapacityReservationID != nil {
+					f2f1f1.SetCapacityReservationId(*r.ko.Spec.LaunchTemplateData.CapacityReservationSpecification.CapacityReservationTarget.CapacityReservationID)
+				}
+				if r.ko.Spec.LaunchTemplateData.CapacityReservationSpecification.CapacityReservationTarget.CapacityReservationResourceGroupARN != nil {
+					f2f1f1.SetCapacityReservationResourceGroupArn(*r.ko.Spec.LaunchTemplateData.CapacityReservationSpecification.CapacityReservationTarget.CapacityReservationResourceGroupARN)
+				}
+				f2f1.SetCapacityReservationTarget(f2f1f1)
 			}
-			temp := int32(*r.ko.Spec.ClusterConfig.DedicatedMasterCount)
-			f5.DedicatedMasterCount = &temp
+			dedicatedMasterCountCopy := int32(*r.ko.Spec.ClusterConfig.DedicatedMasterCount)
+			f5.DedicatedMasterCount = &dedicatedMasterCountCopy
 		}
 		if r.ko.Spec.ClusterConfig.DedicatedMasterEnabled != nil {
 			f5.DedicatedMasterEnabled = r.ko.Spec.ClusterConfig.DedicatedMasterEnabled
@@ -254,10 +251,10 @@ func TestSetSDK_OpenSearch_Domain_Create(t *testing.T) {
 		}
 		if r.ko.Spec.ClusterConfig.InstanceCount != nil {
 			if *r.ko.Spec.ClusterConfig.InstanceCount > math.MaxInt32 || *r.ko.Spec.ClusterConfig.InstanceCount < math.MinInt32 {
-				return nil, fmt.Errorf("field is too large")
+				return nil, fmt.Errorf("error: field InstanceCount is of type int32")
 			}
-			temp := int32(*r.ko.Spec.ClusterConfig.InstanceCount)
-			f5.InstanceCount = &temp
+			instanceCountCopy := int32(*r.ko.Spec.ClusterConfig.InstanceCount)
+			f5.InstanceCount = &instanceCountCopy
 		}
 		if r.ko.Spec.ClusterConfig.InstanceType != nil {
 			f5.InstanceType = svcsdktypes.OpenSearchPartitionInstanceType(*r.ko.Spec.ClusterConfig.InstanceType)
@@ -273,10 +270,10 @@ func TestSetSDK_OpenSearch_Domain_Create(t *testing.T) {
 					f5f7elemf0 := &svcsdktypes.NodeConfig{}
 					if f5f7iter.NodeConfig.Count != nil {
 						if *f5f7iter.NodeConfig.Count > math.MaxInt32 || *f5f7iter.NodeConfig.Count < math.MinInt32 {
-							return nil, fmt.Errorf("field is too large")
+							return nil, fmt.Errorf("error: field Count is of type int32")
 						}
-						temp := int32(*f5f7iter.NodeConfig.Count)
-						f5f7elemf0.Count = &temp
+						countCopy := int32(*f5f7iter.NodeConfig.Count)
+						f5f7elemf0.Count = &countCopy
 					}
 					if f5f7iter.NodeConfig.Enabled != nil {
 						f5f7elemf0.Enabled = f5f7iter.NodeConfig.Enabled
@@ -295,10 +292,10 @@ func TestSetSDK_OpenSearch_Domain_Create(t *testing.T) {
 		}
 		if r.ko.Spec.ClusterConfig.WarmCount != nil {
 			if *r.ko.Spec.ClusterConfig.WarmCount > math.MaxInt32 || *r.ko.Spec.ClusterConfig.WarmCount < math.MinInt32 {
-				return nil, fmt.Errorf("field is too large")
+				return nil, fmt.Errorf("error: field WarmCount is of type int32")
 			}
-			temp := int32(*r.ko.Spec.ClusterConfig.WarmCount)
-			f5.WarmCount = &temp
+			warmCountCopy := int32(*r.ko.Spec.ClusterConfig.WarmCount)
+			f5.WarmCount = &warmCountCopy
 		}
 		if r.ko.Spec.ClusterConfig.WarmEnabled != nil {
 			f5.WarmEnabled = r.ko.Spec.ClusterConfig.WarmEnabled
@@ -310,10 +307,10 @@ func TestSetSDK_OpenSearch_Domain_Create(t *testing.T) {
 			f5f11 := &svcsdktypes.ZoneAwarenessConfig{}
 			if r.ko.Spec.ClusterConfig.ZoneAwarenessConfig.AvailabilityZoneCount != nil {
 				if *r.ko.Spec.ClusterConfig.ZoneAwarenessConfig.AvailabilityZoneCount > math.MaxInt32 || *r.ko.Spec.ClusterConfig.ZoneAwarenessConfig.AvailabilityZoneCount < math.MinInt32 {
-					return nil, fmt.Errorf("field is too large")
+					return nil, fmt.Errorf("error: field AvailabilityZoneCount is of type int32")
 				}
-				temp := int32(*r.ko.Spec.ClusterConfig.ZoneAwarenessConfig.AvailabilityZoneCount)
-				f5f11.AvailabilityZoneCount = &temp
+				availabilityZoneCountCopy := int32(*r.ko.Spec.ClusterConfig.ZoneAwarenessConfig.AvailabilityZoneCount)
+				f5f11.AvailabilityZoneCount = &availabilityZoneCountCopy
 			}
 			f5.ZoneAwarenessConfig = f5f11
 		}
@@ -367,24 +364,24 @@ func TestSetSDK_OpenSearch_Domain_Create(t *testing.T) {
 		}
 		if r.ko.Spec.EBSOptions.IOPS != nil {
 			if *r.ko.Spec.EBSOptions.IOPS > math.MaxInt32 || *r.ko.Spec.EBSOptions.IOPS < math.MinInt32 {
-				return nil, fmt.Errorf("field is too large")
+				return nil, fmt.Errorf("error: field Iops is of type int32")
 			}
-			temp := int32(*r.ko.Spec.EBSOptions.IOPS)
-			f9.Iops = &temp
+			iopsCopy := int32(*r.ko.Spec.EBSOptions.IOPS)
+			f9.Iops = &iopsCopy
 		}
 		if r.ko.Spec.EBSOptions.Throughput != nil {
 			if *r.ko.Spec.EBSOptions.Throughput > math.MaxInt32 || *r.ko.Spec.EBSOptions.Throughput < math.MinInt32 {
-				return nil, fmt.Errorf("field is too large")
+				return nil, fmt.Errorf("error: field Throughput is of type int32")
 			}
-			temp := int32(*r.ko.Spec.EBSOptions.Throughput)
-			f9.Throughput = &temp
+			throughputCopy := int32(*r.ko.Spec.EBSOptions.Throughput)
+			f9.Throughput = &throughputCopy
 		}
 		if r.ko.Spec.EBSOptions.VolumeSize != nil {
 			if *r.ko.Spec.EBSOptions.VolumeSize > math.MaxInt32 || *r.ko.Spec.EBSOptions.VolumeSize < math.MinInt32 {
-				return nil, fmt.Errorf("field is too large")
+				return nil, fmt.Errorf("error: field VolumeSize is of type int32")
 			}
-			temp := int32(*r.ko.Spec.EBSOptions.VolumeSize)
-			f9.VolumeSize = &temp
+			volumeSizeCopy := int32(*r.ko.Spec.EBSOptions.VolumeSize)
+			f9.VolumeSize = &volumeSizeCopy
 		}
 		if r.ko.Spec.EBSOptions.VolumeType != nil {
 			f9.VolumeType = svcsdktypes.VolumeType(*r.ko.Spec.EBSOptions.VolumeType)
@@ -1205,10 +1202,10 @@ func TestSetSDK_MQ_Broker_newUpdateRequest_OmitUnchangedValues(t *testing.T) {
 			}
 			if r.ko.Spec.Configuration.Revision != nil {
 				if *r.ko.Spec.Configuration.Revision > math.MaxInt32 || *r.ko.Spec.Configuration.Revision < math.MinInt32 {
-					return nil, fmt.Errorf("field is too large")
+					return nil, fmt.Errorf("error: field Revision is of type int32")
 				}
-				temp := int32(*r.ko.Spec.Configuration.Revision)
-				f3.Revision = &temp
+				revisionCopy := int32(*r.ko.Spec.Configuration.Revision)
+				f3.Revision = &revisionCopy
 			}
 			res.Configuration = f3
 		}
@@ -1313,10 +1310,10 @@ func TestSetSDK_RDS_DBInstance_Create(t *testing.T) {
 	expected := `
 	if r.ko.Spec.AllocatedStorage != nil {
 		if *r.ko.Spec.AllocatedStorage > math.MaxInt32 || *r.ko.Spec.AllocatedStorage < math.MinInt32 {
-			return nil, fmt.Errorf("field is too large")
+			return nil, fmt.Errorf("error: field AllocatedStorage is of type int32")
 		}
-		temp := int32(*r.ko.Spec.AllocatedStorage)
-		res.AllocatedStorage = &temp
+		allocatedStorageCopy := int32(*r.ko.Spec.AllocatedStorage)
+		res.AllocatedStorage = &allocatedStorageCopy
 	}
 	if r.ko.Spec.AutoMinorVersionUpgrade != nil {
 		res.AutoMinorVersionUpgrade = r.ko.Spec.AutoMinorVersionUpgrade
@@ -1326,10 +1323,10 @@ func TestSetSDK_RDS_DBInstance_Create(t *testing.T) {
 	}
 	if r.ko.Spec.BackupRetentionPeriod != nil {
 		if *r.ko.Spec.BackupRetentionPeriod > math.MaxInt32 || *r.ko.Spec.BackupRetentionPeriod < math.MinInt32 {
-			return nil, fmt.Errorf("field is too large")
+			return nil, fmt.Errorf("error: field BackupRetentionPeriod is of type int32")
 		}
-		temp := int32(*r.ko.Spec.BackupRetentionPeriod)
-		res.BackupRetentionPeriod = &temp
+		backupRetentionPeriodCopy := int32(*r.ko.Spec.BackupRetentionPeriod)
+		res.BackupRetentionPeriod = &backupRetentionPeriodCopy
 	}
 	if r.ko.Spec.CharacterSetName != nil {
 		res.CharacterSetName = r.ko.Spec.CharacterSetName
@@ -1384,10 +1381,10 @@ func TestSetSDK_RDS_DBInstance_Create(t *testing.T) {
 	}
 	if r.ko.Spec.IOPS != nil {
 		if *r.ko.Spec.IOPS > math.MaxInt32 || *r.ko.Spec.IOPS < math.MinInt32 {
-			return nil, fmt.Errorf("field is too large")
+			return nil, fmt.Errorf("error: field Iops is of type int32")
 		}
-		temp := int32(*r.ko.Spec.IOPS)
-		res.Iops = &temp
+		iopsCopy := int32(*r.ko.Spec.IOPS)
+		res.Iops = &iopsCopy
 	}
 	if r.ko.Spec.KMSKeyID != nil {
 		res.KmsKeyId = r.ko.Spec.KMSKeyID
@@ -1403,17 +1400,17 @@ func TestSetSDK_RDS_DBInstance_Create(t *testing.T) {
 	}
 	if r.ko.Spec.MaxAllocatedStorage != nil {
 		if *r.ko.Spec.MaxAllocatedStorage > math.MaxInt32 || *r.ko.Spec.MaxAllocatedStorage < math.MinInt32 {
-			return nil, fmt.Errorf("field is too large")
+			return nil, fmt.Errorf("error: field MaxAllocatedStorage is of type int32")
 		}
-		temp := int32(*r.ko.Spec.MaxAllocatedStorage)
-		res.MaxAllocatedStorage = &temp
+		maxAllocatedStorageCopy := int32(*r.ko.Spec.MaxAllocatedStorage)
+		res.MaxAllocatedStorage = &maxAllocatedStorageCopy
 	}
 	if r.ko.Spec.MonitoringInterval != nil {
 		if *r.ko.Spec.MonitoringInterval > math.MaxInt32 || *r.ko.Spec.MonitoringInterval < math.MinInt32 {
-			return nil, fmt.Errorf("field is too large")
+			return nil, fmt.Errorf("error: field MonitoringInterval is of type int32")
 		}
-		temp := int32(*r.ko.Spec.MonitoringInterval)
-		res.MonitoringInterval = &temp
+		monitoringIntervalCopy := int32(*r.ko.Spec.MonitoringInterval)
+		res.MonitoringInterval = &monitoringIntervalCopy
 	}
 	if r.ko.Spec.MonitoringRoleARN != nil {
 		res.MonitoringRoleArn = r.ko.Spec.MonitoringRoleARN
@@ -1429,17 +1426,17 @@ func TestSetSDK_RDS_DBInstance_Create(t *testing.T) {
 	}
 	if r.ko.Spec.PerformanceInsightsRetentionPeriod != nil {
 		if *r.ko.Spec.PerformanceInsightsRetentionPeriod > math.MaxInt32 || *r.ko.Spec.PerformanceInsightsRetentionPeriod < math.MinInt32 {
-			return nil, fmt.Errorf("field is too large")
+			return nil, fmt.Errorf("error: field PerformanceInsightsRetentionPeriod is of type int32")
 		}
-		temp := int32(*r.ko.Spec.PerformanceInsightsRetentionPeriod)
-		res.PerformanceInsightsRetentionPeriod = &temp
+		performanceInsightsRetentionPeriodCopy := int32(*r.ko.Spec.PerformanceInsightsRetentionPeriod)
+		res.PerformanceInsightsRetentionPeriod = &performanceInsightsRetentionPeriodCopy
 	}
 	if r.ko.Spec.Port != nil {
 		if *r.ko.Spec.Port > math.MaxInt32 || *r.ko.Spec.Port < math.MinInt32 {
-			return nil, fmt.Errorf("field is too large")
+			return nil, fmt.Errorf("error: field Port is of type int32")
 		}
-		temp := int32(*r.ko.Spec.Port)
-		res.Port = &temp
+		portCopy := int32(*r.ko.Spec.Port)
+		res.Port = &portCopy
 	}
 	if r.ko.Spec.PreferredBackupWindow != nil {
 		res.PreferredBackupWindow = r.ko.Spec.PreferredBackupWindow
@@ -1463,10 +1460,10 @@ func TestSetSDK_RDS_DBInstance_Create(t *testing.T) {
 	}
 	if r.ko.Spec.PromotionTier != nil {
 		if *r.ko.Spec.PromotionTier > math.MaxInt32 || *r.ko.Spec.PromotionTier < math.MinInt32 {
-			return nil, fmt.Errorf("field is too large")
+			return nil, fmt.Errorf("error: field PromotionTier is of type int32")
 		}
-		temp := int32(*r.ko.Spec.PromotionTier)
-		res.PromotionTier = &temp
+		promotionTierCopy := int32(*r.ko.Spec.PromotionTier)
+		res.PromotionTier = &promotionTierCopy
 	}
 	if r.ko.Spec.PubliclyAccessible != nil {
 		res.PubliclyAccessible = r.ko.Spec.PubliclyAccessible
@@ -1647,9 +1644,9 @@ func TestSetSDK_SNS_Topic_GetAttributes(t *testing.T) {
 	// field in the TopicStatus struct
 	expected := `
 	if r.ko.Status.ACKResourceMetadata != nil && r.ko.Status.ACKResourceMetadata.ARN != nil {
-		res.TopicArn = (string(*r.ko.Status.ACKResourceMetadata.ARN))
+		res.TopicArn = aws.String(string(*r.ko.Status.ACKResourceMetadata.ARN))
 	} else {
-		res.TopicArn = rm.ARNFromName(*r.ko.Spec.Name)
+		res.TopicArn = aws.String(rm.ARNFromName(*r.ko.Spec.Name))
 	}
 `
 	assert.Equal(
@@ -1777,10 +1774,10 @@ func TestSetSDK_MQ_Broker_Create(t *testing.T) {
 		}
 		if r.ko.Spec.Configuration.Revision != nil {
 			if *r.ko.Spec.Configuration.Revision > math.MaxInt32 || *r.ko.Spec.Configuration.Revision < math.MinInt32 {
-				return nil, fmt.Errorf("field is too large")
+				return nil, fmt.Errorf("error: field Revision is of type int32")
 			}
-			temp := int32(*r.ko.Spec.Configuration.Revision)
-			f3.Revision = &temp
+			revisionCopy := int32(*r.ko.Spec.Configuration.Revision)
+			f3.Revision = &revisionCopy
 		}
 		res.Configuration = f3
 	}
@@ -1900,7 +1897,7 @@ func TestSetSDK_MQ_Broker_Create(t *testing.T) {
 					return nil, ackrequeue.Needed(err)
 				}
 				if tmpSecret != "" {
-					f18elem.SetPassword(tmpSecret)
+					f18elem.Password = aws.String(tmpSecret)
 				}
 			}
 			if f18iter.Username != nil {
@@ -2238,10 +2235,10 @@ func TestSetSDK_WAFv2_RuleGroup_Create(t *testing.T) {
 						}
 						if f4iter.Action.Block.CustomResponse.ResponseCode != nil {
 							if *f4iter.Action.Block.CustomResponse.ResponseCode > math.MaxInt32 || *f4iter.Action.Block.CustomResponse.ResponseCode < math.MinInt32 {
-								return nil, fmt.Errorf("field is too large")
+								return nil, fmt.Errorf("error: field ResponseCode is of type int32")
 							}
-							temp := int32(*f4iter.Action.Block.CustomResponse.ResponseCode)
-							f4elemf0f1f0.ResponseCode = &temp
+							responseCodeCopy := int32(*f4iter.Action.Block.CustomResponse.ResponseCode)
+							f4elemf0f1f0.ResponseCode = &responseCodeCopy
 						}
 						if f4iter.Action.Block.CustomResponse.ResponseHeaders != nil {
 							f4elemf0f1f0f2 := []svcsdktypes.CustomHTTPHeader{}
@@ -2386,10 +2383,10 @@ func TestSetSDK_WAFv2_RuleGroup_Create(t *testing.T) {
 			}
 			if f4iter.Priority != nil {
 				if *f4iter.Priority > math.MaxInt32 || *f4iter.Priority < math.MinInt32 {
-					return nil, fmt.Errorf("field is too large")
+					return nil, fmt.Errorf("error: field Priority is of type int32")
 				}
-				temp := int32(*f4iter.Priority)
-				f4elem.Priority = temp
+				priorityCopy := int32(*f4iter.Priority)
+				f4elem.Priority = priorityCopy
 			}
 			if f4iter.RuleLabels != nil {
 				f4elemf6 := []svcsdktypes.Label{}
@@ -2545,10 +2542,10 @@ func TestSetSDK_WAFv2_RuleGroup_Create(t *testing.T) {
 							f4elemf7f1f3elem := &svcsdktypes.TextTransformation{}
 							if f4elemf7f1f3iter.Priority != nil {
 								if *f4elemf7f1f3iter.Priority > math.MaxInt32 || *f4elemf7f1f3iter.Priority < math.MinInt32 {
-									return nil, fmt.Errorf("field is too large")
+									return nil, fmt.Errorf("error: field Priority is of type int32")
 								}
-								temp := int32(*f4elemf7f1f3iter.Priority)
-								f4elemf7f1f3elem.Priority = temp
+								priorityCopy := int32(*f4elemf7f1f3iter.Priority)
+								f4elemf7f1f3elem.Priority = priorityCopy
 							}
 							if f4elemf7f1f3iter.Type != nil {
 								f4elemf7f1f3elem.Type = svcsdktypes.TextTransformationType(*f4elemf7f1f3iter.Type)
@@ -2735,9 +2732,9 @@ func TestSetSDK_WAFv2_RuleGroup_Create(t *testing.T) {
 											for _, f4elemf7f5f1elemf0f4f3f0iter := range f4elemf7f5f1iter.AWSManagedRulesACFPRuleSet.ResponseInspection.StatusCode.FailureCodes {
 												var f4elemf7f5f1elemf0f4f3f0elem int32
 												if *f4elemf7f5f1elemf0f4f3f0iter > math.MaxInt32 || *f4elemf7f5f1elemf0f4f3f0iter < math.MinInt32 {
-													return nil, fmt.Errorf("field is too large")
+													return nil, fmt.Errorf("error: field ResponseCode is of type int32")
 												}
-												temp := int32(*f4elemf7f5f1elemf0f4f3f0iter)
+												priorityCopy := int32(*f4elemf7f5f1elemf0f4f3f0iter)
 												f4elemf7f5f1elemf0f4f3f0elem = temp
 												f4elemf7f5f1elemf0f4f3f0 = append(f4elemf7f5f1elemf0f4f3f0, f4elemf7f5f1elemf0f4f3f0elem)
 											}
@@ -2748,7 +2745,7 @@ func TestSetSDK_WAFv2_RuleGroup_Create(t *testing.T) {
 											for _, f4elemf7f5f1elemf0f4f3f1iter := range f4elemf7f5f1iter.AWSManagedRulesACFPRuleSet.ResponseInspection.StatusCode.SuccessCodes {
 												var f4elemf7f5f1elemf0f4f3f1elem int32
 												if *f4elemf7f5f1elemf0f4f3f1iter > math.MaxInt32 || *f4elemf7f5f1elemf0f4f3f1iter < math.MinInt32 {
-													return nil, fmt.Errorf("field is too large")
+													return nil, fmt.Errorf("error: field ResponseCode is of type int32")
 												}
 												temp := int32(*f4elemf7f5f1elemf0f4f3f1iter)
 												f4elemf7f5f1elemf0f4f3f1elem = temp
@@ -2836,7 +2833,7 @@ func TestSetSDK_WAFv2_RuleGroup_Create(t *testing.T) {
 											for _, f4elemf7f5f1elemf1f3f3f0iter := range f4elemf7f5f1iter.AWSManagedRulesATPRuleSet.ResponseInspection.StatusCode.FailureCodes {
 												var f4elemf7f5f1elemf1f3f3f0elem int32
 												if *f4elemf7f5f1elemf1f3f3f0iter > math.MaxInt32 || *f4elemf7f5f1elemf1f3f3f0iter < math.MinInt32 {
-													return nil, fmt.Errorf("field is too large")
+													return nil, fmt.Errorf("error: field FailureCode is of type int32")
 												}
 												temp := int32(*f4elemf7f5f1elemf1f3f3f0iter)
 												f4elemf7f5f1elemf1f3f3f0elem = temp
@@ -2849,7 +2846,7 @@ func TestSetSDK_WAFv2_RuleGroup_Create(t *testing.T) {
 											for _, f4elemf7f5f1elemf1f3f3f1iter := range f4elemf7f5f1iter.AWSManagedRulesATPRuleSet.ResponseInspection.StatusCode.SuccessCodes {
 												var f4elemf7f5f1elemf1f3f3f1elem int32
 												if *f4elemf7f5f1elemf1f3f3f1iter > math.MaxInt32 || *f4elemf7f5f1elemf1f3f3f1iter < math.MinInt32 {
-													return nil, fmt.Errorf("field is too large")
+													return nil, fmt.Errorf("error: field SuccessCode is of type int32")
 												}
 												temp := int32(*f4elemf7f5f1elemf1f3f3f1iter)
 												f4elemf7f5f1elemf1f3f3f1elem = temp
@@ -2937,7 +2934,7 @@ func TestSetSDK_WAFv2_RuleGroup_Create(t *testing.T) {
 										}
 										if f4elemf7f5f3iter.ActionToUse.Block.CustomResponse.ResponseCode != nil {
 											if *f4elemf7f5f3iter.ActionToUse.Block.CustomResponse.ResponseCode > math.MaxInt32 || *f4elemf7f5f3iter.ActionToUse.Block.CustomResponse.ResponseCode < math.MinInt32 {
-												return nil, fmt.Errorf("field is too large")
+												return nil, fmt.Errorf("error: field ResponseCode is of type int32")
 											}
 											temp := int32(*f4elemf7f5f3iter.ActionToUse.Block.CustomResponse.ResponseCode)
 											f4elemf7f5f3elemf0f1f0.ResponseCode = &temp
@@ -3063,7 +3060,7 @@ func TestSetSDK_WAFv2_RuleGroup_Create(t *testing.T) {
 										f4elemf7f8f1elemf0f1elem := &svcsdktypes.TextTransformation{}
 										if f4elemf7f8f1elemf0f1iter.Priority != nil {
 											if *f4elemf7f8f1elemf0f1iter.Priority > math.MaxInt32 || *f4elemf7f8f1elemf0f1iter.Priority < math.MinInt32 {
-												return nil, fmt.Errorf("field is too large")
+												return nil, fmt.Errorf("error: field Priority is of type int32")
 											}
 											temp := int32(*f4elemf7f8f1elemf0f1iter.Priority)
 											f4elemf7f8f1elemf0f1elem.Priority = temp
@@ -3096,7 +3093,7 @@ func TestSetSDK_WAFv2_RuleGroup_Create(t *testing.T) {
 										f4elemf7f8f1elemf3f1elem := &svcsdktypes.TextTransformation{}
 										if f4elemf7f8f1elemf3f1iter.Priority != nil {
 											if *f4elemf7f8f1elemf3f1iter.Priority > math.MaxInt32 || *f4elemf7f8f1elemf3f1iter.Priority < math.MinInt32 {
-												return nil, fmt.Errorf("field is too large")
+												return nil, fmt.Errorf("error: field Priority is of type int32")
 											}
 											temp := int32(*f4elemf7f8f1elemf3f1iter.Priority)
 											f4elemf7f8f1elemf3f1elem.Priority = temp
@@ -3132,7 +3129,7 @@ func TestSetSDK_WAFv2_RuleGroup_Create(t *testing.T) {
 										f4elemf7f8f1elemf6f1elem := &svcsdktypes.TextTransformation{}
 										if f4elemf7f8f1elemf6f1iter.Priority != nil {
 											if *f4elemf7f8f1elemf6f1iter.Priority > math.MaxInt32 || *f4elemf7f8f1elemf6f1iter.Priority < math.MinInt32 {
-												return nil, fmt.Errorf("field is too large")
+												return nil, fmt.Errorf("error: field Priority is of type int32")
 											}
 											temp := int32(*f4elemf7f8f1elemf6f1iter.Priority)
 											f4elemf7f8f1elemf6f1elem.Priority = temp
@@ -3154,7 +3151,7 @@ func TestSetSDK_WAFv2_RuleGroup_Create(t *testing.T) {
 										f4elemf7f8f1elemf7f0elem := &svcsdktypes.TextTransformation{}
 										if f4elemf7f8f1elemf7f0iter.Priority != nil {
 											if *f4elemf7f8f1elemf7f0iter.Priority > math.MaxInt32 || *f4elemf7f8f1elemf7f0iter.Priority < math.MinInt32 {
-												return nil, fmt.Errorf("field is too large")
+												return nil, fmt.Errorf("error: field Priority is of type int32")
 											}
 											temp := int32(*f4elemf7f8f1elemf7f0iter.Priority)
 											f4elemf7f8f1elemf7f0elem.Priority = temp
@@ -3176,7 +3173,7 @@ func TestSetSDK_WAFv2_RuleGroup_Create(t *testing.T) {
 										f4elemf7f8f1elemf8f0elem := &svcsdktypes.TextTransformation{}
 										if f4elemf7f8f1elemf8f0iter.Priority != nil {
 											if *f4elemf7f8f1elemf8f0iter.Priority > math.MaxInt32 || *f4elemf7f8f1elemf8f0iter.Priority < math.MinInt32 {
-												return nil, fmt.Errorf("field is too large")
+												return nil, fmt.Errorf("error: field Priority is of type int32")
 											}
 											temp := int32(*f4elemf7f8f1elemf8f0iter.Priority)
 											f4elemf7f8f1elemf8f0elem.Priority = temp
@@ -3350,7 +3347,7 @@ func TestSetSDK_WAFv2_RuleGroup_Create(t *testing.T) {
 							f4elemf7f9f2elem := &svcsdktypes.TextTransformation{}
 							if f4elemf7f9f2iter.Priority != nil {
 								if *f4elemf7f9f2iter.Priority > math.MaxInt32 || *f4elemf7f9f2iter.Priority < math.MinInt32 {
-									return nil, fmt.Errorf("field is too large")
+									return nil, fmt.Errorf("error: field Priority is of type int32")
 								}
 								temp := int32(*f4elemf7f9f2iter.Priority)
 								f4elemf7f9f2elem.Priority = temp
@@ -3502,7 +3499,7 @@ func TestSetSDK_WAFv2_RuleGroup_Create(t *testing.T) {
 							f4elemf7f10f2elem := &svcsdktypes.TextTransformation{}
 							if f4elemf7f10f2iter.Priority != nil {
 								if *f4elemf7f10f2iter.Priority > math.MaxInt32 || *f4elemf7f10f2iter.Priority < math.MinInt32 {
-									return nil, fmt.Errorf("field is too large")
+									return nil, fmt.Errorf("error: field Priority is of type int32")
 								}
 								temp := int32(*f4elemf7f10f2iter.Priority)
 								f4elemf7f10f2elem.Priority = temp
@@ -3569,7 +3566,7 @@ func TestSetSDK_WAFv2_RuleGroup_Create(t *testing.T) {
 										}
 										if f4elemf7f11f2iter.ActionToUse.Block.CustomResponse.ResponseCode != nil {
 											if *f4elemf7f11f2iter.ActionToUse.Block.CustomResponse.ResponseCode > math.MaxInt32 || *f4elemf7f11f2iter.ActionToUse.Block.CustomResponse.ResponseCode < math.MinInt32 {
-												return nil, fmt.Errorf("field is too large")
+												return nil, fmt.Errorf("error: field Priority is of type int32")
 											}
 											temp := int32(*f4elemf7f11f2iter.ActionToUse.Block.CustomResponse.ResponseCode)
 											f4elemf7f11f2elemf0f1f0.ResponseCode = &temp
@@ -3810,7 +3807,7 @@ func TestSetSDK_WAFv2_RuleGroup_Create(t *testing.T) {
 							f4elemf7f12f3elem := &svcsdktypes.TextTransformation{}
 							if f4elemf7f12f3iter.Priority != nil {
 								if *f4elemf7f12f3iter.Priority > math.MaxInt32 || *f4elemf7f12f3iter.Priority < math.MinInt32 {
-									return nil, fmt.Errorf("field is too large")
+									return nil, fmt.Errorf("error: field Priority is of type int32")
 								}
 								temp := int32(*f4elemf7f12f3iter.Priority)
 								f4elemf7f12f3elem.Priority = temp
@@ -3962,7 +3959,7 @@ func TestSetSDK_WAFv2_RuleGroup_Create(t *testing.T) {
 							f4elemf7f13f2elem := &svcsdktypes.TextTransformation{}
 							if f4elemf7f13f2iter.Priority != nil {
 								if *f4elemf7f13f2iter.Priority > math.MaxInt32 || *f4elemf7f13f2iter.Priority < math.MinInt32 {
-									return nil, fmt.Errorf("field is too large")
+									return nil, fmt.Errorf("error: field Priority is of type int32")
 								}
 								temp := int32(*f4elemf7f13f2iter.Priority)
 								f4elemf7f13f2elem.Priority = temp
@@ -4111,7 +4108,7 @@ func TestSetSDK_WAFv2_RuleGroup_Create(t *testing.T) {
 							f4elemf7f14f1elem := &svcsdktypes.TextTransformation{}
 							if f4elemf7f14f1iter.Priority != nil {
 								if *f4elemf7f14f1iter.Priority > math.MaxInt32 || *f4elemf7f14f1iter.Priority < math.MinInt32 {
-									return nil, fmt.Errorf("field is too large")
+									return nil, fmt.Errorf("error: field Priority is of type int32")
 								}
 								temp := int32(*f4elemf7f14f1iter.Priority)
 								f4elemf7f14f1elem.Priority = temp
