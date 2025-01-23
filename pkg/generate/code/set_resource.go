@@ -340,7 +340,7 @@ func SetResource(
 		case "list", "map", "structure":
 			// if lists are made of strings, or maps are made of string-to-string, we want to leverage
 			// the aws-sdk-go-v2 provided function to convert from pointer to non-pointer
-			adaption := adaptPrimitiveCollection(sourceMemberShapeRef.Shape, qualifiedTargetVar, sourceAdaptedVarName, indent)
+			adaption := setResourceAdaptPrimitiveCollection(sourceMemberShapeRef.Shape, qualifiedTargetVar, sourceAdaptedVarName, indent, r.IsSecretField(memberName))
 			out += adaption 
 			if adaption != "" {
 				break
@@ -640,12 +640,11 @@ func setResourceReadMany(
 		// Enum types are just strings at the end of the day
 		// so we want to check if they are empty before deciding
 		// to assign them to the resource field
-		if targetMemberShapeRef.Shape.IsEnum() {
-
+		if sourceMemberShapeRef.Shape.IsEnum() {
 			out += fmt.Sprintf(
 				"%sif %s != \"\" {\n", innerForIndent, sourceAdaptedVarName,
 			)
-		} else if !targetMemberShapeRef.HasDefaultValue() {
+		} else if !sourceMemberShapeRef.HasDefaultValue() {
 			out += fmt.Sprintf(
 				"%sif %s != nil {\n", innerForIndent, sourceAdaptedVarName,
 			)
@@ -662,7 +661,7 @@ func setResourceReadMany(
 		case "list", "structure", "map":
 			// if lists are made of strings, or maps are made of string-to-string, we want to leverage
 			// the aws-sdk-go-v2 provided function to convert from pointer to non-pointer collection
-			adaption := adaptPrimitiveCollection(sourceMemberShape, qualifiedTargetVar, sourceAdaptedVarName, indent)
+			adaption := setResourceAdaptPrimitiveCollection(sourceMemberShape, qualifiedTargetVar, sourceAdaptedVarName, indent, r.IsSecretField(memberName))
 			out += adaption
 			if adaption != "" {
 				break
@@ -735,7 +734,7 @@ func setResourceReadMany(
 				false,
 			)
 		}
-		if targetMemberShapeRef.Shape.IsEnum() || !targetMemberShapeRef.HasDefaultValue() {
+		if sourceMemberShapeRef.Shape.IsEnum() || !sourceMemberShapeRef.HasDefaultValue() {
 			out += fmt.Sprintf(
 				"%s} else {\n", innerForIndent,
 			)
@@ -1776,7 +1775,7 @@ func SetResourceForStruct(
 		// if lists are made of strings, or maps are made of string-to-string, we want to leverage
 		// the aws-sdk-go-v2 provided function to convert from pointer to non-pointer collection
 		case "list", "structure", "map":
-			adaption := adaptPrimitiveCollection(sourceMemberShape, qualifiedTargetVar, sourceAdaptedVarName, indent)
+			adaption := setResourceAdaptPrimitiveCollection(sourceMemberShape, qualifiedTargetVar, sourceAdaptedVarName, indent, r.IsSecretField(targetMemberName))
 			out += adaption
 			if adaption != "" {
 				break
@@ -2117,6 +2116,46 @@ func setResourceForScalar(
 		setTo = "&metav1.Time{*" + sourceVar + "}"
 	}
 
+	if strings.HasPrefix(targetVar, ".") {
+		targetVar = targetVar[1:]
+		//setTo = "*" + setTo   // This is for AWS-SDK-Go-V2
+
+	}
+
+	switch shape.Type {
+	case "list":
+		out += fmt.Sprintf("%s%s = %s\n", indent, targetVar, setTo)
+	case "integer":
+		out += fmt.Sprintf("%s%stemp := int64(*%s)\n", indent, shape.ShapeName, setTo)
+		out += fmt.Sprintf("%s%s = &%stemp\n", indent, targetVar, shape.ShapeName)
+	default:
+		if shape.HasDefaultValue() {
+			out += fmt.Sprintf("%s%s = &%s\n", indent, targetVar, setTo)
+		} else if shape.IsEnum() {
+			out += fmt.Sprintf("%s%s = aws.String(string(%s))\n", indent, targetVar, strings.TrimPrefix(setTo, "*"))
+		} else {
+			out += fmt.Sprintf("%s%s = %s\n", indent, targetVar, setTo)
+		}
+	}
+
+	// This is for AWS-SDK-GO-V2
+	// if shape.IsEnum() {
+	// 	out += fmt.Sprintf("%s%s = aws.String(string(%s))\n", indent, targetVar, strings.TrimPrefix(setTo, "*"))
+	// 	// } else if shape.Type == "integer" {
+
+	// 	// 	out += fmt.Sprintf("%s%s := int64(%s)\n", indent, "number", setTo)
+	// 	// 	out += fmt.Sprintf("%s%s = &%s\n", indent, targetVar, "number")
+
+	// 	// This is for edge case - in efs  controller
+	// 	// targetvar is int64 and rest of targetvar are *int64 - EFS controller
+	// } else if shape.HasDefaultValue() {
+	// 	out += fmt.Sprintf("%s%s = &%s\n", indent, targetVar, setTo)
+	// } else if shape.Type == "integer" {
+	// 	out += fmt.Sprintf("%stemp := int64(*%s)\n", indent, setTo)
+	// 	out += fmt.Sprintf("%s%s = &temp\n", indent, targetVar)
+	// }else {
+	// 	out += fmt.Sprintf("%s%s = %s\n", indent, targetVar, setTo)
+	// }
 	address := ""
 
 	if shape.Type == "long" && isListMember {
@@ -2129,6 +2168,9 @@ func setResourceForScalar(
 			setTo = "*" + setTo
 		}
 		ogMemberName := names.New(shapeRef.OriginalMemberName)
+		if isListMember {
+			ogMemberName = names.New(shapeRef.OrigShapeName)
+		}
 		out += fmt.Sprintf("%s%sCopy := int64(%s)\n", indent, ogMemberName.CamelLower, setTo)
 		out += fmt.Sprintf("%s%s = &%sCopy\n", indent, targetVar, ogMemberName.CamelLower)
 	} else if shape.IsEnum() {
@@ -2227,8 +2269,11 @@ func generateForRangeLoops(
 	return opening, closing, updatedIndentLevel
 }
 
-func adaptPrimitiveCollection(shape *awssdkmodel.Shape, qualifiedTargetVar, sourceAdaptedVarName string, indent string) string {
+func setResourceAdaptPrimitiveCollection(shape *awssdkmodel.Shape, qualifiedTargetVar, sourceAdaptedVarName, indent string, isSecretField bool) string {
 	out := ""
+	if isSecretField {
+		return ""
+	}
 	if shape.Type == "list" &&
 		!shape.MemberRef.Shape.IsEnum() &&
 		(shape.MemberRef.Shape.Type == "string" || shape.MemberRef.Shape.Type == "long" || shape.MemberRef.Shape.Type == "double") {

@@ -316,7 +316,7 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 	if !ok {
 		return false
 	}
-	switch awsErr.Code() {
+	switch awsErr.ErrorCode() {
 	case {{ range $x, $terminalCode := .CRD.TerminalExceptionCodes -}}{{ if ne ($x) (0) }},
 		{{ end }} "{{ $terminalCode }}"{{ end }}:
 		return true

@@ -67,7 +67,7 @@ func ConvertApiV2Shapes(modelPath string) (map[string]*awssdkmodel.API, error) {
 		return nil, fmt.Errorf("error setting up api: %v", err)
 	}
 
-	// fmt.Println(*newApi.Shapes["AIMLOptionsInput_"])
+	cleanUpBadDefaultValueAssignment(newApi)
 
 	return map[string]*awssdkmodel.API{
 		serviceAlias: newApi,
@@ -92,12 +92,15 @@ func buildAPI(shapes map[string]Shape) (*awssdkmodel.API, string, error) {
 		if err != nil {
 			return nil, "", err
 		}
+		// The serice alias is stored in every shapeName as part of the prefix
+		// in the following format: com.amazonaws.<serviceAlias>#shapeName
 		if serviceAlias == "" {
 			serviceAlias = extractServiceAlias(shapeName)
 		}
 		
-		// Since in V2, operation and service are still considered Shape,
-		// handling them separately to create 
+		// In V1 API struct, Operation and Service have their own structure
+		// while in V2 they are still considered shapes. Handling their conversion
+		// separatly in switch case.
 		if shape.Type != "service" && shape.Type != "operation" {
 			newShape, err := createApiShape(shape)
 			if err != nil {
@@ -106,18 +109,22 @@ func buildAPI(shapes map[string]Shape) (*awssdkmodel.API, string, error) {
 			newApi.Shapes[name] = newShape
 		}
 
-		// Ignoring types String, Integer, and boolean since they will be added as MemberRefs
+		// Ignoring to handle types Integer, and boolean since they will be added as MemberRefs
+		// Strings will only be handled when they are also enums
 		switch shape.Type {
 		case "service":
 			serviceId, ok := shape.Traits["aws.api#service"].(map[string]interface{})["sdkId"]
 			if !ok {
 				return nil, "", errors.New("service id not found")
 			}
+			newApi.Metadata.APIVersion, _ = removeShapeNamePrefix(shapeName)
 			newApi.Metadata.ServiceID = serviceId.(string)
 			doc, ok := shape.Traits["smithy.api#documentation"]
 			if !ok {
 				return nil, "", errors.New("service documentation not found")
 			}
+			// using AppendDocstring allows us to convert the documentation that is 
+			// provided to us in html format into a golang comment style format
 			newApi.Documentation = awssdkmodel.AppendDocstring("", doc.(string))
 		case "operation":
 			newApi.Operations[name] = createApiOperation(shape, name, serviceAlias)
@@ -130,7 +137,9 @@ func buildAPI(shapes map[string]Shape) (*awssdkmodel.API, string, error) {
 		case "enum":
 			newApi.Shapes[name].Type = "string"
 			addEnumRef(newApi.Shapes[name], shape)
-		// Union, introduced in S3 model file, is a structure
+		// union is considered to be an interface. needs to be handled
+		// using custom code/generator.yaml renaming so it can point to
+		// the correct structure.
 		case "union":
 			newApi.Shapes[name].Type = "structure"
 			addMemberRefs(newApi.Shapes[name], shape, serviceAlias)
@@ -146,7 +155,7 @@ func buildAPI(shapes map[string]Shape) (*awssdkmodel.API, string, error) {
 	return &newApi, serviceAlias, nil
 }
 
-// createApiOperation creates an awssdkmodel type Operation.
+// createApiOperation creates an awssdkmodel type Operation
 func createApiOperation(shape Shape, name, serviceAlias string) *awssdkmodel.Operation {
 	// Some operations may not have documentation
 	doc, _ := shape.Traits["smithy.api#documentation"].(string)
@@ -369,3 +378,15 @@ func addEnumValues(shape *awssdkmodel.Shape, val interface{}) {
 		}
 	}
 }
+
+func cleanUpBadDefaultValueAssignment(api *awssdkmodel.API) {
+	for _, shape := range api.Shapes {
+		if shape.Type == "structure" {
+			for memberName, member := range shape.MemberRefs {
+				if hasBadDefualtAssignment(api.Metadata.APIVersion, memberName) {
+					member.DefaultValue = "<nil>"
+				}
+			}
+		}
+	}
+} 

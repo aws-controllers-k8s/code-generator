@@ -332,22 +332,14 @@ func SetSDK(
 
 		switch memberShape.Type {
 		case "list", "structure", "map":
-			// leveraging the ToStringSlice to convert from list of string pointers to list of strings
+			// leveraging aws collection pointer->non-pointer conversion function
 			// ditto for maps
-			if memberShape.Type == "list" &&
-				!memberShape.MemberRef.Shape.IsEnum() &&
-				(memberShape.MemberRef.Shape.Type == "string" || memberShape.MemberRef.Shape.Type == "long") {
-				if memberShape.MemberRef.Shape.Type == "string" {
-					out += fmt.Sprintf("%s\t%s.%s = aws.ToStringSlice(%s)\n", indent, targetVarName, memberName, sourceAdaptedVarName)
-				} else {
-					out += fmt.Sprintf("%s\t%s.%s = aws.ToInt64Slice(%s)\n", indent, targetVarName, memberName, sourceAdaptedVarName)
-
-				}
-			} else if memberShape.Type == "map" &&
-				memberShape.KeyRef.Shape.Type == "string" &&
-				memberShape.ValueRef.Shape.Type == "string" {
-				out += fmt.Sprintf("%s\t%s.%s = aws.ToStringMap(%s)\n", indent, targetVarName, memberName, sourceAdaptedVarName)
-			} else {
+			adaptiveCollection := setSDKAdaptiveResourceCollection(memberShape, targetVarName, memberName, sourceAdaptedVarName, indent, r.IsSecretField(memberName))
+			out += adaptiveCollection
+			if adaptiveCollection != "" {
+				break
+			}
+			{
 
 				memberVarName := fmt.Sprintf("f%d", memberIndex)
 
@@ -499,7 +491,7 @@ func SetSDKGetAttributes(
 				indent, sourceVarName, sourceVarName,
 			)
 			out += fmt.Sprintf(
-				"%s\t%s.%s = (string(*%s.Status.ACKResourceMetadata.ARN))\n",
+				"%s\t%s.%s = aws.String(string(*%s.Status.ACKResourceMetadata.ARN))\n",
 				indent, targetVarName, memberName, sourceVarName,
 			)
 			nameField := r.SpecIdentifierField()
@@ -510,7 +502,7 @@ func SetSDKGetAttributes(
 					"%s} else {\n", indent,
 				)
 				out += fmt.Sprintf(
-					"%s\t%s.%s = rm.ARNFromName(*%s.Spec.%s)\n",
+					"%s\t%s.%s = aws.String(rm.ARNFromName(*%s.Spec.%s))\n",
 					indent, targetVarName, memberName, sourceVarName, *nameField,
 				)
 			}
@@ -683,7 +675,7 @@ func SetSDKSetAttributes(
 				indent, sourceVarName, sourceVarName,
 			)
 			out += fmt.Sprintf(
-				"%s\t%s.%s = (string(*%s.Status.ACKResourceMetadata.ARN))\n",
+				"%s\t%s.%s = aws.String(string(*%s.Status.ACKResourceMetadata.ARN))\n",
 				indent, targetVarName, memberName, sourceVarName,
 			)
 			nameField := r.SpecIdentifierField()
@@ -694,7 +686,7 @@ func SetSDKSetAttributes(
 					"%s} else {\n", indent,
 				)
 				out += fmt.Sprintf(
-					"%s\t%s.Set%s(rm.ARNFromName(*%s.Spec.%s))\n",
+					"%s\t%s.%s = aws.String(rm.ARNFromName(*%s.Spec.%s))\n",
 					indent, targetVarName, memberName, sourceVarName, *nameField,
 				)
 			}
@@ -858,7 +850,7 @@ func setSDKReadMany(
 						"generate.code.setSDKReadMany", memberShape.Type))
 				}
 
-				out += fmt.Sprintf("%s%s.Set%s(%s)\n", indent, targetVarName, memberName, value)
+				out += fmt.Sprintf("%s%s.%s =%s\n", indent, targetVarName, memberName, value)
 				continue
 			}
 		}
@@ -1165,20 +1157,12 @@ func SetSDKForStruct(
 		)
 		switch memberShape.Type {
 		case "list", "structure", "map":
-			if memberShape.Type == "list" &&
-				!memberShape.MemberRef.Shape.IsEnum() &&
-				(memberShape.MemberRef.Shape.Type == "string" || memberShape.MemberRef.Shape.Type == "long") {
-				if memberShape.MemberRef.Shape.Type == "string" {
-					out += fmt.Sprintf("%s\t%s.%s = aws.ToStringSlice(%s)\n", indent, targetVarName, memberName, sourceAdaptedVarName)
-				} else {
-					out += fmt.Sprintf("%s\t%s.%s = aws.ToInt64Slice(%s)\n", indent, targetVarName, memberName, sourceAdaptedVarName)
-
-				}
-			} else if memberShape.Type == "map" &&
-				memberShape.KeyRef.Shape.Type == "string" &&
-				memberShape.ValueRef.Shape.Type == "string" {
-				out += fmt.Sprintf("%s\t%s.%s = aws.ToStringMap(%s)\n", indent, targetVarName, memberName, sourceAdaptedVarName)
-			} else {
+			adaptiveCollection := setSDKAdaptiveResourceCollection(memberShape, targetVarName, memberName, sourceAdaptedVarName, indent, r.IsSecretField(memberName))
+			out += adaptiveCollection
+			if adaptiveCollection != "" {
+				break
+			}
+			{
 				memberVarName := fmt.Sprintf(
 					"%sf%d",
 					targetVarName, memberIndex,
@@ -1303,7 +1287,7 @@ func setSDKForSlice(
 	}
 	//  f0 = append(f0, elem0)
 	setPointer := ""
-	if (targetShape.MemberRef.Shape.Type == "string" && !targetShape.MemberRef.Shape.IsEnum()) || targetShape.MemberRef.Shape.Type == "structure" {
+	if targetShape.MemberRef.Shape.Type == "structure" {
 		setPointer = "*"
 	}
 	out += fmt.Sprintf("%s\t%s = append(%s, %s%s)\n", indent, targetVarName, targetVarName, setPointer, elemVarName)
@@ -1436,7 +1420,7 @@ func varEmptyConstructorSDKType(
 			goType = "map[string][]" + strings.TrimPrefix(goType, "map[string][]*")
 		}
 		out += fmt.Sprintf("%s%s := %s{}\n", indent, varName, goType)
-		
+
 	default:
 		// var f0 string
 		out += fmt.Sprintf("%svar %s %s\n", indent, varName, goType)
@@ -1535,13 +1519,16 @@ func setSDKForScalar(
 	}
 
 	if shape.Type == "integer" {
+		ogShapeName := names.New(shapeRef.OriginalMemberName)
+		if isListMember {
+			ogShapeName = names.New(shapeRef.OrigShapeName)
+		}
 		out += fmt.Sprintf("%sif %s > math.MaxInt32 || %s < math.MinInt32 {\n", indent, setTo, setTo)
-		out += fmt.Sprintf("%s\treturn nil, fmt.Errorf(\"field is too large\")\n", indent)
+		out += fmt.Sprintf("%s\treturn nil, fmt.Errorf(\"error: field %s is of type int32\")\n", indent, ogShapeName.Original)
 		out += fmt.Sprintf("%s}\n", indent)
-		ogShapeName := names.New(shapeRef.OrigShapeName)
 		tempVar := ogShapeName.CamelLower + "Copy"
 		out += fmt.Sprintf("%s%s := int32(%s)\n", indent, tempVar, setTo)
-		if !shape.HasDefaultValue() && !isListMember {
+		if !shapeRef.HasDefaultValue() && !isListMember {
 			tempVar = "&" + tempVar
 		}
 		out += fmt.Sprintf("%s%s = %s\n", indent, targetVarPath, tempVar)
@@ -1549,10 +1536,59 @@ func setSDKForScalar(
 		out += fmt.Sprintf("%s%s = svcsdktypes.%s(%s)\n", indent, targetVarPath, shape.ShapeName, setTo)
 	} else if shapeRef.HasDefaultValue() {
 		out += fmt.Sprintf("%s%s = %s\n", indent, targetVarPath, setTo)
-	} else if shape.Type == "timestamp" {
-		out += fmt.Sprintf("%s%s = &%s\n", indent, targetVarPath, strings.TrimPrefix(setTo, "*"))
+
+	} else if targetVarType == "structure" && shape.Type == "boolean" {
+
+		targetVarPath := targetVarName
+		if targetFieldName != "" {
+			targetVarPath += "." + targetFieldName
+		}
+
+		out += fmt.Sprintf("%s%s = %s\n", indent, targetVarPath, strings.TrimPrefix(setTo, "*"))
+
+	} else if shape.Type == "integer" {
+		targetVarPath := targetVarName
+		if targetFieldName != "" {
+			targetVarPath += "." + targetFieldName
+		}
+		out += fmt.Sprintf("%stemp := int32(%s)\n", indent, setTo)
+		out += fmt.Sprintf("%s%s = &temp\n", indent, targetVarPath)
 	} else {
+
+		targetVarPath := targetVarName
+		if targetFieldName != "" {
+			targetVarPath += "." + targetFieldName
+		}
+
 		out += fmt.Sprintf("%s%s = %s\n", indent, targetVarPath, strings.TrimPrefix(setTo, "*"))
 	}
+
+	return out
+}
+
+func setSDKAdaptiveResourceCollection(
+	shape *awssdkmodel.Shape,
+	targetVarName, memberName, sourceAdaptedVarName, indent string,
+	isSecretField bool,
+) string {
+	out := ""
+	if isSecretField {
+		return ""
+	}
+	if shape.Type == "list" &&
+		!shape.MemberRef.Shape.IsEnum() &&
+		(shape.MemberRef.Shape.Type == "string" || shape.MemberRef.Shape.Type == "long") {
+		if shape.MemberRef.Shape.Type == "string" {
+			out += fmt.Sprintf("%s\t%s.%s = aws.ToStringSlice(%s)\n", indent, targetVarName, memberName, sourceAdaptedVarName)
+		} else {
+			out += fmt.Sprintf("%s\t%s.%s = aws.ToInt64Slice(%s)\n", indent, targetVarName, memberName, sourceAdaptedVarName)
+
+		}
+	} else if shape.Type == "map" &&
+		shape.KeyRef.Shape.Type == "string" &&
+		shape.ValueRef.Shape.Type == "string" {
+		out += fmt.Sprintf("%s\t%s.%s = aws.ToStringMap(%s)\n", indent, targetVarName, memberName, sourceAdaptedVarName)
+	}
+
 	return out
 }

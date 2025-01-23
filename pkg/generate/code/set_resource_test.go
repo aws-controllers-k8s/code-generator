@@ -1338,7 +1338,7 @@ func TestSetResource_EKS_Cluster_PopulateResourceFromAnnotation(t *testing.T) {
 	}
 	r.ko.Spec.Name = &tmp
 
-`	
+`
 	assert.Equal(
 		expected,
 		code.PopulateResourceFromAnnotation(crd.Config(), crd, "fields", "r.ko", 1),
@@ -1437,8 +1437,8 @@ func TestSetResource_IAM_Role_NestedSetConfig(t *testing.T) {
 		ko.Spec.Description = nil
 	}
 	if resp.Role.MaxSessionDuration != nil {
-		temp := int64(*resp.Role.MaxSessionDuration)
-		ko.Spec.MaxSessionDuration = &temp
+		maxSessionDurationCopy := int64(*resp.Role.MaxSessionDuration)
+		ko.Spec.MaxSessionDuration = &maxSessionDurationCopy
 	} else {
 		ko.Spec.MaxSessionDuration = nil
 	}
@@ -1586,8 +1586,8 @@ func TestSetResource_EC2_Instance_Create(t *testing.T) {
 	found := false
 	for _, elem := range resp.Instances {
 		if elem.AmiLaunchIndex != nil {
-			temp := int64(*elem.AmiLaunchIndex)
-			ko.Status.AMILaunchIndex = &temp
+			amiLaunchIndexCopy := int64(*elem.AmiLaunchIndex)
+			ko.Status.AMILaunchIndex = &amiLaunchIndexCopy
 		} else {
 			ko.Status.AMILaunchIndex = nil
 		}
@@ -1648,12 +1648,12 @@ func TestSetResource_EC2_Instance_Create(t *testing.T) {
 		if elem.CpuOptions != nil {
 			f6 := &svcapitypes.CPUOptionsRequest{}
 			if elem.CpuOptions.CoreCount != nil {
-				temp := int64(*elem.CpuOptions.CoreCount)
-				f6.CoreCount = &temp
+				coreCountCopy := int64(*elem.CpuOptions.CoreCount)
+				f6.CoreCount = &coreCountCopy
 			}
 			if elem.CpuOptions.ThreadsPerCore != nil {
-				temp := int64(*elem.CpuOptions.ThreadsPerCore)
-				f6.ThreadsPerCore = &temp
+				threadsPerCoreCopy := int64(*elem.CpuOptions.ThreadsPerCore)
+				f6.ThreadsPerCore = &threadsPerCoreCopy
 			}
 			ko.Spec.CPUOptions = f6
 		} else {
@@ -1802,8 +1802,8 @@ func TestSetResource_EC2_Instance_Create(t *testing.T) {
 				f23.HTTPProtocolIPv6 = aws.String(string(elem.MetadataOptions.HttpProtocolIpv6))
 			}
 			if elem.MetadataOptions.HttpPutResponseHopLimit != nil {
-				temp := int64(*elem.MetadataOptions.HttpPutResponseHopLimit)
-				f23.HTTPPutResponseHopLimit = &temp
+				httpPutResponseHopLimitCopy := int64(*elem.MetadataOptions.HttpPutResponseHopLimit)
+				f23.HTTPPutResponseHopLimit = &httpPutResponseHopLimitCopy
 			}
 			if elem.MetadataOptions.HttpTokens != "" {
 				f23.HTTPTokens = aws.String(string(elem.MetadataOptions.HttpTokens))
@@ -1913,8 +1913,8 @@ func TestSetResource_EC2_Instance_Create(t *testing.T) {
 				f27.HostResourceGroupARN = elem.Placement.HostResourceGroupArn
 			}
 			if elem.Placement.PartitionNumber != nil {
-				temp := int64(*elem.Placement.PartitionNumber)
-				f27.PartitionNumber = &temp
+				partitionNumberCopy := int64(*elem.Placement.PartitionNumber)
+				f27.PartitionNumber = &partitionNumberCopy
 			}
 			if elem.Placement.SpreadDomain != nil {
 				f27.SpreadDomain = elem.Placement.SpreadDomain
@@ -2016,8 +2016,8 @@ func TestSetResource_EC2_Instance_Create(t *testing.T) {
 		if elem.State != nil {
 			f42 := &svcapitypes.InstanceState{}
 			if elem.State.Code != nil {
-				temp := int64(*elem.State.Code)
-				f42.Code = &temp
+				codeCopy := int64(*elem.State.Code)
+				f42.Code = &codeCopy
 			}
 			if elem.State.Name != "" {
 				f42.Name = aws.String(string(elem.State.Name))
@@ -2115,8 +2115,8 @@ func TestSetResource_EC2_Instance_ReadMany(t *testing.T) {
 	for _, iter0 := range resp.Reservations {
 		for _, elem := range iter0.Instances {
 			if elem.AmiLaunchIndex != nil {
-				temp := int64(*elem.AmiLaunchIndex)
-				ko.Status.AMILaunchIndex = &temp
+				amiLaunchIndexCopy := int64(*elem.AmiLaunchIndex)
+				ko.Status.AMILaunchIndex = &amiLaunchIndexCopy
 			} else {
 				ko.Status.AMILaunchIndex = nil
 			}
@@ -2177,12 +2177,12 @@ func TestSetResource_EC2_Instance_ReadMany(t *testing.T) {
 			if elem.CpuOptions != nil {
 				f6 := &svcapitypes.CPUOptionsRequest{}
 				if elem.CpuOptions.CoreCount != nil {
-					temp := int64(*elem.CpuOptions.CoreCount)
-					f6.CoreCount = &temp
+					coreCountCopy := int64(*elem.CpuOptions.CoreCount)
+					f6.CoreCount = &coreCountCopy
 				}
 				if elem.CpuOptions.ThreadsPerCore != nil {
-					temp := int64(*elem.CpuOptions.ThreadsPerCore)
-					f6.ThreadsPerCore = &temp
+					threadsPerCoreCopy := int64(*elem.CpuOptions.ThreadsPerCore)
+					f6.ThreadsPerCore = &threadsPerCoreCopy
 				}
 				ko.Spec.CPUOptions = f6
 			} else {
@@ -2331,8 +2331,8 @@ func TestSetResource_EC2_Instance_ReadMany(t *testing.T) {
 					f23.HTTPProtocolIPv6 = aws.String(string(elem.MetadataOptions.HttpProtocolIpv6))
 				}
 				if elem.MetadataOptions.HttpPutResponseHopLimit != nil {
-					temp := int64(*elem.MetadataOptions.HttpPutResponseHopLimit)
-					f23.HTTPPutResponseHopLimit = &temp
+					httpPutResponseHopLimitCopy := int64(*elem.MetadataOptions.HttpPutResponseHopLimit)
+					f23.HTTPPutResponseHopLimit = &httpPutResponseHopLimitCopy
 				}
 				if elem.MetadataOptions.HttpTokens != "" {
 					f23.HTTPTokens = aws.String(string(elem.MetadataOptions.HttpTokens))
@@ -2442,8 +2442,8 @@ func TestSetResource_EC2_Instance_ReadMany(t *testing.T) {
 					f27.HostResourceGroupARN = elem.Placement.HostResourceGroupArn
 				}
 				if elem.Placement.PartitionNumber != nil {
-					temp := int64(*elem.Placement.PartitionNumber)
-					f27.PartitionNumber = &temp
+					partitionNumberCopy := int64(*elem.Placement.PartitionNumber)
+					f27.PartitionNumber = &partitionNumberCopy
 				}
 				if elem.Placement.SpreadDomain != nil {
 					f27.SpreadDomain = elem.Placement.SpreadDomain
@@ -2545,8 +2545,8 @@ func TestSetResource_EC2_Instance_ReadMany(t *testing.T) {
 			if elem.State != nil {
 				f42 := &svcapitypes.InstanceState{}
 				if elem.State.Code != nil {
-					temp := int64(*elem.State.Code)
-					f42.Code = &temp
+					codeCopy := int64(*elem.State.Code)
+					f42.Code = &codeCopy
 				}
 				if elem.State.Name != "" {
 					f42.Name = aws.String(string(elem.State.Name))
@@ -2721,8 +2721,8 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 							f9elemf0f1f0.CustomResponseBodyKey = f9iter.Action.Block.CustomResponse.CustomResponseBodyKey
 						}
 						if f9iter.Action.Block.CustomResponse.ResponseCode != nil {
-							temp := int64(*f9iter.Action.Block.CustomResponse.ResponseCode)
-							f9elemf0f1f0.ResponseCode = &temp
+							responseCodeCopy := int64(*f9iter.Action.Block.CustomResponse.ResponseCode)
+							f9elemf0f1f0.ResponseCode = &responseCodeCopy
 						}
 						if f9iter.Action.Block.CustomResponse.ResponseHeaders != nil {
 							f9elemf0f1f0f2 := []*svcapitypes.CustomHTTPHeader{}
@@ -2865,8 +2865,8 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 				}
 				f9elem.OverrideAction = f9elemf4
 			}
-			temp := int64(f9iter.Priority)
-			f9elem.Priority = &temp
+			priorityCopy := int64(f9iter.Priority)
+			f9elem.Priority = &priorityCopy
 			if f9iter.RuleLabels != nil {
 				f9elemf6 := []*svcapitypes.Label{}
 				for _, f9elemf6iter := range f9iter.RuleLabels {
@@ -3019,8 +3019,8 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 						f9elemf7f1f3 := []*svcapitypes.TextTransformation{}
 						for _, f9elemf7f1f3iter := range f9iter.Statement.ByteMatchStatement.TextTransformations {
 							f9elemf7f1f3elem := &svcapitypes.TextTransformation{}
-							temp := int64(f9elemf7f1f3iter.Priority)
-							f9elemf7f1f3elem.Priority = &temp
+							priorityCopy := int64(f9elemf7f1f3iter.Priority)
+							f9elemf7f1f3elem.Priority = &priorityCopy
 							if f9elemf7f1f3iter.Type != "" {
 								f9elemf7f1f3elem.Type = aws.String(string(f9elemf7f1f3iter.Type))
 							}
@@ -3203,8 +3203,8 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 											f9elemf7f5f1elemf0f4f3f0 := []*int64{}
 											for _, f9elemf7f5f1elemf0f4f3f0iter := range f9elemf7f5f1iter.AWSManagedRulesACFPRuleSet.ResponseInspection.StatusCode.FailureCodes {
 												var f9elemf7f5f1elemf0f4f3f0elem *int64
-												temp := int64(f9elemf7f5f1elemf0f4f3f0iter)
-												f9elemf7f5f1elemf0f4f3f0elem = &temp
+												failureCodeCopy := int64(f9elemf7f5f1elemf0f4f3f0iter)
+												f9elemf7f5f1elemf0f4f3f0elem = &failureCodeCopy
 												f9elemf7f5f1elemf0f4f3f0 = append(f9elemf7f5f1elemf0f4f3f0, f9elemf7f5f1elemf0f4f3f0elem)
 											}
 											f9elemf7f5f1elemf0f4f3.FailureCodes = f9elemf7f5f1elemf0f4f3f0
@@ -3213,8 +3213,8 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 											f9elemf7f5f1elemf0f4f3f1 := []*int64{}
 											for _, f9elemf7f5f1elemf0f4f3f1iter := range f9elemf7f5f1iter.AWSManagedRulesACFPRuleSet.ResponseInspection.StatusCode.SuccessCodes {
 												var f9elemf7f5f1elemf0f4f3f1elem *int64
-												temp := int64(f9elemf7f5f1elemf0f4f3f1iter)
-												f9elemf7f5f1elemf0f4f3f1elem = &temp
+												successCodeCopy := int64(f9elemf7f5f1elemf0f4f3f1iter)
+												f9elemf7f5f1elemf0f4f3f1elem = &successCodeCopy
 												f9elemf7f5f1elemf0f4f3f1 = append(f9elemf7f5f1elemf0f4f3f1, f9elemf7f5f1elemf0f4f3f1elem)
 											}
 											f9elemf7f5f1elemf0f4f3.SuccessCodes = f9elemf7f5f1elemf0f4f3f1
@@ -3296,8 +3296,8 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 											f9elemf7f5f1elemf1f3f3f0 := []*int64{}
 											for _, f9elemf7f5f1elemf1f3f3f0iter := range f9elemf7f5f1iter.AWSManagedRulesATPRuleSet.ResponseInspection.StatusCode.FailureCodes {
 												var f9elemf7f5f1elemf1f3f3f0elem *int64
-												temp := int64(f9elemf7f5f1elemf1f3f3f0iter)
-												f9elemf7f5f1elemf1f3f3f0elem = &temp
+												failureCodeCopy := int64(f9elemf7f5f1elemf1f3f3f0iter)
+												f9elemf7f5f1elemf1f3f3f0elem = &failureCodeCopy
 												f9elemf7f5f1elemf1f3f3f0 = append(f9elemf7f5f1elemf1f3f3f0, f9elemf7f5f1elemf1f3f3f0elem)
 											}
 											f9elemf7f5f1elemf1f3f3.FailureCodes = f9elemf7f5f1elemf1f3f3f0
@@ -3306,8 +3306,8 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 											f9elemf7f5f1elemf1f3f3f1 := []*int64{}
 											for _, f9elemf7f5f1elemf1f3f3f1iter := range f9elemf7f5f1iter.AWSManagedRulesATPRuleSet.ResponseInspection.StatusCode.SuccessCodes {
 												var f9elemf7f5f1elemf1f3f3f1elem *int64
-												temp := int64(f9elemf7f5f1elemf1f3f3f1iter)
-												f9elemf7f5f1elemf1f3f3f1elem = &temp
+												successCodeCopy := int64(f9elemf7f5f1elemf1f3f3f1iter)
+												f9elemf7f5f1elemf1f3f3f1elem = &successCodeCopy
 												f9elemf7f5f1elemf1f3f3f1 = append(f9elemf7f5f1elemf1f3f3f1, f9elemf7f5f1elemf1f3f3f1elem)
 											}
 											f9elemf7f5f1elemf1f3f3.SuccessCodes = f9elemf7f5f1elemf1f3f3f1
@@ -3391,8 +3391,8 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 											f9elemf7f5f3elemf0f1f0.CustomResponseBodyKey = f9elemf7f5f3iter.ActionToUse.Block.CustomResponse.CustomResponseBodyKey
 										}
 										if f9elemf7f5f3iter.ActionToUse.Block.CustomResponse.ResponseCode != nil {
-											temp := int64(*f9elemf7f5f3iter.ActionToUse.Block.CustomResponse.ResponseCode)
-											f9elemf7f5f3elemf0f1f0.ResponseCode = &temp
+											responseCodeCopy := int64(*f9elemf7f5f3iter.ActionToUse.Block.CustomResponse.ResponseCode)
+											f9elemf7f5f3elemf0f1f0.ResponseCode = &responseCodeCopy
 										}
 										if f9elemf7f5f3iter.ActionToUse.Block.CustomResponse.ResponseHeaders != nil {
 											f9elemf7f5f3elemf0f1f0f2 := []*svcapitypes.CustomHTTPHeader{}
@@ -3513,8 +3513,8 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 									f9elemf7f8f1elemf0f1 := []*svcapitypes.TextTransformation{}
 									for _, f9elemf7f8f1elemf0f1iter := range f9elemf7f8f1iter.Cookie.TextTransformations {
 										f9elemf7f8f1elemf0f1elem := &svcapitypes.TextTransformation{}
-										temp := int64(f9elemf7f8f1elemf0f1iter.Priority)
-										f9elemf7f8f1elemf0f1elem.Priority = &temp
+										priorityCopy := int64(f9elemf7f8f1elemf0f1iter.Priority)
+										f9elemf7f8f1elemf0f1elem.Priority = &priorityCopy
 										if f9elemf7f8f1elemf0f1iter.Type != "" {
 											f9elemf7f8f1elemf0f1elem.Type = aws.String(string(f9elemf7f8f1elemf0f1iter.Type))
 										}
@@ -3541,8 +3541,8 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 									f9elemf7f8f1elemf3f1 := []*svcapitypes.TextTransformation{}
 									for _, f9elemf7f8f1elemf3f1iter := range f9elemf7f8f1iter.Header.TextTransformations {
 										f9elemf7f8f1elemf3f1elem := &svcapitypes.TextTransformation{}
-										temp := int64(f9elemf7f8f1elemf3f1iter.Priority)
-										f9elemf7f8f1elemf3f1elem.Priority = &temp
+										priorityCopy := int64(f9elemf7f8f1elemf3f1iter.Priority)
+										f9elemf7f8f1elemf3f1elem.Priority = &priorityCopy
 										if f9elemf7f8f1elemf3f1iter.Type != "" {
 											f9elemf7f8f1elemf3f1elem.Type = aws.String(string(f9elemf7f8f1elemf3f1iter.Type))
 										}
@@ -3572,8 +3572,8 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 									f9elemf7f8f1elemf6f1 := []*svcapitypes.TextTransformation{}
 									for _, f9elemf7f8f1elemf6f1iter := range f9elemf7f8f1iter.QueryArgument.TextTransformations {
 										f9elemf7f8f1elemf6f1elem := &svcapitypes.TextTransformation{}
-										temp := int64(f9elemf7f8f1elemf6f1iter.Priority)
-										f9elemf7f8f1elemf6f1elem.Priority = &temp
+										priorityCopy := int64(f9elemf7f8f1elemf6f1iter.Priority)
+										f9elemf7f8f1elemf6f1elem.Priority = &priorityCopy
 										if f9elemf7f8f1elemf6f1iter.Type != "" {
 											f9elemf7f8f1elemf6f1elem.Type = aws.String(string(f9elemf7f8f1elemf6f1iter.Type))
 										}
@@ -3589,8 +3589,8 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 									f9elemf7f8f1elemf7f0 := []*svcapitypes.TextTransformation{}
 									for _, f9elemf7f8f1elemf7f0iter := range f9elemf7f8f1iter.QueryString.TextTransformations {
 										f9elemf7f8f1elemf7f0elem := &svcapitypes.TextTransformation{}
-										temp := int64(f9elemf7f8f1elemf7f0iter.Priority)
-										f9elemf7f8f1elemf7f0elem.Priority = &temp
+										priorityCopy := int64(f9elemf7f8f1elemf7f0iter.Priority)
+										f9elemf7f8f1elemf7f0elem.Priority = &priorityCopy
 										if f9elemf7f8f1elemf7f0iter.Type != "" {
 											f9elemf7f8f1elemf7f0elem.Type = aws.String(string(f9elemf7f8f1elemf7f0iter.Type))
 										}
@@ -3606,8 +3606,8 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 									f9elemf7f8f1elemf8f0 := []*svcapitypes.TextTransformation{}
 									for _, f9elemf7f8f1elemf8f0iter := range f9elemf7f8f1iter.UriPath.TextTransformations {
 										f9elemf7f8f1elemf8f0elem := &svcapitypes.TextTransformation{}
-										temp := int64(f9elemf7f8f1elemf8f0iter.Priority)
-										f9elemf7f8f1elemf8f0elem.Priority = &temp
+										priorityCopy := int64(f9elemf7f8f1elemf8f0iter.Priority)
+										f9elemf7f8f1elemf8f0elem.Priority = &priorityCopy
 										if f9elemf7f8f1elemf8f0iter.Type != "" {
 											f9elemf7f8f1elemf8f0elem.Type = aws.String(string(f9elemf7f8f1elemf8f0iter.Type))
 										}
@@ -3773,8 +3773,8 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 						f9elemf7f9f2 := []*svcapitypes.TextTransformation{}
 						for _, f9elemf7f9f2iter := range f9iter.Statement.RegexMatchStatement.TextTransformations {
 							f9elemf7f9f2elem := &svcapitypes.TextTransformation{}
-							temp := int64(f9elemf7f9f2iter.Priority)
-							f9elemf7f9f2elem.Priority = &temp
+							priorityCopy := int64(f9elemf7f9f2iter.Priority)
+							f9elemf7f9f2elem.Priority = &priorityCopy
 							if f9elemf7f9f2iter.Type != "" {
 								f9elemf7f9f2elem.Type = aws.String(string(f9elemf7f9f2iter.Type))
 							}
@@ -3920,8 +3920,8 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 						f9elemf7f10f2 := []*svcapitypes.TextTransformation{}
 						for _, f9elemf7f10f2iter := range f9iter.Statement.RegexPatternSetReferenceStatement.TextTransformations {
 							f9elemf7f10f2elem := &svcapitypes.TextTransformation{}
-							temp := int64(f9elemf7f10f2iter.Priority)
-							f9elemf7f10f2elem.Priority = &temp
+							priorityCopy := int64(f9elemf7f10f2iter.Priority)
+							f9elemf7f10f2elem.Priority = &priorityCopy
 							if f9elemf7f10f2iter.Type != "" {
 								f9elemf7f10f2elem.Type = aws.String(string(f9elemf7f10f2iter.Type))
 							}
@@ -3983,8 +3983,8 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 											f9elemf7f11f2elemf0f1f0.CustomResponseBodyKey = f9elemf7f11f2iter.ActionToUse.Block.CustomResponse.CustomResponseBodyKey
 										}
 										if f9elemf7f11f2iter.ActionToUse.Block.CustomResponse.ResponseCode != nil {
-											temp := int64(*f9elemf7f11f2iter.ActionToUse.Block.CustomResponse.ResponseCode)
-											f9elemf7f11f2elemf0f1f0.ResponseCode = &temp
+											responseCodeCopy := int64(*f9elemf7f11f2iter.ActionToUse.Block.CustomResponse.ResponseCode)
+											f9elemf7f11f2elemf0f1f0.ResponseCode = &responseCodeCopy
 										}
 										if f9elemf7f11f2iter.ActionToUse.Block.CustomResponse.ResponseHeaders != nil {
 											f9elemf7f11f2elemf0f1f0f2 := []*svcapitypes.CustomHTTPHeader{}
@@ -4218,8 +4218,8 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 						f9elemf7f12f3 := []*svcapitypes.TextTransformation{}
 						for _, f9elemf7f12f3iter := range f9iter.Statement.SizeConstraintStatement.TextTransformations {
 							f9elemf7f12f3elem := &svcapitypes.TextTransformation{}
-							temp := int64(f9elemf7f12f3iter.Priority)
-							f9elemf7f12f3elem.Priority = &temp
+							priorityCopy := int64(f9elemf7f12f3iter.Priority)
+							f9elemf7f12f3elem.Priority = &priorityCopy
 							if f9elemf7f12f3iter.Type != "" {
 								f9elemf7f12f3elem.Type = aws.String(string(f9elemf7f12f3iter.Type))
 							}
@@ -4365,8 +4365,8 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 						f9elemf7f13f2 := []*svcapitypes.TextTransformation{}
 						for _, f9elemf7f13f2iter := range f9iter.Statement.SqliMatchStatement.TextTransformations {
 							f9elemf7f13f2elem := &svcapitypes.TextTransformation{}
-							temp := int64(f9elemf7f13f2iter.Priority)
-							f9elemf7f13f2elem.Priority = &temp
+							priorityCopy := int64(f9elemf7f13f2iter.Priority)
+							f9elemf7f13f2elem.Priority = &priorityCopy
 							if f9elemf7f13f2iter.Type != "" {
 								f9elemf7f13f2elem.Type = aws.String(string(f9elemf7f13f2iter.Type))
 							}
@@ -4509,8 +4509,8 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 						f9elemf7f14f1 := []*svcapitypes.TextTransformation{}
 						for _, f9elemf7f14f1iter := range f9iter.Statement.XssMatchStatement.TextTransformations {
 							f9elemf7f14f1elem := &svcapitypes.TextTransformation{}
-							temp := int64(f9elemf7f14f1iter.Priority)
-							f9elemf7f14f1elem.Priority = &temp
+							priorityCopy := int64(f9elemf7f14f1iter.Priority)
+							f9elemf7f14f1elem.Priority = &priorityCopy
 							if f9elemf7f14f1iter.Type != "" {
 								f9elemf7f14f1elem.Type = aws.String(string(f9elemf7f14f1iter.Type))
 							}

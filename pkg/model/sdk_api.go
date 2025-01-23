@@ -36,7 +36,7 @@ var (
 	// private/model/api.Shape types
 	GoTypeToSDKShapeType = map[string]string{
 		"int":       "integer",
-		"int64":     "primitiveInteger",
+		"int64":     "long",
 		"float64":   "float",
 		"string":    "string",
 		"bool":      "boolean",
