@@ -225,20 +225,23 @@ func TestSetSDK_OpenSearch_Domain_Create(t *testing.T) {
 			}
 			f4.MaintenanceSchedules = f4f1
 		}
-		if r.ko.Spec.LaunchTemplateData.CapacityReservationSpecification != nil {
-			f2f1 := &svcsdk.LaunchTemplateCapacityReservationSpecificationRequest{}
-			if r.ko.Spec.LaunchTemplateData.CapacityReservationSpecification.CapacityReservationPreference != nil {
-				f2f1.SetCapacityReservationPreference(*r.ko.Spec.LaunchTemplateData.CapacityReservationSpecification.CapacityReservationPreference)
+		if r.ko.Spec.AutoTuneOptions.UseOffPeakWindow != nil {
+			f4.UseOffPeakWindow = r.ko.Spec.AutoTuneOptions.UseOffPeakWindow
+		}
+		res.AutoTuneOptions = f4
+	}
+	if r.ko.Spec.ClusterConfig != nil {
+		f5 := &svcsdktypes.ClusterConfig{}
+		if r.ko.Spec.ClusterConfig.ColdStorageOptions != nil {
+			f5f0 := &svcsdktypes.ColdStorageOptions{}
+			if r.ko.Spec.ClusterConfig.ColdStorageOptions.Enabled != nil {
+				f5f0.Enabled = r.ko.Spec.ClusterConfig.ColdStorageOptions.Enabled
 			}
-			if r.ko.Spec.LaunchTemplateData.CapacityReservationSpecification.CapacityReservationTarget != nil {
-				f2f1f1 := &svcsdk.CapacityReservationTarget{}
-				if r.ko.Spec.LaunchTemplateData.CapacityReservationSpecification.CapacityReservationTarget.CapacityReservationID != nil {
-					f2f1f1.SetCapacityReservationId(*r.ko.Spec.LaunchTemplateData.CapacityReservationSpecification.CapacityReservationTarget.CapacityReservationID)
-				}
-				if r.ko.Spec.LaunchTemplateData.CapacityReservationSpecification.CapacityReservationTarget.CapacityReservationResourceGroupARN != nil {
-					f2f1f1.SetCapacityReservationResourceGroupArn(*r.ko.Spec.LaunchTemplateData.CapacityReservationSpecification.CapacityReservationTarget.CapacityReservationResourceGroupARN)
-				}
-				f2f1.SetCapacityReservationTarget(f2f1f1)
+			f5.ColdStorageOptions = f5f0
+		}
+		if r.ko.Spec.ClusterConfig.DedicatedMasterCount != nil {
+			if *r.ko.Spec.ClusterConfig.DedicatedMasterCount > math.MaxInt32 || *r.ko.Spec.ClusterConfig.DedicatedMasterCount < math.MinInt32 {
+				return nil, fmt.Errorf("error: field DedicatedMasterCount is of type int32")
 			}
 			dedicatedMasterCountCopy := int32(*r.ko.Spec.ClusterConfig.DedicatedMasterCount)
 			f5.DedicatedMasterCount = &dedicatedMasterCountCopy
@@ -2732,10 +2735,10 @@ func TestSetSDK_WAFv2_RuleGroup_Create(t *testing.T) {
 											for _, f4elemf7f5f1elemf0f4f3f0iter := range f4elemf7f5f1iter.AWSManagedRulesACFPRuleSet.ResponseInspection.StatusCode.FailureCodes {
 												var f4elemf7f5f1elemf0f4f3f0elem int32
 												if *f4elemf7f5f1elemf0f4f3f0iter > math.MaxInt32 || *f4elemf7f5f1elemf0f4f3f0iter < math.MinInt32 {
-													return nil, fmt.Errorf("error: field ResponseCode is of type int32")
+													return nil, fmt.Errorf("error: field FailureCode is of type int32")
 												}
-												priorityCopy := int32(*f4elemf7f5f1elemf0f4f3f0iter)
-												f4elemf7f5f1elemf0f4f3f0elem = temp
+												failureCodeCopy := int32(*f4elemf7f5f1elemf0f4f3f0iter)
+												f4elemf7f5f1elemf0f4f3f0elem = failureCodeCopy
 												f4elemf7f5f1elemf0f4f3f0 = append(f4elemf7f5f1elemf0f4f3f0, f4elemf7f5f1elemf0f4f3f0elem)
 											}
 											f4elemf7f5f1elemf0f4f3.FailureCodes = f4elemf7f5f1elemf0f4f3f0
@@ -2745,10 +2748,10 @@ func TestSetSDK_WAFv2_RuleGroup_Create(t *testing.T) {
 											for _, f4elemf7f5f1elemf0f4f3f1iter := range f4elemf7f5f1iter.AWSManagedRulesACFPRuleSet.ResponseInspection.StatusCode.SuccessCodes {
 												var f4elemf7f5f1elemf0f4f3f1elem int32
 												if *f4elemf7f5f1elemf0f4f3f1iter > math.MaxInt32 || *f4elemf7f5f1elemf0f4f3f1iter < math.MinInt32 {
-													return nil, fmt.Errorf("error: field ResponseCode is of type int32")
+													return nil, fmt.Errorf("error: field SuccessCode is of type int32")
 												}
-												temp := int32(*f4elemf7f5f1elemf0f4f3f1iter)
-												f4elemf7f5f1elemf0f4f3f1elem = temp
+												successCodeCopy := int32(*f4elemf7f5f1elemf0f4f3f1iter)
+												f4elemf7f5f1elemf0f4f3f1elem = successCodeCopy
 												f4elemf7f5f1elemf0f4f3f1 = append(f4elemf7f5f1elemf0f4f3f1, f4elemf7f5f1elemf0f4f3f1elem)
 											}
 											f4elemf7f5f1elemf0f4f3.SuccessCodes = f4elemf7f5f1elemf0f4f3f1
@@ -2835,8 +2838,8 @@ func TestSetSDK_WAFv2_RuleGroup_Create(t *testing.T) {
 												if *f4elemf7f5f1elemf1f3f3f0iter > math.MaxInt32 || *f4elemf7f5f1elemf1f3f3f0iter < math.MinInt32 {
 													return nil, fmt.Errorf("error: field FailureCode is of type int32")
 												}
-												temp := int32(*f4elemf7f5f1elemf1f3f3f0iter)
-												f4elemf7f5f1elemf1f3f3f0elem = temp
+												failureCodeCopy := int32(*f4elemf7f5f1elemf1f3f3f0iter)
+												f4elemf7f5f1elemf1f3f3f0elem = failureCodeCopy
 												f4elemf7f5f1elemf1f3f3f0 = append(f4elemf7f5f1elemf1f3f3f0, f4elemf7f5f1elemf1f3f3f0elem)
 											}
 											f4elemf7f5f1elemf1f3f3.FailureCodes = f4elemf7f5f1elemf1f3f3f0
@@ -2848,8 +2851,8 @@ func TestSetSDK_WAFv2_RuleGroup_Create(t *testing.T) {
 												if *f4elemf7f5f1elemf1f3f3f1iter > math.MaxInt32 || *f4elemf7f5f1elemf1f3f3f1iter < math.MinInt32 {
 													return nil, fmt.Errorf("error: field SuccessCode is of type int32")
 												}
-												temp := int32(*f4elemf7f5f1elemf1f3f3f1iter)
-												f4elemf7f5f1elemf1f3f3f1elem = temp
+												successCodeCopy := int32(*f4elemf7f5f1elemf1f3f3f1iter)
+												f4elemf7f5f1elemf1f3f3f1elem = successCodeCopy
 												f4elemf7f5f1elemf1f3f3f1 = append(f4elemf7f5f1elemf1f3f3f1, f4elemf7f5f1elemf1f3f3f1elem)
 											}
 											f4elemf7f5f1elemf1f3f3.SuccessCodes = f4elemf7f5f1elemf1f3f3f1
@@ -2936,8 +2939,8 @@ func TestSetSDK_WAFv2_RuleGroup_Create(t *testing.T) {
 											if *f4elemf7f5f3iter.ActionToUse.Block.CustomResponse.ResponseCode > math.MaxInt32 || *f4elemf7f5f3iter.ActionToUse.Block.CustomResponse.ResponseCode < math.MinInt32 {
 												return nil, fmt.Errorf("error: field ResponseCode is of type int32")
 											}
-											temp := int32(*f4elemf7f5f3iter.ActionToUse.Block.CustomResponse.ResponseCode)
-											f4elemf7f5f3elemf0f1f0.ResponseCode = &temp
+											responseCodeCopy := int32(*f4elemf7f5f3iter.ActionToUse.Block.CustomResponse.ResponseCode)
+											f4elemf7f5f3elemf0f1f0.ResponseCode = &responseCodeCopy
 										}
 										if f4elemf7f5f3iter.ActionToUse.Block.CustomResponse.ResponseHeaders != nil {
 											f4elemf7f5f3elemf0f1f0f2 := []svcsdktypes.CustomHTTPHeader{}
@@ -3062,8 +3065,8 @@ func TestSetSDK_WAFv2_RuleGroup_Create(t *testing.T) {
 											if *f4elemf7f8f1elemf0f1iter.Priority > math.MaxInt32 || *f4elemf7f8f1elemf0f1iter.Priority < math.MinInt32 {
 												return nil, fmt.Errorf("error: field Priority is of type int32")
 											}
-											temp := int32(*f4elemf7f8f1elemf0f1iter.Priority)
-											f4elemf7f8f1elemf0f1elem.Priority = temp
+											priorityCopy := int32(*f4elemf7f8f1elemf0f1iter.Priority)
+											f4elemf7f8f1elemf0f1elem.Priority = priorityCopy
 										}
 										if f4elemf7f8f1elemf0f1iter.Type != nil {
 											f4elemf7f8f1elemf0f1elem.Type = svcsdktypes.TextTransformationType(*f4elemf7f8f1elemf0f1iter.Type)
@@ -3095,8 +3098,8 @@ func TestSetSDK_WAFv2_RuleGroup_Create(t *testing.T) {
 											if *f4elemf7f8f1elemf3f1iter.Priority > math.MaxInt32 || *f4elemf7f8f1elemf3f1iter.Priority < math.MinInt32 {
 												return nil, fmt.Errorf("error: field Priority is of type int32")
 											}
-											temp := int32(*f4elemf7f8f1elemf3f1iter.Priority)
-											f4elemf7f8f1elemf3f1elem.Priority = temp
+											priorityCopy := int32(*f4elemf7f8f1elemf3f1iter.Priority)
+											f4elemf7f8f1elemf3f1elem.Priority = priorityCopy
 										}
 										if f4elemf7f8f1elemf3f1iter.Type != nil {
 											f4elemf7f8f1elemf3f1elem.Type = svcsdktypes.TextTransformationType(*f4elemf7f8f1elemf3f1iter.Type)
@@ -3131,8 +3134,8 @@ func TestSetSDK_WAFv2_RuleGroup_Create(t *testing.T) {
 											if *f4elemf7f8f1elemf6f1iter.Priority > math.MaxInt32 || *f4elemf7f8f1elemf6f1iter.Priority < math.MinInt32 {
 												return nil, fmt.Errorf("error: field Priority is of type int32")
 											}
-											temp := int32(*f4elemf7f8f1elemf6f1iter.Priority)
-											f4elemf7f8f1elemf6f1elem.Priority = temp
+											priorityCopy := int32(*f4elemf7f8f1elemf6f1iter.Priority)
+											f4elemf7f8f1elemf6f1elem.Priority = priorityCopy
 										}
 										if f4elemf7f8f1elemf6f1iter.Type != nil {
 											f4elemf7f8f1elemf6f1elem.Type = svcsdktypes.TextTransformationType(*f4elemf7f8f1elemf6f1iter.Type)
@@ -3153,8 +3156,8 @@ func TestSetSDK_WAFv2_RuleGroup_Create(t *testing.T) {
 											if *f4elemf7f8f1elemf7f0iter.Priority > math.MaxInt32 || *f4elemf7f8f1elemf7f0iter.Priority < math.MinInt32 {
 												return nil, fmt.Errorf("error: field Priority is of type int32")
 											}
-											temp := int32(*f4elemf7f8f1elemf7f0iter.Priority)
-											f4elemf7f8f1elemf7f0elem.Priority = temp
+											priorityCopy := int32(*f4elemf7f8f1elemf7f0iter.Priority)
+											f4elemf7f8f1elemf7f0elem.Priority = priorityCopy
 										}
 										if f4elemf7f8f1elemf7f0iter.Type != nil {
 											f4elemf7f8f1elemf7f0elem.Type = svcsdktypes.TextTransformationType(*f4elemf7f8f1elemf7f0iter.Type)
@@ -3175,8 +3178,8 @@ func TestSetSDK_WAFv2_RuleGroup_Create(t *testing.T) {
 											if *f4elemf7f8f1elemf8f0iter.Priority > math.MaxInt32 || *f4elemf7f8f1elemf8f0iter.Priority < math.MinInt32 {
 												return nil, fmt.Errorf("error: field Priority is of type int32")
 											}
-											temp := int32(*f4elemf7f8f1elemf8f0iter.Priority)
-											f4elemf7f8f1elemf8f0elem.Priority = temp
+											priorityCopy := int32(*f4elemf7f8f1elemf8f0iter.Priority)
+											f4elemf7f8f1elemf8f0elem.Priority = priorityCopy
 										}
 										if f4elemf7f8f1elemf8f0iter.Type != nil {
 											f4elemf7f8f1elemf8f0elem.Type = svcsdktypes.TextTransformationType(*f4elemf7f8f1elemf8f0iter.Type)
@@ -3349,8 +3352,8 @@ func TestSetSDK_WAFv2_RuleGroup_Create(t *testing.T) {
 								if *f4elemf7f9f2iter.Priority > math.MaxInt32 || *f4elemf7f9f2iter.Priority < math.MinInt32 {
 									return nil, fmt.Errorf("error: field Priority is of type int32")
 								}
-								temp := int32(*f4elemf7f9f2iter.Priority)
-								f4elemf7f9f2elem.Priority = temp
+								priorityCopy := int32(*f4elemf7f9f2iter.Priority)
+								f4elemf7f9f2elem.Priority = priorityCopy
 							}
 							if f4elemf7f9f2iter.Type != nil {
 								f4elemf7f9f2elem.Type = svcsdktypes.TextTransformationType(*f4elemf7f9f2iter.Type)
@@ -3501,8 +3504,8 @@ func TestSetSDK_WAFv2_RuleGroup_Create(t *testing.T) {
 								if *f4elemf7f10f2iter.Priority > math.MaxInt32 || *f4elemf7f10f2iter.Priority < math.MinInt32 {
 									return nil, fmt.Errorf("error: field Priority is of type int32")
 								}
-								temp := int32(*f4elemf7f10f2iter.Priority)
-								f4elemf7f10f2elem.Priority = temp
+								priorityCopy := int32(*f4elemf7f10f2iter.Priority)
+								f4elemf7f10f2elem.Priority = priorityCopy
 							}
 							if f4elemf7f10f2iter.Type != nil {
 								f4elemf7f10f2elem.Type = svcsdktypes.TextTransformationType(*f4elemf7f10f2iter.Type)
@@ -3566,10 +3569,10 @@ func TestSetSDK_WAFv2_RuleGroup_Create(t *testing.T) {
 										}
 										if f4elemf7f11f2iter.ActionToUse.Block.CustomResponse.ResponseCode != nil {
 											if *f4elemf7f11f2iter.ActionToUse.Block.CustomResponse.ResponseCode > math.MaxInt32 || *f4elemf7f11f2iter.ActionToUse.Block.CustomResponse.ResponseCode < math.MinInt32 {
-												return nil, fmt.Errorf("error: field Priority is of type int32")
+												return nil, fmt.Errorf("error: field ResponseCode is of type int32")
 											}
-											temp := int32(*f4elemf7f11f2iter.ActionToUse.Block.CustomResponse.ResponseCode)
-											f4elemf7f11f2elemf0f1f0.ResponseCode = &temp
+											responseCodeCopy := int32(*f4elemf7f11f2iter.ActionToUse.Block.CustomResponse.ResponseCode)
+											f4elemf7f11f2elemf0f1f0.ResponseCode = &responseCodeCopy
 										}
 										if f4elemf7f11f2iter.ActionToUse.Block.CustomResponse.ResponseHeaders != nil {
 											f4elemf7f11f2elemf0f1f0f2 := []svcsdktypes.CustomHTTPHeader{}
@@ -3809,8 +3812,8 @@ func TestSetSDK_WAFv2_RuleGroup_Create(t *testing.T) {
 								if *f4elemf7f12f3iter.Priority > math.MaxInt32 || *f4elemf7f12f3iter.Priority < math.MinInt32 {
 									return nil, fmt.Errorf("error: field Priority is of type int32")
 								}
-								temp := int32(*f4elemf7f12f3iter.Priority)
-								f4elemf7f12f3elem.Priority = temp
+								priorityCopy := int32(*f4elemf7f12f3iter.Priority)
+								f4elemf7f12f3elem.Priority = priorityCopy
 							}
 							if f4elemf7f12f3iter.Type != nil {
 								f4elemf7f12f3elem.Type = svcsdktypes.TextTransformationType(*f4elemf7f12f3iter.Type)
@@ -3961,8 +3964,8 @@ func TestSetSDK_WAFv2_RuleGroup_Create(t *testing.T) {
 								if *f4elemf7f13f2iter.Priority > math.MaxInt32 || *f4elemf7f13f2iter.Priority < math.MinInt32 {
 									return nil, fmt.Errorf("error: field Priority is of type int32")
 								}
-								temp := int32(*f4elemf7f13f2iter.Priority)
-								f4elemf7f13f2elem.Priority = temp
+								priorityCopy := int32(*f4elemf7f13f2iter.Priority)
+								f4elemf7f13f2elem.Priority = priorityCopy
 							}
 							if f4elemf7f13f2iter.Type != nil {
 								f4elemf7f13f2elem.Type = svcsdktypes.TextTransformationType(*f4elemf7f13f2iter.Type)
@@ -4110,8 +4113,8 @@ func TestSetSDK_WAFv2_RuleGroup_Create(t *testing.T) {
 								if *f4elemf7f14f1iter.Priority > math.MaxInt32 || *f4elemf7f14f1iter.Priority < math.MinInt32 {
 									return nil, fmt.Errorf("error: field Priority is of type int32")
 								}
-								temp := int32(*f4elemf7f14f1iter.Priority)
-								f4elemf7f14f1elem.Priority = temp
+								priorityCopy := int32(*f4elemf7f14f1iter.Priority)
+								f4elemf7f14f1elem.Priority = priorityCopy
 							}
 							if f4elemf7f14f1iter.Type != nil {
 								f4elemf7f14f1elem.Type = svcsdktypes.TextTransformationType(*f4elemf7f14f1iter.Type)

@@ -312,13 +312,9 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 	if err == nil {
 		return false
 	}
-	awsErr, ok := ackerr.AWSError(err)
-	if !ok {
-		return false
-	}
-	switch awsErr.ErrorCode() {
+	switch err.(type) {
 	case {{ range $x, $terminalCode := .CRD.TerminalExceptionCodes -}}{{ if ne ($x) (0) }},
-		{{ end }} "{{ $terminalCode }}"{{ end }}:
+		{{ end }} *svcsdktypes.{{ $terminalCode }}{{ end }}:
 		return true
 	default:
 		return false
