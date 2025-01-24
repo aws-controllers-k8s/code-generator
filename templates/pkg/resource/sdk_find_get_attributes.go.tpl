@@ -33,7 +33,8 @@ func (rm *resourceManager) sdkFind(
 {{- end }}
 	rm.metrics.RecordAPICall("GET_ATTRIBUTES", "{{ .CRD.Ops.GetAttributes.ExportedName }}", err)
 	if err != nil {
-		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.ErrorCode() == "{{ ResourceExceptionCode .CRD 404 }}" {{ GoCodeSetExceptionMessageCheck .CRD 404 }} {
+		var notFound *svcsdktypes.{{ ResourceExceptionCode .CRD 404 }} {{ GoCodeSetExceptionMessageCheck .CRD 404 }} 
+		if errors.As(err, &notFound){
 			return nil, ackerr.NotFound
 		}
 		return nil, err

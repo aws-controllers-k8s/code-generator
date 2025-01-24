@@ -1509,7 +1509,7 @@ func setSDKForScalar(
 	setTo := sourceVarName
 	shape := shapeRef.Shape
 	if shape.Type == "timestamp" {
-		setTo += ".Time"
+		setTo = "&"+setTo+".Time"
 	} else if shapeRef.UseIndirection() {
 		setTo = "*" + setTo
 	}
