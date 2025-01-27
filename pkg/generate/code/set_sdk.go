@@ -256,8 +256,11 @@ func SetSDK(
 		sourceAdaptedVarName += "." + f.Names.Camel
 		sourceFieldPath := f.Names.Camel
 
-		memberShapeRef, _ := inputShape.MemberRefs[memberName]
+		memberShapeRef := inputShape.MemberRefs[memberName]
 		memberShape := memberShapeRef.Shape
+		// if memberShapeRef.Shape.RealType == "union" {
+		// 	continue
+		// }
 
 		// we construct variables containing temporary storage for sub-elements
 		// and sub-fields that are structs. Names of fields are "f" appended by
@@ -880,7 +883,10 @@ func setSDKReadMany(
 			}
 		}
 
-		memberShapeRef, _ := inputShape.MemberRefs[memberName]
+		memberShapeRef := inputShape.MemberRefs[memberName]
+		// if memberShapeRef.Shape.RealType == "union" {
+		// 	continue
+		// }
 		memberShape := memberShapeRef.Shape
 		out += fmt.Sprintf(
 			"%sif %s != nil {\n", indent, resVarPath,
@@ -1151,6 +1157,9 @@ func SetSDKForStruct(
 		if fallBackName == memberName {
 			// TODO: implement @AmineHilaly
 		}
+		// if memberShape.RealType == "union" {
+		// 	continue
+		// }
 
 		out += fmt.Sprintf(
 			"%sif %s != nil {\n", indent, sourceAdaptedVarName,

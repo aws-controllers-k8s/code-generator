@@ -226,6 +226,10 @@ func SetResource(
 		}
 
 		targetMemberShapeRef = f.ShapeRef
+		// Ignoring this for now
+		// if targetMemberShapeRef.Shape.RealType == "union" {
+		// 	continue
+		// }
 
 		// We may have some special instructions for how to handle setting the
 		// field value...
@@ -636,6 +640,10 @@ func setResourceReadMany(
 		}
 
 		targetMemberShapeRef = f.ShapeRef
+		// ditto
+		// if targetMemberShapeRef.Shape.RealType == "union" {
+		// 	continue
+		// }
 
 		// Enum types are just strings at the end of the day
 		// so we want to check if they are empty before deciding
@@ -958,18 +966,36 @@ func SetResourceGetAttributes(
 		// f9, _ := resp.Attributes["ReceiveMessageWaitTimeSeconds"]
 		// ko.Spec.ReceiveMessageWaitTimeSeconds = &f9
 		out += fmt.Sprintf(
-			"%sf%d, _ := %s.Attributes[\"%s\"]\n",
+			"%sf%d, ok := %s.Attributes[\"%s\"]\n",
 			indent,
 			index,
 			sourceVarName,
 			fieldName,
 		)
 		out += fmt.Sprintf(
-			"%s%s.%s = &f%d\n",
+			"%sif ok {\n",
+			indent,
+		)
+		out += fmt.Sprintf(
+			"%s\t%s.%s = &f%d\n",
 			indent,
 			adaptiveTargetVarName,
 			fieldNames.Camel,
 			index,
+		)
+		out += fmt.Sprintf(
+			"%s} else {\n",
+			indent,
+		)
+		out += fmt.Sprintf(
+			"%s\t%s.%s = nil\n",
+			indent,
+			adaptiveTargetVarName,
+			fieldNames.Camel,
+		)
+		out += fmt.Sprintf(
+			"%s}\n",
+			indent,
 		)
 	}
 	return out
@@ -1734,6 +1760,9 @@ func SetResourceForStruct(
 		if sourceMemberShapeRef == nil {
 			continue
 		}
+		// if sourceMemberShapeRef.Shape.RealType == "union" {
+		// 	continue
+		// }
 		// Upstream logic iterates over sourceShape members and therefore uses
 		// the sourceShape's index; continue using sourceShape's index here for consistency.
 		sourceMemberIndex, err := GetMemberIndex(sourceShape, targetMemberName)

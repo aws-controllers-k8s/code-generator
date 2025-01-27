@@ -97,6 +97,9 @@ type Shape struct {
 	Required         []string
 	Payload          string
 	Type             string
+	// this is being added for type union specifically. We want to generate
+	//  api as struct and handle setSDK and setResource differently
+	RealType         string		
 	Exception        bool
 	Enum             []string
 	EnumConsts       []string

@@ -18,6 +18,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	svcsdk "github.com/aws/aws-sdk-go-v2/service/{{ .ServicePackageName }}"
 	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/{{ .ServicePackageName }}/types"
+	smithy "github.com/aws/smithy-go"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -312,9 +313,14 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 	if err == nil {
 		return false
 	}
-	switch err.(type) {
+
+	var terminalErr smithy.APIError
+	if !errors.As(err, &terminalErr) {
+		return false
+	}
+	switch terminalErr.ErrorCode() {
 	case {{ range $x, $terminalCode := .CRD.TerminalExceptionCodes -}}{{ if ne ($x) (0) }},
-		{{ end }} *svcsdktypes.{{ $terminalCode }}{{ end }}:
+		{{ end }} "{{ $terminalCode }}"{{ end }}:
 		return true
 	default:
 		return false

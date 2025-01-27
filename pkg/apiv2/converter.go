@@ -38,9 +38,9 @@ type ShapeRef struct {
 	Traits    map[string]interface{}
 }
 
-// ConvertAPIV2Shapes loads the V2 api model file, and later translates that
+// LoadAPI loads the V2 api model file, and later translates that
 // structure into the v1 API structure.
-func ConvertApiV2Shapes(modelPath string) (map[string]*awssdkmodel.API, error) {
+func LoadAPI(modelPath string) (map[string]*awssdkmodel.API, error) {
 	// Read the json file
 	file, err := os.ReadFile(modelPath)
 	if err != nil {
@@ -97,7 +97,7 @@ func buildAPI(shapes map[string]Shape) (*awssdkmodel.API, string, error) {
 		if serviceAlias == "" {
 			serviceAlias = extractServiceAlias(shapeName)
 		}
-		
+
 		// In V1 API struct, Operation and Service have their own structure
 		// while in V2 they are still considered shapes. Handling their conversion
 		// separatly in switch case.
@@ -123,7 +123,7 @@ func buildAPI(shapes map[string]Shape) (*awssdkmodel.API, string, error) {
 			if !ok {
 				return nil, "", errors.New("service documentation not found")
 			}
-			// using AppendDocstring allows us to convert the documentation that is 
+			// using AppendDocstring allows us to convert the documentation that is
 			// provided to us in html format into a golang comment style format
 			newApi.Documentation = awssdkmodel.AppendDocstring("", doc.(string))
 		case "operation":
@@ -142,6 +142,7 @@ func buildAPI(shapes map[string]Shape) (*awssdkmodel.API, string, error) {
 		// the correct structure.
 		case "union":
 			newApi.Shapes[name].Type = "structure"
+			newApi.Shapes[name].RealType = "union"
 			addMemberRefs(newApi.Shapes[name], shape, serviceAlias)
 		case "string":
 			val, ok := shape.Traits["smithy.api#enum"]
@@ -166,20 +167,20 @@ func createApiOperation(shape Shape, name, serviceAlias string) *awssdkmodel.Ope
 	}
 
 	if hasPrefix(shape.InputRef.ShapeName, serviceAlias) {
-		inputName, _:= removeShapeNamePrefix(shape.InputRef.ShapeName)
+		inputName, _ := removeShapeNamePrefix(shape.InputRef.ShapeName)
 		newOperation.InputRef = awssdkmodel.ShapeRef{
 			ShapeName: inputName,
 		}
 	}
 	if hasPrefix(shape.OutputRef.ShapeName, serviceAlias) {
-		outputName, _:= removeShapeNamePrefix(shape.OutputRef.ShapeName)
+		outputName, _ := removeShapeNamePrefix(shape.OutputRef.ShapeName)
 		newOperation.OutputRef = awssdkmodel.ShapeRef{
 			ShapeName: outputName,
 		}
 	}
 
 	for _, err := range shape.ErrorRefs {
-		sn, _:= removeShapeNamePrefix(err.ShapeName)
+		sn, _ := removeShapeNamePrefix(err.ShapeName)
 		newOperation.ErrorRefs = append(newOperation.ErrorRefs, awssdkmodel.ShapeRef{
 			ShapeName: sn,
 		})
@@ -259,7 +260,7 @@ func addMemberRefs(apiShape *awssdkmodel.Shape, shape Shape, serviceAlias string
 
 func addMemberRef(apiShape *awssdkmodel.Shape, shape Shape) {
 
-	sn, _:= removeShapeNamePrefix(shape.MemberRef.ShapeName)
+	sn, _ := removeShapeNamePrefix(shape.MemberRef.ShapeName)
 	apiShape.MemberRef = awssdkmodel.ShapeRef{
 		ShapeName: sn,
 	}
@@ -267,11 +268,11 @@ func addMemberRef(apiShape *awssdkmodel.Shape, shape Shape) {
 
 func addKeyAndValueRef(apiShape *awssdkmodel.Shape, shape Shape) {
 
-	sn, _:= removeShapeNamePrefix(shape.KeyRef.ShapeName)
+	sn, _ := removeShapeNamePrefix(shape.KeyRef.ShapeName)
 	apiShape.KeyRef = awssdkmodel.ShapeRef{
 		ShapeName: sn,
 	}
-	sn, _= removeShapeNamePrefix(shape.ValueRef.ShapeName)
+	sn, _ = removeShapeNamePrefix(shape.ValueRef.ShapeName)
 	apiShape.ValueRef = awssdkmodel.ShapeRef{
 		ShapeName: sn,
 	}
@@ -315,7 +316,7 @@ func removeShapeNamePrefix(name string) (string, error) {
 
 // extractServiceAlias extracts the service alias from a shapeName
 // (see removeShapeNamePrefix)
-func extractServiceAlias(name string) (string) {
+func extractServiceAlias(name string) string {
 	temp := strings.Split(name, ".")
 	anotherTemp := strings.Split(temp[len(temp)-1], "#")
 	if len(anotherTemp) != 2 {
@@ -331,7 +332,7 @@ func extractServiceAlias(name string) (string) {
 // will be replaced with the ones in the model.
 //
 // For example:
-// amp(prometheus service) 
+// amp(prometheus service)
 // has target: "smithy.api#String", but no corresponding shape
 // named String.
 func injectCustomPrimitiveShapes() map[string]*awssdkmodel.Shape {
@@ -389,4 +390,4 @@ func cleanUpBadDefaultValueAssignment(api *awssdkmodel.API) {
 			}
 		}
 	}
-} 
+}
