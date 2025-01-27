@@ -33,8 +33,8 @@ func (rm *resourceManager) sdkFind(
 {{- end }}
 	rm.metrics.RecordAPICall("READ_MANY", "{{ .CRD.Ops.ReadMany.ExportedName }}", err)
 	if err != nil {
-		var notFound *svcsdktypes.{{ ResourceExceptionCode .CRD 404 }} {{ GoCodeSetExceptionMessageCheck .CRD 404 }} 
-		if errors.As(err, &notFound){
+		var notFound smithy.APIError
+		if errors.As(err, &notFound) && notFound.ErrorCode() == "{{ ResourceExceptionCode .CRD 404 }}" {{ GoCodeSetExceptionMessageCheck .CRD 404 }} {
 			return nil, ackerr.NotFound
 		}
 		return nil, err
