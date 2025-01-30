@@ -46,11 +46,11 @@ func CheckExceptionMessage(
 			return ""
 		}
 		if excConfig.MessagePrefix != nil {
-			return fmt.Sprintf("&& strings.HasPrefix(awsErr.Message(), \"%s\") ",
+			return fmt.Sprintf("&& strings.HasPrefix(awsErr.ErrorMessage(), \"%s\") ",
 				*excConfig.MessagePrefix)
 		}
 		if excConfig.MessageSuffix != nil {
-			return fmt.Sprintf("&& strings.HasSuffix(awsErr.Message(), \"%s\") ",
+			return fmt.Sprintf("&& strings.HasSuffix(awsErr.ErrorMessage(), \"%s\") ",
 				*excConfig.MessageSuffix)
 		}
 	}

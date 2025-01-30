@@ -70,6 +70,7 @@ var legacyIOSuffixed = IoSuffix{
 		"TaskInput":                    struct{}{},
 		"TransformOutput":              struct{}{},
 		"ModelBiasJobInput":            struct{}{},
+		"ModelInput":                   struct{}{},
 		"TransformInput":               struct{}{},
 		"LabelingJobOutput":            struct{}{},
 		"DataQualityJobInput":          struct{}{},

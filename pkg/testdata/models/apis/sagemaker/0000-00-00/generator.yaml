@@ -1,4 +1,20 @@
 resources:
+  Domain:
+    fields:
+      DomainId:
+        is_read_only: true
+        print:
+          name: DOMAIN-ID
+        from:
+          operation: DescribeDomain
+          path: DomainId
+      Status:
+        is_read_only: true
+        print:
+          name: STATUS
+        from:
+          operation: DescribeDomain
+          path: Status  
   DataQualityJobDefinition:
     exceptions:
       errors:
@@ -37,7 +53,6 @@ ignore:
       - Context
       # - DataQualityJobDefinition
       - DeviceFleet
-      - Domain
       - EdgePackagingJob
       - EndpointConfig
       # - Endpoint
@@ -71,4 +86,22 @@ ignore:
       - Workforce
       - Workteam
     shape_names:
+      - RSessionAppSettings
       - TagList
+      - ModelDataSource
+      - DefaultSpaceSettings
+      - CanvasAppSettings
+      - CodeRepositories
+      - ExecutionRoleIdentityConfig
+    field_paths:
+      - CreateDomainInput.TagPropagation
+      - CreateDomainInput.DomainSettings.AmazonQSettings
+      - CreateDomainInput.DefaultUserSettings.JupyterLabAppSettings.AppLifecycleManagement
+      - CreateDomainInput.DefaultUserSettings.JupyterLabAppSettings.BuiltInLifecycleConfigArn
+      - CreateDomainInput.DefaultUserSettings.JupyterLabAppSettings.EmrSettings
+      - CreateDomainInput.DefaultUserSettings.StudioWebPortalSettings
+      - CreateDomainInput.DefaultUserSettings.AutoMountHomeEFS
+      - CreateUserProfileInput.UserSettings.CodeEditorAppSettings.AppLifecycleManagement
+      - CreateUserProfileInput.UserSettings.CodeEditorAppSettings.BuiltInLifecycleConfigArn
+      - CreateUserProfileInput.UserSettings.CodeEditorAppSettings.CustomImages
+      - CreateDomainInput.DefaultUserSettings.JupyterLabAppSettings.EmrSettings

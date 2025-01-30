@@ -278,7 +278,7 @@ func compareNil(
 
 	switch shape.Type {
 	case "boolean", "string", "character", "byte", "short", "integer", "long",
-		"float", "double", "timestamp", "structure", "jsonvalue":
+		"float", "double", "timestamp", "structure", "jsonvalue", "union":
 		// if ackcompare.HasNilDifference(a.ko.Spec.Name, b.ko.Spec.Name) {
 		out += fmt.Sprintf(
 			"%sif ackcompare.HasNilDifference(%s, %s) {\n",
@@ -489,7 +489,7 @@ func compareSlice(
 			"%sif !ackcompare.SliceStringPEqual(%s, %s) {\n",
 			indent, firstResVarName, secondResVarName,
 		)
-	case "structure":
+	case "structure", "union":
 		// NOTE(jaypipes): Using reflect here is really punting. We should
 		// implement this in a cleaner, more efficient fashion by walking the
 		// struct values and comparing each struct individually, building up

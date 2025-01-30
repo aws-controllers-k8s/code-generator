@@ -226,10 +226,6 @@ func SetResource(
 		}
 
 		targetMemberShapeRef = f.ShapeRef
-		// Ignoring this for now
-		// if targetMemberShapeRef.Shape.RealType == "union" {
-		// 	continue
-		// }
 
 		// We may have some special instructions for how to handle setting the
 		// field value...
@@ -273,6 +269,10 @@ func SetResource(
 				)
 				panic(msg)
 			}
+		}
+
+		if sourceMemberShapeRef.Shape.RealType == "union" {
+			sourceMemberShapeRef.Shape.Type = "union"
 		}
 
 		targetMemberShape := targetMemberShapeRef.Shape
@@ -341,11 +341,11 @@ func SetResource(
 		)
 
 		switch targetMemberShape.Type {
-		case "list", "map", "structure":
+		case "list", "map", "structure", "union":
 			// if lists are made of strings, or maps are made of string-to-string, we want to leverage
 			// the aws-sdk-go-v2 provided function to convert from pointer to non-pointer
 			adaption := setResourceAdaptPrimitiveCollection(sourceMemberShapeRef.Shape, qualifiedTargetVar, sourceAdaptedVarName, indent, r.IsSecretField(memberName))
-			out += adaption 
+			out += adaption
 			if adaption != "" {
 				break
 			}
@@ -376,6 +376,7 @@ func SetResource(
 					sourceMemberShapeRef,
 					indentLevel+1,
 					false,
+					false,
 				)
 			}
 		default:
@@ -391,7 +392,11 @@ func SetResource(
 				sourceMemberShapeRef,
 				indentLevel+1,
 				false,
+				false,
 			)
+		}
+		if sourceMemberShapeRef.Shape.RealType == "union" {
+			sourceMemberShapeRef.Shape.Type = "structure"
 		}
 		if sourceMemberShapeRef.Shape.IsEnum() || !sourceMemberShapeRef.HasDefaultValue() {
 			out += fmt.Sprintf(
@@ -640,10 +645,9 @@ func setResourceReadMany(
 		}
 
 		targetMemberShapeRef = f.ShapeRef
-		// ditto
-		// if targetMemberShapeRef.Shape.RealType == "union" {
-		// 	continue
-		// }
+		if sourceMemberShapeRef.Shape.RealType == "union" {
+			sourceMemberShapeRef.Shape.Type = "union"
+		}
 
 		// Enum types are just strings at the end of the day
 		// so we want to check if they are empty before deciding
@@ -666,10 +670,10 @@ func setResourceReadMany(
 			"%s.%s", targetAdaptedVarName, f.Names.Camel,
 		)
 		switch sourceMemberShape.Type {
-		case "list", "structure", "map":
+		case "list", "structure", "map", "union":
 			// if lists are made of strings, or maps are made of string-to-string, we want to leverage
 			// the aws-sdk-go-v2 provided function to convert from pointer to non-pointer collection
-			adaption := setResourceAdaptPrimitiveCollection(sourceMemberShape, qualifiedTargetVar, sourceAdaptedVarName, indent, r.IsSecretField(memberName))
+			adaption := setResourceAdaptPrimitiveCollection(sourceMemberShape, qualifiedTargetVar, sourceAdaptedVarName, innerForIndent, r.IsSecretField(memberName))
 			out += adaption
 			if adaption != "" {
 				break
@@ -700,6 +704,7 @@ func setResourceReadMany(
 					memberVarName,
 					sourceMemberShapeRef,
 					flIndentLvl+1,
+					false,
 					false,
 				)
 			}
@@ -740,7 +745,11 @@ func setResourceReadMany(
 				sourceMemberShapeRef,
 				flIndentLvl+1,
 				false,
+				false,
 			)
+		}
+		if sourceMemberShapeRef.Shape.RealType == "union" {
+			sourceMemberShapeRef.Shape.Type = "structure"
 		}
 		if sourceMemberShapeRef.Shape.IsEnum() || !sourceMemberShapeRef.HasDefaultValue() {
 			out += fmt.Sprintf(
@@ -1518,6 +1527,7 @@ func setResourceIdentifierPrimaryIdentifier(
 		targetField.ShapeRef,
 		indentLevel,
 		false,
+		false,
 	)
 }
 
@@ -1546,6 +1556,7 @@ func setResourceIdentifierPrimaryIdentifierAnn(
 		adaptedMemberPath,
 		targetField.ShapeRef,
 		indentLevel,
+		false,
 		false,
 	)
 }
@@ -1702,6 +1713,18 @@ func setResourceForContainer(
 			op,
 			indentLevel,
 		)
+	case "union":
+		return setResourceForUnion(
+			cfg, r,
+			targetVarName,
+			targetShapeRef,
+			targetSetCfg,
+			sourceVarName,
+			sourceShapeRef,
+			targetFieldPath,
+			op,
+			indentLevel,
+		)
 	default:
 		return setResourceForScalar(
 			fmt.Sprintf("%s.%s", targetFieldName, targetVarName),
@@ -1709,6 +1732,7 @@ func setResourceForContainer(
 			sourceShapeRef,
 			indentLevel,
 			isListMember,
+			false,
 		)
 	}
 }
@@ -1760,9 +1784,9 @@ func SetResourceForStruct(
 		if sourceMemberShapeRef == nil {
 			continue
 		}
-		// if sourceMemberShapeRef.Shape.RealType == "union" {
-		// 	continue
-		// }
+		if sourceMemberShapeRef.Shape.RealType == "union" {
+			sourceMemberShapeRef.Shape.Type = "union"
+		}
 		// Upstream logic iterates over sourceShape members and therefore uses
 		// the sourceShape's index; continue using sourceShape's index here for consistency.
 		sourceMemberIndex, err := GetMemberIndex(sourceShape, targetMemberName)
@@ -1803,7 +1827,7 @@ func SetResourceForStruct(
 		switch sourceMemberShape.Type {
 		// if lists are made of strings, or maps are made of string-to-string, we want to leverage
 		// the aws-sdk-go-v2 provided function to convert from pointer to non-pointer collection
-		case "list", "structure", "map":
+		case "list", "structure", "map", "union":
 			adaption := setResourceAdaptPrimitiveCollection(sourceMemberShape, qualifiedTargetVar, sourceAdaptedVarName, indent, r.IsSecretField(targetMemberName))
 			out += adaption
 			if adaption != "" {
@@ -1836,6 +1860,7 @@ func SetResourceForStruct(
 					sourceMemberShapeRef,
 					indentLevel+1,
 					false,
+					false,
 				)
 			}
 		default:
@@ -1845,7 +1870,11 @@ func SetResourceForStruct(
 				sourceMemberShapeRef,
 				indentLevel+1,
 				false,
+				false,
 			)
+		}
+		if sourceMemberShapeRef.Shape.RealType == "union" {
+			sourceMemberShapeRef.Shape.Type = "structure"
 		}
 		if sourceMemberShape.IsEnum() || !sourceMemberShapeRef.HasDefaultValue() {
 			out += fmt.Sprintf(
@@ -1911,6 +1940,7 @@ func SetResourceForStruct(
 						sourceAdaptedVarName,
 						sourceMemberShapeRef,
 						indentLevel+1,
+						false,
 						false,
 					)
 					if sourceShape.IsEnum() || !sourceShapeRef.HasDefaultValue() {
@@ -1991,6 +2021,10 @@ func setResourceForSlice(
 	// And this would indicate to the code generator that the
 	// Spec.DBSecurityGroups field should be set from the value of the
 	// Output shape's DBSecurityGroups..DBSecurityGroupName fields.
+	if sourceShape.MemberRef.Shape.RealType == "union" {
+		sourceShape.MemberRef.Shape.Type = "union"
+	}
+
 	if targetSetCfg != nil && targetSetCfg.From != nil {
 		if sourceMemberShapeRef, found := sourceShape.MemberRef.Shape.MemberRefs[*targetSetCfg.From]; found {
 			out += setResourceForScalar(
@@ -1999,6 +2033,7 @@ func setResourceForSlice(
 				sourceMemberShapeRef,
 				indentLevel+1,
 				true,
+				false,
 			)
 		} else {
 			// This is a bug in the code generation if this occurs...
@@ -2031,6 +2066,9 @@ func setResourceForSlice(
 			op,
 			indentLevel+1,
 		)
+	}
+	if sourceShape.MemberRef.Shape.RealType == "union" {
+		sourceShape.MemberRef.Shape.Type = "structure"
 	}
 	out += fmt.Sprintf("%s\t%s = append(%s, %s)\n", indent, targetVarName, targetVarName, elemVarName)
 	out += fmt.Sprintf("%s}\n", indent)
@@ -2135,7 +2173,8 @@ func setResourceForScalar(
 	sourceVar string,
 	shapeRef *awssdkmodel.ShapeRef,
 	indentLevel int,
-	isListMember bool,
+	isList bool,
+	isUnion bool,
 ) string {
 	out := ""
 	indent := strings.Repeat("\t", indentLevel)
@@ -2144,29 +2183,29 @@ func setResourceForScalar(
 	if shape.Type == "timestamp" {
 		setTo = "&metav1.Time{*" + sourceVar + "}"
 	}
-
-	if strings.HasPrefix(targetVar, ".") {
-		targetVar = targetVar[1:]
-		//setTo = "*" + setTo   // This is for AWS-SDK-Go-V2
-
-	}
-
+	
+	targetVar = strings.TrimPrefix(targetVar, ".")
 	address := ""
 
-	if shape.Type == "long" && isListMember {
+	if (shape.Type == "long"  && isList) || (shape.Type == "string" && isUnion) {
 		address = "&"
 	}
 
+	intOrFloat := map[string]string{
+		"integer": "int",
+		"float": "float",
+	}
+
 	targetVar = strings.TrimPrefix(targetVar, ".")
-	if shape.Type == "integer" {
-		if !shapeRef.HasDefaultValue() && !isListMember {
+	if actualType, ok := intOrFloat[shape.Type]; ok {
+		if !shapeRef.HasDefaultValue() && !isList {
 			setTo = "*" + setTo
 		}
 		ogMemberName := names.New(shapeRef.OriginalMemberName)
-		if isListMember {
+		if isList {
 			ogMemberName = names.New(shapeRef.OrigShapeName)
 		}
-		out += fmt.Sprintf("%s%sCopy := int64(%s)\n", indent, ogMemberName.CamelLower, setTo)
+		out += fmt.Sprintf("%s%sCopy := %s64(%s)\n", indent, ogMemberName.CamelLower, actualType, setTo)
 		out += fmt.Sprintf("%s%s = &%sCopy\n", indent, targetVar, ogMemberName.CamelLower)
 	} else if shape.IsEnum() {
 		out += fmt.Sprintf("%s%s = aws.String(string(%s))\n", indent, targetVar, strings.TrimPrefix(setTo, "*"))
@@ -2293,6 +2332,143 @@ func setResourceAdaptPrimitiveCollection(shape *awssdkmodel.Shape, qualifiedTarg
 			out += fmt.Sprintf("%s\t%s = aws.Float64Map(%s)\n", indent, qualifiedTargetVar, sourceAdaptedVarName)
 		}
 	}
+
+	return out
+}
+
+func setResourceForUnion(
+	cfg *ackgenconfig.Config,
+	r *model.CRD,
+	// The variable name that we want to set a value to
+	targetVarName string,
+	// Shape Ref of the target struct field
+	targetShapeRef *awssdkmodel.ShapeRef,
+	// SetFieldConfig of the *target* field
+	targetSetCfg *ackgenconfig.SetFieldConfig,
+	// The struct or struct field that we access our source value from
+	sourceVarName string,
+	// ShapeRef of the source struct field
+	sourceShapeRef *awssdkmodel.ShapeRef,
+	// targetFieldPath is the field path to targetFieldName
+	targetFieldPath string,
+	op model.OpType,
+	indentLevel int,
+) string {
+	out := ""
+	indent := strings.Repeat("\t", indentLevel)
+	sourceShape := sourceShapeRef.Shape
+	targetShape := targetShapeRef.Shape
+
+	var sourceMemberShapeRef *awssdkmodel.ShapeRef
+	var sourceAdaptedVarName, qualifiedTargetVar string
+
+	sdkGoType := sourceShape.GoTypeWithPkgName()
+	sdkGoType = model.ReplacePkgName(sdkGoType, r.SDKAPIPackageName(), "svcsdktypes", true)
+
+	out += fmt.Sprintf("%sswitch %s.(type) {\n", indent, sourceVarName)
+	for _, targetMemberName := range targetShape.MemberNames() {
+		var setCfg *ackgenconfig.SetFieldConfig
+		f, ok := r.Fields[targetFieldPath]
+		if ok {
+			mf, ok := f.MemberFields[targetMemberName]
+			if ok {
+				setCfg = mf.GetSetterConfig(op)
+				if setCfg != nil && setCfg.IgnoreResourceSetter() {
+					continue
+				}
+			}
+		}
+
+		sourceMemberShapeRef = sourceShape.MemberRefs[targetMemberName]
+		if sourceMemberShapeRef == nil {
+			continue
+		}
+
+		sourceMemberIndex, err := GetMemberIndex(sourceShape, targetMemberName)
+		if err != nil {
+			msg := fmt.Sprintf(
+				"could not determine source shape index: %v", err)
+			panic(msg)
+		}
+
+		targetMemberShapeRef := targetShape.MemberRefs[targetMemberName]
+		// adding an extra f0 to ensure we don't run into naming confusion with the elemVarName
+		indexedVarName := fmt.Sprintf("%sf%df%d", targetVarName, sourceMemberIndex, sourceMemberIndex)
+		elemVarName := fmt.Sprintf("%sf%d", targetVarName, sourceMemberIndex)
+		sourceMemberShape := sourceMemberShapeRef.Shape
+		targetMemberCleanNames := names.New(targetMemberName)
+
+		out += fmt.Sprintf("%scase %sMember%s:\n", indent, sdkGoType, targetMemberName)
+		out += fmt.Sprintf(
+			"%s\t%s := %s.(%sMember%s)\n",
+			indent,
+			elemVarName,
+			sourceVarName,
+			sdkGoType,
+			targetMemberName,
+		)
+		out += fmt.Sprintf(
+			"%s\tif %s != nil {\n",
+			indent,
+			elemVarName,
+		)
+		sourceAdaptedVarName = fmt.Sprintf("%s.Value", elemVarName)
+
+		qualifiedTargetVar = fmt.Sprintf(
+			"%s.%s", targetVarName, targetMemberCleanNames.Camel,
+		)
+		updatedTargetFieldPath := targetFieldPath + "." + targetMemberCleanNames.Camel
+
+		switch sourceMemberShape.Type {
+		case "list", "structure", "map", "union":
+			adaption := setResourceAdaptPrimitiveCollection(sourceMemberShape, qualifiedTargetVar, sourceAdaptedVarName, indent, r.IsSecretField(targetMemberName))
+			out += adaption
+			if adaption != "" {
+				break
+			}
+			{
+				out += varEmptyConstructorK8sType(
+					cfg, r,
+					indexedVarName,
+					targetMemberShapeRef.Shape,
+					indentLevel+2,
+				)
+				out += setResourceForContainer(
+					cfg, r,
+					targetMemberCleanNames.Camel,
+					indexedVarName,
+					targetMemberShapeRef,
+					nil,
+					sourceAdaptedVarName,
+					sourceMemberShapeRef,
+					updatedTargetFieldPath,
+					false,
+					op,
+					indentLevel+2,
+				)
+
+				out += setResourceForScalar(
+					qualifiedTargetVar,
+					indexedVarName,
+					targetMemberShapeRef,
+					indentLevel+2,
+					false,
+					true,
+				)
+			}
+		default:
+			out += setResourceForScalar(
+				qualifiedTargetVar,
+				sourceAdaptedVarName,
+				targetMemberShapeRef,
+				indentLevel+1,
+				false,
+				true,
+			)
+		}
+		out += fmt.Sprintf("%s\t}\n", indent)
+	}
+	out += fmt.Sprintf("%s}\n", indent)
 
 	return out
 }

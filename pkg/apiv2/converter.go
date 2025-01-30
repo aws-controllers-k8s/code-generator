@@ -204,25 +204,25 @@ func createApiShape(shape Shape) (*awssdkmodel.Shape, error) {
 	}
 
 	if isException {
-		code, ok := shape.Traits["smithy.api#httpError"]
+		statusCode, ok := shape.Traits["smithy.api#httpError"]
+		apiShape.ErrorInfo = awssdkmodel.ErrorInfo{}
 		if ok {
-			switch code := code.(type) {
+			switch code := statusCode.(type) {
 			case float64:
-				apiShape.ErrorInfo = awssdkmodel.ErrorInfo{
-					HTTPStatusCode: int(code),
-				}
+				apiShape.ErrorInfo.HTTPStatusCode = int(code)
 			case int:
-				apiShape.ErrorInfo = awssdkmodel.ErrorInfo{
-					HTTPStatusCode: code,
-				}
+				apiShape.ErrorInfo.HTTPStatusCode = code
 			case int64:
-				apiShape.ErrorInfo = awssdkmodel.ErrorInfo{
-					HTTPStatusCode: int(code),
-				}
+				apiShape.ErrorInfo.HTTPStatusCode = int(code)
 			default:
-				return nil, fmt.Errorf("status code type not found for exception")
+				return nil, fmt.Errorf("statusCode type not found for exception")
 			}
 		}
+		errorTrait, ok := shape.Traits["aws.protocols#awsQueryError"]
+		if ok {
+			apiShape.ErrorInfo.Code, _ = errorTrait.(map[string]interface{})["code"].(string)
+		}
+
 	}
 
 	// Shapes that are default so far are booleans and
@@ -242,10 +242,10 @@ func addMemberRefs(apiShape *awssdkmodel.Shape, shape Shape, serviceAlias string
 	for memberName, member := range shape.MemberRefs {
 		// Here we make an assumption that we will not get an error
 		shapeNameClean, _ := removeShapeNamePrefix(member.ShapeName)
-		documentation, _ := member.Traits["smithy.api#documentation"].(string)
 		if member.isRequired() {
 			apiShape.Required = append(apiShape.Required, memberName)
 		}
+		documentation, _ := member.Traits["smithy.api#documentation"].(string)
 		apiShape.MemberRefs[memberName] = &awssdkmodel.ShapeRef{
 			ShapeName:     shapeNameClean,
 			Documentation: awssdkmodel.AppendDocstring("", documentation),

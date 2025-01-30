@@ -407,7 +407,7 @@ func (ref *ShapeRef) GoTypeWithPkgName() string {
 // If withPkgName is true, the package name will be added as a prefix
 func goType(s *Shape, withPkgName bool) string {
 	switch s.Type {
-	case "structure":
+	case "structure", "union":
 		if withPkgName || s.resolvePkg != "" {
 			pkg := s.resolvePkg
 			if pkg != "" {
