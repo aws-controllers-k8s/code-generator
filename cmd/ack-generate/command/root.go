@@ -107,10 +107,10 @@ func init() {
 		&optServicesDir, "services-dir", defaultServicesDir, "Path to directory to output service-specific code",
 	)
 	rootCmd.PersistentFlags().StringVar(
-		&optCacheDir, "cache-dir", defaultCacheDir, "Path to directory to store cached files (including clone'd aws-sdk-go repo)",
+		&optCacheDir, "cache-dir", defaultCacheDir, "Path to directory to store cached files (including clone'd aws-sdk-go-v2 repo)",
 	)
 	rootCmd.PersistentFlags().BoolVar(
-		&optRefreshCache, "refresh-cache", true, "If true, and aws-sdk-go repo is already cloned, will git pull the latest aws-sdk-go commit",
+		&optRefreshCache, "refresh-cache", true, "If true, and aws-sdk-go-v2 repo is already cloned, will git pull the latest aws-sdk-go-v2 commit",
 	)
 	rootCmd.PersistentFlags().StringVar(
 		&optGeneratorConfigPath, "generator-config-path", "", "Path to file containing instructions for code generation to use",
@@ -125,7 +125,7 @@ func init() {
 		&optOutputPath, "output", "o", "", "Path to directory to output generated files (if generating crossplane providers, this should be the root of the aws-crossplane directory)",
 	)
 	rootCmd.PersistentFlags().StringVar(
-		&optAWSSDKGoVersion, "aws-sdk-go-version", "", "Version of github.com/aws/aws-sdk-go used to generate apis and controllers files",
+		&optAWSSDKGoVersion, "aws-sdk-go-version", "", "Version of github.com/aws/aws-sdk-go-v2 used to generate apis and controllers files",
 	)
 	rootCmd.PersistentFlags().StringVar(
 		&optServiceAccountName, "service-account-name", "", "The name of the ServiceAccount used for ACK service controller",

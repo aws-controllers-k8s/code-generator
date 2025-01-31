@@ -61,6 +61,7 @@ func TestSQS_Queue(t *testing.T) {
 
 	expSpecFieldCamel := []string{
 		"ContentBasedDeduplication",
+		"CreatedTimestamp",
 		"DelaySeconds",
 		"FIFOQueue",
 		"KMSDataKeyReusePeriodSeconds",
@@ -79,8 +80,8 @@ func TestSQS_Queue(t *testing.T) {
 	expStatusFieldCamel := []string{
 		// There are a set of Attribute map keys that are readonly
 		// fields...
-		"CreatedTimestamp",
-		"LastModifiedTimestamp",
+		// "CreatedTimestamp",
+		// "LastModifiedTimestamp",
 		// There is only a QueueURL field returned from CreateQueueResult shape
 		"QueueURL",
 	}

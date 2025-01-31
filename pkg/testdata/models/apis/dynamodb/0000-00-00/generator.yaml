@@ -26,3 +26,19 @@ operations:
     # selecting for the output shape that only have a single member, which is incorrect
     # in this case.
     output_wrapper_field_path: BackupDescription.BackupDetails
+ignore:
+  field_paths:
+  - DescribeTableOutput.Table.DeletionProtectionEnabled
+  - DescribeTableOutput.Table.TableClassSummary
+  - DescribeTableOutput.Table.WarmThroughput
+  - GlobalSecondaryIndex.OnDemandThroughputOverride
+  - GlobalSecondaryIndex.OnDemandThroughput
+  - DescribeTableOutput.Table.OnDemandThroughput
+  - GlobalSecondaryIndex.WarmThroughput
+  - DescribeTableOutput.Table.MultiRegionConsistency
+  - ReplicaGlobalSecondaryIndexDescription.OnDemandThroughputOverride
+  - ReplicaGlobalSecondaryIndexDescription.WarmThroughput
+  - ReplicaDescription.OnDemandThroughputOverride
+  - ReplicaDescription.ReplicaInaccessibleDateTime
+  - ReplicaDescription.ReplicaTableClassSummary
+  - ReplicaDescription.WarmThroughput

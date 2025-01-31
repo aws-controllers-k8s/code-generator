@@ -82,20 +82,25 @@ func TestLambda_Function(t *testing.T) {
 
 	expStatusFieldCamel := []string{
 		// Added from generator.yaml
+		"Architectures",
 		"CodeLocation",
 		"CodeRepositoryType",
 		"CodeSHA256",
 		"CodeSize",
+		"EphemeralStorage",
 		// "FunctionArn", <-- ACKMetadata.ARN
 		"ImageConfigResponse",
 		"LastModified",
 		"LastUpdateStatus",
 		"LastUpdateStatusReason",
 		"LastUpdateStatusReasonCode",
+		"LoggingConfig",
 		"MasterARN",
 		"RevisionID",
+		"RuntimeVersionConfig",
 		"SigningJobARN",
 		"SigningProfileVersionARN",
+		"SnapStart",
 		"State",
 		"StateReason",
 		"StateReasonCode",

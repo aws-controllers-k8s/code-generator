@@ -123,6 +123,7 @@ func TestECRRepository(t *testing.T) {
 	expSpecFieldCamel := []string{
 		"ImageScanningConfiguration",
 		"ImageTagMutability",
+		"RegistryID",
 		"RepositoryName",
 		"Tags",
 	}
@@ -134,7 +135,6 @@ func TestECRRepository(t *testing.T) {
 		// input shape and therefore exists in the Spec
 		// "ImageTagMutability" removed because it is contained in the input
 		// shape and therefore exists in the Spec
-		"RegistryID",
 		// "RepositoryARN" removed because it refers to the primary object's
 		// ARN and the SDKMapper identified it for mapping to the standard
 		// Status.ACKResourceMetadata.ARN field

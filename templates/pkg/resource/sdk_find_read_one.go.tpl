@@ -28,16 +28,14 @@ func (rm *resourceManager) sdkFind(
 {{- end }}
 
 	var resp {{ .CRD.GetOutputShapeGoType .CRD.Ops.ReadOne }}
-	resp, err = rm.sdkapi.{{ .CRD.Ops.ReadOne.ExportedName }}WithContext(ctx, input)
+	resp, err = rm.sdkapi.{{ .CRD.Ops.ReadOne.ExportedName }}(ctx, input)
 {{- if $hookCode := Hook .CRD "sdk_read_one_post_request" }}
 {{ $hookCode }}
 {{- end }}
 	rm.metrics.RecordAPICall("READ_ONE", "{{ .CRD.Ops.ReadOne.ExportedName }}", err)
 	if err != nil {
-		if reqErr, ok := ackerr.AWSRequestFailure(err); ok && reqErr.StatusCode() == 404 {
-			return nil, ackerr.NotFound
-        }
-		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "{{ ResourceExceptionCode .CRD 404 }}" {{ GoCodeSetExceptionMessageCheck .CRD 404 }}{
+		var awsErr smithy.APIError
+		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "{{ ResourceExceptionCode .CRD 404 }}" {{ GoCodeSetExceptionMessageCheck .CRD 404 }} {
 			return nil, ackerr.NotFound
 		}
 		return nil, err

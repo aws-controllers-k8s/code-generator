@@ -21,7 +21,7 @@ resources:
       custom_method_name: customUpdateApi
   Route:
     tags:
-      ignore: True
+      ignore: true
 operations:
   CreateApi:
     custom_implementation: customCreateApi

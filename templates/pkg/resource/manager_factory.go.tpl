@@ -10,7 +10,7 @@ import (
 	ackcfg "github.com/aws-controllers-k8s/runtime/pkg/config"
 	ackmetrics "github.com/aws-controllers-k8s/runtime/pkg/metrics"
 	acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
-	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/go-logr/logr"
 
 	svcresource "github.com/aws-controllers-k8s/{{ .ControllerName }}-controller/pkg/resource"
@@ -34,10 +34,10 @@ func (f *resourceManagerFactory) ResourceDescriptor() acktypes.AWSResourceDescri
 // supplied AWS account
 func (f *resourceManagerFactory) ManagerFor(
 	cfg ackcfg.Config,
+	clientcfg aws.Config,
 	log logr.Logger,
 	metrics *ackmetrics.Metrics,
 	rr acktypes.Reconciler,
-	sess *session.Session,
 	id ackv1alpha1.AWSAccountID,
 	region ackv1alpha1.AWSRegion,
 	roleARN ackv1alpha1.AWSResourceName,
@@ -57,7 +57,7 @@ func (f *resourceManagerFactory) ManagerFor(
 	f.Lock()
 	defer f.Unlock()
 
-	rm, err := newResourceManager(cfg, log, metrics, rr, sess, id, region)
+	rm, err := newResourceManager(cfg, clientcfg, log, metrics, rr, id, region)
 	if err != nil {
 		return nil, err
 	}

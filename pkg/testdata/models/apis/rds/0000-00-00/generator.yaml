@@ -1,27 +1,337 @@
-resources:
-  DBInstance:
-    fields:
-      DBInstanceIdentifier:
-        is_primary_key: true
-      # NOTE(jaypipes): This is testing the SetFieldConfig.From functionality
-      # to instruct the code generator to use a different source field in the
-      # Output shape when setting the value of this field, but only for the
-      # Create and ReadOne resource manager methods.
+ignore:
+  resource_names:
+    - BlueGreenDeployment
+    - CustomAvailabilityZone
+    - CustomDBEngineVersion
+    #- DBCluster
+    - DBClusterEndpoint
+    #- DBClusterParameterGroup
+    # DBClusterSnapshot
+    #- DBInstance
+    - DBInstanceReadReplica
+    #- DBParameterGroup
+    #- DBProxy
+    - DBProxyEndpoint
+    - DBSecurityGroup
+    # DBSnapshot
+    #- DBSubnetGroup
+    - EventSubscription
+    #- GlobalCluster
+    - OptionGroup
+    - Integration
+    - DBShardGroup
+    - TenantDatabase
+  field_paths:
+    - CreateDBClusterInput.CACertificateIdentifier
+    - CreateDBClusterInput.ClusterScalabilityType
+    - CreateDBClusterInput.DatabaseInsightsMode
+    - CreateDBClusterInput.EngineLifecycleSupport
+    - CreateDBClusterOutput.DBCluster.IOOptimizedNextAllowedModificationTime
+    - CreateDBClusterOutput.DBCluster.LimitlessDatabase
+    - CreateDBClusterOutput.DBCluster.LocalWriteForwardingStatus
+    - CreateDBClusterOutput.DBCluster.StatusInfos
+    - CreateDBClusterOutput.DBCluster.StorageThroughput
+    - CreateDBInstanceInput.DBSecurityGroups
+    - CreateDBInstanceInput.DomainAuthSecretArn
+    - CreateDBInstanceInput.DomainDnsIps
+    - CreateDBInstanceInput.MultiTenant
+    - CreateDBInstanceInput.DedicatedLogVolume
+    - CreateDBInstanceInput.DatabaseInsightsMode
+    - CreateDBInstanceOutput.DBInstance.PercentProgress
+    - RestoreDBInstanceFromDBSnapshotInput.DomainFqdn
+    - RestoreDBInstanceToPointInTimeInput.DomainOu
+    - RestoreDBInstanceToPointInTimeInput.EngineLifecycleSupport
+    - RestoreDBClusterToPointInTimeInput.SourceDbClusterResourceId
+    - RestoreDBInstanceFromDBSnapshotInput.DedicatedLogVolume
+    - RestoreDBInstanceFromDBSnapshotInput.DomainAuthSecretArn
+    - RestoreDBInstanceFromDBSnapshotInput.DomainDnsIps
+    - RestoreDBClusterToPointInTimeInput.EngineLifecycleSupport
+    - RestoreDBClusterFromSnapshotInput.EngineLifecycleSupport
+    - DBInstance.DBSecurityGroups
+    # We handle Spec.Tags separately...
+    - "DescribeDBInstancesOutput.DBInstances.DBInstance.TagList"
+    # These fields are also supported for DBSnapshot updates but we can't
+    # support them for the moment. They require some code-generator modifications.
+    - "CreateDBSnapshotOutput.DBSnapshot.EngineVersion"
+    - "CreateDBSnapshotOutput.DBSnapshot.OptionGroupName"
+    - "DescribeDBClusterSnapshotsOutput.DBClusterSnapshots.TagList"
+operations:
+  ModifyDBCluster:
+    override_values:
+      # The whole concept of a "maintenance window" isn't aligned with the
+      # declarative state model in Kubernetes. Users should build "maintenance
+      # window" functionality at a higher layer than the APIs that manage the
+      # lifecycle of individual resources like a DB cluster or DB instance. For
+      # example, users can build maintenance window functionality into their
+      # deployment pipeline solution or GitOps solution.
       #
-      # In this case, we are instructing the code generator to set the
-      # Spec.DBSecurityGroups field (which is a []string field) to the set of
-      # DBSecurityGroups..DBSecurityGroupName values in the ReadOne method's
-      # Output shape.
-      DBSecurityGroups:
+      # We override the value of the ApplyImmediately field in the modify
+      # operations to "true" because we want changes that a Kubernetes user
+      # makes to a resource's Spec to be reconciled by the ACK service
+      # controller, not a different service.
+      ApplyImmediately: aws.Bool(true)
+      # We override the value of AllowMajorVersionUpgrade field in the modify
+      # call since any engine version change should apply directly.
+      # This flag was designed as a protect flag but not necessary in controller
+      # side when customer need to make the engine version change
+      AllowMajorVersionUpgrade: aws.Bool(true)
+  ModifyDBInstance:
+    override_values:
+      # The whole concept of a "maintenance window" isn't aligned with the
+      # declarative state model in Kubernetes. Users should build "maintenance
+      # window" functionality at a higher layer than the APIs that manage the
+      # lifecycle of individual resources like a DB cluster or DB instance. For
+      # example, users can build maintenance window functionality into their
+      # deployment pipeline solution or GitOps solution.
+      #
+      # We override the value of the ApplyImmediately field in the modify
+      # operations to "true" because we want changes that a Kubernetes user
+      # makes to a resource's Spec to be reconciled by the ACK service
+      # controller, not a different service.
+      ApplyImmediately: aws.Bool(true)
+      # We override the value of the ApplyImmediately field in the modify
+      # operations to "true" because we want changes that a Kubernetes user
+      # makes to a resource's Spec to be reconciled by the ACK service
+      # controller, not a different service.
+      AllowMajorVersionUpgrade: aws.Bool(true)
+resources:
+  DBCluster:
+    fields:
+      DestinationRegion:
         set:
-          - method: Create
-            from: DBSecurityGroupName
-          - method: ReadOne
-            from: DBSecurityGroupName
-  DBSubnetGroup:
+          - ignore: all
+      DBClusterIdentifier:
+        is_primary_key: true
+      MasterUserPassword:
+        is_secret: true
+      KmsKeyId:
+        references:
+          resource: Key
+          service_name: kms
+          path: Status.ACKResourceMetadata.ARN
+      MasterUserSecretKmsKeyId:
+        references:
+          resource: Key
+          service_name: kms
+          path: Status.ACKResourceMetadata.ARN
+      DBClusterParameterGroupName:
+        references:
+          resource: DBClusterParameterGroup
+          path: Spec.Name
+      DBSubnetGroupName:
+        references:
+          resource: DBSubnetGroup
+          path: Spec.Name
+      VpcSecurityGroupIds:
+        references:
+          resource: SecurityGroup
+          service_name: ec2
+          path: Status.ID
+      SnapshotIdentifier:
+        from:
+          operation: RestoreDBClusterFromSnapshot
+          path: SnapshotIdentifier
+      SourceDBClusterIdentifier:
+        from:
+          operation: RestoreDBClusterToPointInTime
+          path: SourceDBClusterIdentifier
+      RestoreType:
+        from:
+          operation: RestoreDBClusterToPointInTime
+          path: RestoreType
+      RestoreToTime:
+        from:
+          operation: RestoreDBClusterToPointInTime
+          path: RestoreToTime
+      UseLatestRestorableTime:
+        from:
+          operation: RestoreDBClusterToPointInTime
+          path: UseLatestRestorableTime
+      Tags:
+        compare:
+          # We have a custom comparison function...
+          is_ignored: true
+    renames:
+      operations:
+        CreateDBCluster:
+          output_fields:
+            ScalingConfigurationInfo: ScalingConfiguration
+        ModifyDBCluster:
+          output_fields:
+            ScalingConfigurationInfo: ScalingConfiguration
+  DBClusterParameterGroup:
+    renames:
+      operations:
+        DescribeDBClusterParameterGroups:
+          input_fields:
+            DBClusterParameterGroupName: Name
+            DBParameterGroupFamily: Family
+        CreateDBClusterParameterGroup:
+          input_fields:
+            DBClusterParameterGroupName: Name
+            DBParameterGroupFamily: Family
+        DeleteDBClusterParameterGroup:
+          input_fields:
+            DBClusterParameterGroupName: Name
+        ModifyDBClusterParameterGroup:
+          input_fields:
+            DBClusterParameterGroupName: Name
+            DBParameterGroupFamily: Family
     fields:
       Name:
         is_primary_key: true
+      Parameters:
+        from:
+          operation: ModifyDBClusterParameterGroup
+          path: Parameters
+        documentation: DEPRECATED - do not use.  Prefer ParameterOverrides instead.
+      ParameterOverrides:
+        custom_field:
+          # Map keys are the parameter name and the values are the parameter value.
+          # We automatically determine the "apply method" for parameters.
+          map_of: String
+        documentation: These are ONLY user-defined parameter overrides for the
+          DB cluster parameter group. This does not contain default or system
+          parameters.
+      Tags:
+        compare:
+          # We have a custom comparison function...
+          is_ignored: true
+      # These are the "statuses" for the user-defined parameter overrides in
+      # Spec.ParameterOverrides
+      ParameterOverrideStatuses:
+        from:
+          operation: DescribeDBClusterParameters
+          path: Parameters
+        is_read_only: true
+  DBInstance:
+    fields:
+      AvailabilityZone:
+        late_initialize: {}
+        is_immutable: true
+      DBInstanceIdentifier:
+        is_primary_key: true
+      DBInstanceStatus:
+        print:
+          name: "STATUS"
+      MasterUserPassword:
+        is_secret: true
+      KmsKeyId:
+        references:
+          resource: Key
+          service_name: kms
+          path: Status.ACKResourceMetadata.ARN
+      MasterUserSecretKmsKeyId:
+        references:
+          resource: Key
+          service_name: kms
+          path: Status.ACKResourceMetadata.ARN
+      DBParameterGroupName:
+        references:
+          resource: DBParameterGroup
+          path: Spec.Name
+      DBSubnetGroupName:
+        references:
+          resource: DBSubnetGroup
+          path: Spec.Name
+      VpcSecurityGroupIds:
+        references:
+          resource: SecurityGroup
+          service_name: ec2
+          path: Status.ID
+      BackupTarget:
+        late_initialize: {}
+      NetworkType:
+        late_initialize: {}
+      # Used by restore db instance from db snapshot
+      DBSnapshotIdentifier:
+        from:
+          operation: RestoreDBInstanceFromDBSnapshot
+          path: DBSnapshotIdentifier
+      DBClusterSnapshotIdentifier:
+        from:
+          operation: RestoreDBInstanceFromDBSnapshot
+          path: DBClusterSnapshotIdentifier
+      UseDefaultProcessorFeatures:
+        from:
+          operation: RestoreDBInstanceFromDBSnapshot
+          path: UseDefaultProcessorFeatures
+      # Used by create db instance read replica
+      SourceDBInstanceIdentifier:
+        from:
+          operation: CreateDBInstanceReadReplica
+          path: SourceDBInstanceIdentifier
+      DestinationRegion:
+        set:
+          - ignore: all
+        from:
+          operation: CreateDBInstanceReadReplica
+          path: DestinationRegion
+      ReplicaMode:
+        from:
+          operation: CreateDBInstanceReadReplica
+          path: ReplicaMode
+      SourceRegion:
+        from:
+          operation: CreateDBInstanceReadReplica
+          path: SourceRegion
+      PreSignedURL:
+        from:
+          operation: CreateDBInstanceReadReplica
+          path: PreSignedUrl
+      Tags:
+        compare:
+          # We have a custom comparison function...
+          is_ignored: true
+    renames:
+      operations:
+        CreateDBInstance:
+          input_fields:
+            EnablePerformanceInsights: PerformanceInsightsEnabled
+        ModifyDBInstance:
+          input_fields:
+            EnablePerformanceInsights: PerformanceInsightsEnabled
+  GlobalCluster:
+    fields:
+      GlobalClusterIdentifier:
+        is_primary_key: true
+    tags:
+      ignore: true
+  DBParameterGroup:
+    renames:
+      operations:
+        DescribeDBParameterGroups:
+          input_fields:
+            DBParameterGroupName: Name
+            DBParameterGroupFamily: Family
+        CreateDBParameterGroup:
+          input_fields:
+            DBParameterGroupName: Name
+            DBParameterGroupFamily: Family
+        DeleteDBParameterGroup:
+          input_fields:
+            DBParameterGroupName: Name
+        ModifyDBParameterGroup:
+          input_fields:
+            DBParameterGroupName: Name
+            DBParameterGroupFamily: Family
+    fields:
+      Name:
+        is_primary_key: true
+      ParameterOverrides:
+        custom_field:
+          # The type is a map[string]string where the map keys are the
+          # parameter name and the values are the parameter value. We
+          # automatically determine the "apply method" for parameters so all
+          # the user needs to do is specify the parameter name and value they
+          # want to override...
+          map_of: String
+      ParameterOverrideStatuses:
+        from:
+          operation: DescribeDBParameters
+          path: Parameters
+        is_read_only: true
+  DBSubnetGroup:
     renames:
       operations:
         DescribeDBSubnetGroups:
@@ -32,6 +342,44 @@ resources:
           input_fields:
             DBSubnetGroupName: Name
             DBSubnetGroupDescription: Description
+        ModifyDBSubnetGroup:
+          input_fields:
+            DBSubnetGroupName: Name
+            DBSubnetGroupDescription: Description
         DeleteDBSubnetGroup:
           input_fields:
             DBSubnetGroupName: Name
+  DBProxy:
+    fields:
+      Name:
+        is_primary_key: true
+    renames:
+      operations:
+        CreateDBProxy:
+          input_fields:
+            DBProxyName: Name
+        DeleteDBProxy:
+          input_fields:
+            DBProxyName: Name
+        DescribeDBProxies:
+          input_fields:
+            DBProxyName: Name
+        ModifyDBProxy:
+          input_fields:
+            DBProxyName: Name
+  DBSnapshot:
+    fields:
+      DBSnapshotIdentifier:
+        is_primary_key: true
+      DBInstanceIdentifier:
+        references:
+          resource: DBInstance
+          path: Spec.DBInstanceIdentifier
+  DBClusterSnapshot:
+    fields:
+      DBClusterSnapshotIdentifier:
+        is_primary_key: true
+      DBClusterIdentifier:
+        references:
+          resource: DBCluster
+          path: Spec.DBClusterIdentifier

@@ -1,5 +1,3 @@
-
-
 package api
 
 // IoSuffix represents map of service to shape names that
@@ -72,6 +70,7 @@ var legacyIOSuffixed = IoSuffix{
 		"TaskInput":                    struct{}{},
 		"TransformOutput":              struct{}{},
 		"ModelBiasJobInput":            struct{}{},
+		"ModelInput":                   struct{}{},
 		"TransformInput":               struct{}{},
 		"LabelingJobOutput":            struct{}{},
 		"DataQualityJobInput":          struct{}{},
@@ -115,6 +114,16 @@ var legacyIOSuffixed = IoSuffix{
 		"BatchInferenceJobInput":  struct{}{},
 		"BatchInferenceJobOutput": struct{}{},
 		"DatasetExportJobOutput":  struct{}{},
+	},
+
+	"OpenSearchService": {
+		"AIMLOptionsInput":                           struct{}{},
+		"AdvancedSecurityOptionsInput":               struct{}{},
+		"NaturalLanguageQueryGenerationOptionsInput": struct{}{},
+		"JWTOptionsInput":                            struct{}{},
+		"SAMLOptionsInput":                           struct{}{},
+		"AutoTuneOptionsInput":                       struct{}{},
+		"IdentityCenterOptionsInput":                 struct{}{},
 	},
 
 	"MWAA": {

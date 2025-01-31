@@ -224,6 +224,9 @@ if ! $ACK_GENERATE_BIN_PATH "${controller_args[@]}"; then
 fi
 
 pushd "$SERVICE_CONTROLLER_SOURCE_PATH/pkg/resource" 1>/dev/null
+echo "Running GO mod tidy"
+go mod edit -replace github.com/aws-controllers-k8s/runtime=github.com/michaelhtm/ack-runtime@aws-sdk-go-v2-mt
+go mod tidy 1>/dev/null
 
 echo "Generating RBAC manifests for $SERVICE"
 controller-gen rbac:roleName="$K8S_RBAC_ROLE_NAME" paths=./... output:rbac:artifacts:config="$config_output_dir/rbac"
@@ -242,6 +245,7 @@ popd 1>/dev/null
 
 echo "Running gofmt against generated code for $SERVICE"
 gofmt -w "$SERVICE_CONTROLLER_SOURCE_PATH"
+goimports -w "$SERVICE_CONTROLLER_SOURCE_PATH"
 
 echo "Updating additional GitHub repository maintenance files"
 cp "$ROOT_DIR"/CODE_OF_CONDUCT.md "$SERVICE_CONTROLLER_SOURCE_PATH"/CODE_OF_CONDUCT.md

@@ -103,7 +103,7 @@ func TestSageMaker_Error_Prefix_Message(t *testing.T) {
 	assert.Equal("ValidationException", crd.ExceptionCode(404))
 
 	// Validation Exception has prefix Requested resource not found.
-	assert.Equal("&& strings.HasPrefix(awsErr.Message(), \"Requested resource not found\") ", code.CheckExceptionMessage(crd.Config(), crd, 404))
+	assert.Equal("&& strings.HasPrefix(awsErr.ErrorMessage(), \"Requested resource not found\") ", code.CheckExceptionMessage(crd.Config(), crd, 404))
 }
 
 func TestSageMaker_Error_Suffix_Message(t *testing.T) {
@@ -138,7 +138,7 @@ func TestSageMaker_Error_Suffix_Message(t *testing.T) {
 	assert.Equal("ValidationException", crd.ExceptionCode(404))
 
 	// Validation Exception has suffix ModelPackageGroup arn:aws:sagemaker:/ does not exist
-	assert.Equal("&& strings.HasSuffix(awsErr.Message(), \"does not exist.\") ", code.CheckExceptionMessage(crd.Config(), crd, 404))
+	assert.Equal("&& strings.HasSuffix(awsErr.ErrorMessage(), \"does not exist.\") ", code.CheckExceptionMessage(crd.Config(), crd, 404))
 }
 
 func TestSageMaker_RequeueOnSuccessSeconds(t *testing.T) {
