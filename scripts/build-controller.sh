@@ -225,7 +225,6 @@ fi
 
 pushd "$SERVICE_CONTROLLER_SOURCE_PATH/pkg/resource" 1>/dev/null
 echo "Running GO mod tidy"
-go mod edit -replace github.com/aws-controllers-k8s/runtime=github.com/michaelhtm/ack-runtime@aws-sdk-go-v2-mt
 go mod tidy 1>/dev/null
 
 echo "Generating RBAC manifests for $SERVICE"

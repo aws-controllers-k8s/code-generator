@@ -279,7 +279,11 @@ func addKeyAndValueRef(apiShape *awssdkmodel.Shape, shape Shape) {
 }
 
 func addEnumRef(apiShape *awssdkmodel.Shape, shape Shape) {
-	for memberName := range shape.MemberRefs {
+	for memberName, member := range shape.MemberRefs {
+		enumValue, ok := member.Traits["smithy.api#enumValue"]
+		if ok {
+			memberName = enumValue.(string)
+		}
 		apiShape.Enum = append(apiShape.Enum, memberName)
 	}
 	slices.Sort(apiShape.Enum)
