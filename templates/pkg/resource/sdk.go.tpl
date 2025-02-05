@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"math"
 
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
 	ackcondition "github.com/aws-controllers-k8s/runtime/pkg/condition"
@@ -15,8 +16,10 @@ import (
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
-	"github.com/aws/aws-sdk-go/aws"
-	svcsdk "github.com/aws/aws-sdk-go/service/{{ .ServicePackageName }}"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	svcsdk "github.com/aws/aws-sdk-go-v2/service/{{ .ServicePackageName }}"
+	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/{{ .ServicePackageName }}/types"
+	smithy "github.com/aws/smithy-go"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -27,8 +30,7 @@ import (
 var (
 	_ = &metav1.Time{}
 	_ = strings.ToLower("")
-	_ = &aws.JSONValue{}
-	_ = &svcsdk.{{ .ClientStructTypeName }}{}
+	_ = &svcsdk.Client{}
 	_ = &svcapitypes.{{ .CRD.Names.Camel }}{}
 	_ = ackv1alpha1.AWSAccountID("")
 	_ = &ackerr.NotFound
@@ -36,6 +38,7 @@ var (
 	_ = &reflect.Value{}
 	_ = fmt.Sprintf("")
 	_ = &ackrequeue.NoRequeue{}
+	_ = &aws.Config{}
 )
 
 // sdkFind returns SDK-specific information about a supplied resource
@@ -82,7 +85,7 @@ func (rm *resourceManager) sdkCreate(
 {{- end }}
 
 	var resp {{ .CRD.GetOutputShapeGoType .CRD.Ops.Create }}; _ = resp;
-	resp, err = rm.sdkapi.{{ .CRD.Ops.Create.ExportedName }}WithContext(ctx, input)
+	resp, err = rm.sdkapi.{{ .CRD.Ops.Create.ExportedName }}(ctx, input)
 {{- if $hookCode := Hook .CRD "sdk_create_post_request" }}
 {{ $hookCode }}
 {{- end }}
@@ -164,7 +167,7 @@ func (rm *resourceManager) sdkDelete(
 {{ $hookCode }}
 {{- end }}
 	var resp {{ .CRD.GetOutputShapeGoType .CRD.Ops.Delete }}; _ = resp;
-	resp, err = rm.sdkapi.{{ .CRD.Ops.Delete.ExportedName }}WithContext(ctx, input)
+	resp, err = rm.sdkapi.{{ .CRD.Ops.Delete.ExportedName }}(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "{{ .CRD.Ops.Delete.ExportedName }}", err)
 {{- if $hookCode := Hook .CRD "sdk_delete_post_request" }}
 {{ $hookCode }}
@@ -311,11 +314,12 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 	if err == nil {
 		return false
 	}
-	awsErr, ok := ackerr.AWSError(err)
-	if !ok {
+
+	var terminalErr smithy.APIError
+	if !errors.As(err, &terminalErr) {
 		return false
 	}
-	switch awsErr.Code() {
+	switch terminalErr.ErrorCode() {
 	case {{ range $x, $terminalCode := .CRD.TerminalExceptionCodes -}}{{ if ne ($x) (0) }},
 		{{ end }} "{{ $terminalCode }}"{{ end }}:
 		return true

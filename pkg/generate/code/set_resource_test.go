@@ -45,18 +45,12 @@ func TestSetResource_APIGWv2_Route_Create(t *testing.T) {
 		ko.Spec.APIKeyRequired = nil
 	}
 	if resp.AuthorizationScopes != nil {
-		f2 := []*string{}
-		for _, f2iter := range resp.AuthorizationScopes {
-			var f2elem string
-			f2elem = *f2iter
-			f2 = append(f2, &f2elem)
-		}
-		ko.Spec.AuthorizationScopes = f2
+		ko.Spec.AuthorizationScopes = aws.StringSlice(resp.AuthorizationScopes)
 	} else {
 		ko.Spec.AuthorizationScopes = nil
 	}
-	if resp.AuthorizationType != nil {
-		ko.Spec.AuthorizationType = resp.AuthorizationType
+	if resp.AuthorizationType != "" {
+		ko.Spec.AuthorizationType = aws.String(string(resp.AuthorizationType))
 	} else {
 		ko.Spec.AuthorizationType = nil
 	}
@@ -76,13 +70,7 @@ func TestSetResource_APIGWv2_Route_Create(t *testing.T) {
 		ko.Spec.OperationName = nil
 	}
 	if resp.RequestModels != nil {
-		f7 := map[string]*string{}
-		for f7key, f7valiter := range resp.RequestModels {
-			var f7val string
-			f7val = *f7valiter
-			f7[f7key] = &f7val
-		}
-		ko.Spec.RequestModels = f7
+		ko.Spec.RequestModels = aws.StringMap(resp.RequestModels)
 	} else {
 		ko.Spec.RequestModels = nil
 	}
@@ -147,18 +135,12 @@ func TestSetResource_APIGWv2_Route_ReadOne(t *testing.T) {
 		ko.Spec.APIKeyRequired = nil
 	}
 	if resp.AuthorizationScopes != nil {
-		f2 := []*string{}
-		for _, f2iter := range resp.AuthorizationScopes {
-			var f2elem string
-			f2elem = *f2iter
-			f2 = append(f2, &f2elem)
-		}
-		ko.Spec.AuthorizationScopes = f2
+		ko.Spec.AuthorizationScopes = aws.StringSlice(resp.AuthorizationScopes)
 	} else {
 		ko.Spec.AuthorizationScopes = nil
 	}
-	if resp.AuthorizationType != nil {
-		ko.Spec.AuthorizationType = resp.AuthorizationType
+	if resp.AuthorizationType != "" {
+		ko.Spec.AuthorizationType = aws.String(string(resp.AuthorizationType))
 	} else {
 		ko.Spec.AuthorizationType = nil
 	}
@@ -178,13 +160,7 @@ func TestSetResource_APIGWv2_Route_ReadOne(t *testing.T) {
 		ko.Spec.OperationName = nil
 	}
 	if resp.RequestModels != nil {
-		f7 := map[string]*string{}
-		for f7key, f7valiter := range resp.RequestModels {
-			var f7val string
-			f7val = *f7valiter
-			f7[f7key] = &f7val
-		}
-		ko.Spec.RequestModels = f7
+		ko.Spec.RequestModels = aws.StringMap(resp.RequestModels)
 	} else {
 		ko.Spec.RequestModels = nil
 	}
@@ -220,6 +196,401 @@ func TestSetResource_APIGWv2_Route_ReadOne(t *testing.T) {
 		ko.Spec.Target = resp.Target
 	} else {
 		ko.Spec.Target = nil
+	}
+`
+	assert.Equal(
+		expected,
+		code.SetResource(crd.Config(), crd, model.OpTypeGet, "resp", "ko", 1),
+	)
+}
+
+
+func TestSetResource_SageMaker_Domain_ReadOne(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "sagemaker")
+
+	crd := testutil.GetCRDByName(t, g, "Domain")
+	require.NotNil(crd)
+
+	expected := `
+	if resp.AppNetworkAccessType != "" {
+		ko.Spec.AppNetworkAccessType = aws.String(string(resp.AppNetworkAccessType))
+	} else {
+		ko.Spec.AppNetworkAccessType = nil
+	}
+	if resp.AppSecurityGroupManagement != "" {
+		ko.Spec.AppSecurityGroupManagement = aws.String(string(resp.AppSecurityGroupManagement))
+	} else {
+		ko.Spec.AppSecurityGroupManagement = nil
+	}
+	if resp.AuthMode != "" {
+		ko.Spec.AuthMode = aws.String(string(resp.AuthMode))
+	} else {
+		ko.Spec.AuthMode = nil
+	}
+	if resp.DefaultUserSettings != nil {
+		f4 := &svcapitypes.UserSettings{}
+		if resp.DefaultUserSettings.CodeEditorAppSettings != nil {
+			f4f0 := &svcapitypes.CodeEditorAppSettings{}
+			if resp.DefaultUserSettings.CodeEditorAppSettings.DefaultResourceSpec != nil {
+				f4f0f0 := &svcapitypes.ResourceSpec{}
+				if resp.DefaultUserSettings.CodeEditorAppSettings.DefaultResourceSpec.InstanceType != "" {
+					f4f0f0.InstanceType = aws.String(string(resp.DefaultUserSettings.CodeEditorAppSettings.DefaultResourceSpec.InstanceType))
+				}
+				if resp.DefaultUserSettings.CodeEditorAppSettings.DefaultResourceSpec.LifecycleConfigArn != nil {
+					f4f0f0.LifecycleConfigARN = resp.DefaultUserSettings.CodeEditorAppSettings.DefaultResourceSpec.LifecycleConfigArn
+				}
+				if resp.DefaultUserSettings.CodeEditorAppSettings.DefaultResourceSpec.SageMakerImageArn != nil {
+					f4f0f0.SageMakerImageARN = resp.DefaultUserSettings.CodeEditorAppSettings.DefaultResourceSpec.SageMakerImageArn
+				}
+				if resp.DefaultUserSettings.CodeEditorAppSettings.DefaultResourceSpec.SageMakerImageVersionAlias != nil {
+					f4f0f0.SageMakerImageVersionAlias = resp.DefaultUserSettings.CodeEditorAppSettings.DefaultResourceSpec.SageMakerImageVersionAlias
+				}
+				if resp.DefaultUserSettings.CodeEditorAppSettings.DefaultResourceSpec.SageMakerImageVersionArn != nil {
+					f4f0f0.SageMakerImageVersionARN = resp.DefaultUserSettings.CodeEditorAppSettings.DefaultResourceSpec.SageMakerImageVersionArn
+				}
+				f4f0.DefaultResourceSpec = f4f0f0
+			}
+			if resp.DefaultUserSettings.CodeEditorAppSettings.LifecycleConfigArns != nil {
+				f4f0.LifecycleConfigARNs = aws.StringSlice(resp.DefaultUserSettings.CodeEditorAppSettings.LifecycleConfigArns)
+			}
+			f4.CodeEditorAppSettings = f4f0
+		}
+		if resp.DefaultUserSettings.CustomFileSystemConfigs != nil {
+			f4f1 := []*svcapitypes.CustomFileSystemConfig{}
+			for _, f4f1iter := range resp.DefaultUserSettings.CustomFileSystemConfigs {
+				f4f1elem := &svcapitypes.CustomFileSystemConfig{}
+				switch f4f1iter.(type) {
+				case *svcsdktypes.CustomFileSystemConfigMemberEFSFileSystemConfig:
+					f4f1elemf0 := f4f1iter.(*svcsdktypes.CustomFileSystemConfigMemberEFSFileSystemConfig)
+					if f4f1elemf0 != nil {
+						f4f1elemf0f0 := &svcapitypes.EFSFileSystemConfig{}
+						if f4f1elemf0.Value.FileSystemId != nil {
+							f4f1elemf0f0.FileSystemID = f4f1elemf0.Value.FileSystemId
+						}
+						if f4f1elemf0.Value.FileSystemPath != nil {
+							f4f1elemf0f0.FileSystemPath = f4f1elemf0.Value.FileSystemPath
+						}
+						f4f1elem.EFSFileSystemConfig = f4f1elemf0f0
+					}
+				case *svcsdktypes.CustomFileSystemConfigMemberFSxLustreFileSystemConfig:
+					f4f1elemf1 := f4f1iter.(*svcsdktypes.CustomFileSystemConfigMemberFSxLustreFileSystemConfig)
+					if f4f1elemf1 != nil {
+						f4f1elemf1f1 := &svcapitypes.FSxLustreFileSystemConfig{}
+						if f4f1elemf1.Value.FileSystemId != nil {
+							f4f1elemf1f1.FileSystemID = f4f1elemf1.Value.FileSystemId
+						}
+						if f4f1elemf1.Value.FileSystemPath != nil {
+							f4f1elemf1f1.FileSystemPath = f4f1elemf1.Value.FileSystemPath
+						}
+						f4f1elem.FSxLustreFileSystemConfig = f4f1elemf1f1
+					}
+				}
+				f4f1 = append(f4f1, f4f1elem)
+			}
+			f4.CustomFileSystemConfigs = f4f1
+		}
+		if resp.DefaultUserSettings.CustomPosixUserConfig != nil {
+			f4f2 := &svcapitypes.CustomPosixUserConfig{}
+			if resp.DefaultUserSettings.CustomPosixUserConfig.Gid != nil {
+				f4f2.GID = resp.DefaultUserSettings.CustomPosixUserConfig.Gid
+			}
+			if resp.DefaultUserSettings.CustomPosixUserConfig.Uid != nil {
+				f4f2.UID = resp.DefaultUserSettings.CustomPosixUserConfig.Uid
+			}
+			f4.CustomPosixUserConfig = f4f2
+		}
+		if resp.DefaultUserSettings.DefaultLandingUri != nil {
+			f4.DefaultLandingURI = resp.DefaultUserSettings.DefaultLandingUri
+		}
+		if resp.DefaultUserSettings.ExecutionRole != nil {
+			f4.ExecutionRole = resp.DefaultUserSettings.ExecutionRole
+		}
+		if resp.DefaultUserSettings.JupyterLabAppSettings != nil {
+			f4f5 := &svcapitypes.JupyterLabAppSettings{}
+			if resp.DefaultUserSettings.JupyterLabAppSettings.CustomImages != nil {
+				f4f5f0 := []*svcapitypes.CustomImage{}
+				for _, f4f5f0iter := range resp.DefaultUserSettings.JupyterLabAppSettings.CustomImages {
+					f4f5f0elem := &svcapitypes.CustomImage{}
+					if f4f5f0iter.AppImageConfigName != nil {
+						f4f5f0elem.AppImageConfigName = f4f5f0iter.AppImageConfigName
+					}
+					if f4f5f0iter.ImageName != nil {
+						f4f5f0elem.ImageName = f4f5f0iter.ImageName
+					}
+					if f4f5f0iter.ImageVersionNumber != nil {
+						imageVersionNumberCopy := int64(*f4f5f0iter.ImageVersionNumber)
+						f4f5f0elem.ImageVersionNumber = &imageVersionNumberCopy
+					}
+					f4f5f0 = append(f4f5f0, f4f5f0elem)
+				}
+				f4f5.CustomImages = f4f5f0
+			}
+			if resp.DefaultUserSettings.JupyterLabAppSettings.DefaultResourceSpec != nil {
+				f4f5f1 := &svcapitypes.ResourceSpec{}
+				if resp.DefaultUserSettings.JupyterLabAppSettings.DefaultResourceSpec.InstanceType != "" {
+					f4f5f1.InstanceType = aws.String(string(resp.DefaultUserSettings.JupyterLabAppSettings.DefaultResourceSpec.InstanceType))
+				}
+				if resp.DefaultUserSettings.JupyterLabAppSettings.DefaultResourceSpec.LifecycleConfigArn != nil {
+					f4f5f1.LifecycleConfigARN = resp.DefaultUserSettings.JupyterLabAppSettings.DefaultResourceSpec.LifecycleConfigArn
+				}
+				if resp.DefaultUserSettings.JupyterLabAppSettings.DefaultResourceSpec.SageMakerImageArn != nil {
+					f4f5f1.SageMakerImageARN = resp.DefaultUserSettings.JupyterLabAppSettings.DefaultResourceSpec.SageMakerImageArn
+				}
+				if resp.DefaultUserSettings.JupyterLabAppSettings.DefaultResourceSpec.SageMakerImageVersionAlias != nil {
+					f4f5f1.SageMakerImageVersionAlias = resp.DefaultUserSettings.JupyterLabAppSettings.DefaultResourceSpec.SageMakerImageVersionAlias
+				}
+				if resp.DefaultUserSettings.JupyterLabAppSettings.DefaultResourceSpec.SageMakerImageVersionArn != nil {
+					f4f5f1.SageMakerImageVersionARN = resp.DefaultUserSettings.JupyterLabAppSettings.DefaultResourceSpec.SageMakerImageVersionArn
+				}
+				f4f5.DefaultResourceSpec = f4f5f1
+			}
+			if resp.DefaultUserSettings.JupyterLabAppSettings.LifecycleConfigArns != nil {
+				f4f5.LifecycleConfigARNs = aws.StringSlice(resp.DefaultUserSettings.JupyterLabAppSettings.LifecycleConfigArns)
+			}
+			f4.JupyterLabAppSettings = f4f5
+		}
+		if resp.DefaultUserSettings.JupyterServerAppSettings != nil {
+			f4f6 := &svcapitypes.JupyterServerAppSettings{}
+			if resp.DefaultUserSettings.JupyterServerAppSettings.DefaultResourceSpec != nil {
+				f4f6f0 := &svcapitypes.ResourceSpec{}
+				if resp.DefaultUserSettings.JupyterServerAppSettings.DefaultResourceSpec.InstanceType != "" {
+					f4f6f0.InstanceType = aws.String(string(resp.DefaultUserSettings.JupyterServerAppSettings.DefaultResourceSpec.InstanceType))
+				}
+				if resp.DefaultUserSettings.JupyterServerAppSettings.DefaultResourceSpec.LifecycleConfigArn != nil {
+					f4f6f0.LifecycleConfigARN = resp.DefaultUserSettings.JupyterServerAppSettings.DefaultResourceSpec.LifecycleConfigArn
+				}
+				if resp.DefaultUserSettings.JupyterServerAppSettings.DefaultResourceSpec.SageMakerImageArn != nil {
+					f4f6f0.SageMakerImageARN = resp.DefaultUserSettings.JupyterServerAppSettings.DefaultResourceSpec.SageMakerImageArn
+				}
+				if resp.DefaultUserSettings.JupyterServerAppSettings.DefaultResourceSpec.SageMakerImageVersionAlias != nil {
+					f4f6f0.SageMakerImageVersionAlias = resp.DefaultUserSettings.JupyterServerAppSettings.DefaultResourceSpec.SageMakerImageVersionAlias
+				}
+				if resp.DefaultUserSettings.JupyterServerAppSettings.DefaultResourceSpec.SageMakerImageVersionArn != nil {
+					f4f6f0.SageMakerImageVersionARN = resp.DefaultUserSettings.JupyterServerAppSettings.DefaultResourceSpec.SageMakerImageVersionArn
+				}
+				f4f6.DefaultResourceSpec = f4f6f0
+			}
+			if resp.DefaultUserSettings.JupyterServerAppSettings.LifecycleConfigArns != nil {
+				f4f6.LifecycleConfigARNs = aws.StringSlice(resp.DefaultUserSettings.JupyterServerAppSettings.LifecycleConfigArns)
+			}
+			f4.JupyterServerAppSettings = f4f6
+		}
+		if resp.DefaultUserSettings.KernelGatewayAppSettings != nil {
+			f4f7 := &svcapitypes.KernelGatewayAppSettings{}
+			if resp.DefaultUserSettings.KernelGatewayAppSettings.CustomImages != nil {
+				f4f7f0 := []*svcapitypes.CustomImage{}
+				for _, f4f7f0iter := range resp.DefaultUserSettings.KernelGatewayAppSettings.CustomImages {
+					f4f7f0elem := &svcapitypes.CustomImage{}
+					if f4f7f0iter.AppImageConfigName != nil {
+						f4f7f0elem.AppImageConfigName = f4f7f0iter.AppImageConfigName
+					}
+					if f4f7f0iter.ImageName != nil {
+						f4f7f0elem.ImageName = f4f7f0iter.ImageName
+					}
+					if f4f7f0iter.ImageVersionNumber != nil {
+						imageVersionNumberCopy := int64(*f4f7f0iter.ImageVersionNumber)
+						f4f7f0elem.ImageVersionNumber = &imageVersionNumberCopy
+					}
+					f4f7f0 = append(f4f7f0, f4f7f0elem)
+				}
+				f4f7.CustomImages = f4f7f0
+			}
+			if resp.DefaultUserSettings.KernelGatewayAppSettings.DefaultResourceSpec != nil {
+				f4f7f1 := &svcapitypes.ResourceSpec{}
+				if resp.DefaultUserSettings.KernelGatewayAppSettings.DefaultResourceSpec.InstanceType != "" {
+					f4f7f1.InstanceType = aws.String(string(resp.DefaultUserSettings.KernelGatewayAppSettings.DefaultResourceSpec.InstanceType))
+				}
+				if resp.DefaultUserSettings.KernelGatewayAppSettings.DefaultResourceSpec.LifecycleConfigArn != nil {
+					f4f7f1.LifecycleConfigARN = resp.DefaultUserSettings.KernelGatewayAppSettings.DefaultResourceSpec.LifecycleConfigArn
+				}
+				if resp.DefaultUserSettings.KernelGatewayAppSettings.DefaultResourceSpec.SageMakerImageArn != nil {
+					f4f7f1.SageMakerImageARN = resp.DefaultUserSettings.KernelGatewayAppSettings.DefaultResourceSpec.SageMakerImageArn
+				}
+				if resp.DefaultUserSettings.KernelGatewayAppSettings.DefaultResourceSpec.SageMakerImageVersionAlias != nil {
+					f4f7f1.SageMakerImageVersionAlias = resp.DefaultUserSettings.KernelGatewayAppSettings.DefaultResourceSpec.SageMakerImageVersionAlias
+				}
+				if resp.DefaultUserSettings.KernelGatewayAppSettings.DefaultResourceSpec.SageMakerImageVersionArn != nil {
+					f4f7f1.SageMakerImageVersionARN = resp.DefaultUserSettings.KernelGatewayAppSettings.DefaultResourceSpec.SageMakerImageVersionArn
+				}
+				f4f7.DefaultResourceSpec = f4f7f1
+			}
+			if resp.DefaultUserSettings.KernelGatewayAppSettings.LifecycleConfigArns != nil {
+				f4f7.LifecycleConfigARNs = aws.StringSlice(resp.DefaultUserSettings.KernelGatewayAppSettings.LifecycleConfigArns)
+			}
+			f4.KernelGatewayAppSettings = f4f7
+		}
+		if resp.DefaultUserSettings.RStudioServerProAppSettings != nil {
+			f4f8 := &svcapitypes.RStudioServerProAppSettings{}
+			if resp.DefaultUserSettings.RStudioServerProAppSettings.AccessStatus != "" {
+				f4f8.AccessStatus = aws.String(string(resp.DefaultUserSettings.RStudioServerProAppSettings.AccessStatus))
+			}
+			if resp.DefaultUserSettings.RStudioServerProAppSettings.UserGroup != "" {
+				f4f8.UserGroup = aws.String(string(resp.DefaultUserSettings.RStudioServerProAppSettings.UserGroup))
+			}
+			f4.RStudioServerProAppSettings = f4f8
+		}
+		if resp.DefaultUserSettings.SecurityGroups != nil {
+			f4.SecurityGroups = aws.StringSlice(resp.DefaultUserSettings.SecurityGroups)
+		}
+		if resp.DefaultUserSettings.SharingSettings != nil {
+			f4f10 := &svcapitypes.SharingSettings{}
+			if resp.DefaultUserSettings.SharingSettings.NotebookOutputOption != "" {
+				f4f10.NotebookOutputOption = aws.String(string(resp.DefaultUserSettings.SharingSettings.NotebookOutputOption))
+			}
+			if resp.DefaultUserSettings.SharingSettings.S3KmsKeyId != nil {
+				f4f10.S3KMSKeyID = resp.DefaultUserSettings.SharingSettings.S3KmsKeyId
+			}
+			if resp.DefaultUserSettings.SharingSettings.S3OutputPath != nil {
+				f4f10.S3OutputPath = resp.DefaultUserSettings.SharingSettings.S3OutputPath
+			}
+			f4.SharingSettings = f4f10
+		}
+		if resp.DefaultUserSettings.SpaceStorageSettings != nil {
+			f4f11 := &svcapitypes.DefaultSpaceStorageSettings{}
+			if resp.DefaultUserSettings.SpaceStorageSettings.DefaultEbsStorageSettings != nil {
+				f4f11f0 := &svcapitypes.DefaultEBSStorageSettings{}
+				if resp.DefaultUserSettings.SpaceStorageSettings.DefaultEbsStorageSettings.DefaultEbsVolumeSizeInGb != nil {
+					defaultEBSVolumeSizeInGbCopy := int64(*resp.DefaultUserSettings.SpaceStorageSettings.DefaultEbsStorageSettings.DefaultEbsVolumeSizeInGb)
+					f4f11f0.DefaultEBSVolumeSizeInGb = &defaultEBSVolumeSizeInGbCopy
+				}
+				if resp.DefaultUserSettings.SpaceStorageSettings.DefaultEbsStorageSettings.MaximumEbsVolumeSizeInGb != nil {
+					maximumEBSVolumeSizeInGbCopy := int64(*resp.DefaultUserSettings.SpaceStorageSettings.DefaultEbsStorageSettings.MaximumEbsVolumeSizeInGb)
+					f4f11f0.MaximumEBSVolumeSizeInGb = &maximumEBSVolumeSizeInGbCopy
+				}
+				f4f11.DefaultEBSStorageSettings = f4f11f0
+			}
+			f4.SpaceStorageSettings = f4f11
+		}
+		if resp.DefaultUserSettings.StudioWebPortal != "" {
+			f4.StudioWebPortal = aws.String(string(resp.DefaultUserSettings.StudioWebPortal))
+		}
+		if resp.DefaultUserSettings.TensorBoardAppSettings != nil {
+			f4f13 := &svcapitypes.TensorBoardAppSettings{}
+			if resp.DefaultUserSettings.TensorBoardAppSettings.DefaultResourceSpec != nil {
+				f4f13f0 := &svcapitypes.ResourceSpec{}
+				if resp.DefaultUserSettings.TensorBoardAppSettings.DefaultResourceSpec.InstanceType != "" {
+					f4f13f0.InstanceType = aws.String(string(resp.DefaultUserSettings.TensorBoardAppSettings.DefaultResourceSpec.InstanceType))
+				}
+				if resp.DefaultUserSettings.TensorBoardAppSettings.DefaultResourceSpec.LifecycleConfigArn != nil {
+					f4f13f0.LifecycleConfigARN = resp.DefaultUserSettings.TensorBoardAppSettings.DefaultResourceSpec.LifecycleConfigArn
+				}
+				if resp.DefaultUserSettings.TensorBoardAppSettings.DefaultResourceSpec.SageMakerImageArn != nil {
+					f4f13f0.SageMakerImageARN = resp.DefaultUserSettings.TensorBoardAppSettings.DefaultResourceSpec.SageMakerImageArn
+				}
+				if resp.DefaultUserSettings.TensorBoardAppSettings.DefaultResourceSpec.SageMakerImageVersionAlias != nil {
+					f4f13f0.SageMakerImageVersionAlias = resp.DefaultUserSettings.TensorBoardAppSettings.DefaultResourceSpec.SageMakerImageVersionAlias
+				}
+				if resp.DefaultUserSettings.TensorBoardAppSettings.DefaultResourceSpec.SageMakerImageVersionArn != nil {
+					f4f13f0.SageMakerImageVersionARN = resp.DefaultUserSettings.TensorBoardAppSettings.DefaultResourceSpec.SageMakerImageVersionArn
+				}
+				f4f13.DefaultResourceSpec = f4f13f0
+			}
+			f4.TensorBoardAppSettings = f4f13
+		}
+		ko.Spec.DefaultUserSettings = f4
+	} else {
+		ko.Spec.DefaultUserSettings = nil
+	}
+	if ko.Status.ACKResourceMetadata == nil {
+		ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
+	}
+	if resp.DomainArn != nil {
+		arn := ackv1alpha1.AWSResourceName(*resp.DomainArn)
+		ko.Status.ACKResourceMetadata.ARN = &arn
+	}
+	if resp.DomainId != nil {
+		ko.Status.DomainID = resp.DomainId
+	} else {
+		ko.Status.DomainID = nil
+	}
+	if resp.DomainName != nil {
+		ko.Spec.DomainName = resp.DomainName
+	} else {
+		ko.Spec.DomainName = nil
+	}
+	if resp.DomainSettings != nil {
+		f8 := &svcapitypes.DomainSettings{}
+		if resp.DomainSettings.DockerSettings != nil {
+			f8f0 := &svcapitypes.DockerSettings{}
+			if resp.DomainSettings.DockerSettings.EnableDockerAccess != "" {
+				f8f0.EnableDockerAccess = aws.String(string(resp.DomainSettings.DockerSettings.EnableDockerAccess))
+			}
+			if resp.DomainSettings.DockerSettings.VpcOnlyTrustedAccounts != nil {
+				f8f0.VPCOnlyTrustedAccounts = aws.StringSlice(resp.DomainSettings.DockerSettings.VpcOnlyTrustedAccounts)
+			}
+			f8.DockerSettings = f8f0
+		}
+		if resp.DomainSettings.RStudioServerProDomainSettings != nil {
+			f8f1 := &svcapitypes.RStudioServerProDomainSettings{}
+			if resp.DomainSettings.RStudioServerProDomainSettings.DefaultResourceSpec != nil {
+				f8f1f0 := &svcapitypes.ResourceSpec{}
+				if resp.DomainSettings.RStudioServerProDomainSettings.DefaultResourceSpec.InstanceType != "" {
+					f8f1f0.InstanceType = aws.String(string(resp.DomainSettings.RStudioServerProDomainSettings.DefaultResourceSpec.InstanceType))
+				}
+				if resp.DomainSettings.RStudioServerProDomainSettings.DefaultResourceSpec.LifecycleConfigArn != nil {
+					f8f1f0.LifecycleConfigARN = resp.DomainSettings.RStudioServerProDomainSettings.DefaultResourceSpec.LifecycleConfigArn
+				}
+				if resp.DomainSettings.RStudioServerProDomainSettings.DefaultResourceSpec.SageMakerImageArn != nil {
+					f8f1f0.SageMakerImageARN = resp.DomainSettings.RStudioServerProDomainSettings.DefaultResourceSpec.SageMakerImageArn
+				}
+				if resp.DomainSettings.RStudioServerProDomainSettings.DefaultResourceSpec.SageMakerImageVersionAlias != nil {
+					f8f1f0.SageMakerImageVersionAlias = resp.DomainSettings.RStudioServerProDomainSettings.DefaultResourceSpec.SageMakerImageVersionAlias
+				}
+				if resp.DomainSettings.RStudioServerProDomainSettings.DefaultResourceSpec.SageMakerImageVersionArn != nil {
+					f8f1f0.SageMakerImageVersionARN = resp.DomainSettings.RStudioServerProDomainSettings.DefaultResourceSpec.SageMakerImageVersionArn
+				}
+				f8f1.DefaultResourceSpec = f8f1f0
+			}
+			if resp.DomainSettings.RStudioServerProDomainSettings.DomainExecutionRoleArn != nil {
+				f8f1.DomainExecutionRoleARN = resp.DomainSettings.RStudioServerProDomainSettings.DomainExecutionRoleArn
+			}
+			if resp.DomainSettings.RStudioServerProDomainSettings.RStudioConnectUrl != nil {
+				f8f1.RStudioConnectURL = resp.DomainSettings.RStudioServerProDomainSettings.RStudioConnectUrl
+			}
+			if resp.DomainSettings.RStudioServerProDomainSettings.RStudioPackageManagerUrl != nil {
+				f8f1.RStudioPackageManagerURL = resp.DomainSettings.RStudioServerProDomainSettings.RStudioPackageManagerUrl
+			}
+			f8.RStudioServerProDomainSettings = f8f1
+		}
+		if resp.DomainSettings.SecurityGroupIds != nil {
+			f8.SecurityGroupIDs = aws.StringSlice(resp.DomainSettings.SecurityGroupIds)
+		}
+		ko.Spec.DomainSettings = f8
+	} else {
+		ko.Spec.DomainSettings = nil
+	}
+	if resp.HomeEfsFileSystemKmsKeyId != nil {
+		ko.Spec.HomeEFSFileSystemKMSKeyID = resp.HomeEfsFileSystemKmsKeyId
+	} else {
+		ko.Spec.HomeEFSFileSystemKMSKeyID = nil
+	}
+	if resp.KmsKeyId != nil {
+		ko.Spec.KMSKeyID = resp.KmsKeyId
+	} else {
+		ko.Spec.KMSKeyID = nil
+	}
+	if resp.Status != "" {
+		ko.Status.Status = aws.String(string(resp.Status))
+	} else {
+		ko.Status.Status = nil
+	}
+	if resp.SubnetIds != nil {
+		ko.Spec.SubnetIDs = aws.StringSlice(resp.SubnetIds)
+	} else {
+		ko.Spec.SubnetIDs = nil
+	}
+	if resp.Url != nil {
+		ko.Status.URL = resp.Url
+	} else {
+		ko.Status.URL = nil
+	}
+	if resp.VpcId != nil {
+		ko.Spec.VPCID = resp.VpcId
+	} else {
+		ko.Spec.VPCID = nil
 	}
 `
 	assert.Equal(
@@ -265,13 +636,13 @@ func TestSetResource_DynamoDB_Backup_ReadOne(t *testing.T) {
 	} else {
 		ko.Status.BackupSizeBytes = nil
 	}
-	if resp.BackupDescription.BackupDetails.BackupStatus != nil {
-		ko.Status.BackupStatus = resp.BackupDescription.BackupDetails.BackupStatus
+	if resp.BackupDescription.BackupDetails.BackupStatus != "" {
+		ko.Status.BackupStatus = aws.String(string(resp.BackupDescription.BackupDetails.BackupStatus))
 	} else {
 		ko.Status.BackupStatus = nil
 	}
-	if resp.BackupDescription.BackupDetails.BackupType != nil {
-		ko.Status.BackupType = resp.BackupDescription.BackupDetails.BackupType
+	if resp.BackupDescription.BackupDetails.BackupType != "" {
+		ko.Status.BackupType = aws.String(string(resp.BackupDescription.BackupDetails.BackupType))
 	} else {
 		ko.Status.BackupType = nil
 	}
@@ -354,8 +725,8 @@ func TestSetResource_DynamoDB_Table_ReadOne(t *testing.T) {
 			if f1iter.AttributeName != nil {
 				f1elem.AttributeName = f1iter.AttributeName
 			}
-			if f1iter.AttributeType != nil {
-				f1elem.AttributeType = f1iter.AttributeType
+			if f1iter.AttributeType != "" {
+				f1elem.AttributeType = aws.String(string(f1iter.AttributeType))
 			}
 			f1 = append(f1, f1elem)
 		}
@@ -365,8 +736,8 @@ func TestSetResource_DynamoDB_Table_ReadOne(t *testing.T) {
 	}
 	if resp.Table.BillingModeSummary != nil {
 		f2 := &svcapitypes.BillingModeSummary{}
-		if resp.Table.BillingModeSummary.BillingMode != nil {
-			f2.BillingMode = resp.Table.BillingModeSummary.BillingMode
+		if resp.Table.BillingModeSummary.BillingMode != "" {
+			f2.BillingMode = aws.String(string(resp.Table.BillingModeSummary.BillingMode))
 		}
 		if resp.Table.BillingModeSummary.LastUpdateToPayPerRequestDateTime != nil {
 			f2.LastUpdateToPayPerRequestDateTime = &metav1.Time{*resp.Table.BillingModeSummary.LastUpdateToPayPerRequestDateTime}
@@ -394,38 +765,32 @@ func TestSetResource_DynamoDB_Table_ReadOne(t *testing.T) {
 					if f4elemf6iter.AttributeName != nil {
 						f4elemf6elem.AttributeName = f4elemf6iter.AttributeName
 					}
-					if f4elemf6iter.KeyType != nil {
-						f4elemf6elem.KeyType = f4elemf6iter.KeyType
+					if f4elemf6iter.KeyType != "" {
+						f4elemf6elem.KeyType = aws.String(string(f4elemf6iter.KeyType))
 					}
 					f4elemf6 = append(f4elemf6, f4elemf6elem)
 				}
 				f4elem.KeySchema = f4elemf6
 			}
 			if f4iter.Projection != nil {
-				f4elemf7 := &svcapitypes.Projection{}
+				f4elemf8 := &svcapitypes.Projection{}
 				if f4iter.Projection.NonKeyAttributes != nil {
-					f4elemf7f0 := []*string{}
-					for _, f4elemf7f0iter := range f4iter.Projection.NonKeyAttributes {
-						var f4elemf7f0elem string
-						f4elemf7f0elem = *f4elemf7f0iter
-						f4elemf7f0 = append(f4elemf7f0, &f4elemf7f0elem)
-					}
-					f4elemf7.NonKeyAttributes = f4elemf7f0
+					f4elemf8.NonKeyAttributes = aws.StringSlice(f4iter.Projection.NonKeyAttributes)
 				}
-				if f4iter.Projection.ProjectionType != nil {
-					f4elemf7.ProjectionType = f4iter.Projection.ProjectionType
+				if f4iter.Projection.ProjectionType != "" {
+					f4elemf8.ProjectionType = aws.String(string(f4iter.Projection.ProjectionType))
 				}
-				f4elem.Projection = f4elemf7
+				f4elem.Projection = f4elemf8
 			}
 			if f4iter.ProvisionedThroughput != nil {
-				f4elemf8 := &svcapitypes.ProvisionedThroughput{}
+				f4elemf9 := &svcapitypes.ProvisionedThroughput{}
 				if f4iter.ProvisionedThroughput.ReadCapacityUnits != nil {
-					f4elemf8.ReadCapacityUnits = f4iter.ProvisionedThroughput.ReadCapacityUnits
+					f4elemf9.ReadCapacityUnits = f4iter.ProvisionedThroughput.ReadCapacityUnits
 				}
 				if f4iter.ProvisionedThroughput.WriteCapacityUnits != nil {
-					f4elemf8.WriteCapacityUnits = f4iter.ProvisionedThroughput.WriteCapacityUnits
+					f4elemf9.WriteCapacityUnits = f4iter.ProvisionedThroughput.WriteCapacityUnits
 				}
-				f4elem.ProvisionedThroughput = f4elemf8
+				f4elem.ProvisionedThroughput = f4elemf9
 			}
 			f4 = append(f4, f4elem)
 		}
@@ -450,8 +815,8 @@ func TestSetResource_DynamoDB_Table_ReadOne(t *testing.T) {
 			if f7iter.AttributeName != nil {
 				f7elem.AttributeName = f7iter.AttributeName
 			}
-			if f7iter.KeyType != nil {
-				f7elem.KeyType = f7iter.KeyType
+			if f7iter.KeyType != "" {
+				f7elem.KeyType = aws.String(string(f7iter.KeyType))
 			}
 			f7 = append(f7, f7elem)
 		}
@@ -483,8 +848,8 @@ func TestSetResource_DynamoDB_Table_ReadOne(t *testing.T) {
 					if f10elemf4iter.AttributeName != nil {
 						f10elemf4elem.AttributeName = f10elemf4iter.AttributeName
 					}
-					if f10elemf4iter.KeyType != nil {
-						f10elemf4elem.KeyType = f10elemf4iter.KeyType
+					if f10elemf4iter.KeyType != "" {
+						f10elemf4elem.KeyType = aws.String(string(f10elemf4iter.KeyType))
 					}
 					f10elemf4 = append(f10elemf4, f10elemf4elem)
 				}
@@ -493,16 +858,10 @@ func TestSetResource_DynamoDB_Table_ReadOne(t *testing.T) {
 			if f10iter.Projection != nil {
 				f10elemf5 := &svcapitypes.Projection{}
 				if f10iter.Projection.NonKeyAttributes != nil {
-					f10elemf5f0 := []*string{}
-					for _, f10elemf5f0iter := range f10iter.Projection.NonKeyAttributes {
-						var f10elemf5f0elem string
-						f10elemf5f0elem = *f10elemf5f0iter
-						f10elemf5f0 = append(f10elemf5f0, &f10elemf5f0elem)
-					}
-					f10elemf5.NonKeyAttributes = f10elemf5f0
+					f10elemf5.NonKeyAttributes = aws.StringSlice(f10iter.Projection.NonKeyAttributes)
 				}
-				if f10iter.Projection.ProjectionType != nil {
-					f10elemf5.ProjectionType = f10iter.Projection.ProjectionType
+				if f10iter.Projection.ProjectionType != "" {
+					f10elemf5.ProjectionType = aws.String(string(f10iter.Projection.ProjectionType))
 				}
 				f10elem.Projection = f10elemf5
 			}
@@ -559,8 +918,8 @@ func TestSetResource_DynamoDB_Table_ReadOne(t *testing.T) {
 			if f12iter.RegionName != nil {
 				f12elem.RegionName = f12iter.RegionName
 			}
-			if f12iter.ReplicaStatus != nil {
-				f12elem.ReplicaStatus = f12iter.ReplicaStatus
+			if f12iter.ReplicaStatus != "" {
+				f12elem.ReplicaStatus = aws.String(string(f12iter.ReplicaStatus))
 			}
 			if f12iter.ReplicaStatusDescription != nil {
 				f12elem.ReplicaStatusDescription = f12iter.ReplicaStatusDescription
@@ -600,11 +959,11 @@ func TestSetResource_DynamoDB_Table_ReadOne(t *testing.T) {
 		if resp.Table.SSEDescription.KMSMasterKeyArn != nil {
 			f14.KMSMasterKeyARN = resp.Table.SSEDescription.KMSMasterKeyArn
 		}
-		if resp.Table.SSEDescription.SSEType != nil {
-			f14.SSEType = resp.Table.SSEDescription.SSEType
+		if resp.Table.SSEDescription.SSEType != "" {
+			f14.SSEType = aws.String(string(resp.Table.SSEDescription.SSEType))
 		}
-		if resp.Table.SSEDescription.Status != nil {
-			f14.Status = resp.Table.SSEDescription.Status
+		if resp.Table.SSEDescription.Status != "" {
+			f14.Status = aws.String(string(resp.Table.SSEDescription.Status))
 		}
 		ko.Status.SSEDescription = f14
 	} else {
@@ -615,8 +974,8 @@ func TestSetResource_DynamoDB_Table_ReadOne(t *testing.T) {
 		if resp.Table.StreamSpecification.StreamEnabled != nil {
 			f15.StreamEnabled = resp.Table.StreamSpecification.StreamEnabled
 		}
-		if resp.Table.StreamSpecification.StreamViewType != nil {
-			f15.StreamViewType = resp.Table.StreamSpecification.StreamViewType
+		if resp.Table.StreamSpecification.StreamViewType != "" {
+			f15.StreamViewType = aws.String(string(resp.Table.StreamSpecification.StreamViewType))
 		}
 		ko.Spec.StreamSpecification = f15
 	} else {
@@ -644,8 +1003,8 @@ func TestSetResource_DynamoDB_Table_ReadOne(t *testing.T) {
 	} else {
 		ko.Status.TableSizeBytes = nil
 	}
-	if resp.Table.TableStatus != nil {
-		ko.Status.TableStatus = resp.Table.TableStatus
+	if resp.Table.TableStatus != "" {
+		ko.Status.TableStatus = aws.String(string(resp.Table.TableStatus))
 	} else {
 		ko.Status.TableStatus = nil
 	}
@@ -742,22 +1101,20 @@ func TestSetResource_ECR_Repository_Create(t *testing.T) {
 	}
 	if resp.Repository.ImageScanningConfiguration != nil {
 		f1 := &svcapitypes.ImageScanningConfiguration{}
-		if resp.Repository.ImageScanningConfiguration.ScanOnPush != nil {
-			f1.ScanOnPush = resp.Repository.ImageScanningConfiguration.ScanOnPush
-		}
+		f1.ScanOnPush = &resp.Repository.ImageScanningConfiguration.ScanOnPush
 		ko.Spec.ImageScanningConfiguration = f1
 	} else {
 		ko.Spec.ImageScanningConfiguration = nil
 	}
-	if resp.Repository.ImageTagMutability != nil {
-		ko.Spec.ImageTagMutability = resp.Repository.ImageTagMutability
+	if resp.Repository.ImageTagMutability != "" {
+		ko.Spec.ImageTagMutability = aws.String(string(resp.Repository.ImageTagMutability))
 	} else {
 		ko.Spec.ImageTagMutability = nil
 	}
 	if resp.Repository.RegistryId != nil {
-		ko.Status.RegistryID = resp.Repository.RegistryId
+		ko.Spec.RegistryID = resp.Repository.RegistryId
 	} else {
-		ko.Status.RegistryID = nil
+		ko.Spec.RegistryID = nil
 	}
 	if ko.Status.ACKResourceMetadata == nil {
 		ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
@@ -807,22 +1164,20 @@ func TestSetResource_ECR_Repository_ReadMany(t *testing.T) {
 		}
 		if elem.ImageScanningConfiguration != nil {
 			f1 := &svcapitypes.ImageScanningConfiguration{}
-			if elem.ImageScanningConfiguration.ScanOnPush != nil {
-				f1.ScanOnPush = elem.ImageScanningConfiguration.ScanOnPush
-			}
+			f1.ScanOnPush = &elem.ImageScanningConfiguration.ScanOnPush
 			ko.Spec.ImageScanningConfiguration = f1
 		} else {
 			ko.Spec.ImageScanningConfiguration = nil
 		}
-		if elem.ImageTagMutability != nil {
-			ko.Spec.ImageTagMutability = elem.ImageTagMutability
+		if elem.ImageTagMutability != "" {
+			ko.Spec.ImageTagMutability = aws.String(string(elem.ImageTagMutability))
 		} else {
 			ko.Spec.ImageTagMutability = nil
 		}
 		if elem.RegistryId != nil {
-			ko.Status.RegistryID = elem.RegistryId
+			ko.Spec.RegistryID = elem.RegistryId
 		} else {
-			ko.Status.RegistryID = nil
+			ko.Spec.RegistryID = nil
 		}
 		if elem.RepositoryArn != nil {
 			if ko.Status.ACKResourceMetadata == nil {
@@ -845,1814 +1200,6 @@ func TestSetResource_ECR_Repository_ReadMany(t *testing.T) {
 			ko.Status.RepositoryURI = elem.RepositoryUri
 		} else {
 			ko.Status.RepositoryURI = nil
-		}
-		found = true
-		break
-	}
-	if !found {
-		return nil, ackerr.NotFound
-	}
-`
-	assert.Equal(
-		expected,
-		code.SetResource(crd.Config(), crd, model.OpTypeList, "resp", "ko", 1),
-	)
-}
-
-func TestSetResource_Elasticache_ReplicationGroup_Create(t *testing.T) {
-	assert := assert.New(t)
-	require := require.New(t)
-
-	g := testutil.NewModelForService(t, "elasticache")
-
-	crd := testutil.GetCRDByName(t, g, "ReplicationGroup")
-	require.NotNil(crd)
-
-	expected := `
-	if ko.Status.ACKResourceMetadata == nil {
-		ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
-	}
-	if resp.ReplicationGroup.ARN != nil {
-		arn := ackv1alpha1.AWSResourceName(*resp.ReplicationGroup.ARN)
-		ko.Status.ACKResourceMetadata.ARN = &arn
-	}
-	if resp.ReplicationGroup.AtRestEncryptionEnabled != nil {
-		ko.Spec.AtRestEncryptionEnabled = resp.ReplicationGroup.AtRestEncryptionEnabled
-	} else {
-		ko.Spec.AtRestEncryptionEnabled = nil
-	}
-	if resp.ReplicationGroup.AuthTokenEnabled != nil {
-		ko.Status.AuthTokenEnabled = resp.ReplicationGroup.AuthTokenEnabled
-	} else {
-		ko.Status.AuthTokenEnabled = nil
-	}
-	if resp.ReplicationGroup.AuthTokenLastModifiedDate != nil {
-		ko.Status.AuthTokenLastModifiedDate = &metav1.Time{*resp.ReplicationGroup.AuthTokenLastModifiedDate}
-	} else {
-		ko.Status.AuthTokenLastModifiedDate = nil
-	}
-	if resp.ReplicationGroup.AutomaticFailover != nil {
-		ko.Status.AutomaticFailover = resp.ReplicationGroup.AutomaticFailover
-	} else {
-		ko.Status.AutomaticFailover = nil
-	}
-	if resp.ReplicationGroup.CacheNodeType != nil {
-		ko.Spec.CacheNodeType = resp.ReplicationGroup.CacheNodeType
-	} else {
-		ko.Spec.CacheNodeType = nil
-	}
-	if resp.ReplicationGroup.ClusterEnabled != nil {
-		ko.Status.ClusterEnabled = resp.ReplicationGroup.ClusterEnabled
-	} else {
-		ko.Status.ClusterEnabled = nil
-	}
-	if resp.ReplicationGroup.ConfigurationEndpoint != nil {
-		f7 := &svcapitypes.Endpoint{}
-		if resp.ReplicationGroup.ConfigurationEndpoint.Address != nil {
-			f7.Address = resp.ReplicationGroup.ConfigurationEndpoint.Address
-		}
-		if resp.ReplicationGroup.ConfigurationEndpoint.Port != nil {
-			f7.Port = resp.ReplicationGroup.ConfigurationEndpoint.Port
-		}
-		ko.Status.ConfigurationEndpoint = f7
-	} else {
-		ko.Status.ConfigurationEndpoint = nil
-	}
-	if resp.ReplicationGroup.Description != nil {
-		ko.Status.Description = resp.ReplicationGroup.Description
-	} else {
-		ko.Status.Description = nil
-	}
-	if resp.ReplicationGroup.GlobalReplicationGroupInfo != nil {
-		f9 := &svcapitypes.GlobalReplicationGroupInfo{}
-		if resp.ReplicationGroup.GlobalReplicationGroupInfo.GlobalReplicationGroupId != nil {
-			f9.GlobalReplicationGroupID = resp.ReplicationGroup.GlobalReplicationGroupInfo.GlobalReplicationGroupId
-		}
-		if resp.ReplicationGroup.GlobalReplicationGroupInfo.GlobalReplicationGroupMemberRole != nil {
-			f9.GlobalReplicationGroupMemberRole = resp.ReplicationGroup.GlobalReplicationGroupInfo.GlobalReplicationGroupMemberRole
-		}
-		ko.Status.GlobalReplicationGroupInfo = f9
-	} else {
-		ko.Status.GlobalReplicationGroupInfo = nil
-	}
-	if resp.ReplicationGroup.KmsKeyId != nil {
-		ko.Spec.KMSKeyID = resp.ReplicationGroup.KmsKeyId
-	} else {
-		ko.Spec.KMSKeyID = nil
-	}
-	if resp.ReplicationGroup.MemberClusters != nil {
-		f12 := []*string{}
-		for _, f12iter := range resp.ReplicationGroup.MemberClusters {
-			var f12elem string
-			f12elem = *f12iter
-			f12 = append(f12, &f12elem)
-		}
-		ko.Status.MemberClusters = f12
-	} else {
-		ko.Status.MemberClusters = nil
-	}
-	if resp.ReplicationGroup.MemberClustersOutpostArns != nil {
-		f13 := []*string{}
-		for _, f13iter := range resp.ReplicationGroup.MemberClustersOutpostArns {
-			var f13elem string
-			f13elem = *f13iter
-			f13 = append(f13, &f13elem)
-		}
-		ko.Status.MemberClustersOutpostARNs = f13
-	} else {
-		ko.Status.MemberClustersOutpostARNs = nil
-	}
-	if resp.ReplicationGroup.MultiAZ != nil {
-		ko.Status.MultiAZ = resp.ReplicationGroup.MultiAZ
-	} else {
-		ko.Status.MultiAZ = nil
-	}
-	if resp.ReplicationGroup.NodeGroups != nil {
-		f15 := []*svcapitypes.NodeGroup{}
-		for _, f15iter := range resp.ReplicationGroup.NodeGroups {
-			f15elem := &svcapitypes.NodeGroup{}
-			if f15iter.NodeGroupId != nil {
-				f15elem.NodeGroupID = f15iter.NodeGroupId
-			}
-			if f15iter.NodeGroupMembers != nil {
-				f15elemf1 := []*svcapitypes.NodeGroupMember{}
-				for _, f15elemf1iter := range f15iter.NodeGroupMembers {
-					f15elemf1elem := &svcapitypes.NodeGroupMember{}
-					if f15elemf1iter.CacheClusterId != nil {
-						f15elemf1elem.CacheClusterID = f15elemf1iter.CacheClusterId
-					}
-					if f15elemf1iter.CacheNodeId != nil {
-						f15elemf1elem.CacheNodeID = f15elemf1iter.CacheNodeId
-					}
-					if f15elemf1iter.CurrentRole != nil {
-						f15elemf1elem.CurrentRole = f15elemf1iter.CurrentRole
-					}
-					if f15elemf1iter.PreferredAvailabilityZone != nil {
-						f15elemf1elem.PreferredAvailabilityZone = f15elemf1iter.PreferredAvailabilityZone
-					}
-					if f15elemf1iter.PreferredOutpostArn != nil {
-						f15elemf1elem.PreferredOutpostARN = f15elemf1iter.PreferredOutpostArn
-					}
-					if f15elemf1iter.ReadEndpoint != nil {
-						f15elemf1elemf5 := &svcapitypes.Endpoint{}
-						if f15elemf1iter.ReadEndpoint.Address != nil {
-							f15elemf1elemf5.Address = f15elemf1iter.ReadEndpoint.Address
-						}
-						if f15elemf1iter.ReadEndpoint.Port != nil {
-							f15elemf1elemf5.Port = f15elemf1iter.ReadEndpoint.Port
-						}
-						f15elemf1elem.ReadEndpoint = f15elemf1elemf5
-					}
-					f15elemf1 = append(f15elemf1, f15elemf1elem)
-				}
-				f15elem.NodeGroupMembers = f15elemf1
-			}
-			if f15iter.PrimaryEndpoint != nil {
-				f15elemf2 := &svcapitypes.Endpoint{}
-				if f15iter.PrimaryEndpoint.Address != nil {
-					f15elemf2.Address = f15iter.PrimaryEndpoint.Address
-				}
-				if f15iter.PrimaryEndpoint.Port != nil {
-					f15elemf2.Port = f15iter.PrimaryEndpoint.Port
-				}
-				f15elem.PrimaryEndpoint = f15elemf2
-			}
-			if f15iter.ReaderEndpoint != nil {
-				f15elemf3 := &svcapitypes.Endpoint{}
-				if f15iter.ReaderEndpoint.Address != nil {
-					f15elemf3.Address = f15iter.ReaderEndpoint.Address
-				}
-				if f15iter.ReaderEndpoint.Port != nil {
-					f15elemf3.Port = f15iter.ReaderEndpoint.Port
-				}
-				f15elem.ReaderEndpoint = f15elemf3
-			}
-			if f15iter.Slots != nil {
-				f15elem.Slots = f15iter.Slots
-			}
-			if f15iter.Status != nil {
-				f15elem.Status = f15iter.Status
-			}
-			f15 = append(f15, f15elem)
-		}
-		ko.Status.NodeGroups = f15
-	} else {
-		ko.Status.NodeGroups = nil
-	}
-	if resp.ReplicationGroup.PendingModifiedValues != nil {
-		f16 := &svcapitypes.ReplicationGroupPendingModifiedValues{}
-		if resp.ReplicationGroup.PendingModifiedValues.AuthTokenStatus != nil {
-			f16.AuthTokenStatus = resp.ReplicationGroup.PendingModifiedValues.AuthTokenStatus
-		}
-		if resp.ReplicationGroup.PendingModifiedValues.AutomaticFailoverStatus != nil {
-			f16.AutomaticFailoverStatus = resp.ReplicationGroup.PendingModifiedValues.AutomaticFailoverStatus
-		}
-		if resp.ReplicationGroup.PendingModifiedValues.LogDeliveryConfigurations != nil {
-			f16f2 := []*svcapitypes.PendingLogDeliveryConfiguration{}
-			for _, f16f2iter := range resp.ReplicationGroup.PendingModifiedValues.LogDeliveryConfigurations {
-				f16f2elem := &svcapitypes.PendingLogDeliveryConfiguration{}
-				if f16f2iter.DestinationDetails != nil {
-					f16f2elemf0 := &svcapitypes.DestinationDetails{}
-					if f16f2iter.DestinationDetails.CloudWatchLogsDetails != nil {
-						f16f2elemf0f0 := &svcapitypes.CloudWatchLogsDestinationDetails{}
-						if f16f2iter.DestinationDetails.CloudWatchLogsDetails.LogGroup != nil {
-							f16f2elemf0f0.LogGroup = f16f2iter.DestinationDetails.CloudWatchLogsDetails.LogGroup
-						}
-						f16f2elemf0.CloudWatchLogsDetails = f16f2elemf0f0
-					}
-					if f16f2iter.DestinationDetails.KinesisFirehoseDetails != nil {
-						f16f2elemf0f1 := &svcapitypes.KinesisFirehoseDestinationDetails{}
-						if f16f2iter.DestinationDetails.KinesisFirehoseDetails.DeliveryStream != nil {
-							f16f2elemf0f1.DeliveryStream = f16f2iter.DestinationDetails.KinesisFirehoseDetails.DeliveryStream
-						}
-						f16f2elemf0.KinesisFirehoseDetails = f16f2elemf0f1
-					}
-					f16f2elem.DestinationDetails = f16f2elemf0
-				}
-				if f16f2iter.DestinationType != nil {
-					f16f2elem.DestinationType = f16f2iter.DestinationType
-				}
-				if f16f2iter.LogFormat != nil {
-					f16f2elem.LogFormat = f16f2iter.LogFormat
-				}
-				if f16f2iter.LogType != nil {
-					f16f2elem.LogType = f16f2iter.LogType
-				}
-				f16f2 = append(f16f2, f16f2elem)
-			}
-			f16.LogDeliveryConfigurations = f16f2
-		}
-		if resp.ReplicationGroup.PendingModifiedValues.PrimaryClusterId != nil {
-			f16.PrimaryClusterID = resp.ReplicationGroup.PendingModifiedValues.PrimaryClusterId
-		}
-		if resp.ReplicationGroup.PendingModifiedValues.Resharding != nil {
-			f16f4 := &svcapitypes.ReshardingStatus{}
-			if resp.ReplicationGroup.PendingModifiedValues.Resharding.SlotMigration != nil {
-				f16f4f0 := &svcapitypes.SlotMigration{}
-				if resp.ReplicationGroup.PendingModifiedValues.Resharding.SlotMigration.ProgressPercentage != nil {
-					f16f4f0.ProgressPercentage = resp.ReplicationGroup.PendingModifiedValues.Resharding.SlotMigration.ProgressPercentage
-				}
-				f16f4.SlotMigration = f16f4f0
-			}
-			f16.Resharding = f16f4
-		}
-		if resp.ReplicationGroup.PendingModifiedValues.UserGroups != nil {
-			f16f5 := &svcapitypes.UserGroupsUpdateStatus{}
-			if resp.ReplicationGroup.PendingModifiedValues.UserGroups.UserGroupIdsToAdd != nil {
-				f16f5f0 := []*string{}
-				for _, f16f5f0iter := range resp.ReplicationGroup.PendingModifiedValues.UserGroups.UserGroupIdsToAdd {
-					var f16f5f0elem string
-					f16f5f0elem = *f16f5f0iter
-					f16f5f0 = append(f16f5f0, &f16f5f0elem)
-				}
-				f16f5.UserGroupIDsToAdd = f16f5f0
-			}
-			if resp.ReplicationGroup.PendingModifiedValues.UserGroups.UserGroupIdsToRemove != nil {
-				f16f5f1 := []*string{}
-				for _, f16f5f1iter := range resp.ReplicationGroup.PendingModifiedValues.UserGroups.UserGroupIdsToRemove {
-					var f16f5f1elem string
-					f16f5f1elem = *f16f5f1iter
-					f16f5f1 = append(f16f5f1, &f16f5f1elem)
-				}
-				f16f5.UserGroupIDsToRemove = f16f5f1
-			}
-			f16.UserGroups = f16f5
-		}
-		ko.Status.PendingModifiedValues = f16
-	} else {
-		ko.Status.PendingModifiedValues = nil
-	}
-	if resp.ReplicationGroup.ReplicationGroupId != nil {
-		ko.Spec.ReplicationGroupID = resp.ReplicationGroup.ReplicationGroupId
-	} else {
-		ko.Spec.ReplicationGroupID = nil
-	}
-	if resp.ReplicationGroup.SnapshotRetentionLimit != nil {
-		ko.Spec.SnapshotRetentionLimit = resp.ReplicationGroup.SnapshotRetentionLimit
-	} else {
-		ko.Spec.SnapshotRetentionLimit = nil
-	}
-	if resp.ReplicationGroup.SnapshotWindow != nil {
-		ko.Spec.SnapshotWindow = resp.ReplicationGroup.SnapshotWindow
-	} else {
-		ko.Spec.SnapshotWindow = nil
-	}
-	if resp.ReplicationGroup.SnapshottingClusterId != nil {
-		ko.Status.SnapshottingClusterID = resp.ReplicationGroup.SnapshottingClusterId
-	} else {
-		ko.Status.SnapshottingClusterID = nil
-	}
-	if resp.ReplicationGroup.Status != nil {
-		ko.Status.Status = resp.ReplicationGroup.Status
-	} else {
-		ko.Status.Status = nil
-	}
-	if resp.ReplicationGroup.TransitEncryptionEnabled != nil {
-		ko.Spec.TransitEncryptionEnabled = resp.ReplicationGroup.TransitEncryptionEnabled
-	} else {
-		ko.Spec.TransitEncryptionEnabled = nil
-	}
-	if resp.ReplicationGroup.UserGroupIds != nil {
-		f23 := []*string{}
-		for _, f23iter := range resp.ReplicationGroup.UserGroupIds {
-			var f23elem string
-			f23elem = *f23iter
-			f23 = append(f23, &f23elem)
-		}
-		ko.Spec.UserGroupIDs = f23
-	} else {
-		ko.Spec.UserGroupIDs = nil
-	}
-`
-	assert.Equal(
-		expected,
-		code.SetResource(crd.Config(), crd, model.OpTypeCreate, "resp", "ko", 1),
-	)
-}
-
-func TestSetResource_Elasticache_ReplicationGroup_ReadMany(t *testing.T) {
-	assert := assert.New(t)
-	require := require.New(t)
-
-	g := testutil.NewModelForService(t, "elasticache")
-
-	crd := testutil.GetCRDByName(t, g, "ReplicationGroup")
-	require.NotNil(crd)
-
-	expected := `
-	found := false
-	for _, elem := range resp.ReplicationGroups {
-		if elem.ARN != nil {
-			if ko.Status.ACKResourceMetadata == nil {
-				ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
-			}
-			tmpARN := ackv1alpha1.AWSResourceName(*elem.ARN)
-			ko.Status.ACKResourceMetadata.ARN = &tmpARN
-		}
-		if elem.AtRestEncryptionEnabled != nil {
-			ko.Spec.AtRestEncryptionEnabled = elem.AtRestEncryptionEnabled
-		} else {
-			ko.Spec.AtRestEncryptionEnabled = nil
-		}
-		if elem.AuthTokenEnabled != nil {
-			ko.Status.AuthTokenEnabled = elem.AuthTokenEnabled
-		} else {
-			ko.Status.AuthTokenEnabled = nil
-		}
-		if elem.AuthTokenLastModifiedDate != nil {
-			ko.Status.AuthTokenLastModifiedDate = &metav1.Time{*elem.AuthTokenLastModifiedDate}
-		} else {
-			ko.Status.AuthTokenLastModifiedDate = nil
-		}
-		if elem.AutomaticFailover != nil {
-			ko.Status.AutomaticFailover = elem.AutomaticFailover
-		} else {
-			ko.Status.AutomaticFailover = nil
-		}
-		if elem.CacheNodeType != nil {
-			ko.Spec.CacheNodeType = elem.CacheNodeType
-		} else {
-			ko.Spec.CacheNodeType = nil
-		}
-		if elem.ClusterEnabled != nil {
-			ko.Status.ClusterEnabled = elem.ClusterEnabled
-		} else {
-			ko.Status.ClusterEnabled = nil
-		}
-		if elem.ConfigurationEndpoint != nil {
-			f7 := &svcapitypes.Endpoint{}
-			if elem.ConfigurationEndpoint.Address != nil {
-				f7.Address = elem.ConfigurationEndpoint.Address
-			}
-			if elem.ConfigurationEndpoint.Port != nil {
-				f7.Port = elem.ConfigurationEndpoint.Port
-			}
-			ko.Status.ConfigurationEndpoint = f7
-		} else {
-			ko.Status.ConfigurationEndpoint = nil
-		}
-		if elem.Description != nil {
-			ko.Status.Description = elem.Description
-		} else {
-			ko.Status.Description = nil
-		}
-		if elem.GlobalReplicationGroupInfo != nil {
-			f9 := &svcapitypes.GlobalReplicationGroupInfo{}
-			if elem.GlobalReplicationGroupInfo.GlobalReplicationGroupId != nil {
-				f9.GlobalReplicationGroupID = elem.GlobalReplicationGroupInfo.GlobalReplicationGroupId
-			}
-			if elem.GlobalReplicationGroupInfo.GlobalReplicationGroupMemberRole != nil {
-				f9.GlobalReplicationGroupMemberRole = elem.GlobalReplicationGroupInfo.GlobalReplicationGroupMemberRole
-			}
-			ko.Status.GlobalReplicationGroupInfo = f9
-		} else {
-			ko.Status.GlobalReplicationGroupInfo = nil
-		}
-		if elem.KmsKeyId != nil {
-			ko.Spec.KMSKeyID = elem.KmsKeyId
-		} else {
-			ko.Spec.KMSKeyID = nil
-		}
-		if elem.LogDeliveryConfigurations != nil {
-			f11 := []*svcapitypes.LogDeliveryConfigurationRequest{}
-			for _, f11iter := range elem.LogDeliveryConfigurations {
-				f11elem := &svcapitypes.LogDeliveryConfigurationRequest{}
-				if f11iter.DestinationDetails != nil {
-					f11elemf0 := &svcapitypes.DestinationDetails{}
-					if f11iter.DestinationDetails.CloudWatchLogsDetails != nil {
-						f11elemf0f0 := &svcapitypes.CloudWatchLogsDestinationDetails{}
-						if f11iter.DestinationDetails.CloudWatchLogsDetails.LogGroup != nil {
-							f11elemf0f0.LogGroup = f11iter.DestinationDetails.CloudWatchLogsDetails.LogGroup
-						}
-						f11elemf0.CloudWatchLogsDetails = f11elemf0f0
-					}
-					if f11iter.DestinationDetails.KinesisFirehoseDetails != nil {
-						f11elemf0f1 := &svcapitypes.KinesisFirehoseDestinationDetails{}
-						if f11iter.DestinationDetails.KinesisFirehoseDetails.DeliveryStream != nil {
-							f11elemf0f1.DeliveryStream = f11iter.DestinationDetails.KinesisFirehoseDetails.DeliveryStream
-						}
-						f11elemf0.KinesisFirehoseDetails = f11elemf0f1
-					}
-					f11elem.DestinationDetails = f11elemf0
-				}
-				if f11iter.DestinationType != nil {
-					f11elem.DestinationType = f11iter.DestinationType
-				}
-				if f11iter.LogFormat != nil {
-					f11elem.LogFormat = f11iter.LogFormat
-				}
-				if f11iter.LogType != nil {
-					f11elem.LogType = f11iter.LogType
-				}
-				f11 = append(f11, f11elem)
-			}
-			ko.Spec.LogDeliveryConfigurations = f11
-		} else {
-			ko.Spec.LogDeliveryConfigurations = nil
-		}
-		if elem.MemberClusters != nil {
-			f12 := []*string{}
-			for _, f12iter := range elem.MemberClusters {
-				var f12elem string
-				f12elem = *f12iter
-				f12 = append(f12, &f12elem)
-			}
-			ko.Status.MemberClusters = f12
-		} else {
-			ko.Status.MemberClusters = nil
-		}
-		if elem.MemberClustersOutpostArns != nil {
-			f13 := []*string{}
-			for _, f13iter := range elem.MemberClustersOutpostArns {
-				var f13elem string
-				f13elem = *f13iter
-				f13 = append(f13, &f13elem)
-			}
-			ko.Status.MemberClustersOutpostARNs = f13
-		} else {
-			ko.Status.MemberClustersOutpostARNs = nil
-		}
-		if elem.MultiAZ != nil {
-			ko.Status.MultiAZ = elem.MultiAZ
-		} else {
-			ko.Status.MultiAZ = nil
-		}
-		if elem.NodeGroups != nil {
-			f15 := []*svcapitypes.NodeGroup{}
-			for _, f15iter := range elem.NodeGroups {
-				f15elem := &svcapitypes.NodeGroup{}
-				if f15iter.NodeGroupId != nil {
-					f15elem.NodeGroupID = f15iter.NodeGroupId
-				}
-				if f15iter.NodeGroupMembers != nil {
-					f15elemf1 := []*svcapitypes.NodeGroupMember{}
-					for _, f15elemf1iter := range f15iter.NodeGroupMembers {
-						f15elemf1elem := &svcapitypes.NodeGroupMember{}
-						if f15elemf1iter.CacheClusterId != nil {
-							f15elemf1elem.CacheClusterID = f15elemf1iter.CacheClusterId
-						}
-						if f15elemf1iter.CacheNodeId != nil {
-							f15elemf1elem.CacheNodeID = f15elemf1iter.CacheNodeId
-						}
-						if f15elemf1iter.CurrentRole != nil {
-							f15elemf1elem.CurrentRole = f15elemf1iter.CurrentRole
-						}
-						if f15elemf1iter.PreferredAvailabilityZone != nil {
-							f15elemf1elem.PreferredAvailabilityZone = f15elemf1iter.PreferredAvailabilityZone
-						}
-						if f15elemf1iter.PreferredOutpostArn != nil {
-							f15elemf1elem.PreferredOutpostARN = f15elemf1iter.PreferredOutpostArn
-						}
-						if f15elemf1iter.ReadEndpoint != nil {
-							f15elemf1elemf5 := &svcapitypes.Endpoint{}
-							if f15elemf1iter.ReadEndpoint.Address != nil {
-								f15elemf1elemf5.Address = f15elemf1iter.ReadEndpoint.Address
-							}
-							if f15elemf1iter.ReadEndpoint.Port != nil {
-								f15elemf1elemf5.Port = f15elemf1iter.ReadEndpoint.Port
-							}
-							f15elemf1elem.ReadEndpoint = f15elemf1elemf5
-						}
-						f15elemf1 = append(f15elemf1, f15elemf1elem)
-					}
-					f15elem.NodeGroupMembers = f15elemf1
-				}
-				if f15iter.PrimaryEndpoint != nil {
-					f15elemf2 := &svcapitypes.Endpoint{}
-					if f15iter.PrimaryEndpoint.Address != nil {
-						f15elemf2.Address = f15iter.PrimaryEndpoint.Address
-					}
-					if f15iter.PrimaryEndpoint.Port != nil {
-						f15elemf2.Port = f15iter.PrimaryEndpoint.Port
-					}
-					f15elem.PrimaryEndpoint = f15elemf2
-				}
-				if f15iter.ReaderEndpoint != nil {
-					f15elemf3 := &svcapitypes.Endpoint{}
-					if f15iter.ReaderEndpoint.Address != nil {
-						f15elemf3.Address = f15iter.ReaderEndpoint.Address
-					}
-					if f15iter.ReaderEndpoint.Port != nil {
-						f15elemf3.Port = f15iter.ReaderEndpoint.Port
-					}
-					f15elem.ReaderEndpoint = f15elemf3
-				}
-				if f15iter.Slots != nil {
-					f15elem.Slots = f15iter.Slots
-				}
-				if f15iter.Status != nil {
-					f15elem.Status = f15iter.Status
-				}
-				f15 = append(f15, f15elem)
-			}
-			ko.Status.NodeGroups = f15
-		} else {
-			ko.Status.NodeGroups = nil
-		}
-		if elem.PendingModifiedValues != nil {
-			f16 := &svcapitypes.ReplicationGroupPendingModifiedValues{}
-			if elem.PendingModifiedValues.AuthTokenStatus != nil {
-				f16.AuthTokenStatus = elem.PendingModifiedValues.AuthTokenStatus
-			}
-			if elem.PendingModifiedValues.AutomaticFailoverStatus != nil {
-				f16.AutomaticFailoverStatus = elem.PendingModifiedValues.AutomaticFailoverStatus
-			}
-			if elem.PendingModifiedValues.LogDeliveryConfigurations != nil {
-				f16f2 := []*svcapitypes.PendingLogDeliveryConfiguration{}
-				for _, f16f2iter := range elem.PendingModifiedValues.LogDeliveryConfigurations {
-					f16f2elem := &svcapitypes.PendingLogDeliveryConfiguration{}
-					if f16f2iter.DestinationDetails != nil {
-						f16f2elemf0 := &svcapitypes.DestinationDetails{}
-						if f16f2iter.DestinationDetails.CloudWatchLogsDetails != nil {
-							f16f2elemf0f0 := &svcapitypes.CloudWatchLogsDestinationDetails{}
-							if f16f2iter.DestinationDetails.CloudWatchLogsDetails.LogGroup != nil {
-								f16f2elemf0f0.LogGroup = f16f2iter.DestinationDetails.CloudWatchLogsDetails.LogGroup
-							}
-							f16f2elemf0.CloudWatchLogsDetails = f16f2elemf0f0
-						}
-						if f16f2iter.DestinationDetails.KinesisFirehoseDetails != nil {
-							f16f2elemf0f1 := &svcapitypes.KinesisFirehoseDestinationDetails{}
-							if f16f2iter.DestinationDetails.KinesisFirehoseDetails.DeliveryStream != nil {
-								f16f2elemf0f1.DeliveryStream = f16f2iter.DestinationDetails.KinesisFirehoseDetails.DeliveryStream
-							}
-							f16f2elemf0.KinesisFirehoseDetails = f16f2elemf0f1
-						}
-						f16f2elem.DestinationDetails = f16f2elemf0
-					}
-					if f16f2iter.DestinationType != nil {
-						f16f2elem.DestinationType = f16f2iter.DestinationType
-					}
-					if f16f2iter.LogFormat != nil {
-						f16f2elem.LogFormat = f16f2iter.LogFormat
-					}
-					if f16f2iter.LogType != nil {
-						f16f2elem.LogType = f16f2iter.LogType
-					}
-					f16f2 = append(f16f2, f16f2elem)
-				}
-				f16.LogDeliveryConfigurations = f16f2
-			}
-			if elem.PendingModifiedValues.PrimaryClusterId != nil {
-				f16.PrimaryClusterID = elem.PendingModifiedValues.PrimaryClusterId
-			}
-			if elem.PendingModifiedValues.Resharding != nil {
-				f16f4 := &svcapitypes.ReshardingStatus{}
-				if elem.PendingModifiedValues.Resharding.SlotMigration != nil {
-					f16f4f0 := &svcapitypes.SlotMigration{}
-					if elem.PendingModifiedValues.Resharding.SlotMigration.ProgressPercentage != nil {
-						f16f4f0.ProgressPercentage = elem.PendingModifiedValues.Resharding.SlotMigration.ProgressPercentage
-					}
-					f16f4.SlotMigration = f16f4f0
-				}
-				f16.Resharding = f16f4
-			}
-			if elem.PendingModifiedValues.UserGroups != nil {
-				f16f5 := &svcapitypes.UserGroupsUpdateStatus{}
-				if elem.PendingModifiedValues.UserGroups.UserGroupIdsToAdd != nil {
-					f16f5f0 := []*string{}
-					for _, f16f5f0iter := range elem.PendingModifiedValues.UserGroups.UserGroupIdsToAdd {
-						var f16f5f0elem string
-						f16f5f0elem = *f16f5f0iter
-						f16f5f0 = append(f16f5f0, &f16f5f0elem)
-					}
-					f16f5.UserGroupIDsToAdd = f16f5f0
-				}
-				if elem.PendingModifiedValues.UserGroups.UserGroupIdsToRemove != nil {
-					f16f5f1 := []*string{}
-					for _, f16f5f1iter := range elem.PendingModifiedValues.UserGroups.UserGroupIdsToRemove {
-						var f16f5f1elem string
-						f16f5f1elem = *f16f5f1iter
-						f16f5f1 = append(f16f5f1, &f16f5f1elem)
-					}
-					f16f5.UserGroupIDsToRemove = f16f5f1
-				}
-				f16.UserGroups = f16f5
-			}
-			ko.Status.PendingModifiedValues = f16
-		} else {
-			ko.Status.PendingModifiedValues = nil
-		}
-		if elem.ReplicationGroupId != nil {
-			ko.Spec.ReplicationGroupID = elem.ReplicationGroupId
-		} else {
-			ko.Spec.ReplicationGroupID = nil
-		}
-		if elem.SnapshotRetentionLimit != nil {
-			ko.Spec.SnapshotRetentionLimit = elem.SnapshotRetentionLimit
-		} else {
-			ko.Spec.SnapshotRetentionLimit = nil
-		}
-		if elem.SnapshotWindow != nil {
-			ko.Spec.SnapshotWindow = elem.SnapshotWindow
-		} else {
-			ko.Spec.SnapshotWindow = nil
-		}
-		if elem.SnapshottingClusterId != nil {
-			ko.Status.SnapshottingClusterID = elem.SnapshottingClusterId
-		} else {
-			ko.Status.SnapshottingClusterID = nil
-		}
-		if elem.Status != nil {
-			ko.Status.Status = elem.Status
-		} else {
-			ko.Status.Status = nil
-		}
-		if elem.TransitEncryptionEnabled != nil {
-			ko.Spec.TransitEncryptionEnabled = elem.TransitEncryptionEnabled
-		} else {
-			ko.Spec.TransitEncryptionEnabled = nil
-		}
-		if elem.UserGroupIds != nil {
-			f23 := []*string{}
-			for _, f23iter := range elem.UserGroupIds {
-				var f23elem string
-				f23elem = *f23iter
-				f23 = append(f23, &f23elem)
-			}
-			ko.Spec.UserGroupIDs = f23
-		} else {
-			ko.Spec.UserGroupIDs = nil
-		}
-		found = true
-		break
-	}
-	if !found {
-		return nil, ackerr.NotFound
-	}
-`
-	assert.Equal(
-		expected,
-		code.SetResource(crd.Config(), crd, model.OpTypeList, "resp", "ko", 1),
-	)
-}
-
-func TestSetResource_RDS_DBInstance_Create(t *testing.T) {
-	assert := assert.New(t)
-	require := require.New(t)
-
-	g := testutil.NewModelForService(t, "rds")
-
-	crd := testutil.GetCRDByName(t, g, "DBInstance")
-	require.NotNil(crd)
-
-	expected := `
-	if resp.DBInstance.AllocatedStorage != nil {
-		ko.Spec.AllocatedStorage = resp.DBInstance.AllocatedStorage
-	} else {
-		ko.Spec.AllocatedStorage = nil
-	}
-	if resp.DBInstance.AssociatedRoles != nil {
-		f1 := []*svcapitypes.DBInstanceRole{}
-		for _, f1iter := range resp.DBInstance.AssociatedRoles {
-			f1elem := &svcapitypes.DBInstanceRole{}
-			if f1iter.FeatureName != nil {
-				f1elem.FeatureName = f1iter.FeatureName
-			}
-			if f1iter.RoleArn != nil {
-				f1elem.RoleARN = f1iter.RoleArn
-			}
-			if f1iter.Status != nil {
-				f1elem.Status = f1iter.Status
-			}
-			f1 = append(f1, f1elem)
-		}
-		ko.Status.AssociatedRoles = f1
-	} else {
-		ko.Status.AssociatedRoles = nil
-	}
-	if resp.DBInstance.AutoMinorVersionUpgrade != nil {
-		ko.Spec.AutoMinorVersionUpgrade = resp.DBInstance.AutoMinorVersionUpgrade
-	} else {
-		ko.Spec.AutoMinorVersionUpgrade = nil
-	}
-	if resp.DBInstance.AvailabilityZone != nil {
-		ko.Spec.AvailabilityZone = resp.DBInstance.AvailabilityZone
-	} else {
-		ko.Spec.AvailabilityZone = nil
-	}
-	if resp.DBInstance.BackupRetentionPeriod != nil {
-		ko.Spec.BackupRetentionPeriod = resp.DBInstance.BackupRetentionPeriod
-	} else {
-		ko.Spec.BackupRetentionPeriod = nil
-	}
-	if resp.DBInstance.CACertificateIdentifier != nil {
-		ko.Status.CACertificateIdentifier = resp.DBInstance.CACertificateIdentifier
-	} else {
-		ko.Status.CACertificateIdentifier = nil
-	}
-	if resp.DBInstance.CharacterSetName != nil {
-		ko.Spec.CharacterSetName = resp.DBInstance.CharacterSetName
-	} else {
-		ko.Spec.CharacterSetName = nil
-	}
-	if resp.DBInstance.CopyTagsToSnapshot != nil {
-		ko.Spec.CopyTagsToSnapshot = resp.DBInstance.CopyTagsToSnapshot
-	} else {
-		ko.Spec.CopyTagsToSnapshot = nil
-	}
-	if resp.DBInstance.DBClusterIdentifier != nil {
-		ko.Spec.DBClusterIdentifier = resp.DBInstance.DBClusterIdentifier
-	} else {
-		ko.Spec.DBClusterIdentifier = nil
-	}
-	if ko.Status.ACKResourceMetadata == nil {
-		ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
-	}
-	if resp.DBInstance.DBInstanceArn != nil {
-		arn := ackv1alpha1.AWSResourceName(*resp.DBInstance.DBInstanceArn)
-		ko.Status.ACKResourceMetadata.ARN = &arn
-	}
-	if resp.DBInstance.DBInstanceClass != nil {
-		ko.Spec.DBInstanceClass = resp.DBInstance.DBInstanceClass
-	} else {
-		ko.Spec.DBInstanceClass = nil
-	}
-	if resp.DBInstance.DBInstanceIdentifier != nil {
-		ko.Spec.DBInstanceIdentifier = resp.DBInstance.DBInstanceIdentifier
-	} else {
-		ko.Spec.DBInstanceIdentifier = nil
-	}
-	if resp.DBInstance.DBInstanceStatus != nil {
-		ko.Status.DBInstanceStatus = resp.DBInstance.DBInstanceStatus
-	} else {
-		ko.Status.DBInstanceStatus = nil
-	}
-	if resp.DBInstance.DBName != nil {
-		ko.Spec.DBName = resp.DBInstance.DBName
-	} else {
-		ko.Spec.DBName = nil
-	}
-	if resp.DBInstance.DBParameterGroups != nil {
-		f14 := []*svcapitypes.DBParameterGroupStatus_SDK{}
-		for _, f14iter := range resp.DBInstance.DBParameterGroups {
-			f14elem := &svcapitypes.DBParameterGroupStatus_SDK{}
-			if f14iter.DBParameterGroupName != nil {
-				f14elem.DBParameterGroupName = f14iter.DBParameterGroupName
-			}
-			if f14iter.ParameterApplyStatus != nil {
-				f14elem.ParameterApplyStatus = f14iter.ParameterApplyStatus
-			}
-			f14 = append(f14, f14elem)
-		}
-		ko.Status.DBParameterGroups = f14
-	} else {
-		ko.Status.DBParameterGroups = nil
-	}
-	if resp.DBInstance.DBSecurityGroups != nil {
-		f15 := []*string{}
-		for _, f15iter := range resp.DBInstance.DBSecurityGroups {
-			var f15elem string
-			f15elem = *f15iter.DBSecurityGroupName
-			f15 = append(f15, &f15elem)
-		}
-		ko.Spec.DBSecurityGroups = f15
-	} else {
-		ko.Spec.DBSecurityGroups = nil
-	}
-	if resp.DBInstance.DBSubnetGroup != nil {
-		f16 := &svcapitypes.DBSubnetGroup_SDK{}
-		if resp.DBInstance.DBSubnetGroup.DBSubnetGroupArn != nil {
-			f16.DBSubnetGroupARN = resp.DBInstance.DBSubnetGroup.DBSubnetGroupArn
-		}
-		if resp.DBInstance.DBSubnetGroup.DBSubnetGroupDescription != nil {
-			f16.DBSubnetGroupDescription = resp.DBInstance.DBSubnetGroup.DBSubnetGroupDescription
-		}
-		if resp.DBInstance.DBSubnetGroup.DBSubnetGroupName != nil {
-			f16.DBSubnetGroupName = resp.DBInstance.DBSubnetGroup.DBSubnetGroupName
-		}
-		if resp.DBInstance.DBSubnetGroup.SubnetGroupStatus != nil {
-			f16.SubnetGroupStatus = resp.DBInstance.DBSubnetGroup.SubnetGroupStatus
-		}
-		if resp.DBInstance.DBSubnetGroup.Subnets != nil {
-			f16f4 := []*svcapitypes.Subnet{}
-			for _, f16f4iter := range resp.DBInstance.DBSubnetGroup.Subnets {
-				f16f4elem := &svcapitypes.Subnet{}
-				if f16f4iter.SubnetAvailabilityZone != nil {
-					f16f4elemf0 := &svcapitypes.AvailabilityZone{}
-					if f16f4iter.SubnetAvailabilityZone.Name != nil {
-						f16f4elemf0.Name = f16f4iter.SubnetAvailabilityZone.Name
-					}
-					f16f4elem.SubnetAvailabilityZone = f16f4elemf0
-				}
-				if f16f4iter.SubnetIdentifier != nil {
-					f16f4elem.SubnetIdentifier = f16f4iter.SubnetIdentifier
-				}
-				if f16f4iter.SubnetOutpost != nil {
-					f16f4elemf2 := &svcapitypes.Outpost{}
-					if f16f4iter.SubnetOutpost.Arn != nil {
-						f16f4elemf2.ARN = f16f4iter.SubnetOutpost.Arn
-					}
-					f16f4elem.SubnetOutpost = f16f4elemf2
-				}
-				if f16f4iter.SubnetStatus != nil {
-					f16f4elem.SubnetStatus = f16f4iter.SubnetStatus
-				}
-				f16f4 = append(f16f4, f16f4elem)
-			}
-			f16.Subnets = f16f4
-		}
-		if resp.DBInstance.DBSubnetGroup.VpcId != nil {
-			f16.VPCID = resp.DBInstance.DBSubnetGroup.VpcId
-		}
-		ko.Status.DBSubnetGroup = f16
-	} else {
-		ko.Status.DBSubnetGroup = nil
-	}
-	if resp.DBInstance.DbInstancePort != nil {
-		ko.Status.DBInstancePort = resp.DBInstance.DbInstancePort
-	} else {
-		ko.Status.DBInstancePort = nil
-	}
-	if resp.DBInstance.DbiResourceId != nil {
-		ko.Status.DBIResourceID = resp.DBInstance.DbiResourceId
-	} else {
-		ko.Status.DBIResourceID = nil
-	}
-	if resp.DBInstance.DeletionProtection != nil {
-		ko.Spec.DeletionProtection = resp.DBInstance.DeletionProtection
-	} else {
-		ko.Spec.DeletionProtection = nil
-	}
-	if resp.DBInstance.DomainMemberships != nil {
-		f20 := []*svcapitypes.DomainMembership{}
-		for _, f20iter := range resp.DBInstance.DomainMemberships {
-			f20elem := &svcapitypes.DomainMembership{}
-			if f20iter.Domain != nil {
-				f20elem.Domain = f20iter.Domain
-			}
-			if f20iter.FQDN != nil {
-				f20elem.FQDN = f20iter.FQDN
-			}
-			if f20iter.IAMRoleName != nil {
-				f20elem.IAMRoleName = f20iter.IAMRoleName
-			}
-			if f20iter.Status != nil {
-				f20elem.Status = f20iter.Status
-			}
-			f20 = append(f20, f20elem)
-		}
-		ko.Status.DomainMemberships = f20
-	} else {
-		ko.Status.DomainMemberships = nil
-	}
-	if resp.DBInstance.EnabledCloudwatchLogsExports != nil {
-		f21 := []*string{}
-		for _, f21iter := range resp.DBInstance.EnabledCloudwatchLogsExports {
-			var f21elem string
-			f21elem = *f21iter
-			f21 = append(f21, &f21elem)
-		}
-		ko.Status.EnabledCloudwatchLogsExports = f21
-	} else {
-		ko.Status.EnabledCloudwatchLogsExports = nil
-	}
-	if resp.DBInstance.Endpoint != nil {
-		f22 := &svcapitypes.Endpoint{}
-		if resp.DBInstance.Endpoint.Address != nil {
-			f22.Address = resp.DBInstance.Endpoint.Address
-		}
-		if resp.DBInstance.Endpoint.HostedZoneId != nil {
-			f22.HostedZoneID = resp.DBInstance.Endpoint.HostedZoneId
-		}
-		if resp.DBInstance.Endpoint.Port != nil {
-			f22.Port = resp.DBInstance.Endpoint.Port
-		}
-		ko.Status.Endpoint = f22
-	} else {
-		ko.Status.Endpoint = nil
-	}
-	if resp.DBInstance.Engine != nil {
-		ko.Spec.Engine = resp.DBInstance.Engine
-	} else {
-		ko.Spec.Engine = nil
-	}
-	if resp.DBInstance.EngineVersion != nil {
-		ko.Spec.EngineVersion = resp.DBInstance.EngineVersion
-	} else {
-		ko.Spec.EngineVersion = nil
-	}
-	if resp.DBInstance.EnhancedMonitoringResourceArn != nil {
-		ko.Status.EnhancedMonitoringResourceARN = resp.DBInstance.EnhancedMonitoringResourceArn
-	} else {
-		ko.Status.EnhancedMonitoringResourceARN = nil
-	}
-	if resp.DBInstance.IAMDatabaseAuthenticationEnabled != nil {
-		ko.Status.IAMDatabaseAuthenticationEnabled = resp.DBInstance.IAMDatabaseAuthenticationEnabled
-	} else {
-		ko.Status.IAMDatabaseAuthenticationEnabled = nil
-	}
-	if resp.DBInstance.InstanceCreateTime != nil {
-		ko.Status.InstanceCreateTime = &metav1.Time{*resp.DBInstance.InstanceCreateTime}
-	} else {
-		ko.Status.InstanceCreateTime = nil
-	}
-	if resp.DBInstance.Iops != nil {
-		ko.Spec.IOPS = resp.DBInstance.Iops
-	} else {
-		ko.Spec.IOPS = nil
-	}
-	if resp.DBInstance.KmsKeyId != nil {
-		ko.Spec.KMSKeyID = resp.DBInstance.KmsKeyId
-	} else {
-		ko.Spec.KMSKeyID = nil
-	}
-	if resp.DBInstance.LatestRestorableTime != nil {
-		ko.Status.LatestRestorableTime = &metav1.Time{*resp.DBInstance.LatestRestorableTime}
-	} else {
-		ko.Status.LatestRestorableTime = nil
-	}
-	if resp.DBInstance.LicenseModel != nil {
-		ko.Spec.LicenseModel = resp.DBInstance.LicenseModel
-	} else {
-		ko.Spec.LicenseModel = nil
-	}
-	if resp.DBInstance.ListenerEndpoint != nil {
-		f32 := &svcapitypes.Endpoint{}
-		if resp.DBInstance.ListenerEndpoint.Address != nil {
-			f32.Address = resp.DBInstance.ListenerEndpoint.Address
-		}
-		if resp.DBInstance.ListenerEndpoint.HostedZoneId != nil {
-			f32.HostedZoneID = resp.DBInstance.ListenerEndpoint.HostedZoneId
-		}
-		if resp.DBInstance.ListenerEndpoint.Port != nil {
-			f32.Port = resp.DBInstance.ListenerEndpoint.Port
-		}
-		ko.Status.ListenerEndpoint = f32
-	} else {
-		ko.Status.ListenerEndpoint = nil
-	}
-	if resp.DBInstance.MasterUsername != nil {
-		ko.Spec.MasterUsername = resp.DBInstance.MasterUsername
-	} else {
-		ko.Spec.MasterUsername = nil
-	}
-	if resp.DBInstance.MaxAllocatedStorage != nil {
-		ko.Spec.MaxAllocatedStorage = resp.DBInstance.MaxAllocatedStorage
-	} else {
-		ko.Spec.MaxAllocatedStorage = nil
-	}
-	if resp.DBInstance.MonitoringInterval != nil {
-		ko.Spec.MonitoringInterval = resp.DBInstance.MonitoringInterval
-	} else {
-		ko.Spec.MonitoringInterval = nil
-	}
-	if resp.DBInstance.MonitoringRoleArn != nil {
-		ko.Spec.MonitoringRoleARN = resp.DBInstance.MonitoringRoleArn
-	} else {
-		ko.Spec.MonitoringRoleARN = nil
-	}
-	if resp.DBInstance.MultiAZ != nil {
-		ko.Spec.MultiAZ = resp.DBInstance.MultiAZ
-	} else {
-		ko.Spec.MultiAZ = nil
-	}
-	if resp.DBInstance.OptionGroupMemberships != nil {
-		f38 := []*svcapitypes.OptionGroupMembership{}
-		for _, f38iter := range resp.DBInstance.OptionGroupMemberships {
-			f38elem := &svcapitypes.OptionGroupMembership{}
-			if f38iter.OptionGroupName != nil {
-				f38elem.OptionGroupName = f38iter.OptionGroupName
-			}
-			if f38iter.Status != nil {
-				f38elem.Status = f38iter.Status
-			}
-			f38 = append(f38, f38elem)
-		}
-		ko.Status.OptionGroupMemberships = f38
-	} else {
-		ko.Status.OptionGroupMemberships = nil
-	}
-	if resp.DBInstance.PendingModifiedValues != nil {
-		f39 := &svcapitypes.PendingModifiedValues{}
-		if resp.DBInstance.PendingModifiedValues.AllocatedStorage != nil {
-			f39.AllocatedStorage = resp.DBInstance.PendingModifiedValues.AllocatedStorage
-		}
-		if resp.DBInstance.PendingModifiedValues.BackupRetentionPeriod != nil {
-			f39.BackupRetentionPeriod = resp.DBInstance.PendingModifiedValues.BackupRetentionPeriod
-		}
-		if resp.DBInstance.PendingModifiedValues.CACertificateIdentifier != nil {
-			f39.CACertificateIdentifier = resp.DBInstance.PendingModifiedValues.CACertificateIdentifier
-		}
-		if resp.DBInstance.PendingModifiedValues.DBInstanceClass != nil {
-			f39.DBInstanceClass = resp.DBInstance.PendingModifiedValues.DBInstanceClass
-		}
-		if resp.DBInstance.PendingModifiedValues.DBInstanceIdentifier != nil {
-			f39.DBInstanceIdentifier = resp.DBInstance.PendingModifiedValues.DBInstanceIdentifier
-		}
-		if resp.DBInstance.PendingModifiedValues.DBSubnetGroupName != nil {
-			f39.DBSubnetGroupName = resp.DBInstance.PendingModifiedValues.DBSubnetGroupName
-		}
-		if resp.DBInstance.PendingModifiedValues.EngineVersion != nil {
-			f39.EngineVersion = resp.DBInstance.PendingModifiedValues.EngineVersion
-		}
-		if resp.DBInstance.PendingModifiedValues.Iops != nil {
-			f39.IOPS = resp.DBInstance.PendingModifiedValues.Iops
-		}
-		if resp.DBInstance.PendingModifiedValues.LicenseModel != nil {
-			f39.LicenseModel = resp.DBInstance.PendingModifiedValues.LicenseModel
-		}
-		if resp.DBInstance.PendingModifiedValues.MasterUserPassword != nil {
-			f39.MasterUserPassword = resp.DBInstance.PendingModifiedValues.MasterUserPassword
-		}
-		if resp.DBInstance.PendingModifiedValues.MultiAZ != nil {
-			f39.MultiAZ = resp.DBInstance.PendingModifiedValues.MultiAZ
-		}
-		if resp.DBInstance.PendingModifiedValues.PendingCloudwatchLogsExports != nil {
-			f39f11 := &svcapitypes.PendingCloudwatchLogsExports{}
-			if resp.DBInstance.PendingModifiedValues.PendingCloudwatchLogsExports.LogTypesToDisable != nil {
-				f39f11f0 := []*string{}
-				for _, f39f11f0iter := range resp.DBInstance.PendingModifiedValues.PendingCloudwatchLogsExports.LogTypesToDisable {
-					var f39f11f0elem string
-					f39f11f0elem = *f39f11f0iter
-					f39f11f0 = append(f39f11f0, &f39f11f0elem)
-				}
-				f39f11.LogTypesToDisable = f39f11f0
-			}
-			if resp.DBInstance.PendingModifiedValues.PendingCloudwatchLogsExports.LogTypesToEnable != nil {
-				f39f11f1 := []*string{}
-				for _, f39f11f1iter := range resp.DBInstance.PendingModifiedValues.PendingCloudwatchLogsExports.LogTypesToEnable {
-					var f39f11f1elem string
-					f39f11f1elem = *f39f11f1iter
-					f39f11f1 = append(f39f11f1, &f39f11f1elem)
-				}
-				f39f11.LogTypesToEnable = f39f11f1
-			}
-			f39.PendingCloudwatchLogsExports = f39f11
-		}
-		if resp.DBInstance.PendingModifiedValues.Port != nil {
-			f39.Port = resp.DBInstance.PendingModifiedValues.Port
-		}
-		if resp.DBInstance.PendingModifiedValues.ProcessorFeatures != nil {
-			f39f13 := []*svcapitypes.ProcessorFeature{}
-			for _, f39f13iter := range resp.DBInstance.PendingModifiedValues.ProcessorFeatures {
-				f39f13elem := &svcapitypes.ProcessorFeature{}
-				if f39f13iter.Name != nil {
-					f39f13elem.Name = f39f13iter.Name
-				}
-				if f39f13iter.Value != nil {
-					f39f13elem.Value = f39f13iter.Value
-				}
-				f39f13 = append(f39f13, f39f13elem)
-			}
-			f39.ProcessorFeatures = f39f13
-		}
-		if resp.DBInstance.PendingModifiedValues.StorageType != nil {
-			f39.StorageType = resp.DBInstance.PendingModifiedValues.StorageType
-		}
-		ko.Status.PendingModifiedValues = f39
-	} else {
-		ko.Status.PendingModifiedValues = nil
-	}
-	if resp.DBInstance.PerformanceInsightsEnabled != nil {
-		ko.Status.PerformanceInsightsEnabled = resp.DBInstance.PerformanceInsightsEnabled
-	} else {
-		ko.Status.PerformanceInsightsEnabled = nil
-	}
-	if resp.DBInstance.PerformanceInsightsKMSKeyId != nil {
-		ko.Spec.PerformanceInsightsKMSKeyID = resp.DBInstance.PerformanceInsightsKMSKeyId
-	} else {
-		ko.Spec.PerformanceInsightsKMSKeyID = nil
-	}
-	if resp.DBInstance.PerformanceInsightsRetentionPeriod != nil {
-		ko.Spec.PerformanceInsightsRetentionPeriod = resp.DBInstance.PerformanceInsightsRetentionPeriod
-	} else {
-		ko.Spec.PerformanceInsightsRetentionPeriod = nil
-	}
-	if resp.DBInstance.PreferredBackupWindow != nil {
-		ko.Spec.PreferredBackupWindow = resp.DBInstance.PreferredBackupWindow
-	} else {
-		ko.Spec.PreferredBackupWindow = nil
-	}
-	if resp.DBInstance.PreferredMaintenanceWindow != nil {
-		ko.Spec.PreferredMaintenanceWindow = resp.DBInstance.PreferredMaintenanceWindow
-	} else {
-		ko.Spec.PreferredMaintenanceWindow = nil
-	}
-	if resp.DBInstance.ProcessorFeatures != nil {
-		f45 := []*svcapitypes.ProcessorFeature{}
-		for _, f45iter := range resp.DBInstance.ProcessorFeatures {
-			f45elem := &svcapitypes.ProcessorFeature{}
-			if f45iter.Name != nil {
-				f45elem.Name = f45iter.Name
-			}
-			if f45iter.Value != nil {
-				f45elem.Value = f45iter.Value
-			}
-			f45 = append(f45, f45elem)
-		}
-		ko.Spec.ProcessorFeatures = f45
-	} else {
-		ko.Spec.ProcessorFeatures = nil
-	}
-	if resp.DBInstance.PromotionTier != nil {
-		ko.Spec.PromotionTier = resp.DBInstance.PromotionTier
-	} else {
-		ko.Spec.PromotionTier = nil
-	}
-	if resp.DBInstance.PubliclyAccessible != nil {
-		ko.Spec.PubliclyAccessible = resp.DBInstance.PubliclyAccessible
-	} else {
-		ko.Spec.PubliclyAccessible = nil
-	}
-	if resp.DBInstance.ReadReplicaDBClusterIdentifiers != nil {
-		f48 := []*string{}
-		for _, f48iter := range resp.DBInstance.ReadReplicaDBClusterIdentifiers {
-			var f48elem string
-			f48elem = *f48iter
-			f48 = append(f48, &f48elem)
-		}
-		ko.Status.ReadReplicaDBClusterIdentifiers = f48
-	} else {
-		ko.Status.ReadReplicaDBClusterIdentifiers = nil
-	}
-	if resp.DBInstance.ReadReplicaDBInstanceIdentifiers != nil {
-		f49 := []*string{}
-		for _, f49iter := range resp.DBInstance.ReadReplicaDBInstanceIdentifiers {
-			var f49elem string
-			f49elem = *f49iter
-			f49 = append(f49, &f49elem)
-		}
-		ko.Status.ReadReplicaDBInstanceIdentifiers = f49
-	} else {
-		ko.Status.ReadReplicaDBInstanceIdentifiers = nil
-	}
-	if resp.DBInstance.ReadReplicaSourceDBInstanceIdentifier != nil {
-		ko.Status.ReadReplicaSourceDBInstanceIdentifier = resp.DBInstance.ReadReplicaSourceDBInstanceIdentifier
-	} else {
-		ko.Status.ReadReplicaSourceDBInstanceIdentifier = nil
-	}
-	if resp.DBInstance.SecondaryAvailabilityZone != nil {
-		ko.Status.SecondaryAvailabilityZone = resp.DBInstance.SecondaryAvailabilityZone
-	} else {
-		ko.Status.SecondaryAvailabilityZone = nil
-	}
-	if resp.DBInstance.StatusInfos != nil {
-		f52 := []*svcapitypes.DBInstanceStatusInfo{}
-		for _, f52iter := range resp.DBInstance.StatusInfos {
-			f52elem := &svcapitypes.DBInstanceStatusInfo{}
-			if f52iter.Message != nil {
-				f52elem.Message = f52iter.Message
-			}
-			if f52iter.Normal != nil {
-				f52elem.Normal = f52iter.Normal
-			}
-			if f52iter.Status != nil {
-				f52elem.Status = f52iter.Status
-			}
-			if f52iter.StatusType != nil {
-				f52elem.StatusType = f52iter.StatusType
-			}
-			f52 = append(f52, f52elem)
-		}
-		ko.Status.StatusInfos = f52
-	} else {
-		ko.Status.StatusInfos = nil
-	}
-	if resp.DBInstance.StorageEncrypted != nil {
-		ko.Spec.StorageEncrypted = resp.DBInstance.StorageEncrypted
-	} else {
-		ko.Spec.StorageEncrypted = nil
-	}
-	if resp.DBInstance.StorageType != nil {
-		ko.Spec.StorageType = resp.DBInstance.StorageType
-	} else {
-		ko.Spec.StorageType = nil
-	}
-	if resp.DBInstance.TdeCredentialArn != nil {
-		ko.Spec.TDECredentialARN = resp.DBInstance.TdeCredentialArn
-	} else {
-		ko.Spec.TDECredentialARN = nil
-	}
-	if resp.DBInstance.Timezone != nil {
-		ko.Spec.Timezone = resp.DBInstance.Timezone
-	} else {
-		ko.Spec.Timezone = nil
-	}
-	if resp.DBInstance.VpcSecurityGroups != nil {
-		f57 := []*svcapitypes.VPCSecurityGroupMembership{}
-		for _, f57iter := range resp.DBInstance.VpcSecurityGroups {
-			f57elem := &svcapitypes.VPCSecurityGroupMembership{}
-			if f57iter.Status != nil {
-				f57elem.Status = f57iter.Status
-			}
-			if f57iter.VpcSecurityGroupId != nil {
-				f57elem.VPCSecurityGroupID = f57iter.VpcSecurityGroupId
-			}
-			f57 = append(f57, f57elem)
-		}
-		ko.Status.VPCSecurityGroups = f57
-	} else {
-		ko.Status.VPCSecurityGroups = nil
-	}
-`
-	assert.Equal(
-		expected,
-		code.SetResource(crd.Config(), crd, model.OpTypeCreate, "resp", "ko", 1),
-	)
-}
-
-func TestSetResource_RDS_DBInstance_ReadMany(t *testing.T) {
-	assert := assert.New(t)
-	require := require.New(t)
-
-	g := testutil.NewModelForService(t, "rds")
-
-	crd := testutil.GetCRDByName(t, g, "DBInstance")
-	require.NotNil(crd)
-
-	// This asserts that the fields of the Spec and Status structs of the
-	// target variable are constructed with cleaned, renamed-friendly names
-	// referring to the generated Kubernetes API type definitions
-	expected := `
-	found := false
-	for _, elem := range resp.DBInstances {
-		if elem.AllocatedStorage != nil {
-			ko.Spec.AllocatedStorage = elem.AllocatedStorage
-		} else {
-			ko.Spec.AllocatedStorage = nil
-		}
-		if elem.AssociatedRoles != nil {
-			f1 := []*svcapitypes.DBInstanceRole{}
-			for _, f1iter := range elem.AssociatedRoles {
-				f1elem := &svcapitypes.DBInstanceRole{}
-				if f1iter.FeatureName != nil {
-					f1elem.FeatureName = f1iter.FeatureName
-				}
-				if f1iter.RoleArn != nil {
-					f1elem.RoleARN = f1iter.RoleArn
-				}
-				if f1iter.Status != nil {
-					f1elem.Status = f1iter.Status
-				}
-				f1 = append(f1, f1elem)
-			}
-			ko.Status.AssociatedRoles = f1
-		} else {
-			ko.Status.AssociatedRoles = nil
-		}
-		if elem.AutoMinorVersionUpgrade != nil {
-			ko.Spec.AutoMinorVersionUpgrade = elem.AutoMinorVersionUpgrade
-		} else {
-			ko.Spec.AutoMinorVersionUpgrade = nil
-		}
-		if elem.AvailabilityZone != nil {
-			ko.Spec.AvailabilityZone = elem.AvailabilityZone
-		} else {
-			ko.Spec.AvailabilityZone = nil
-		}
-		if elem.BackupRetentionPeriod != nil {
-			ko.Spec.BackupRetentionPeriod = elem.BackupRetentionPeriod
-		} else {
-			ko.Spec.BackupRetentionPeriod = nil
-		}
-		if elem.CACertificateIdentifier != nil {
-			ko.Status.CACertificateIdentifier = elem.CACertificateIdentifier
-		} else {
-			ko.Status.CACertificateIdentifier = nil
-		}
-		if elem.CharacterSetName != nil {
-			ko.Spec.CharacterSetName = elem.CharacterSetName
-		} else {
-			ko.Spec.CharacterSetName = nil
-		}
-		if elem.CopyTagsToSnapshot != nil {
-			ko.Spec.CopyTagsToSnapshot = elem.CopyTagsToSnapshot
-		} else {
-			ko.Spec.CopyTagsToSnapshot = nil
-		}
-		if elem.DBClusterIdentifier != nil {
-			ko.Spec.DBClusterIdentifier = elem.DBClusterIdentifier
-		} else {
-			ko.Spec.DBClusterIdentifier = nil
-		}
-		if elem.DBInstanceArn != nil {
-			if ko.Status.ACKResourceMetadata == nil {
-				ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
-			}
-			tmpARN := ackv1alpha1.AWSResourceName(*elem.DBInstanceArn)
-			ko.Status.ACKResourceMetadata.ARN = &tmpARN
-		}
-		if elem.DBInstanceClass != nil {
-			ko.Spec.DBInstanceClass = elem.DBInstanceClass
-		} else {
-			ko.Spec.DBInstanceClass = nil
-		}
-		if elem.DBInstanceIdentifier != nil {
-			ko.Spec.DBInstanceIdentifier = elem.DBInstanceIdentifier
-		} else {
-			ko.Spec.DBInstanceIdentifier = nil
-		}
-		if elem.DBInstanceStatus != nil {
-			ko.Status.DBInstanceStatus = elem.DBInstanceStatus
-		} else {
-			ko.Status.DBInstanceStatus = nil
-		}
-		if elem.DBName != nil {
-			ko.Spec.DBName = elem.DBName
-		} else {
-			ko.Spec.DBName = nil
-		}
-		if elem.DBParameterGroups != nil {
-			f14 := []*svcapitypes.DBParameterGroupStatus_SDK{}
-			for _, f14iter := range elem.DBParameterGroups {
-				f14elem := &svcapitypes.DBParameterGroupStatus_SDK{}
-				if f14iter.DBParameterGroupName != nil {
-					f14elem.DBParameterGroupName = f14iter.DBParameterGroupName
-				}
-				if f14iter.ParameterApplyStatus != nil {
-					f14elem.ParameterApplyStatus = f14iter.ParameterApplyStatus
-				}
-				f14 = append(f14, f14elem)
-			}
-			ko.Status.DBParameterGroups = f14
-		} else {
-			ko.Status.DBParameterGroups = nil
-		}
-		if elem.DBSecurityGroups != nil {
-			f15 := []*string{}
-			for _, f15iter := range elem.DBSecurityGroups {
-				var f15elem string
-				f15elem = *f15iter.DBSecurityGroupName
-				f15 = append(f15, &f15elem)
-			}
-			ko.Spec.DBSecurityGroups = f15
-		} else {
-			ko.Spec.DBSecurityGroups = nil
-		}
-		if elem.DBSubnetGroup != nil {
-			f16 := &svcapitypes.DBSubnetGroup_SDK{}
-			if elem.DBSubnetGroup.DBSubnetGroupArn != nil {
-				f16.DBSubnetGroupARN = elem.DBSubnetGroup.DBSubnetGroupArn
-			}
-			if elem.DBSubnetGroup.DBSubnetGroupDescription != nil {
-				f16.DBSubnetGroupDescription = elem.DBSubnetGroup.DBSubnetGroupDescription
-			}
-			if elem.DBSubnetGroup.DBSubnetGroupName != nil {
-				f16.DBSubnetGroupName = elem.DBSubnetGroup.DBSubnetGroupName
-			}
-			if elem.DBSubnetGroup.SubnetGroupStatus != nil {
-				f16.SubnetGroupStatus = elem.DBSubnetGroup.SubnetGroupStatus
-			}
-			if elem.DBSubnetGroup.Subnets != nil {
-				f16f4 := []*svcapitypes.Subnet{}
-				for _, f16f4iter := range elem.DBSubnetGroup.Subnets {
-					f16f4elem := &svcapitypes.Subnet{}
-					if f16f4iter.SubnetAvailabilityZone != nil {
-						f16f4elemf0 := &svcapitypes.AvailabilityZone{}
-						if f16f4iter.SubnetAvailabilityZone.Name != nil {
-							f16f4elemf0.Name = f16f4iter.SubnetAvailabilityZone.Name
-						}
-						f16f4elem.SubnetAvailabilityZone = f16f4elemf0
-					}
-					if f16f4iter.SubnetIdentifier != nil {
-						f16f4elem.SubnetIdentifier = f16f4iter.SubnetIdentifier
-					}
-					if f16f4iter.SubnetOutpost != nil {
-						f16f4elemf2 := &svcapitypes.Outpost{}
-						if f16f4iter.SubnetOutpost.Arn != nil {
-							f16f4elemf2.ARN = f16f4iter.SubnetOutpost.Arn
-						}
-						f16f4elem.SubnetOutpost = f16f4elemf2
-					}
-					if f16f4iter.SubnetStatus != nil {
-						f16f4elem.SubnetStatus = f16f4iter.SubnetStatus
-					}
-					f16f4 = append(f16f4, f16f4elem)
-				}
-				f16.Subnets = f16f4
-			}
-			if elem.DBSubnetGroup.VpcId != nil {
-				f16.VPCID = elem.DBSubnetGroup.VpcId
-			}
-			ko.Status.DBSubnetGroup = f16
-		} else {
-			ko.Status.DBSubnetGroup = nil
-		}
-		if elem.DbInstancePort != nil {
-			ko.Status.DBInstancePort = elem.DbInstancePort
-		} else {
-			ko.Status.DBInstancePort = nil
-		}
-		if elem.DbiResourceId != nil {
-			ko.Status.DBIResourceID = elem.DbiResourceId
-		} else {
-			ko.Status.DBIResourceID = nil
-		}
-		if elem.DeletionProtection != nil {
-			ko.Spec.DeletionProtection = elem.DeletionProtection
-		} else {
-			ko.Spec.DeletionProtection = nil
-		}
-		if elem.DomainMemberships != nil {
-			f20 := []*svcapitypes.DomainMembership{}
-			for _, f20iter := range elem.DomainMemberships {
-				f20elem := &svcapitypes.DomainMembership{}
-				if f20iter.Domain != nil {
-					f20elem.Domain = f20iter.Domain
-				}
-				if f20iter.FQDN != nil {
-					f20elem.FQDN = f20iter.FQDN
-				}
-				if f20iter.IAMRoleName != nil {
-					f20elem.IAMRoleName = f20iter.IAMRoleName
-				}
-				if f20iter.Status != nil {
-					f20elem.Status = f20iter.Status
-				}
-				f20 = append(f20, f20elem)
-			}
-			ko.Status.DomainMemberships = f20
-		} else {
-			ko.Status.DomainMemberships = nil
-		}
-		if elem.EnabledCloudwatchLogsExports != nil {
-			f21 := []*string{}
-			for _, f21iter := range elem.EnabledCloudwatchLogsExports {
-				var f21elem string
-				f21elem = *f21iter
-				f21 = append(f21, &f21elem)
-			}
-			ko.Status.EnabledCloudwatchLogsExports = f21
-		} else {
-			ko.Status.EnabledCloudwatchLogsExports = nil
-		}
-		if elem.Endpoint != nil {
-			f22 := &svcapitypes.Endpoint{}
-			if elem.Endpoint.Address != nil {
-				f22.Address = elem.Endpoint.Address
-			}
-			if elem.Endpoint.HostedZoneId != nil {
-				f22.HostedZoneID = elem.Endpoint.HostedZoneId
-			}
-			if elem.Endpoint.Port != nil {
-				f22.Port = elem.Endpoint.Port
-			}
-			ko.Status.Endpoint = f22
-		} else {
-			ko.Status.Endpoint = nil
-		}
-		if elem.Engine != nil {
-			ko.Spec.Engine = elem.Engine
-		} else {
-			ko.Spec.Engine = nil
-		}
-		if elem.EngineVersion != nil {
-			ko.Spec.EngineVersion = elem.EngineVersion
-		} else {
-			ko.Spec.EngineVersion = nil
-		}
-		if elem.EnhancedMonitoringResourceArn != nil {
-			ko.Status.EnhancedMonitoringResourceARN = elem.EnhancedMonitoringResourceArn
-		} else {
-			ko.Status.EnhancedMonitoringResourceARN = nil
-		}
-		if elem.IAMDatabaseAuthenticationEnabled != nil {
-			ko.Status.IAMDatabaseAuthenticationEnabled = elem.IAMDatabaseAuthenticationEnabled
-		} else {
-			ko.Status.IAMDatabaseAuthenticationEnabled = nil
-		}
-		if elem.InstanceCreateTime != nil {
-			ko.Status.InstanceCreateTime = &metav1.Time{*elem.InstanceCreateTime}
-		} else {
-			ko.Status.InstanceCreateTime = nil
-		}
-		if elem.Iops != nil {
-			ko.Spec.IOPS = elem.Iops
-		} else {
-			ko.Spec.IOPS = nil
-		}
-		if elem.KmsKeyId != nil {
-			ko.Spec.KMSKeyID = elem.KmsKeyId
-		} else {
-			ko.Spec.KMSKeyID = nil
-		}
-		if elem.LatestRestorableTime != nil {
-			ko.Status.LatestRestorableTime = &metav1.Time{*elem.LatestRestorableTime}
-		} else {
-			ko.Status.LatestRestorableTime = nil
-		}
-		if elem.LicenseModel != nil {
-			ko.Spec.LicenseModel = elem.LicenseModel
-		} else {
-			ko.Spec.LicenseModel = nil
-		}
-		if elem.ListenerEndpoint != nil {
-			f32 := &svcapitypes.Endpoint{}
-			if elem.ListenerEndpoint.Address != nil {
-				f32.Address = elem.ListenerEndpoint.Address
-			}
-			if elem.ListenerEndpoint.HostedZoneId != nil {
-				f32.HostedZoneID = elem.ListenerEndpoint.HostedZoneId
-			}
-			if elem.ListenerEndpoint.Port != nil {
-				f32.Port = elem.ListenerEndpoint.Port
-			}
-			ko.Status.ListenerEndpoint = f32
-		} else {
-			ko.Status.ListenerEndpoint = nil
-		}
-		if elem.MasterUsername != nil {
-			ko.Spec.MasterUsername = elem.MasterUsername
-		} else {
-			ko.Spec.MasterUsername = nil
-		}
-		if elem.MaxAllocatedStorage != nil {
-			ko.Spec.MaxAllocatedStorage = elem.MaxAllocatedStorage
-		} else {
-			ko.Spec.MaxAllocatedStorage = nil
-		}
-		if elem.MonitoringInterval != nil {
-			ko.Spec.MonitoringInterval = elem.MonitoringInterval
-		} else {
-			ko.Spec.MonitoringInterval = nil
-		}
-		if elem.MonitoringRoleArn != nil {
-			ko.Spec.MonitoringRoleARN = elem.MonitoringRoleArn
-		} else {
-			ko.Spec.MonitoringRoleARN = nil
-		}
-		if elem.MultiAZ != nil {
-			ko.Spec.MultiAZ = elem.MultiAZ
-		} else {
-			ko.Spec.MultiAZ = nil
-		}
-		if elem.OptionGroupMemberships != nil {
-			f38 := []*svcapitypes.OptionGroupMembership{}
-			for _, f38iter := range elem.OptionGroupMemberships {
-				f38elem := &svcapitypes.OptionGroupMembership{}
-				if f38iter.OptionGroupName != nil {
-					f38elem.OptionGroupName = f38iter.OptionGroupName
-				}
-				if f38iter.Status != nil {
-					f38elem.Status = f38iter.Status
-				}
-				f38 = append(f38, f38elem)
-			}
-			ko.Status.OptionGroupMemberships = f38
-		} else {
-			ko.Status.OptionGroupMemberships = nil
-		}
-		if elem.PendingModifiedValues != nil {
-			f39 := &svcapitypes.PendingModifiedValues{}
-			if elem.PendingModifiedValues.AllocatedStorage != nil {
-				f39.AllocatedStorage = elem.PendingModifiedValues.AllocatedStorage
-			}
-			if elem.PendingModifiedValues.BackupRetentionPeriod != nil {
-				f39.BackupRetentionPeriod = elem.PendingModifiedValues.BackupRetentionPeriod
-			}
-			if elem.PendingModifiedValues.CACertificateIdentifier != nil {
-				f39.CACertificateIdentifier = elem.PendingModifiedValues.CACertificateIdentifier
-			}
-			if elem.PendingModifiedValues.DBInstanceClass != nil {
-				f39.DBInstanceClass = elem.PendingModifiedValues.DBInstanceClass
-			}
-			if elem.PendingModifiedValues.DBInstanceIdentifier != nil {
-				f39.DBInstanceIdentifier = elem.PendingModifiedValues.DBInstanceIdentifier
-			}
-			if elem.PendingModifiedValues.DBSubnetGroupName != nil {
-				f39.DBSubnetGroupName = elem.PendingModifiedValues.DBSubnetGroupName
-			}
-			if elem.PendingModifiedValues.EngineVersion != nil {
-				f39.EngineVersion = elem.PendingModifiedValues.EngineVersion
-			}
-			if elem.PendingModifiedValues.Iops != nil {
-				f39.IOPS = elem.PendingModifiedValues.Iops
-			}
-			if elem.PendingModifiedValues.LicenseModel != nil {
-				f39.LicenseModel = elem.PendingModifiedValues.LicenseModel
-			}
-			if elem.PendingModifiedValues.MasterUserPassword != nil {
-				f39.MasterUserPassword = elem.PendingModifiedValues.MasterUserPassword
-			}
-			if elem.PendingModifiedValues.MultiAZ != nil {
-				f39.MultiAZ = elem.PendingModifiedValues.MultiAZ
-			}
-			if elem.PendingModifiedValues.PendingCloudwatchLogsExports != nil {
-				f39f11 := &svcapitypes.PendingCloudwatchLogsExports{}
-				if elem.PendingModifiedValues.PendingCloudwatchLogsExports.LogTypesToDisable != nil {
-					f39f11f0 := []*string{}
-					for _, f39f11f0iter := range elem.PendingModifiedValues.PendingCloudwatchLogsExports.LogTypesToDisable {
-						var f39f11f0elem string
-						f39f11f0elem = *f39f11f0iter
-						f39f11f0 = append(f39f11f0, &f39f11f0elem)
-					}
-					f39f11.LogTypesToDisable = f39f11f0
-				}
-				if elem.PendingModifiedValues.PendingCloudwatchLogsExports.LogTypesToEnable != nil {
-					f39f11f1 := []*string{}
-					for _, f39f11f1iter := range elem.PendingModifiedValues.PendingCloudwatchLogsExports.LogTypesToEnable {
-						var f39f11f1elem string
-						f39f11f1elem = *f39f11f1iter
-						f39f11f1 = append(f39f11f1, &f39f11f1elem)
-					}
-					f39f11.LogTypesToEnable = f39f11f1
-				}
-				f39.PendingCloudwatchLogsExports = f39f11
-			}
-			if elem.PendingModifiedValues.Port != nil {
-				f39.Port = elem.PendingModifiedValues.Port
-			}
-			if elem.PendingModifiedValues.ProcessorFeatures != nil {
-				f39f13 := []*svcapitypes.ProcessorFeature{}
-				for _, f39f13iter := range elem.PendingModifiedValues.ProcessorFeatures {
-					f39f13elem := &svcapitypes.ProcessorFeature{}
-					if f39f13iter.Name != nil {
-						f39f13elem.Name = f39f13iter.Name
-					}
-					if f39f13iter.Value != nil {
-						f39f13elem.Value = f39f13iter.Value
-					}
-					f39f13 = append(f39f13, f39f13elem)
-				}
-				f39.ProcessorFeatures = f39f13
-			}
-			if elem.PendingModifiedValues.StorageType != nil {
-				f39.StorageType = elem.PendingModifiedValues.StorageType
-			}
-			ko.Status.PendingModifiedValues = f39
-		} else {
-			ko.Status.PendingModifiedValues = nil
-		}
-		if elem.PerformanceInsightsEnabled != nil {
-			ko.Status.PerformanceInsightsEnabled = elem.PerformanceInsightsEnabled
-		} else {
-			ko.Status.PerformanceInsightsEnabled = nil
-		}
-		if elem.PerformanceInsightsKMSKeyId != nil {
-			ko.Spec.PerformanceInsightsKMSKeyID = elem.PerformanceInsightsKMSKeyId
-		} else {
-			ko.Spec.PerformanceInsightsKMSKeyID = nil
-		}
-		if elem.PerformanceInsightsRetentionPeriod != nil {
-			ko.Spec.PerformanceInsightsRetentionPeriod = elem.PerformanceInsightsRetentionPeriod
-		} else {
-			ko.Spec.PerformanceInsightsRetentionPeriod = nil
-		}
-		if elem.PreferredBackupWindow != nil {
-			ko.Spec.PreferredBackupWindow = elem.PreferredBackupWindow
-		} else {
-			ko.Spec.PreferredBackupWindow = nil
-		}
-		if elem.PreferredMaintenanceWindow != nil {
-			ko.Spec.PreferredMaintenanceWindow = elem.PreferredMaintenanceWindow
-		} else {
-			ko.Spec.PreferredMaintenanceWindow = nil
-		}
-		if elem.ProcessorFeatures != nil {
-			f45 := []*svcapitypes.ProcessorFeature{}
-			for _, f45iter := range elem.ProcessorFeatures {
-				f45elem := &svcapitypes.ProcessorFeature{}
-				if f45iter.Name != nil {
-					f45elem.Name = f45iter.Name
-				}
-				if f45iter.Value != nil {
-					f45elem.Value = f45iter.Value
-				}
-				f45 = append(f45, f45elem)
-			}
-			ko.Spec.ProcessorFeatures = f45
-		} else {
-			ko.Spec.ProcessorFeatures = nil
-		}
-		if elem.PromotionTier != nil {
-			ko.Spec.PromotionTier = elem.PromotionTier
-		} else {
-			ko.Spec.PromotionTier = nil
-		}
-		if elem.PubliclyAccessible != nil {
-			ko.Spec.PubliclyAccessible = elem.PubliclyAccessible
-		} else {
-			ko.Spec.PubliclyAccessible = nil
-		}
-		if elem.ReadReplicaDBClusterIdentifiers != nil {
-			f48 := []*string{}
-			for _, f48iter := range elem.ReadReplicaDBClusterIdentifiers {
-				var f48elem string
-				f48elem = *f48iter
-				f48 = append(f48, &f48elem)
-			}
-			ko.Status.ReadReplicaDBClusterIdentifiers = f48
-		} else {
-			ko.Status.ReadReplicaDBClusterIdentifiers = nil
-		}
-		if elem.ReadReplicaDBInstanceIdentifiers != nil {
-			f49 := []*string{}
-			for _, f49iter := range elem.ReadReplicaDBInstanceIdentifiers {
-				var f49elem string
-				f49elem = *f49iter
-				f49 = append(f49, &f49elem)
-			}
-			ko.Status.ReadReplicaDBInstanceIdentifiers = f49
-		} else {
-			ko.Status.ReadReplicaDBInstanceIdentifiers = nil
-		}
-		if elem.ReadReplicaSourceDBInstanceIdentifier != nil {
-			ko.Status.ReadReplicaSourceDBInstanceIdentifier = elem.ReadReplicaSourceDBInstanceIdentifier
-		} else {
-			ko.Status.ReadReplicaSourceDBInstanceIdentifier = nil
-		}
-		if elem.SecondaryAvailabilityZone != nil {
-			ko.Status.SecondaryAvailabilityZone = elem.SecondaryAvailabilityZone
-		} else {
-			ko.Status.SecondaryAvailabilityZone = nil
-		}
-		if elem.StatusInfos != nil {
-			f52 := []*svcapitypes.DBInstanceStatusInfo{}
-			for _, f52iter := range elem.StatusInfos {
-				f52elem := &svcapitypes.DBInstanceStatusInfo{}
-				if f52iter.Message != nil {
-					f52elem.Message = f52iter.Message
-				}
-				if f52iter.Normal != nil {
-					f52elem.Normal = f52iter.Normal
-				}
-				if f52iter.Status != nil {
-					f52elem.Status = f52iter.Status
-				}
-				if f52iter.StatusType != nil {
-					f52elem.StatusType = f52iter.StatusType
-				}
-				f52 = append(f52, f52elem)
-			}
-			ko.Status.StatusInfos = f52
-		} else {
-			ko.Status.StatusInfos = nil
-		}
-		if elem.StorageEncrypted != nil {
-			ko.Spec.StorageEncrypted = elem.StorageEncrypted
-		} else {
-			ko.Spec.StorageEncrypted = nil
-		}
-		if elem.StorageType != nil {
-			ko.Spec.StorageType = elem.StorageType
-		} else {
-			ko.Spec.StorageType = nil
-		}
-		if elem.TdeCredentialArn != nil {
-			ko.Spec.TDECredentialARN = elem.TdeCredentialArn
-		} else {
-			ko.Spec.TDECredentialARN = nil
-		}
-		if elem.Timezone != nil {
-			ko.Spec.Timezone = elem.Timezone
-		} else {
-			ko.Spec.Timezone = nil
-		}
-		if elem.VpcSecurityGroups != nil {
-			f57 := []*svcapitypes.VPCSecurityGroupMembership{}
-			for _, f57iter := range elem.VpcSecurityGroups {
-				f57elem := &svcapitypes.VPCSecurityGroupMembership{}
-				if f57iter.Status != nil {
-					f57elem.Status = f57iter.Status
-				}
-				if f57iter.VpcSecurityGroupId != nil {
-					f57elem.VPCSecurityGroupID = f57iter.VpcSecurityGroupId
-				}
-				f57 = append(f57, f57elem)
-			}
-			ko.Status.VPCSecurityGroups = f57
-		} else {
-			ko.Status.VPCSecurityGroups = nil
 		}
 		found = true
 		break
@@ -2712,17 +1259,42 @@ func TestSetResource_SNS_Topic_GetAttributes(t *testing.T) {
 	// (and thus in the Spec fields). Two of them are the tesource's ARN and
 	// AWS Owner account ID, both of which are handled specially.
 	expected := `
-	ko.Spec.DeliveryPolicy = resp.Attributes["DeliveryPolicy"]
-	ko.Spec.DisplayName = resp.Attributes["DisplayName"]
-	ko.Status.EffectiveDeliveryPolicy = resp.Attributes["EffectiveDeliveryPolicy"]
-	ko.Spec.KMSMasterKeyID = resp.Attributes["KmsMasterKeyId"]
+	f0, ok := resp.Attributes["DeliveryPolicy"]
+	if ok {
+		ko.Spec.DeliveryPolicy = &f0
+	} else {
+		ko.Spec.DeliveryPolicy = nil
+	}
+	f1, ok := resp.Attributes["DisplayName"]
+	if ok {
+		ko.Spec.DisplayName = &f1
+	} else {
+		ko.Spec.DisplayName = nil
+	}
+	f2, ok := resp.Attributes["EffectiveDeliveryPolicy"]
+	if ok {
+		ko.Status.EffectiveDeliveryPolicy = &f2
+	} else {
+		ko.Status.EffectiveDeliveryPolicy = nil
+	}
+	f3, ok := resp.Attributes["KmsMasterKeyId"]
+	if ok {
+		ko.Spec.KMSMasterKeyID = &f3
+	} else {
+		ko.Spec.KMSMasterKeyID = nil
+	}
 	if ko.Status.ACKResourceMetadata == nil {
 		ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
 	}
-	tmpOwnerID := ackv1alpha1.AWSAccountID(*resp.Attributes["Owner"])
+	tmpOwnerID := ackv1alpha1.AWSAccountID(resp.Attributes["Owner"])
 	ko.Status.ACKResourceMetadata.OwnerAccountID = &tmpOwnerID
-	ko.Spec.Policy = resp.Attributes["Policy"]
-	tmpARN := ackv1alpha1.AWSResourceName(*resp.Attributes["TopicArn"])
+	f5, ok := resp.Attributes["Policy"]
+	if ok {
+		ko.Spec.Policy = &f5
+	} else {
+		ko.Spec.Policy = nil
+	}
+	tmpARN := ackv1alpha1.AWSResourceName(resp.Attributes["TopicArn"])
 	ko.Status.ACKResourceMetadata.ARN = &tmpARN
 `
 	assert.Equal(
@@ -2770,24 +1342,83 @@ func TestSetResource_SQS_Queue_GetAttributes(t *testing.T) {
 	// (and thus in the Spec fields). One of them is the resource's ARN which
 	// is handled specially.
 	expected := `
-	ko.Spec.ContentBasedDeduplication = resp.Attributes["ContentBasedDeduplication"]
-	ko.Status.CreatedTimestamp = resp.Attributes["CreatedTimestamp"]
-	ko.Spec.DelaySeconds = resp.Attributes["DelaySeconds"]
-	ko.Spec.FIFOQueue = resp.Attributes["FifoQueue"]
-	ko.Spec.KMSDataKeyReusePeriodSeconds = resp.Attributes["KmsDataKeyReusePeriodSeconds"]
-	ko.Spec.KMSMasterKeyID = resp.Attributes["KmsMasterKeyId"]
-	ko.Status.LastModifiedTimestamp = resp.Attributes["LastModifiedTimestamp"]
-	ko.Spec.MaximumMessageSize = resp.Attributes["MaximumMessageSize"]
-	ko.Spec.MessageRetentionPeriod = resp.Attributes["MessageRetentionPeriod"]
-	ko.Spec.Policy = resp.Attributes["Policy"]
+	f0, ok := resp.Attributes["ContentBasedDeduplication"]
+	if ok {
+		ko.Spec.ContentBasedDeduplication = &f0
+	} else {
+		ko.Spec.ContentBasedDeduplication = nil
+	}
+	f1, ok := resp.Attributes["CreatedTimestamp"]
+	if ok {
+		ko.Spec.CreatedTimestamp = &f1
+	} else {
+		ko.Spec.CreatedTimestamp = nil
+	}
+	f2, ok := resp.Attributes["DelaySeconds"]
+	if ok {
+		ko.Spec.DelaySeconds = &f2
+	} else {
+		ko.Spec.DelaySeconds = nil
+	}
+	f3, ok := resp.Attributes["FifoQueue"]
+	if ok {
+		ko.Spec.FIFOQueue = &f3
+	} else {
+		ko.Spec.FIFOQueue = nil
+	}
+	f4, ok := resp.Attributes["KmsDataKeyReusePeriodSeconds"]
+	if ok {
+		ko.Spec.KMSDataKeyReusePeriodSeconds = &f4
+	} else {
+		ko.Spec.KMSDataKeyReusePeriodSeconds = nil
+	}
+	f5, ok := resp.Attributes["KmsMasterKeyId"]
+	if ok {
+		ko.Spec.KMSMasterKeyID = &f5
+	} else {
+		ko.Spec.KMSMasterKeyID = nil
+	}
+	f6, ok := resp.Attributes["MaximumMessageSize"]
+	if ok {
+		ko.Spec.MaximumMessageSize = &f6
+	} else {
+		ko.Spec.MaximumMessageSize = nil
+	}
+	f7, ok := resp.Attributes["MessageRetentionPeriod"]
+	if ok {
+		ko.Spec.MessageRetentionPeriod = &f7
+	} else {
+		ko.Spec.MessageRetentionPeriod = nil
+	}
+	f8, ok := resp.Attributes["Policy"]
+	if ok {
+		ko.Spec.Policy = &f8
+	} else {
+		ko.Spec.Policy = nil
+	}
 	if ko.Status.ACKResourceMetadata == nil {
 		ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
 	}
-	tmpARN := ackv1alpha1.AWSResourceName(*resp.Attributes["QueueArn"])
+	tmpARN := ackv1alpha1.AWSResourceName(resp.Attributes["QueueArn"])
 	ko.Status.ACKResourceMetadata.ARN = &tmpARN
-	ko.Spec.ReceiveMessageWaitTimeSeconds = resp.Attributes["ReceiveMessageWaitTimeSeconds"]
-	ko.Spec.RedrivePolicy = resp.Attributes["RedrivePolicy"]
-	ko.Spec.VisibilityTimeout = resp.Attributes["VisibilityTimeout"]
+	f10, ok := resp.Attributes["ReceiveMessageWaitTimeSeconds"]
+	if ok {
+		ko.Spec.ReceiveMessageWaitTimeSeconds = &f10
+	} else {
+		ko.Spec.ReceiveMessageWaitTimeSeconds = nil
+	}
+	f11, ok := resp.Attributes["RedrivePolicy"]
+	if ok {
+		ko.Spec.RedrivePolicy = &f11
+	} else {
+		ko.Spec.RedrivePolicy = nil
+	}
+	f12, ok := resp.Attributes["VisibilityTimeout"]
+	if ok {
+		ko.Spec.VisibilityTimeout = &f12
+	} else {
+		ko.Spec.VisibilityTimeout = nil
+	}
 `
 	assert.Equal(
 		expected,
@@ -2862,6 +1493,11 @@ func TestSetResource_RDS_DBSubnetGroup_ReadMany(t *testing.T) {
 			ko.Status.Subnets = f4
 		} else {
 			ko.Status.Subnets = nil
+		}
+		if elem.SupportedNetworkTypes != nil {
+			ko.Status.SupportedNetworkTypes = aws.StringSlice(elem.SupportedNetworkTypes)
+		} else {
+			ko.Status.SupportedNetworkTypes = nil
 		}
 		if elem.VpcId != nil {
 			ko.Status.VPCID = elem.VpcId
@@ -3055,7 +1691,7 @@ func TestSetResource_APIGWV2_ApiMapping_SetResourceIdentifiers(t *testing.T) {
 
 	f1, f1ok := identifier.AdditionalKeys["domainName"]
 	if f1ok {
-		r.ko.Spec.DomainName = &f1
+		r.ko.Spec.DomainName = aws.String(f1)
 	}
 `
 	assert.Equal(
@@ -3124,19 +1760,26 @@ func TestSetResource_EC2_SecurityGroups_SetResourceIdentifiers(t *testing.T) {
 	} else {
 		ko.Status.ID = nil
 	}
+	if ko.Status.ACKResourceMetadata == nil {
+		ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
+	}
+	if resp.SecurityGroupArn != nil {
+		arn := ackv1alpha1.AWSResourceName(*resp.SecurityGroupArn)
+		ko.Status.ACKResourceMetadata.ARN = &arn
+	}
 	if resp.Tags != nil {
-		f1 := []*svcapitypes.Tag{}
-		for _, f1iter := range resp.Tags {
-			f1elem := &svcapitypes.Tag{}
-			if f1iter.Key != nil {
-				f1elem.Key = f1iter.Key
+		f2 := []*svcapitypes.Tag{}
+		for _, f2iter := range resp.Tags {
+			f2elem := &svcapitypes.Tag{}
+			if f2iter.Key != nil {
+				f2elem.Key = f2iter.Key
 			}
-			if f1iter.Value != nil {
-				f1elem.Value = f1iter.Value
+			if f2iter.Value != nil {
+				f2elem.Value = f2iter.Value
 			}
-			f1 = append(f1, f1elem)
+			f2 = append(f2, f2elem)
 		}
-		ko.Status.Tags = f1
+		ko.Status.Tags = f2
 	} else {
 		ko.Status.Tags = nil
 	}
@@ -3163,7 +1806,7 @@ func TestSetResource_EKS_Cluster_PopulateResourceFromAnnotation(t *testing.T) {
 	}
 	r.ko.Spec.Name = &tmp
 
-`	
+`
 	assert.Equal(
 		expected,
 		code.PopulateResourceFromAnnotation(crd.Config(), crd, "fields", "r.ko", 1),
@@ -3215,7 +1858,7 @@ func TestSetResource_APIGWV2_ApiMapping_PopulateResourceFromAnnotation(t *testin
 
 	f1, f1ok := fields["domainName"]
 	if f1ok {
-		r.ko.Spec.DomainName = &f1
+		r.ko.Spec.DomainName = aws.String(f1)
 	}
 `
 	assert.Equal(
@@ -3262,7 +1905,8 @@ func TestSetResource_IAM_Role_NestedSetConfig(t *testing.T) {
 		ko.Spec.Description = nil
 	}
 	if resp.Role.MaxSessionDuration != nil {
-		ko.Spec.MaxSessionDuration = resp.Role.MaxSessionDuration
+		maxSessionDurationCopy := int64(*resp.Role.MaxSessionDuration)
+		ko.Spec.MaxSessionDuration = &maxSessionDurationCopy
 	} else {
 		ko.Spec.MaxSessionDuration = nil
 	}
@@ -3346,11 +1990,11 @@ func TestSetResource_EC2_DHCPOptions_NestedSetConfig(t *testing.T) {
 			if f0iter.Values != nil {
 				f0elemf1 := []*string{}
 				for _, f0elemf1iter := range f0iter.Values {
-					var f0elemf1elem string
+					var f0elemf1elem *string
 					if f0elemf1iter.Value != nil {
-						f0elemf1elem = *f0elemf1iter.Value
+						f0elemf1elem = f0elemf1iter.Value
 					}
-					f0elemf1 = append(f0elemf1, &f0elemf1elem)
+					f0elemf1 = append(f0elemf1, f0elemf1elem)
 				}
 				f0elem.Values = f0elemf1
 			}
@@ -3393,336 +2037,6 @@ func TestSetResource_EC2_DHCPOptions_NestedSetConfig(t *testing.T) {
 	)
 }
 
-func TestSetResource_EventBridge_Rule_SetResourceForStruct(t *testing.T) {
-	assert := assert.New(t)
-	require := require.New(t)
-
-	g := testutil.NewModelForService(t, "eventbridge")
-
-	crd := testutil.GetCRDByName(t, g, "Rule")
-	require.NotNil(crd)
-
-	// Getting CRD Target shape
-	field, ok := crd.SpecFields["Targets"]
-	require.True(ok)
-	koShape := &field.ShapeRef.Shape.MemberRef
-
-	// Getting SDK Target shape
-	putTargetsOP, ok := g.SDKAPI.API.Operations["PutTargets"]
-	require.True(ok)
-	targetsShape, ok := putTargetsOP.InputRef.Shape.MemberRefs["Targets"]
-	require.True(ok)
-	targetShape := &targetsShape.Shape.MemberRef
-
-	expected := `	if resp.Arn != nil {
-		fx.ARN = resp.Arn
-	}
-	if resp.BatchParameters != nil {
-		fxf1 := &svcapitypes.BatchParameters{}
-		if resp.BatchParameters.ArrayProperties != nil {
-			fxf1f0 := &svcapitypes.BatchArrayProperties{}
-			if resp.BatchParameters.ArrayProperties.Size != nil {
-				fxf1f0.Size = resp.BatchParameters.ArrayProperties.Size
-			}
-			fxf1.ArrayProperties = fxf1f0
-		}
-		if resp.BatchParameters.JobDefinition != nil {
-			fxf1.JobDefinition = resp.BatchParameters.JobDefinition
-		}
-		if resp.BatchParameters.JobName != nil {
-			fxf1.JobName = resp.BatchParameters.JobName
-		}
-		if resp.BatchParameters.RetryStrategy != nil {
-			fxf1f3 := &svcapitypes.BatchRetryStrategy{}
-			if resp.BatchParameters.RetryStrategy.Attempts != nil {
-				fxf1f3.Attempts = resp.BatchParameters.RetryStrategy.Attempts
-			}
-			fxf1.RetryStrategy = fxf1f3
-		}
-		fx.BatchParameters = fxf1
-	}
-	if resp.DeadLetterConfig != nil {
-		fxf2 := &svcapitypes.DeadLetterConfig{}
-		if resp.DeadLetterConfig.Arn != nil {
-			fxf2.ARN = resp.DeadLetterConfig.Arn
-		}
-		fx.DeadLetterConfig = fxf2
-	}
-	if resp.EcsParameters != nil {
-		fxf3 := &svcapitypes.ECSParameters{}
-		if resp.EcsParameters.CapacityProviderStrategy != nil {
-			fxf3f0 := []*svcapitypes.CapacityProviderStrategyItem{}
-			for _, fxf3f0iter := range resp.EcsParameters.CapacityProviderStrategy {
-				fxf3f0elem := &svcapitypes.CapacityProviderStrategyItem{}
-				if fxf3f0iter.Base != nil {
-					fxf3f0elem.Base = fxf3f0iter.Base
-				}
-				if fxf3f0iter.CapacityProvider != nil {
-					fxf3f0elem.CapacityProvider = fxf3f0iter.CapacityProvider
-				}
-				if fxf3f0iter.Weight != nil {
-					fxf3f0elem.Weight = fxf3f0iter.Weight
-				}
-				fxf3f0 = append(fxf3f0, fxf3f0elem)
-			}
-			fxf3.CapacityProviderStrategy = fxf3f0
-		}
-		if resp.EcsParameters.EnableECSManagedTags != nil {
-			fxf3.EnableECSManagedTags = resp.EcsParameters.EnableECSManagedTags
-		}
-		if resp.EcsParameters.EnableExecuteCommand != nil {
-			fxf3.EnableExecuteCommand = resp.EcsParameters.EnableExecuteCommand
-		}
-		if resp.EcsParameters.Group != nil {
-			fxf3.Group = resp.EcsParameters.Group
-		}
-		if resp.EcsParameters.LaunchType != nil {
-			fxf3.LaunchType = resp.EcsParameters.LaunchType
-		}
-		if resp.EcsParameters.NetworkConfiguration != nil {
-			fxf3f5 := &svcapitypes.NetworkConfiguration{}
-			if resp.EcsParameters.NetworkConfiguration.AwsvpcConfiguration != nil {
-				fxf3f5f0 := &svcapitypes.AWSVPCConfiguration{}
-				if resp.EcsParameters.NetworkConfiguration.AwsvpcConfiguration.AssignPublicIp != nil {
-					fxf3f5f0.AssignPublicIP = resp.EcsParameters.NetworkConfiguration.AwsvpcConfiguration.AssignPublicIp
-				}
-				if resp.EcsParameters.NetworkConfiguration.AwsvpcConfiguration.SecurityGroups != nil {
-					fxf3f5f0f1 := []*string{}
-					for _, fxf3f5f0f1iter := range resp.EcsParameters.NetworkConfiguration.AwsvpcConfiguration.SecurityGroups {
-						var fxf3f5f0f1elem string
-						fxf3f5f0f1elem = *fxf3f5f0f1iter
-						fxf3f5f0f1 = append(fxf3f5f0f1, &fxf3f5f0f1elem)
-					}
-					fxf3f5f0.SecurityGroups = fxf3f5f0f1
-				}
-				if resp.EcsParameters.NetworkConfiguration.AwsvpcConfiguration.Subnets != nil {
-					fxf3f5f0f2 := []*string{}
-					for _, fxf3f5f0f2iter := range resp.EcsParameters.NetworkConfiguration.AwsvpcConfiguration.Subnets {
-						var fxf3f5f0f2elem string
-						fxf3f5f0f2elem = *fxf3f5f0f2iter
-						fxf3f5f0f2 = append(fxf3f5f0f2, &fxf3f5f0f2elem)
-					}
-					fxf3f5f0.Subnets = fxf3f5f0f2
-				}
-				fxf3f5.AWSVPCConfiguration = fxf3f5f0
-			}
-			fxf3.NetworkConfiguration = fxf3f5
-		}
-		if resp.EcsParameters.PlacementConstraints != nil {
-			fxf3f6 := []*svcapitypes.PlacementConstraint{}
-			for _, fxf3f6iter := range resp.EcsParameters.PlacementConstraints {
-				fxf3f6elem := &svcapitypes.PlacementConstraint{}
-				if fxf3f6iter.Expression != nil {
-					fxf3f6elem.Expression = fxf3f6iter.Expression
-				}
-				if fxf3f6iter.Type != nil {
-					fxf3f6elem.Type = fxf3f6iter.Type
-				}
-				fxf3f6 = append(fxf3f6, fxf3f6elem)
-			}
-			fxf3.PlacementConstraints = fxf3f6
-		}
-		if resp.EcsParameters.PlacementStrategy != nil {
-			fxf3f7 := []*svcapitypes.PlacementStrategy{}
-			for _, fxf3f7iter := range resp.EcsParameters.PlacementStrategy {
-				fxf3f7elem := &svcapitypes.PlacementStrategy{}
-				if fxf3f7iter.Field != nil {
-					fxf3f7elem.Field = fxf3f7iter.Field
-				}
-				if fxf3f7iter.Type != nil {
-					fxf3f7elem.Type = fxf3f7iter.Type
-				}
-				fxf3f7 = append(fxf3f7, fxf3f7elem)
-			}
-			fxf3.PlacementStrategy = fxf3f7
-		}
-		if resp.EcsParameters.PlatformVersion != nil {
-			fxf3.PlatformVersion = resp.EcsParameters.PlatformVersion
-		}
-		if resp.EcsParameters.PropagateTags != nil {
-			fxf3.PropagateTags = resp.EcsParameters.PropagateTags
-		}
-		if resp.EcsParameters.ReferenceId != nil {
-			fxf3.ReferenceID = resp.EcsParameters.ReferenceId
-		}
-		if resp.EcsParameters.Tags != nil {
-			fxf3f11 := []*svcapitypes.Tag{}
-			for _, fxf3f11iter := range resp.EcsParameters.Tags {
-				fxf3f11elem := &svcapitypes.Tag{}
-				if fxf3f11iter.Key != nil {
-					fxf3f11elem.Key = fxf3f11iter.Key
-				}
-				if fxf3f11iter.Value != nil {
-					fxf3f11elem.Value = fxf3f11iter.Value
-				}
-				fxf3f11 = append(fxf3f11, fxf3f11elem)
-			}
-			fxf3.Tags = fxf3f11
-		}
-		if resp.EcsParameters.TaskCount != nil {
-			fxf3.TaskCount = resp.EcsParameters.TaskCount
-		}
-		if resp.EcsParameters.TaskDefinitionArn != nil {
-			fxf3.TaskDefinitionARN = resp.EcsParameters.TaskDefinitionArn
-		}
-		fx.ECSParameters = fxf3
-	}
-	if resp.HttpParameters != nil {
-		fxf4 := &svcapitypes.HTTPParameters{}
-		if resp.HttpParameters.HeaderParameters != nil {
-			fxf4f0 := map[string]*string{}
-			for fxf4f0key, fxf4f0valiter := range resp.HttpParameters.HeaderParameters {
-				var fxf4f0val string
-				fxf4f0val = *fxf4f0valiter
-				fxf4f0[fxf4f0key] = &fxf4f0val
-			}
-			fxf4.HeaderParameters = fxf4f0
-		}
-		if resp.HttpParameters.PathParameterValues != nil {
-			fxf4f1 := []*string{}
-			for _, fxf4f1iter := range resp.HttpParameters.PathParameterValues {
-				var fxf4f1elem string
-				fxf4f1elem = *fxf4f1iter
-				fxf4f1 = append(fxf4f1, &fxf4f1elem)
-			}
-			fxf4.PathParameterValues = fxf4f1
-		}
-		if resp.HttpParameters.QueryStringParameters != nil {
-			fxf4f2 := map[string]*string{}
-			for fxf4f2key, fxf4f2valiter := range resp.HttpParameters.QueryStringParameters {
-				var fxf4f2val string
-				fxf4f2val = *fxf4f2valiter
-				fxf4f2[fxf4f2key] = &fxf4f2val
-			}
-			fxf4.QueryStringParameters = fxf4f2
-		}
-		fx.HTTPParameters = fxf4
-	}
-	if resp.Id != nil {
-		fx.ID = resp.Id
-	}
-	if resp.Input != nil {
-		fx.Input = resp.Input
-	}
-	if resp.InputPath != nil {
-		fx.InputPath = resp.InputPath
-	}
-	if resp.InputTransformer != nil {
-		fxf8 := &svcapitypes.InputTransformer{}
-		if resp.InputTransformer.InputPathsMap != nil {
-			fxf8f0 := map[string]*string{}
-			for fxf8f0key, fxf8f0valiter := range resp.InputTransformer.InputPathsMap {
-				var fxf8f0val string
-				fxf8f0val = *fxf8f0valiter
-				fxf8f0[fxf8f0key] = &fxf8f0val
-			}
-			fxf8.InputPathsMap = fxf8f0
-		}
-		if resp.InputTransformer.InputTemplate != nil {
-			fxf8.InputTemplate = resp.InputTransformer.InputTemplate
-		}
-		fx.InputTransformer = fxf8
-	}
-	if resp.KinesisParameters != nil {
-		fxf9 := &svcapitypes.KinesisParameters{}
-		if resp.KinesisParameters.PartitionKeyPath != nil {
-			fxf9.PartitionKeyPath = resp.KinesisParameters.PartitionKeyPath
-		}
-		fx.KinesisParameters = fxf9
-	}
-	if resp.RedshiftDataParameters != nil {
-		fxf10 := &svcapitypes.RedshiftDataParameters{}
-		if resp.RedshiftDataParameters.Database != nil {
-			fxf10.Database = resp.RedshiftDataParameters.Database
-		}
-		if resp.RedshiftDataParameters.DbUser != nil {
-			fxf10.DBUser = resp.RedshiftDataParameters.DbUser
-		}
-		if resp.RedshiftDataParameters.SecretManagerArn != nil {
-			fxf10.SecretManagerARN = resp.RedshiftDataParameters.SecretManagerArn
-		}
-		if resp.RedshiftDataParameters.Sql != nil {
-			fxf10.SQL = resp.RedshiftDataParameters.Sql
-		}
-		if resp.RedshiftDataParameters.StatementName != nil {
-			fxf10.StatementName = resp.RedshiftDataParameters.StatementName
-		}
-		if resp.RedshiftDataParameters.WithEvent != nil {
-			fxf10.WithEvent = resp.RedshiftDataParameters.WithEvent
-		}
-		fx.RedshiftDataParameters = fxf10
-	}
-	if resp.RetryPolicy != nil {
-		fxf11 := &svcapitypes.RetryPolicy{}
-		if resp.RetryPolicy.MaximumEventAgeInSeconds != nil {
-			fxf11.MaximumEventAgeInSeconds = resp.RetryPolicy.MaximumEventAgeInSeconds
-		}
-		if resp.RetryPolicy.MaximumRetryAttempts != nil {
-			fxf11.MaximumRetryAttempts = resp.RetryPolicy.MaximumRetryAttempts
-		}
-		fx.RetryPolicy = fxf11
-	}
-	if resp.RoleArn != nil {
-		fx.RoleARN = resp.RoleArn
-	}
-	if resp.RunCommandParameters != nil {
-		fxf13 := &svcapitypes.RunCommandParameters{}
-		if resp.RunCommandParameters.RunCommandTargets != nil {
-			fxf13f0 := []*svcapitypes.RunCommandTarget{}
-			for _, fxf13f0iter := range resp.RunCommandParameters.RunCommandTargets {
-				fxf13f0elem := &svcapitypes.RunCommandTarget{}
-				if fxf13f0iter.Key != nil {
-					fxf13f0elem.Key = fxf13f0iter.Key
-				}
-				if fxf13f0iter.Values != nil {
-					fxf13f0elemf1 := []*string{}
-					for _, fxf13f0elemf1iter := range fxf13f0iter.Values {
-						var fxf13f0elemf1elem string
-						fxf13f0elemf1elem = *fxf13f0elemf1iter
-						fxf13f0elemf1 = append(fxf13f0elemf1, &fxf13f0elemf1elem)
-					}
-					fxf13f0elem.Values = fxf13f0elemf1
-				}
-				fxf13f0 = append(fxf13f0, fxf13f0elem)
-			}
-			fxf13.RunCommandTargets = fxf13f0
-		}
-		fx.RunCommandParameters = fxf13
-	}
-	if resp.SageMakerPipelineParameters != nil {
-		fxf14 := &svcapitypes.SageMakerPipelineParameters{}
-		if resp.SageMakerPipelineParameters.PipelineParameterList != nil {
-			fxf14f0 := []*svcapitypes.SageMakerPipelineParameter{}
-			for _, fxf14f0iter := range resp.SageMakerPipelineParameters.PipelineParameterList {
-				fxf14f0elem := &svcapitypes.SageMakerPipelineParameter{}
-				if fxf14f0iter.Name != nil {
-					fxf14f0elem.Name = fxf14f0iter.Name
-				}
-				if fxf14f0iter.Value != nil {
-					fxf14f0elem.Value = fxf14f0iter.Value
-				}
-				fxf14f0 = append(fxf14f0, fxf14f0elem)
-			}
-			fxf14.PipelineParameterList = fxf14f0
-		}
-		fx.SageMakerPipelineParameters = fxf14
-	}
-	if resp.SqsParameters != nil {
-		fxf15 := &svcapitypes.SQSParameters{}
-		if resp.SqsParameters.MessageGroupId != nil {
-			fxf15.MessageGroupID = resp.SqsParameters.MessageGroupId
-		}
-		fx.SQSParameters = fxf15
-	}
-`
-	assert.Equal(
-		expected,
-		code.SetResourceForStruct(
-			crd.Config(), crd, "fx", koShape, nil, "resp", targetShape, "", model.OpTypeList, 1,
-		),
-	)
-}
-
 func TestSetResource_EC2_Instance_Create(t *testing.T) {
 	// Check that the RunInstances output (Reservation)
 	// uses the first element of the returned list of Instances
@@ -3740,12 +2054,13 @@ func TestSetResource_EC2_Instance_Create(t *testing.T) {
 	found := false
 	for _, elem := range resp.Instances {
 		if elem.AmiLaunchIndex != nil {
-			ko.Status.AMILaunchIndex = elem.AmiLaunchIndex
+			amiLaunchIndexCopy := int64(*elem.AmiLaunchIndex)
+			ko.Status.AMILaunchIndex = &amiLaunchIndexCopy
 		} else {
 			ko.Status.AMILaunchIndex = nil
 		}
-		if elem.Architecture != nil {
-			ko.Status.Architecture = elem.Architecture
+		if elem.Architecture != "" {
+			ko.Status.Architecture = aws.String(string(elem.Architecture))
 		} else {
 			ko.Status.Architecture = nil
 		}
@@ -3769,8 +2084,8 @@ func TestSetResource_EC2_Instance_Create(t *testing.T) {
 		} else {
 			ko.Spec.BlockDeviceMappings = nil
 		}
-		if elem.BootMode != nil {
-			ko.Status.BootMode = elem.BootMode
+		if elem.BootMode != "" {
+			ko.Status.BootMode = aws.String(string(elem.BootMode))
 		} else {
 			ko.Status.BootMode = nil
 		}
@@ -3781,8 +2096,8 @@ func TestSetResource_EC2_Instance_Create(t *testing.T) {
 		}
 		if elem.CapacityReservationSpecification != nil {
 			f5 := &svcapitypes.CapacityReservationSpecification{}
-			if elem.CapacityReservationSpecification.CapacityReservationPreference != nil {
-				f5.CapacityReservationPreference = elem.CapacityReservationSpecification.CapacityReservationPreference
+			if elem.CapacityReservationSpecification.CapacityReservationPreference != "" {
+				f5.CapacityReservationPreference = aws.String(string(elem.CapacityReservationSpecification.CapacityReservationPreference))
 			}
 			if elem.CapacityReservationSpecification.CapacityReservationTarget != nil {
 				f5f1 := &svcapitypes.CapacityReservationTarget{}
@@ -3801,10 +2116,12 @@ func TestSetResource_EC2_Instance_Create(t *testing.T) {
 		if elem.CpuOptions != nil {
 			f6 := &svcapitypes.CPUOptionsRequest{}
 			if elem.CpuOptions.CoreCount != nil {
-				f6.CoreCount = elem.CpuOptions.CoreCount
+				coreCountCopy := int64(*elem.CpuOptions.CoreCount)
+				f6.CoreCount = &coreCountCopy
 			}
 			if elem.CpuOptions.ThreadsPerCore != nil {
-				f6.ThreadsPerCore = elem.CpuOptions.ThreadsPerCore
+				threadsPerCoreCopy := int64(*elem.CpuOptions.ThreadsPerCore)
+				f6.ThreadsPerCore = &threadsPerCoreCopy
 			}
 			ko.Spec.CPUOptions = f6
 		} else {
@@ -3882,8 +2199,8 @@ func TestSetResource_EC2_Instance_Create(t *testing.T) {
 		} else {
 			ko.Spec.HibernationOptions = nil
 		}
-		if elem.Hypervisor != nil {
-			ko.Status.Hypervisor = elem.Hypervisor
+		if elem.Hypervisor != "" {
+			ko.Status.Hypervisor = aws.String(string(elem.Hypervisor))
 		} else {
 			ko.Status.Hypervisor = nil
 		}
@@ -3906,13 +2223,13 @@ func TestSetResource_EC2_Instance_Create(t *testing.T) {
 		} else {
 			ko.Status.InstanceID = nil
 		}
-		if elem.InstanceLifecycle != nil {
-			ko.Status.InstanceLifecycle = elem.InstanceLifecycle
+		if elem.InstanceLifecycle != "" {
+			ko.Status.InstanceLifecycle = aws.String(string(elem.InstanceLifecycle))
 		} else {
 			ko.Status.InstanceLifecycle = nil
 		}
-		if elem.InstanceType != nil {
-			ko.Spec.InstanceType = elem.InstanceType
+		if elem.InstanceType != "" {
+			ko.Spec.InstanceType = aws.String(string(elem.InstanceType))
 		} else {
 			ko.Spec.InstanceType = nil
 		}
@@ -3946,17 +2263,18 @@ func TestSetResource_EC2_Instance_Create(t *testing.T) {
 		}
 		if elem.MetadataOptions != nil {
 			f23 := &svcapitypes.InstanceMetadataOptionsRequest{}
-			if elem.MetadataOptions.HttpEndpoint != nil {
-				f23.HTTPEndpoint = elem.MetadataOptions.HttpEndpoint
+			if elem.MetadataOptions.HttpEndpoint != "" {
+				f23.HTTPEndpoint = aws.String(string(elem.MetadataOptions.HttpEndpoint))
 			}
-			if elem.MetadataOptions.HttpProtocolIpv6 != nil {
-				f23.HTTPProtocolIPv6 = elem.MetadataOptions.HttpProtocolIpv6
+			if elem.MetadataOptions.HttpProtocolIpv6 != "" {
+				f23.HTTPProtocolIPv6 = aws.String(string(elem.MetadataOptions.HttpProtocolIpv6))
 			}
 			if elem.MetadataOptions.HttpPutResponseHopLimit != nil {
-				f23.HTTPPutResponseHopLimit = elem.MetadataOptions.HttpPutResponseHopLimit
+				httpPutResponseHopLimitCopy := int64(*elem.MetadataOptions.HttpPutResponseHopLimit)
+				f23.HTTPPutResponseHopLimit = &httpPutResponseHopLimitCopy
 			}
-			if elem.MetadataOptions.HttpTokens != nil {
-				f23.HTTPTokens = elem.MetadataOptions.HttpTokens
+			if elem.MetadataOptions.HttpTokens != "" {
+				f23.HTTPTokens = aws.String(string(elem.MetadataOptions.HttpTokens))
 			}
 			ko.Spec.MetadataOptions = f23
 		} else {
@@ -3979,37 +2297,37 @@ func TestSetResource_EC2_Instance_Create(t *testing.T) {
 					f25elem.InterfaceType = f25iter.InterfaceType
 				}
 				if f25iter.Ipv4Prefixes != nil {
-					f25elemf5 := []*svcapitypes.IPv4PrefixSpecificationRequest{}
-					for _, f25elemf5iter := range f25iter.Ipv4Prefixes {
-						f25elemf5elem := &svcapitypes.IPv4PrefixSpecificationRequest{}
-						if f25elemf5iter.Ipv4Prefix != nil {
-							f25elemf5elem.IPv4Prefix = f25elemf5iter.Ipv4Prefix
-						}
-						f25elemf5 = append(f25elemf5, f25elemf5elem)
-					}
-					f25elem.IPv4Prefixes = f25elemf5
-				}
-				if f25iter.Ipv6Addresses != nil {
-					f25elemf6 := []*svcapitypes.InstanceIPv6Address{}
-					for _, f25elemf6iter := range f25iter.Ipv6Addresses {
-						f25elemf6elem := &svcapitypes.InstanceIPv6Address{}
-						if f25elemf6iter.Ipv6Address != nil {
-							f25elemf6elem.IPv6Address = f25elemf6iter.Ipv6Address
+					f25elemf6 := []*svcapitypes.IPv4PrefixSpecificationRequest{}
+					for _, f25elemf6iter := range f25iter.Ipv4Prefixes {
+						f25elemf6elem := &svcapitypes.IPv4PrefixSpecificationRequest{}
+						if f25elemf6iter.Ipv4Prefix != nil {
+							f25elemf6elem.IPv4Prefix = f25elemf6iter.Ipv4Prefix
 						}
 						f25elemf6 = append(f25elemf6, f25elemf6elem)
 					}
-					f25elem.IPv6Addresses = f25elemf6
+					f25elem.IPv4Prefixes = f25elemf6
 				}
-				if f25iter.Ipv6Prefixes != nil {
-					f25elemf7 := []*svcapitypes.IPv6PrefixSpecificationRequest{}
-					for _, f25elemf7iter := range f25iter.Ipv6Prefixes {
-						f25elemf7elem := &svcapitypes.IPv6PrefixSpecificationRequest{}
-						if f25elemf7iter.Ipv6Prefix != nil {
-							f25elemf7elem.IPv6Prefix = f25elemf7iter.Ipv6Prefix
+				if f25iter.Ipv6Addresses != nil {
+					f25elemf7 := []*svcapitypes.InstanceIPv6Address{}
+					for _, f25elemf7iter := range f25iter.Ipv6Addresses {
+						f25elemf7elem := &svcapitypes.InstanceIPv6Address{}
+						if f25elemf7iter.Ipv6Address != nil {
+							f25elemf7elem.IPv6Address = f25elemf7iter.Ipv6Address
 						}
 						f25elemf7 = append(f25elemf7, f25elemf7elem)
 					}
-					f25elem.IPv6Prefixes = f25elemf7
+					f25elem.IPv6Addresses = f25elemf7
+				}
+				if f25iter.Ipv6Prefixes != nil {
+					f25elemf8 := []*svcapitypes.IPv6PrefixSpecificationRequest{}
+					for _, f25elemf8iter := range f25iter.Ipv6Prefixes {
+						f25elemf8elem := &svcapitypes.IPv6PrefixSpecificationRequest{}
+						if f25elemf8iter.Ipv6Prefix != nil {
+							f25elemf8elem.IPv6Prefix = f25elemf8iter.Ipv6Prefix
+						}
+						f25elemf8 = append(f25elemf8, f25elemf8elem)
+					}
+					f25elem.IPv6Prefixes = f25elemf8
 				}
 				if f25iter.NetworkInterfaceId != nil {
 					f25elem.NetworkInterfaceID = f25iter.NetworkInterfaceId
@@ -4018,18 +2336,18 @@ func TestSetResource_EC2_Instance_Create(t *testing.T) {
 					f25elem.PrivateIPAddress = f25iter.PrivateIpAddress
 				}
 				if f25iter.PrivateIpAddresses != nil {
-					f25elemf13 := []*svcapitypes.PrivateIPAddressSpecification{}
-					for _, f25elemf13iter := range f25iter.PrivateIpAddresses {
-						f25elemf13elem := &svcapitypes.PrivateIPAddressSpecification{}
-						if f25elemf13iter.Primary != nil {
-							f25elemf13elem.Primary = f25elemf13iter.Primary
+					f25elemf15 := []*svcapitypes.PrivateIPAddressSpecification{}
+					for _, f25elemf15iter := range f25iter.PrivateIpAddresses {
+						f25elemf15elem := &svcapitypes.PrivateIPAddressSpecification{}
+						if f25elemf15iter.Primary != nil {
+							f25elemf15elem.Primary = f25elemf15iter.Primary
 						}
-						if f25elemf13iter.PrivateIpAddress != nil {
-							f25elemf13elem.PrivateIPAddress = f25elemf13iter.PrivateIpAddress
+						if f25elemf15iter.PrivateIpAddress != nil {
+							f25elemf15elem.PrivateIPAddress = f25elemf15iter.PrivateIpAddress
 						}
-						f25elemf13 = append(f25elemf13, f25elemf13elem)
+						f25elemf15 = append(f25elemf15, f25elemf15elem)
 					}
-					f25elem.PrivateIPAddresses = f25elemf13
+					f25elem.PrivateIPAddresses = f25elemf15
 				}
 				if f25iter.SubnetId != nil {
 					f25elem.SubnetID = f25iter.SubnetId
@@ -4063,20 +2381,21 @@ func TestSetResource_EC2_Instance_Create(t *testing.T) {
 				f27.HostResourceGroupARN = elem.Placement.HostResourceGroupArn
 			}
 			if elem.Placement.PartitionNumber != nil {
-				f27.PartitionNumber = elem.Placement.PartitionNumber
+				partitionNumberCopy := int64(*elem.Placement.PartitionNumber)
+				f27.PartitionNumber = &partitionNumberCopy
 			}
 			if elem.Placement.SpreadDomain != nil {
 				f27.SpreadDomain = elem.Placement.SpreadDomain
 			}
-			if elem.Placement.Tenancy != nil {
-				f27.Tenancy = elem.Placement.Tenancy
+			if elem.Placement.Tenancy != "" {
+				f27.Tenancy = aws.String(string(elem.Placement.Tenancy))
 			}
 			ko.Spec.Placement = f27
 		} else {
 			ko.Spec.Placement = nil
 		}
-		if elem.Platform != nil {
-			ko.Status.Platform = elem.Platform
+		if elem.Platform != "" {
+			ko.Status.Platform = aws.String(string(elem.Platform))
 		} else {
 			ko.Status.Platform = nil
 		}
@@ -4102,8 +2421,8 @@ func TestSetResource_EC2_Instance_Create(t *testing.T) {
 				if f32iter.ProductCodeId != nil {
 					f32elem.ProductCodeID = f32iter.ProductCodeId
 				}
-				if f32iter.ProductCodeType != nil {
-					f32elem.ProductCodeType = f32iter.ProductCodeType
+				if f32iter.ProductCodeType != "" {
+					f32elem.ProductCodeType = aws.String(string(f32iter.ProductCodeType))
 				}
 				f32 = append(f32, f32elem)
 			}
@@ -4131,17 +2450,17 @@ func TestSetResource_EC2_Instance_Create(t *testing.T) {
 		} else {
 			ko.Status.RootDeviceName = nil
 		}
-		if elem.RootDeviceType != nil {
-			ko.Status.RootDeviceType = elem.RootDeviceType
+		if elem.RootDeviceType != "" {
+			ko.Status.RootDeviceType = aws.String(string(elem.RootDeviceType))
 		} else {
 			ko.Status.RootDeviceType = nil
 		}
 		if elem.SecurityGroups != nil {
 			f38 := []*string{}
 			for _, f38iter := range elem.SecurityGroups {
-				var f38elem string
-				f38elem = *f38iter.GroupName
-				f38 = append(f38, &f38elem)
+				var f38elem *string
+				f38elem = f38iter.GroupName
+				f38 = append(f38, f38elem)
 			}
 			ko.Spec.SecurityGroups = f38
 		} else {
@@ -4165,10 +2484,11 @@ func TestSetResource_EC2_Instance_Create(t *testing.T) {
 		if elem.State != nil {
 			f42 := &svcapitypes.InstanceState{}
 			if elem.State.Code != nil {
-				f42.Code = elem.State.Code
+				codeCopy := int64(*elem.State.Code)
+				f42.Code = &codeCopy
 			}
-			if elem.State.Name != nil {
-				f42.Name = elem.State.Name
+			if elem.State.Name != "" {
+				f42.Name = aws.String(string(elem.State.Name))
 			}
 			ko.Status.State = f42
 		} else {
@@ -4222,8 +2542,8 @@ func TestSetResource_EC2_Instance_Create(t *testing.T) {
 		} else {
 			ko.Status.UsageOperationUpdateTime = nil
 		}
-		if elem.VirtualizationType != nil {
-			ko.Status.VirtualizationType = elem.VirtualizationType
+		if elem.VirtualizationType != "" {
+			ko.Status.VirtualizationType = aws.String(string(elem.VirtualizationType))
 		} else {
 			ko.Status.VirtualizationType = nil
 		}
@@ -4263,12 +2583,13 @@ func TestSetResource_EC2_Instance_ReadMany(t *testing.T) {
 	for _, iter0 := range resp.Reservations {
 		for _, elem := range iter0.Instances {
 			if elem.AmiLaunchIndex != nil {
-				ko.Status.AMILaunchIndex = elem.AmiLaunchIndex
+				amiLaunchIndexCopy := int64(*elem.AmiLaunchIndex)
+				ko.Status.AMILaunchIndex = &amiLaunchIndexCopy
 			} else {
 				ko.Status.AMILaunchIndex = nil
 			}
-			if elem.Architecture != nil {
-				ko.Status.Architecture = elem.Architecture
+			if elem.Architecture != "" {
+				ko.Status.Architecture = aws.String(string(elem.Architecture))
 			} else {
 				ko.Status.Architecture = nil
 			}
@@ -4292,8 +2613,8 @@ func TestSetResource_EC2_Instance_ReadMany(t *testing.T) {
 			} else {
 				ko.Spec.BlockDeviceMappings = nil
 			}
-			if elem.BootMode != nil {
-				ko.Status.BootMode = elem.BootMode
+			if elem.BootMode != "" {
+				ko.Status.BootMode = aws.String(string(elem.BootMode))
 			} else {
 				ko.Status.BootMode = nil
 			}
@@ -4304,8 +2625,8 @@ func TestSetResource_EC2_Instance_ReadMany(t *testing.T) {
 			}
 			if elem.CapacityReservationSpecification != nil {
 				f5 := &svcapitypes.CapacityReservationSpecification{}
-				if elem.CapacityReservationSpecification.CapacityReservationPreference != nil {
-					f5.CapacityReservationPreference = elem.CapacityReservationSpecification.CapacityReservationPreference
+				if elem.CapacityReservationSpecification.CapacityReservationPreference != "" {
+					f5.CapacityReservationPreference = aws.String(string(elem.CapacityReservationSpecification.CapacityReservationPreference))
 				}
 				if elem.CapacityReservationSpecification.CapacityReservationTarget != nil {
 					f5f1 := &svcapitypes.CapacityReservationTarget{}
@@ -4324,10 +2645,12 @@ func TestSetResource_EC2_Instance_ReadMany(t *testing.T) {
 			if elem.CpuOptions != nil {
 				f6 := &svcapitypes.CPUOptionsRequest{}
 				if elem.CpuOptions.CoreCount != nil {
-					f6.CoreCount = elem.CpuOptions.CoreCount
+					coreCountCopy := int64(*elem.CpuOptions.CoreCount)
+					f6.CoreCount = &coreCountCopy
 				}
 				if elem.CpuOptions.ThreadsPerCore != nil {
-					f6.ThreadsPerCore = elem.CpuOptions.ThreadsPerCore
+					threadsPerCoreCopy := int64(*elem.CpuOptions.ThreadsPerCore)
+					f6.ThreadsPerCore = &threadsPerCoreCopy
 				}
 				ko.Spec.CPUOptions = f6
 			} else {
@@ -4405,8 +2728,8 @@ func TestSetResource_EC2_Instance_ReadMany(t *testing.T) {
 			} else {
 				ko.Spec.HibernationOptions = nil
 			}
-			if elem.Hypervisor != nil {
-				ko.Status.Hypervisor = elem.Hypervisor
+			if elem.Hypervisor != "" {
+				ko.Status.Hypervisor = aws.String(string(elem.Hypervisor))
 			} else {
 				ko.Status.Hypervisor = nil
 			}
@@ -4429,13 +2752,13 @@ func TestSetResource_EC2_Instance_ReadMany(t *testing.T) {
 			} else {
 				ko.Status.InstanceID = nil
 			}
-			if elem.InstanceLifecycle != nil {
-				ko.Status.InstanceLifecycle = elem.InstanceLifecycle
+			if elem.InstanceLifecycle != "" {
+				ko.Status.InstanceLifecycle = aws.String(string(elem.InstanceLifecycle))
 			} else {
 				ko.Status.InstanceLifecycle = nil
 			}
-			if elem.InstanceType != nil {
-				ko.Spec.InstanceType = elem.InstanceType
+			if elem.InstanceType != "" {
+				ko.Spec.InstanceType = aws.String(string(elem.InstanceType))
 			} else {
 				ko.Spec.InstanceType = nil
 			}
@@ -4469,17 +2792,18 @@ func TestSetResource_EC2_Instance_ReadMany(t *testing.T) {
 			}
 			if elem.MetadataOptions != nil {
 				f23 := &svcapitypes.InstanceMetadataOptionsRequest{}
-				if elem.MetadataOptions.HttpEndpoint != nil {
-					f23.HTTPEndpoint = elem.MetadataOptions.HttpEndpoint
+				if elem.MetadataOptions.HttpEndpoint != "" {
+					f23.HTTPEndpoint = aws.String(string(elem.MetadataOptions.HttpEndpoint))
 				}
-				if elem.MetadataOptions.HttpProtocolIpv6 != nil {
-					f23.HTTPProtocolIPv6 = elem.MetadataOptions.HttpProtocolIpv6
+				if elem.MetadataOptions.HttpProtocolIpv6 != "" {
+					f23.HTTPProtocolIPv6 = aws.String(string(elem.MetadataOptions.HttpProtocolIpv6))
 				}
 				if elem.MetadataOptions.HttpPutResponseHopLimit != nil {
-					f23.HTTPPutResponseHopLimit = elem.MetadataOptions.HttpPutResponseHopLimit
+					httpPutResponseHopLimitCopy := int64(*elem.MetadataOptions.HttpPutResponseHopLimit)
+					f23.HTTPPutResponseHopLimit = &httpPutResponseHopLimitCopy
 				}
-				if elem.MetadataOptions.HttpTokens != nil {
-					f23.HTTPTokens = elem.MetadataOptions.HttpTokens
+				if elem.MetadataOptions.HttpTokens != "" {
+					f23.HTTPTokens = aws.String(string(elem.MetadataOptions.HttpTokens))
 				}
 				ko.Spec.MetadataOptions = f23
 			} else {
@@ -4502,37 +2826,37 @@ func TestSetResource_EC2_Instance_ReadMany(t *testing.T) {
 						f25elem.InterfaceType = f25iter.InterfaceType
 					}
 					if f25iter.Ipv4Prefixes != nil {
-						f25elemf5 := []*svcapitypes.IPv4PrefixSpecificationRequest{}
-						for _, f25elemf5iter := range f25iter.Ipv4Prefixes {
-							f25elemf5elem := &svcapitypes.IPv4PrefixSpecificationRequest{}
-							if f25elemf5iter.Ipv4Prefix != nil {
-								f25elemf5elem.IPv4Prefix = f25elemf5iter.Ipv4Prefix
-							}
-							f25elemf5 = append(f25elemf5, f25elemf5elem)
-						}
-						f25elem.IPv4Prefixes = f25elemf5
-					}
-					if f25iter.Ipv6Addresses != nil {
-						f25elemf6 := []*svcapitypes.InstanceIPv6Address{}
-						for _, f25elemf6iter := range f25iter.Ipv6Addresses {
-							f25elemf6elem := &svcapitypes.InstanceIPv6Address{}
-							if f25elemf6iter.Ipv6Address != nil {
-								f25elemf6elem.IPv6Address = f25elemf6iter.Ipv6Address
+						f25elemf6 := []*svcapitypes.IPv4PrefixSpecificationRequest{}
+						for _, f25elemf6iter := range f25iter.Ipv4Prefixes {
+							f25elemf6elem := &svcapitypes.IPv4PrefixSpecificationRequest{}
+							if f25elemf6iter.Ipv4Prefix != nil {
+								f25elemf6elem.IPv4Prefix = f25elemf6iter.Ipv4Prefix
 							}
 							f25elemf6 = append(f25elemf6, f25elemf6elem)
 						}
-						f25elem.IPv6Addresses = f25elemf6
+						f25elem.IPv4Prefixes = f25elemf6
 					}
-					if f25iter.Ipv6Prefixes != nil {
-						f25elemf7 := []*svcapitypes.IPv6PrefixSpecificationRequest{}
-						for _, f25elemf7iter := range f25iter.Ipv6Prefixes {
-							f25elemf7elem := &svcapitypes.IPv6PrefixSpecificationRequest{}
-							if f25elemf7iter.Ipv6Prefix != nil {
-								f25elemf7elem.IPv6Prefix = f25elemf7iter.Ipv6Prefix
+					if f25iter.Ipv6Addresses != nil {
+						f25elemf7 := []*svcapitypes.InstanceIPv6Address{}
+						for _, f25elemf7iter := range f25iter.Ipv6Addresses {
+							f25elemf7elem := &svcapitypes.InstanceIPv6Address{}
+							if f25elemf7iter.Ipv6Address != nil {
+								f25elemf7elem.IPv6Address = f25elemf7iter.Ipv6Address
 							}
 							f25elemf7 = append(f25elemf7, f25elemf7elem)
 						}
-						f25elem.IPv6Prefixes = f25elemf7
+						f25elem.IPv6Addresses = f25elemf7
+					}
+					if f25iter.Ipv6Prefixes != nil {
+						f25elemf8 := []*svcapitypes.IPv6PrefixSpecificationRequest{}
+						for _, f25elemf8iter := range f25iter.Ipv6Prefixes {
+							f25elemf8elem := &svcapitypes.IPv6PrefixSpecificationRequest{}
+							if f25elemf8iter.Ipv6Prefix != nil {
+								f25elemf8elem.IPv6Prefix = f25elemf8iter.Ipv6Prefix
+							}
+							f25elemf8 = append(f25elemf8, f25elemf8elem)
+						}
+						f25elem.IPv6Prefixes = f25elemf8
 					}
 					if f25iter.NetworkInterfaceId != nil {
 						f25elem.NetworkInterfaceID = f25iter.NetworkInterfaceId
@@ -4541,18 +2865,18 @@ func TestSetResource_EC2_Instance_ReadMany(t *testing.T) {
 						f25elem.PrivateIPAddress = f25iter.PrivateIpAddress
 					}
 					if f25iter.PrivateIpAddresses != nil {
-						f25elemf13 := []*svcapitypes.PrivateIPAddressSpecification{}
-						for _, f25elemf13iter := range f25iter.PrivateIpAddresses {
-							f25elemf13elem := &svcapitypes.PrivateIPAddressSpecification{}
-							if f25elemf13iter.Primary != nil {
-								f25elemf13elem.Primary = f25elemf13iter.Primary
+						f25elemf15 := []*svcapitypes.PrivateIPAddressSpecification{}
+						for _, f25elemf15iter := range f25iter.PrivateIpAddresses {
+							f25elemf15elem := &svcapitypes.PrivateIPAddressSpecification{}
+							if f25elemf15iter.Primary != nil {
+								f25elemf15elem.Primary = f25elemf15iter.Primary
 							}
-							if f25elemf13iter.PrivateIpAddress != nil {
-								f25elemf13elem.PrivateIPAddress = f25elemf13iter.PrivateIpAddress
+							if f25elemf15iter.PrivateIpAddress != nil {
+								f25elemf15elem.PrivateIPAddress = f25elemf15iter.PrivateIpAddress
 							}
-							f25elemf13 = append(f25elemf13, f25elemf13elem)
+							f25elemf15 = append(f25elemf15, f25elemf15elem)
 						}
-						f25elem.PrivateIPAddresses = f25elemf13
+						f25elem.PrivateIPAddresses = f25elemf15
 					}
 					if f25iter.SubnetId != nil {
 						f25elem.SubnetID = f25iter.SubnetId
@@ -4586,20 +2910,21 @@ func TestSetResource_EC2_Instance_ReadMany(t *testing.T) {
 					f27.HostResourceGroupARN = elem.Placement.HostResourceGroupArn
 				}
 				if elem.Placement.PartitionNumber != nil {
-					f27.PartitionNumber = elem.Placement.PartitionNumber
+					partitionNumberCopy := int64(*elem.Placement.PartitionNumber)
+					f27.PartitionNumber = &partitionNumberCopy
 				}
 				if elem.Placement.SpreadDomain != nil {
 					f27.SpreadDomain = elem.Placement.SpreadDomain
 				}
-				if elem.Placement.Tenancy != nil {
-					f27.Tenancy = elem.Placement.Tenancy
+				if elem.Placement.Tenancy != "" {
+					f27.Tenancy = aws.String(string(elem.Placement.Tenancy))
 				}
 				ko.Spec.Placement = f27
 			} else {
 				ko.Spec.Placement = nil
 			}
-			if elem.Platform != nil {
-				ko.Status.Platform = elem.Platform
+			if elem.Platform != "" {
+				ko.Status.Platform = aws.String(string(elem.Platform))
 			} else {
 				ko.Status.Platform = nil
 			}
@@ -4625,8 +2950,8 @@ func TestSetResource_EC2_Instance_ReadMany(t *testing.T) {
 					if f32iter.ProductCodeId != nil {
 						f32elem.ProductCodeID = f32iter.ProductCodeId
 					}
-					if f32iter.ProductCodeType != nil {
-						f32elem.ProductCodeType = f32iter.ProductCodeType
+					if f32iter.ProductCodeType != "" {
+						f32elem.ProductCodeType = aws.String(string(f32iter.ProductCodeType))
 					}
 					f32 = append(f32, f32elem)
 				}
@@ -4654,17 +2979,17 @@ func TestSetResource_EC2_Instance_ReadMany(t *testing.T) {
 			} else {
 				ko.Status.RootDeviceName = nil
 			}
-			if elem.RootDeviceType != nil {
-				ko.Status.RootDeviceType = elem.RootDeviceType
+			if elem.RootDeviceType != "" {
+				ko.Status.RootDeviceType = aws.String(string(elem.RootDeviceType))
 			} else {
 				ko.Status.RootDeviceType = nil
 			}
 			if elem.SecurityGroups != nil {
 				f38 := []*string{}
 				for _, f38iter := range elem.SecurityGroups {
-					var f38elem string
-					f38elem = *f38iter.GroupName
-					f38 = append(f38, &f38elem)
+					var f38elem *string
+					f38elem = f38iter.GroupName
+					f38 = append(f38, f38elem)
 				}
 				ko.Spec.SecurityGroups = f38
 			} else {
@@ -4688,10 +3013,11 @@ func TestSetResource_EC2_Instance_ReadMany(t *testing.T) {
 			if elem.State != nil {
 				f42 := &svcapitypes.InstanceState{}
 				if elem.State.Code != nil {
-					f42.Code = elem.State.Code
+					codeCopy := int64(*elem.State.Code)
+					f42.Code = &codeCopy
 				}
-				if elem.State.Name != nil {
-					f42.Name = elem.State.Name
+				if elem.State.Name != "" {
+					f42.Name = aws.String(string(elem.State.Name))
 				}
 				ko.Status.State = f42
 			} else {
@@ -4745,8 +3071,8 @@ func TestSetResource_EC2_Instance_ReadMany(t *testing.T) {
 			} else {
 				ko.Status.UsageOperationUpdateTime = nil
 			}
-			if elem.VirtualizationType != nil {
-				ko.Status.VirtualizationType = elem.VirtualizationType
+			if elem.VirtualizationType != "" {
+				ko.Status.VirtualizationType = aws.String(string(elem.VirtualizationType))
 			} else {
 				ko.Status.VirtualizationType = nil
 			}
@@ -4803,8 +3129,8 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 			if f4valiter.Content != nil {
 				f4val.Content = f4valiter.Content
 			}
-			if f4valiter.ContentType != nil {
-				f4val.ContentType = f4valiter.ContentType
+			if f4valiter.ContentType != "" {
+				f4val.ContentType = aws.String(string(f4valiter.ContentType))
 			}
 			f4[f4key] = f4val
 		}
@@ -4863,7 +3189,8 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 							f9elemf0f1f0.CustomResponseBodyKey = f9iter.Action.Block.CustomResponse.CustomResponseBodyKey
 						}
 						if f9iter.Action.Block.CustomResponse.ResponseCode != nil {
-							f9elemf0f1f0.ResponseCode = f9iter.Action.Block.CustomResponse.ResponseCode
+							responseCodeCopy := int64(*f9iter.Action.Block.CustomResponse.ResponseCode)
+							f9elemf0f1f0.ResponseCode = &responseCodeCopy
 						}
 						if f9iter.Action.Block.CustomResponse.ResponseHeaders != nil {
 							f9elemf0f1f0f2 := []*svcapitypes.CustomHTTPHeader{}
@@ -5006,9 +3333,8 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 				}
 				f9elem.OverrideAction = f9elemf4
 			}
-			if f9iter.Priority != nil {
-				f9elem.Priority = f9iter.Priority
-			}
+			priorityCopy := int64(f9iter.Priority)
+			f9elem.Priority = &priorityCopy
 			if f9iter.RuleLabels != nil {
 				f9elemf6 := []*svcapitypes.Label{}
 				for _, f9elemf6iter := range f9iter.RuleLabels {
@@ -5032,8 +3358,8 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 						}
 						if f9iter.Statement.ByteMatchStatement.FieldToMatch.Body != nil {
 							f9elemf7f1f0f1 := &svcapitypes.Body{}
-							if f9iter.Statement.ByteMatchStatement.FieldToMatch.Body.OversizeHandling != nil {
-								f9elemf7f1f0f1.OversizeHandling = f9iter.Statement.ByteMatchStatement.FieldToMatch.Body.OversizeHandling
+							if f9iter.Statement.ByteMatchStatement.FieldToMatch.Body.OversizeHandling != "" {
+								f9elemf7f1f0f1.OversizeHandling = aws.String(string(f9iter.Statement.ByteMatchStatement.FieldToMatch.Body.OversizeHandling))
 							}
 							f9elemf7f1f0.Body = f9elemf7f1f0f1
 						}
@@ -5046,37 +3372,25 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 									f9elemf7f1f0f2f0.All = f9elemf7f1f0f2f0f0
 								}
 								if f9iter.Statement.ByteMatchStatement.FieldToMatch.Cookies.MatchPattern.ExcludedCookies != nil {
-									f9elemf7f1f0f2f0f1 := []*string{}
-									for _, f9elemf7f1f0f2f0f1iter := range f9iter.Statement.ByteMatchStatement.FieldToMatch.Cookies.MatchPattern.ExcludedCookies {
-										var f9elemf7f1f0f2f0f1elem string
-										f9elemf7f1f0f2f0f1elem = *f9elemf7f1f0f2f0f1iter
-										f9elemf7f1f0f2f0f1 = append(f9elemf7f1f0f2f0f1, &f9elemf7f1f0f2f0f1elem)
-									}
-									f9elemf7f1f0f2f0.ExcludedCookies = f9elemf7f1f0f2f0f1
+									f9elemf7f1f0f2f0.ExcludedCookies = aws.StringSlice(f9iter.Statement.ByteMatchStatement.FieldToMatch.Cookies.MatchPattern.ExcludedCookies)
 								}
 								if f9iter.Statement.ByteMatchStatement.FieldToMatch.Cookies.MatchPattern.IncludedCookies != nil {
-									f9elemf7f1f0f2f0f2 := []*string{}
-									for _, f9elemf7f1f0f2f0f2iter := range f9iter.Statement.ByteMatchStatement.FieldToMatch.Cookies.MatchPattern.IncludedCookies {
-										var f9elemf7f1f0f2f0f2elem string
-										f9elemf7f1f0f2f0f2elem = *f9elemf7f1f0f2f0f2iter
-										f9elemf7f1f0f2f0f2 = append(f9elemf7f1f0f2f0f2, &f9elemf7f1f0f2f0f2elem)
-									}
-									f9elemf7f1f0f2f0.IncludedCookies = f9elemf7f1f0f2f0f2
+									f9elemf7f1f0f2f0.IncludedCookies = aws.StringSlice(f9iter.Statement.ByteMatchStatement.FieldToMatch.Cookies.MatchPattern.IncludedCookies)
 								}
 								f9elemf7f1f0f2.MatchPattern = f9elemf7f1f0f2f0
 							}
-							if f9iter.Statement.ByteMatchStatement.FieldToMatch.Cookies.MatchScope != nil {
-								f9elemf7f1f0f2.MatchScope = f9iter.Statement.ByteMatchStatement.FieldToMatch.Cookies.MatchScope
+							if f9iter.Statement.ByteMatchStatement.FieldToMatch.Cookies.MatchScope != "" {
+								f9elemf7f1f0f2.MatchScope = aws.String(string(f9iter.Statement.ByteMatchStatement.FieldToMatch.Cookies.MatchScope))
 							}
-							if f9iter.Statement.ByteMatchStatement.FieldToMatch.Cookies.OversizeHandling != nil {
-								f9elemf7f1f0f2.OversizeHandling = f9iter.Statement.ByteMatchStatement.FieldToMatch.Cookies.OversizeHandling
+							if f9iter.Statement.ByteMatchStatement.FieldToMatch.Cookies.OversizeHandling != "" {
+								f9elemf7f1f0f2.OversizeHandling = aws.String(string(f9iter.Statement.ByteMatchStatement.FieldToMatch.Cookies.OversizeHandling))
 							}
 							f9elemf7f1f0.Cookies = f9elemf7f1f0f2
 						}
 						if f9iter.Statement.ByteMatchStatement.FieldToMatch.HeaderOrder != nil {
 							f9elemf7f1f0f3 := &svcapitypes.HeaderOrder{}
-							if f9iter.Statement.ByteMatchStatement.FieldToMatch.HeaderOrder.OversizeHandling != nil {
-								f9elemf7f1f0f3.OversizeHandling = f9iter.Statement.ByteMatchStatement.FieldToMatch.HeaderOrder.OversizeHandling
+							if f9iter.Statement.ByteMatchStatement.FieldToMatch.HeaderOrder.OversizeHandling != "" {
+								f9elemf7f1f0f3.OversizeHandling = aws.String(string(f9iter.Statement.ByteMatchStatement.FieldToMatch.HeaderOrder.OversizeHandling))
 							}
 							f9elemf7f1f0.HeaderOrder = f9elemf7f1f0f3
 						}
@@ -5089,44 +3403,32 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 									f9elemf7f1f0f4f0.All = f9elemf7f1f0f4f0f0
 								}
 								if f9iter.Statement.ByteMatchStatement.FieldToMatch.Headers.MatchPattern.ExcludedHeaders != nil {
-									f9elemf7f1f0f4f0f1 := []*string{}
-									for _, f9elemf7f1f0f4f0f1iter := range f9iter.Statement.ByteMatchStatement.FieldToMatch.Headers.MatchPattern.ExcludedHeaders {
-										var f9elemf7f1f0f4f0f1elem string
-										f9elemf7f1f0f4f0f1elem = *f9elemf7f1f0f4f0f1iter
-										f9elemf7f1f0f4f0f1 = append(f9elemf7f1f0f4f0f1, &f9elemf7f1f0f4f0f1elem)
-									}
-									f9elemf7f1f0f4f0.ExcludedHeaders = f9elemf7f1f0f4f0f1
+									f9elemf7f1f0f4f0.ExcludedHeaders = aws.StringSlice(f9iter.Statement.ByteMatchStatement.FieldToMatch.Headers.MatchPattern.ExcludedHeaders)
 								}
 								if f9iter.Statement.ByteMatchStatement.FieldToMatch.Headers.MatchPattern.IncludedHeaders != nil {
-									f9elemf7f1f0f4f0f2 := []*string{}
-									for _, f9elemf7f1f0f4f0f2iter := range f9iter.Statement.ByteMatchStatement.FieldToMatch.Headers.MatchPattern.IncludedHeaders {
-										var f9elemf7f1f0f4f0f2elem string
-										f9elemf7f1f0f4f0f2elem = *f9elemf7f1f0f4f0f2iter
-										f9elemf7f1f0f4f0f2 = append(f9elemf7f1f0f4f0f2, &f9elemf7f1f0f4f0f2elem)
-									}
-									f9elemf7f1f0f4f0.IncludedHeaders = f9elemf7f1f0f4f0f2
+									f9elemf7f1f0f4f0.IncludedHeaders = aws.StringSlice(f9iter.Statement.ByteMatchStatement.FieldToMatch.Headers.MatchPattern.IncludedHeaders)
 								}
 								f9elemf7f1f0f4.MatchPattern = f9elemf7f1f0f4f0
 							}
-							if f9iter.Statement.ByteMatchStatement.FieldToMatch.Headers.MatchScope != nil {
-								f9elemf7f1f0f4.MatchScope = f9iter.Statement.ByteMatchStatement.FieldToMatch.Headers.MatchScope
+							if f9iter.Statement.ByteMatchStatement.FieldToMatch.Headers.MatchScope != "" {
+								f9elemf7f1f0f4.MatchScope = aws.String(string(f9iter.Statement.ByteMatchStatement.FieldToMatch.Headers.MatchScope))
 							}
-							if f9iter.Statement.ByteMatchStatement.FieldToMatch.Headers.OversizeHandling != nil {
-								f9elemf7f1f0f4.OversizeHandling = f9iter.Statement.ByteMatchStatement.FieldToMatch.Headers.OversizeHandling
+							if f9iter.Statement.ByteMatchStatement.FieldToMatch.Headers.OversizeHandling != "" {
+								f9elemf7f1f0f4.OversizeHandling = aws.String(string(f9iter.Statement.ByteMatchStatement.FieldToMatch.Headers.OversizeHandling))
 							}
 							f9elemf7f1f0.Headers = f9elemf7f1f0f4
 						}
 						if f9iter.Statement.ByteMatchStatement.FieldToMatch.JA3Fingerprint != nil {
 							f9elemf7f1f0f5 := &svcapitypes.JA3Fingerprint{}
-							if f9iter.Statement.ByteMatchStatement.FieldToMatch.JA3Fingerprint.FallbackBehavior != nil {
-								f9elemf7f1f0f5.FallbackBehavior = f9iter.Statement.ByteMatchStatement.FieldToMatch.JA3Fingerprint.FallbackBehavior
+							if f9iter.Statement.ByteMatchStatement.FieldToMatch.JA3Fingerprint.FallbackBehavior != "" {
+								f9elemf7f1f0f5.FallbackBehavior = aws.String(string(f9iter.Statement.ByteMatchStatement.FieldToMatch.JA3Fingerprint.FallbackBehavior))
 							}
 							f9elemf7f1f0.JA3Fingerprint = f9elemf7f1f0f5
 						}
 						if f9iter.Statement.ByteMatchStatement.FieldToMatch.JsonBody != nil {
 							f9elemf7f1f0f6 := &svcapitypes.JSONBody{}
-							if f9iter.Statement.ByteMatchStatement.FieldToMatch.JsonBody.InvalidFallbackBehavior != nil {
-								f9elemf7f1f0f6.InvalidFallbackBehavior = f9iter.Statement.ByteMatchStatement.FieldToMatch.JsonBody.InvalidFallbackBehavior
+							if f9iter.Statement.ByteMatchStatement.FieldToMatch.JsonBody.InvalidFallbackBehavior != "" {
+								f9elemf7f1f0f6.InvalidFallbackBehavior = aws.String(string(f9iter.Statement.ByteMatchStatement.FieldToMatch.JsonBody.InvalidFallbackBehavior))
 							}
 							if f9iter.Statement.ByteMatchStatement.FieldToMatch.JsonBody.MatchPattern != nil {
 								f9elemf7f1f0f6f1 := &svcapitypes.JSONMatchPattern{}
@@ -5135,21 +3437,15 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 									f9elemf7f1f0f6f1.All = f9elemf7f1f0f6f1f0
 								}
 								if f9iter.Statement.ByteMatchStatement.FieldToMatch.JsonBody.MatchPattern.IncludedPaths != nil {
-									f9elemf7f1f0f6f1f1 := []*string{}
-									for _, f9elemf7f1f0f6f1f1iter := range f9iter.Statement.ByteMatchStatement.FieldToMatch.JsonBody.MatchPattern.IncludedPaths {
-										var f9elemf7f1f0f6f1f1elem string
-										f9elemf7f1f0f6f1f1elem = *f9elemf7f1f0f6f1f1iter
-										f9elemf7f1f0f6f1f1 = append(f9elemf7f1f0f6f1f1, &f9elemf7f1f0f6f1f1elem)
-									}
-									f9elemf7f1f0f6f1.IncludedPaths = f9elemf7f1f0f6f1f1
+									f9elemf7f1f0f6f1.IncludedPaths = aws.StringSlice(f9iter.Statement.ByteMatchStatement.FieldToMatch.JsonBody.MatchPattern.IncludedPaths)
 								}
 								f9elemf7f1f0f6.MatchPattern = f9elemf7f1f0f6f1
 							}
-							if f9iter.Statement.ByteMatchStatement.FieldToMatch.JsonBody.MatchScope != nil {
-								f9elemf7f1f0f6.MatchScope = f9iter.Statement.ByteMatchStatement.FieldToMatch.JsonBody.MatchScope
+							if f9iter.Statement.ByteMatchStatement.FieldToMatch.JsonBody.MatchScope != "" {
+								f9elemf7f1f0f6.MatchScope = aws.String(string(f9iter.Statement.ByteMatchStatement.FieldToMatch.JsonBody.MatchScope))
 							}
-							if f9iter.Statement.ByteMatchStatement.FieldToMatch.JsonBody.OversizeHandling != nil {
-								f9elemf7f1f0f6.OversizeHandling = f9iter.Statement.ByteMatchStatement.FieldToMatch.JsonBody.OversizeHandling
+							if f9iter.Statement.ByteMatchStatement.FieldToMatch.JsonBody.OversizeHandling != "" {
+								f9elemf7f1f0f6.OversizeHandling = aws.String(string(f9iter.Statement.ByteMatchStatement.FieldToMatch.JsonBody.OversizeHandling))
 							}
 							f9elemf7f1f0.JSONBody = f9elemf7f1f0f6
 						}
@@ -5181,8 +3477,8 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 						}
 						f9elemf7f1.FieldToMatch = f9elemf7f1f0
 					}
-					if f9iter.Statement.ByteMatchStatement.PositionalConstraint != nil {
-						f9elemf7f1.PositionalConstraint = f9iter.Statement.ByteMatchStatement.PositionalConstraint
+					if f9iter.Statement.ByteMatchStatement.PositionalConstraint != "" {
+						f9elemf7f1.PositionalConstraint = aws.String(string(f9iter.Statement.ByteMatchStatement.PositionalConstraint))
 					}
 					if f9iter.Statement.ByteMatchStatement.SearchString != nil {
 						f9elemf7f1.SearchString = f9iter.Statement.ByteMatchStatement.SearchString
@@ -5191,11 +3487,10 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 						f9elemf7f1f3 := []*svcapitypes.TextTransformation{}
 						for _, f9elemf7f1f3iter := range f9iter.Statement.ByteMatchStatement.TextTransformations {
 							f9elemf7f1f3elem := &svcapitypes.TextTransformation{}
-							if f9elemf7f1f3iter.Priority != nil {
-								f9elemf7f1f3elem.Priority = f9elemf7f1f3iter.Priority
-							}
-							if f9elemf7f1f3iter.Type != nil {
-								f9elemf7f1f3elem.Type = f9elemf7f1f3iter.Type
+							priorityCopy := int64(f9elemf7f1f3iter.Priority)
+							f9elemf7f1f3elem.Priority = &priorityCopy
+							if f9elemf7f1f3iter.Type != "" {
+								f9elemf7f1f3elem.Type = aws.String(string(f9elemf7f1f3iter.Type))
 							}
 							f9elemf7f1f3 = append(f9elemf7f1f3, f9elemf7f1f3elem)
 						}
@@ -5208,16 +3503,16 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 					if f9iter.Statement.GeoMatchStatement.CountryCodes != nil {
 						f9elemf7f2f0 := []*string{}
 						for _, f9elemf7f2f0iter := range f9iter.Statement.GeoMatchStatement.CountryCodes {
-							var f9elemf7f2f0elem string
-							f9elemf7f2f0elem = *f9elemf7f2f0iter
-							f9elemf7f2f0 = append(f9elemf7f2f0, &f9elemf7f2f0elem)
+							var f9elemf7f2f0elem *string
+							f9elemf7f2f0elem = aws.String(string(f9elemf7f2f0iter))
+							f9elemf7f2f0 = append(f9elemf7f2f0, f9elemf7f2f0elem)
 						}
 						f9elemf7f2.CountryCodes = f9elemf7f2f0
 					}
 					if f9iter.Statement.GeoMatchStatement.ForwardedIPConfig != nil {
 						f9elemf7f2f1 := &svcapitypes.ForwardedIPConfig{}
-						if f9iter.Statement.GeoMatchStatement.ForwardedIPConfig.FallbackBehavior != nil {
-							f9elemf7f2f1.FallbackBehavior = f9iter.Statement.GeoMatchStatement.ForwardedIPConfig.FallbackBehavior
+						if f9iter.Statement.GeoMatchStatement.ForwardedIPConfig.FallbackBehavior != "" {
+							f9elemf7f2f1.FallbackBehavior = aws.String(string(f9iter.Statement.GeoMatchStatement.ForwardedIPConfig.FallbackBehavior))
 						}
 						if f9iter.Statement.GeoMatchStatement.ForwardedIPConfig.HeaderName != nil {
 							f9elemf7f2f1.HeaderName = f9iter.Statement.GeoMatchStatement.ForwardedIPConfig.HeaderName
@@ -5233,14 +3528,14 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 					}
 					if f9iter.Statement.IPSetReferenceStatement.IPSetForwardedIPConfig != nil {
 						f9elemf7f3f1 := &svcapitypes.IPSetForwardedIPConfig{}
-						if f9iter.Statement.IPSetReferenceStatement.IPSetForwardedIPConfig.FallbackBehavior != nil {
-							f9elemf7f3f1.FallbackBehavior = f9iter.Statement.IPSetReferenceStatement.IPSetForwardedIPConfig.FallbackBehavior
+						if f9iter.Statement.IPSetReferenceStatement.IPSetForwardedIPConfig.FallbackBehavior != "" {
+							f9elemf7f3f1.FallbackBehavior = aws.String(string(f9iter.Statement.IPSetReferenceStatement.IPSetForwardedIPConfig.FallbackBehavior))
 						}
 						if f9iter.Statement.IPSetReferenceStatement.IPSetForwardedIPConfig.HeaderName != nil {
 							f9elemf7f3f1.HeaderName = f9iter.Statement.IPSetReferenceStatement.IPSetForwardedIPConfig.HeaderName
 						}
-						if f9iter.Statement.IPSetReferenceStatement.IPSetForwardedIPConfig.Position != nil {
-							f9elemf7f3f1.Position = f9iter.Statement.IPSetReferenceStatement.IPSetForwardedIPConfig.Position
+						if f9iter.Statement.IPSetReferenceStatement.IPSetForwardedIPConfig.Position != "" {
+							f9elemf7f3f1.Position = aws.String(string(f9iter.Statement.IPSetReferenceStatement.IPSetForwardedIPConfig.Position))
 						}
 						f9elemf7f3.IPSetForwardedIPConfig = f9elemf7f3f1
 					}
@@ -5251,8 +3546,8 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 					if f9iter.Statement.LabelMatchStatement.Key != nil {
 						f9elemf7f4.Key = f9iter.Statement.LabelMatchStatement.Key
 					}
-					if f9iter.Statement.LabelMatchStatement.Scope != nil {
-						f9elemf7f4.Scope = f9iter.Statement.LabelMatchStatement.Scope
+					if f9iter.Statement.LabelMatchStatement.Scope != "" {
+						f9elemf7f4.Scope = aws.String(string(f9iter.Statement.LabelMatchStatement.Scope))
 					}
 					f9elemf7.LabelMatchStatement = f9elemf7f4
 				}
@@ -5278,9 +3573,7 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 								if f9elemf7f5f1iter.AWSManagedRulesACFPRuleSet.CreationPath != nil {
 									f9elemf7f5f1elemf0.CreationPath = f9elemf7f5f1iter.AWSManagedRulesACFPRuleSet.CreationPath
 								}
-								if f9elemf7f5f1iter.AWSManagedRulesACFPRuleSet.EnableRegexInPath != nil {
-									f9elemf7f5f1elemf0.EnableRegexInPath = f9elemf7f5f1iter.AWSManagedRulesACFPRuleSet.EnableRegexInPath
-								}
+								f9elemf7f5f1elemf0.EnableRegexInPath = &f9elemf7f5f1iter.AWSManagedRulesACFPRuleSet.EnableRegexInPath
 								if f9elemf7f5f1iter.AWSManagedRulesACFPRuleSet.RegistrationPagePath != nil {
 									f9elemf7f5f1elemf0.RegistrationPagePath = f9elemf7f5f1iter.AWSManagedRulesACFPRuleSet.RegistrationPagePath
 								}
@@ -5311,8 +3604,8 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 										}
 										f9elemf7f5f1elemf0f3.PasswordField = f9elemf7f5f1elemf0f3f2
 									}
-									if f9elemf7f5f1iter.AWSManagedRulesACFPRuleSet.RequestInspection.PayloadType != nil {
-										f9elemf7f5f1elemf0f3.PayloadType = f9elemf7f5f1iter.AWSManagedRulesACFPRuleSet.RequestInspection.PayloadType
+									if f9elemf7f5f1iter.AWSManagedRulesACFPRuleSet.RequestInspection.PayloadType != "" {
+										f9elemf7f5f1elemf0f3.PayloadType = aws.String(string(f9elemf7f5f1iter.AWSManagedRulesACFPRuleSet.RequestInspection.PayloadType))
 									}
 									if f9elemf7f5f1iter.AWSManagedRulesACFPRuleSet.RequestInspection.PhoneNumberFields != nil {
 										f9elemf7f5f1elemf0f3f4 := []*svcapitypes.PhoneNumberField{}
@@ -5339,72 +3632,36 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 									if f9elemf7f5f1iter.AWSManagedRulesACFPRuleSet.ResponseInspection.BodyContains != nil {
 										f9elemf7f5f1elemf0f4f0 := &svcapitypes.ResponseInspectionBodyContains{}
 										if f9elemf7f5f1iter.AWSManagedRulesACFPRuleSet.ResponseInspection.BodyContains.FailureStrings != nil {
-											f9elemf7f5f1elemf0f4f0f0 := []*string{}
-											for _, f9elemf7f5f1elemf0f4f0f0iter := range f9elemf7f5f1iter.AWSManagedRulesACFPRuleSet.ResponseInspection.BodyContains.FailureStrings {
-												var f9elemf7f5f1elemf0f4f0f0elem string
-												f9elemf7f5f1elemf0f4f0f0elem = *f9elemf7f5f1elemf0f4f0f0iter
-												f9elemf7f5f1elemf0f4f0f0 = append(f9elemf7f5f1elemf0f4f0f0, &f9elemf7f5f1elemf0f4f0f0elem)
-											}
-											f9elemf7f5f1elemf0f4f0.FailureStrings = f9elemf7f5f1elemf0f4f0f0
+											f9elemf7f5f1elemf0f4f0.FailureStrings = aws.StringSlice(f9elemf7f5f1iter.AWSManagedRulesACFPRuleSet.ResponseInspection.BodyContains.FailureStrings)
 										}
 										if f9elemf7f5f1iter.AWSManagedRulesACFPRuleSet.ResponseInspection.BodyContains.SuccessStrings != nil {
-											f9elemf7f5f1elemf0f4f0f1 := []*string{}
-											for _, f9elemf7f5f1elemf0f4f0f1iter := range f9elemf7f5f1iter.AWSManagedRulesACFPRuleSet.ResponseInspection.BodyContains.SuccessStrings {
-												var f9elemf7f5f1elemf0f4f0f1elem string
-												f9elemf7f5f1elemf0f4f0f1elem = *f9elemf7f5f1elemf0f4f0f1iter
-												f9elemf7f5f1elemf0f4f0f1 = append(f9elemf7f5f1elemf0f4f0f1, &f9elemf7f5f1elemf0f4f0f1elem)
-											}
-											f9elemf7f5f1elemf0f4f0.SuccessStrings = f9elemf7f5f1elemf0f4f0f1
+											f9elemf7f5f1elemf0f4f0.SuccessStrings = aws.StringSlice(f9elemf7f5f1iter.AWSManagedRulesACFPRuleSet.ResponseInspection.BodyContains.SuccessStrings)
 										}
 										f9elemf7f5f1elemf0f4.BodyContains = f9elemf7f5f1elemf0f4f0
 									}
 									if f9elemf7f5f1iter.AWSManagedRulesACFPRuleSet.ResponseInspection.Header != nil {
 										f9elemf7f5f1elemf0f4f1 := &svcapitypes.ResponseInspectionHeader{}
 										if f9elemf7f5f1iter.AWSManagedRulesACFPRuleSet.ResponseInspection.Header.FailureValues != nil {
-											f9elemf7f5f1elemf0f4f1f0 := []*string{}
-											for _, f9elemf7f5f1elemf0f4f1f0iter := range f9elemf7f5f1iter.AWSManagedRulesACFPRuleSet.ResponseInspection.Header.FailureValues {
-												var f9elemf7f5f1elemf0f4f1f0elem string
-												f9elemf7f5f1elemf0f4f1f0elem = *f9elemf7f5f1elemf0f4f1f0iter
-												f9elemf7f5f1elemf0f4f1f0 = append(f9elemf7f5f1elemf0f4f1f0, &f9elemf7f5f1elemf0f4f1f0elem)
-											}
-											f9elemf7f5f1elemf0f4f1.FailureValues = f9elemf7f5f1elemf0f4f1f0
+											f9elemf7f5f1elemf0f4f1.FailureValues = aws.StringSlice(f9elemf7f5f1iter.AWSManagedRulesACFPRuleSet.ResponseInspection.Header.FailureValues)
 										}
 										if f9elemf7f5f1iter.AWSManagedRulesACFPRuleSet.ResponseInspection.Header.Name != nil {
 											f9elemf7f5f1elemf0f4f1.Name = f9elemf7f5f1iter.AWSManagedRulesACFPRuleSet.ResponseInspection.Header.Name
 										}
 										if f9elemf7f5f1iter.AWSManagedRulesACFPRuleSet.ResponseInspection.Header.SuccessValues != nil {
-											f9elemf7f5f1elemf0f4f1f2 := []*string{}
-											for _, f9elemf7f5f1elemf0f4f1f2iter := range f9elemf7f5f1iter.AWSManagedRulesACFPRuleSet.ResponseInspection.Header.SuccessValues {
-												var f9elemf7f5f1elemf0f4f1f2elem string
-												f9elemf7f5f1elemf0f4f1f2elem = *f9elemf7f5f1elemf0f4f1f2iter
-												f9elemf7f5f1elemf0f4f1f2 = append(f9elemf7f5f1elemf0f4f1f2, &f9elemf7f5f1elemf0f4f1f2elem)
-											}
-											f9elemf7f5f1elemf0f4f1.SuccessValues = f9elemf7f5f1elemf0f4f1f2
+											f9elemf7f5f1elemf0f4f1.SuccessValues = aws.StringSlice(f9elemf7f5f1iter.AWSManagedRulesACFPRuleSet.ResponseInspection.Header.SuccessValues)
 										}
 										f9elemf7f5f1elemf0f4.Header = f9elemf7f5f1elemf0f4f1
 									}
 									if f9elemf7f5f1iter.AWSManagedRulesACFPRuleSet.ResponseInspection.Json != nil {
 										f9elemf7f5f1elemf0f4f2 := &svcapitypes.ResponseInspectionJSON{}
 										if f9elemf7f5f1iter.AWSManagedRulesACFPRuleSet.ResponseInspection.Json.FailureValues != nil {
-											f9elemf7f5f1elemf0f4f2f0 := []*string{}
-											for _, f9elemf7f5f1elemf0f4f2f0iter := range f9elemf7f5f1iter.AWSManagedRulesACFPRuleSet.ResponseInspection.Json.FailureValues {
-												var f9elemf7f5f1elemf0f4f2f0elem string
-												f9elemf7f5f1elemf0f4f2f0elem = *f9elemf7f5f1elemf0f4f2f0iter
-												f9elemf7f5f1elemf0f4f2f0 = append(f9elemf7f5f1elemf0f4f2f0, &f9elemf7f5f1elemf0f4f2f0elem)
-											}
-											f9elemf7f5f1elemf0f4f2.FailureValues = f9elemf7f5f1elemf0f4f2f0
+											f9elemf7f5f1elemf0f4f2.FailureValues = aws.StringSlice(f9elemf7f5f1iter.AWSManagedRulesACFPRuleSet.ResponseInspection.Json.FailureValues)
 										}
 										if f9elemf7f5f1iter.AWSManagedRulesACFPRuleSet.ResponseInspection.Json.Identifier != nil {
 											f9elemf7f5f1elemf0f4f2.Identifier = f9elemf7f5f1iter.AWSManagedRulesACFPRuleSet.ResponseInspection.Json.Identifier
 										}
 										if f9elemf7f5f1iter.AWSManagedRulesACFPRuleSet.ResponseInspection.Json.SuccessValues != nil {
-											f9elemf7f5f1elemf0f4f2f2 := []*string{}
-											for _, f9elemf7f5f1elemf0f4f2f2iter := range f9elemf7f5f1iter.AWSManagedRulesACFPRuleSet.ResponseInspection.Json.SuccessValues {
-												var f9elemf7f5f1elemf0f4f2f2elem string
-												f9elemf7f5f1elemf0f4f2f2elem = *f9elemf7f5f1elemf0f4f2f2iter
-												f9elemf7f5f1elemf0f4f2f2 = append(f9elemf7f5f1elemf0f4f2f2, &f9elemf7f5f1elemf0f4f2f2elem)
-											}
-											f9elemf7f5f1elemf0f4f2.SuccessValues = f9elemf7f5f1elemf0f4f2f2
+											f9elemf7f5f1elemf0f4f2.SuccessValues = aws.StringSlice(f9elemf7f5f1iter.AWSManagedRulesACFPRuleSet.ResponseInspection.Json.SuccessValues)
 										}
 										f9elemf7f5f1elemf0f4.JSON = f9elemf7f5f1elemf0f4f2
 									}
@@ -5413,18 +3670,20 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 										if f9elemf7f5f1iter.AWSManagedRulesACFPRuleSet.ResponseInspection.StatusCode.FailureCodes != nil {
 											f9elemf7f5f1elemf0f4f3f0 := []*int64{}
 											for _, f9elemf7f5f1elemf0f4f3f0iter := range f9elemf7f5f1iter.AWSManagedRulesACFPRuleSet.ResponseInspection.StatusCode.FailureCodes {
-												var f9elemf7f5f1elemf0f4f3f0elem int64
-												f9elemf7f5f1elemf0f4f3f0elem = *f9elemf7f5f1elemf0f4f3f0iter
-												f9elemf7f5f1elemf0f4f3f0 = append(f9elemf7f5f1elemf0f4f3f0, &f9elemf7f5f1elemf0f4f3f0elem)
+												var f9elemf7f5f1elemf0f4f3f0elem *int64
+												failureCodeCopy := int64(f9elemf7f5f1elemf0f4f3f0iter)
+												f9elemf7f5f1elemf0f4f3f0elem = &failureCodeCopy
+												f9elemf7f5f1elemf0f4f3f0 = append(f9elemf7f5f1elemf0f4f3f0, f9elemf7f5f1elemf0f4f3f0elem)
 											}
 											f9elemf7f5f1elemf0f4f3.FailureCodes = f9elemf7f5f1elemf0f4f3f0
 										}
 										if f9elemf7f5f1iter.AWSManagedRulesACFPRuleSet.ResponseInspection.StatusCode.SuccessCodes != nil {
 											f9elemf7f5f1elemf0f4f3f1 := []*int64{}
 											for _, f9elemf7f5f1elemf0f4f3f1iter := range f9elemf7f5f1iter.AWSManagedRulesACFPRuleSet.ResponseInspection.StatusCode.SuccessCodes {
-												var f9elemf7f5f1elemf0f4f3f1elem int64
-												f9elemf7f5f1elemf0f4f3f1elem = *f9elemf7f5f1elemf0f4f3f1iter
-												f9elemf7f5f1elemf0f4f3f1 = append(f9elemf7f5f1elemf0f4f3f1, &f9elemf7f5f1elemf0f4f3f1elem)
+												var f9elemf7f5f1elemf0f4f3f1elem *int64
+												successCodeCopy := int64(f9elemf7f5f1elemf0f4f3f1iter)
+												f9elemf7f5f1elemf0f4f3f1elem = &successCodeCopy
+												f9elemf7f5f1elemf0f4f3f1 = append(f9elemf7f5f1elemf0f4f3f1, f9elemf7f5f1elemf0f4f3f1elem)
 											}
 											f9elemf7f5f1elemf0f4f3.SuccessCodes = f9elemf7f5f1elemf0f4f3f1
 										}
@@ -5436,9 +3695,7 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 							}
 							if f9elemf7f5f1iter.AWSManagedRulesATPRuleSet != nil {
 								f9elemf7f5f1elemf1 := &svcapitypes.AWSManagedRulesATPRuleSet{}
-								if f9elemf7f5f1iter.AWSManagedRulesATPRuleSet.EnableRegexInPath != nil {
-									f9elemf7f5f1elemf1.EnableRegexInPath = f9elemf7f5f1iter.AWSManagedRulesATPRuleSet.EnableRegexInPath
-								}
+								f9elemf7f5f1elemf1.EnableRegexInPath = &f9elemf7f5f1iter.AWSManagedRulesATPRuleSet.EnableRegexInPath
 								if f9elemf7f5f1iter.AWSManagedRulesATPRuleSet.LoginPath != nil {
 									f9elemf7f5f1elemf1.LoginPath = f9elemf7f5f1iter.AWSManagedRulesATPRuleSet.LoginPath
 								}
@@ -5451,8 +3708,8 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 										}
 										f9elemf7f5f1elemf1f2.PasswordField = f9elemf7f5f1elemf1f2f0
 									}
-									if f9elemf7f5f1iter.AWSManagedRulesATPRuleSet.RequestInspection.PayloadType != nil {
-										f9elemf7f5f1elemf1f2.PayloadType = f9elemf7f5f1iter.AWSManagedRulesATPRuleSet.RequestInspection.PayloadType
+									if f9elemf7f5f1iter.AWSManagedRulesATPRuleSet.RequestInspection.PayloadType != "" {
+										f9elemf7f5f1elemf1f2.PayloadType = aws.String(string(f9elemf7f5f1iter.AWSManagedRulesATPRuleSet.RequestInspection.PayloadType))
 									}
 									if f9elemf7f5f1iter.AWSManagedRulesATPRuleSet.RequestInspection.UsernameField != nil {
 										f9elemf7f5f1elemf1f2f2 := &svcapitypes.UsernameField{}
@@ -5468,72 +3725,36 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 									if f9elemf7f5f1iter.AWSManagedRulesATPRuleSet.ResponseInspection.BodyContains != nil {
 										f9elemf7f5f1elemf1f3f0 := &svcapitypes.ResponseInspectionBodyContains{}
 										if f9elemf7f5f1iter.AWSManagedRulesATPRuleSet.ResponseInspection.BodyContains.FailureStrings != nil {
-											f9elemf7f5f1elemf1f3f0f0 := []*string{}
-											for _, f9elemf7f5f1elemf1f3f0f0iter := range f9elemf7f5f1iter.AWSManagedRulesATPRuleSet.ResponseInspection.BodyContains.FailureStrings {
-												var f9elemf7f5f1elemf1f3f0f0elem string
-												f9elemf7f5f1elemf1f3f0f0elem = *f9elemf7f5f1elemf1f3f0f0iter
-												f9elemf7f5f1elemf1f3f0f0 = append(f9elemf7f5f1elemf1f3f0f0, &f9elemf7f5f1elemf1f3f0f0elem)
-											}
-											f9elemf7f5f1elemf1f3f0.FailureStrings = f9elemf7f5f1elemf1f3f0f0
+											f9elemf7f5f1elemf1f3f0.FailureStrings = aws.StringSlice(f9elemf7f5f1iter.AWSManagedRulesATPRuleSet.ResponseInspection.BodyContains.FailureStrings)
 										}
 										if f9elemf7f5f1iter.AWSManagedRulesATPRuleSet.ResponseInspection.BodyContains.SuccessStrings != nil {
-											f9elemf7f5f1elemf1f3f0f1 := []*string{}
-											for _, f9elemf7f5f1elemf1f3f0f1iter := range f9elemf7f5f1iter.AWSManagedRulesATPRuleSet.ResponseInspection.BodyContains.SuccessStrings {
-												var f9elemf7f5f1elemf1f3f0f1elem string
-												f9elemf7f5f1elemf1f3f0f1elem = *f9elemf7f5f1elemf1f3f0f1iter
-												f9elemf7f5f1elemf1f3f0f1 = append(f9elemf7f5f1elemf1f3f0f1, &f9elemf7f5f1elemf1f3f0f1elem)
-											}
-											f9elemf7f5f1elemf1f3f0.SuccessStrings = f9elemf7f5f1elemf1f3f0f1
+											f9elemf7f5f1elemf1f3f0.SuccessStrings = aws.StringSlice(f9elemf7f5f1iter.AWSManagedRulesATPRuleSet.ResponseInspection.BodyContains.SuccessStrings)
 										}
 										f9elemf7f5f1elemf1f3.BodyContains = f9elemf7f5f1elemf1f3f0
 									}
 									if f9elemf7f5f1iter.AWSManagedRulesATPRuleSet.ResponseInspection.Header != nil {
 										f9elemf7f5f1elemf1f3f1 := &svcapitypes.ResponseInspectionHeader{}
 										if f9elemf7f5f1iter.AWSManagedRulesATPRuleSet.ResponseInspection.Header.FailureValues != nil {
-											f9elemf7f5f1elemf1f3f1f0 := []*string{}
-											for _, f9elemf7f5f1elemf1f3f1f0iter := range f9elemf7f5f1iter.AWSManagedRulesATPRuleSet.ResponseInspection.Header.FailureValues {
-												var f9elemf7f5f1elemf1f3f1f0elem string
-												f9elemf7f5f1elemf1f3f1f0elem = *f9elemf7f5f1elemf1f3f1f0iter
-												f9elemf7f5f1elemf1f3f1f0 = append(f9elemf7f5f1elemf1f3f1f0, &f9elemf7f5f1elemf1f3f1f0elem)
-											}
-											f9elemf7f5f1elemf1f3f1.FailureValues = f9elemf7f5f1elemf1f3f1f0
+											f9elemf7f5f1elemf1f3f1.FailureValues = aws.StringSlice(f9elemf7f5f1iter.AWSManagedRulesATPRuleSet.ResponseInspection.Header.FailureValues)
 										}
 										if f9elemf7f5f1iter.AWSManagedRulesATPRuleSet.ResponseInspection.Header.Name != nil {
 											f9elemf7f5f1elemf1f3f1.Name = f9elemf7f5f1iter.AWSManagedRulesATPRuleSet.ResponseInspection.Header.Name
 										}
 										if f9elemf7f5f1iter.AWSManagedRulesATPRuleSet.ResponseInspection.Header.SuccessValues != nil {
-											f9elemf7f5f1elemf1f3f1f2 := []*string{}
-											for _, f9elemf7f5f1elemf1f3f1f2iter := range f9elemf7f5f1iter.AWSManagedRulesATPRuleSet.ResponseInspection.Header.SuccessValues {
-												var f9elemf7f5f1elemf1f3f1f2elem string
-												f9elemf7f5f1elemf1f3f1f2elem = *f9elemf7f5f1elemf1f3f1f2iter
-												f9elemf7f5f1elemf1f3f1f2 = append(f9elemf7f5f1elemf1f3f1f2, &f9elemf7f5f1elemf1f3f1f2elem)
-											}
-											f9elemf7f5f1elemf1f3f1.SuccessValues = f9elemf7f5f1elemf1f3f1f2
+											f9elemf7f5f1elemf1f3f1.SuccessValues = aws.StringSlice(f9elemf7f5f1iter.AWSManagedRulesATPRuleSet.ResponseInspection.Header.SuccessValues)
 										}
 										f9elemf7f5f1elemf1f3.Header = f9elemf7f5f1elemf1f3f1
 									}
 									if f9elemf7f5f1iter.AWSManagedRulesATPRuleSet.ResponseInspection.Json != nil {
 										f9elemf7f5f1elemf1f3f2 := &svcapitypes.ResponseInspectionJSON{}
 										if f9elemf7f5f1iter.AWSManagedRulesATPRuleSet.ResponseInspection.Json.FailureValues != nil {
-											f9elemf7f5f1elemf1f3f2f0 := []*string{}
-											for _, f9elemf7f5f1elemf1f3f2f0iter := range f9elemf7f5f1iter.AWSManagedRulesATPRuleSet.ResponseInspection.Json.FailureValues {
-												var f9elemf7f5f1elemf1f3f2f0elem string
-												f9elemf7f5f1elemf1f3f2f0elem = *f9elemf7f5f1elemf1f3f2f0iter
-												f9elemf7f5f1elemf1f3f2f0 = append(f9elemf7f5f1elemf1f3f2f0, &f9elemf7f5f1elemf1f3f2f0elem)
-											}
-											f9elemf7f5f1elemf1f3f2.FailureValues = f9elemf7f5f1elemf1f3f2f0
+											f9elemf7f5f1elemf1f3f2.FailureValues = aws.StringSlice(f9elemf7f5f1iter.AWSManagedRulesATPRuleSet.ResponseInspection.Json.FailureValues)
 										}
 										if f9elemf7f5f1iter.AWSManagedRulesATPRuleSet.ResponseInspection.Json.Identifier != nil {
 											f9elemf7f5f1elemf1f3f2.Identifier = f9elemf7f5f1iter.AWSManagedRulesATPRuleSet.ResponseInspection.Json.Identifier
 										}
 										if f9elemf7f5f1iter.AWSManagedRulesATPRuleSet.ResponseInspection.Json.SuccessValues != nil {
-											f9elemf7f5f1elemf1f3f2f2 := []*string{}
-											for _, f9elemf7f5f1elemf1f3f2f2iter := range f9elemf7f5f1iter.AWSManagedRulesATPRuleSet.ResponseInspection.Json.SuccessValues {
-												var f9elemf7f5f1elemf1f3f2f2elem string
-												f9elemf7f5f1elemf1f3f2f2elem = *f9elemf7f5f1elemf1f3f2f2iter
-												f9elemf7f5f1elemf1f3f2f2 = append(f9elemf7f5f1elemf1f3f2f2, &f9elemf7f5f1elemf1f3f2f2elem)
-											}
-											f9elemf7f5f1elemf1f3f2.SuccessValues = f9elemf7f5f1elemf1f3f2f2
+											f9elemf7f5f1elemf1f3f2.SuccessValues = aws.StringSlice(f9elemf7f5f1iter.AWSManagedRulesATPRuleSet.ResponseInspection.Json.SuccessValues)
 										}
 										f9elemf7f5f1elemf1f3.JSON = f9elemf7f5f1elemf1f3f2
 									}
@@ -5542,18 +3763,20 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 										if f9elemf7f5f1iter.AWSManagedRulesATPRuleSet.ResponseInspection.StatusCode.FailureCodes != nil {
 											f9elemf7f5f1elemf1f3f3f0 := []*int64{}
 											for _, f9elemf7f5f1elemf1f3f3f0iter := range f9elemf7f5f1iter.AWSManagedRulesATPRuleSet.ResponseInspection.StatusCode.FailureCodes {
-												var f9elemf7f5f1elemf1f3f3f0elem int64
-												f9elemf7f5f1elemf1f3f3f0elem = *f9elemf7f5f1elemf1f3f3f0iter
-												f9elemf7f5f1elemf1f3f3f0 = append(f9elemf7f5f1elemf1f3f3f0, &f9elemf7f5f1elemf1f3f3f0elem)
+												var f9elemf7f5f1elemf1f3f3f0elem *int64
+												failureCodeCopy := int64(f9elemf7f5f1elemf1f3f3f0iter)
+												f9elemf7f5f1elemf1f3f3f0elem = &failureCodeCopy
+												f9elemf7f5f1elemf1f3f3f0 = append(f9elemf7f5f1elemf1f3f3f0, f9elemf7f5f1elemf1f3f3f0elem)
 											}
 											f9elemf7f5f1elemf1f3f3.FailureCodes = f9elemf7f5f1elemf1f3f3f0
 										}
 										if f9elemf7f5f1iter.AWSManagedRulesATPRuleSet.ResponseInspection.StatusCode.SuccessCodes != nil {
 											f9elemf7f5f1elemf1f3f3f1 := []*int64{}
 											for _, f9elemf7f5f1elemf1f3f3f1iter := range f9elemf7f5f1iter.AWSManagedRulesATPRuleSet.ResponseInspection.StatusCode.SuccessCodes {
-												var f9elemf7f5f1elemf1f3f3f1elem int64
-												f9elemf7f5f1elemf1f3f3f1elem = *f9elemf7f5f1elemf1f3f3f1iter
-												f9elemf7f5f1elemf1f3f3f1 = append(f9elemf7f5f1elemf1f3f3f1, &f9elemf7f5f1elemf1f3f3f1elem)
+												var f9elemf7f5f1elemf1f3f3f1elem *int64
+												successCodeCopy := int64(f9elemf7f5f1elemf1f3f3f1iter)
+												f9elemf7f5f1elemf1f3f3f1elem = &successCodeCopy
+												f9elemf7f5f1elemf1f3f3f1 = append(f9elemf7f5f1elemf1f3f3f1, f9elemf7f5f1elemf1f3f3f1elem)
 											}
 											f9elemf7f5f1elemf1f3f3.SuccessCodes = f9elemf7f5f1elemf1f3f3f1
 										}
@@ -5568,8 +3791,8 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 								if f9elemf7f5f1iter.AWSManagedRulesBotControlRuleSet.EnableMachineLearning != nil {
 									f9elemf7f5f1elemf2.EnableMachineLearning = f9elemf7f5f1iter.AWSManagedRulesBotControlRuleSet.EnableMachineLearning
 								}
-								if f9elemf7f5f1iter.AWSManagedRulesBotControlRuleSet.InspectionLevel != nil {
-									f9elemf7f5f1elemf2.InspectionLevel = f9elemf7f5f1iter.AWSManagedRulesBotControlRuleSet.InspectionLevel
+								if f9elemf7f5f1iter.AWSManagedRulesBotControlRuleSet.InspectionLevel != "" {
+									f9elemf7f5f1elemf2.InspectionLevel = aws.String(string(f9elemf7f5f1iter.AWSManagedRulesBotControlRuleSet.InspectionLevel))
 								}
 								f9elemf7f5f1elem.AWSManagedRulesBotControlRuleSet = f9elemf7f5f1elemf2
 							}
@@ -5583,8 +3806,8 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 								}
 								f9elemf7f5f1elem.PasswordField = f9elemf7f5f1elemf4
 							}
-							if f9elemf7f5f1iter.PayloadType != nil {
-								f9elemf7f5f1elem.PayloadType = f9elemf7f5f1iter.PayloadType
+							if f9elemf7f5f1iter.PayloadType != "" {
+								f9elemf7f5f1elem.PayloadType = aws.String(string(f9elemf7f5f1iter.PayloadType))
 							}
 							if f9elemf7f5f1iter.UsernameField != nil {
 								f9elemf7f5f1elemf6 := &svcapitypes.UsernameField{}
@@ -5636,7 +3859,8 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 											f9elemf7f5f3elemf0f1f0.CustomResponseBodyKey = f9elemf7f5f3iter.ActionToUse.Block.CustomResponse.CustomResponseBodyKey
 										}
 										if f9elemf7f5f3iter.ActionToUse.Block.CustomResponse.ResponseCode != nil {
-											f9elemf7f5f3elemf0f1f0.ResponseCode = f9elemf7f5f3iter.ActionToUse.Block.CustomResponse.ResponseCode
+											responseCodeCopy := int64(*f9elemf7f5f3iter.ActionToUse.Block.CustomResponse.ResponseCode)
+											f9elemf7f5f3elemf0f1f0.ResponseCode = &responseCodeCopy
 										}
 										if f9elemf7f5f3iter.ActionToUse.Block.CustomResponse.ResponseHeaders != nil {
 											f9elemf7f5f3elemf0f1f0f2 := []*svcapitypes.CustomHTTPHeader{}
@@ -5741,8 +3965,8 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 				}
 				if f9iter.Statement.RateBasedStatement != nil {
 					f9elemf7f8 := &svcapitypes.RateBasedStatement{}
-					if f9iter.Statement.RateBasedStatement.AggregateKeyType != nil {
-						f9elemf7f8.AggregateKeyType = f9iter.Statement.RateBasedStatement.AggregateKeyType
+					if f9iter.Statement.RateBasedStatement.AggregateKeyType != "" {
+						f9elemf7f8.AggregateKeyType = aws.String(string(f9iter.Statement.RateBasedStatement.AggregateKeyType))
 					}
 					if f9iter.Statement.RateBasedStatement.CustomKeys != nil {
 						f9elemf7f8f1 := []*svcapitypes.RateBasedStatementCustomKey{}
@@ -5757,11 +3981,10 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 									f9elemf7f8f1elemf0f1 := []*svcapitypes.TextTransformation{}
 									for _, f9elemf7f8f1elemf0f1iter := range f9elemf7f8f1iter.Cookie.TextTransformations {
 										f9elemf7f8f1elemf0f1elem := &svcapitypes.TextTransformation{}
-										if f9elemf7f8f1elemf0f1iter.Priority != nil {
-											f9elemf7f8f1elemf0f1elem.Priority = f9elemf7f8f1elemf0f1iter.Priority
-										}
-										if f9elemf7f8f1elemf0f1iter.Type != nil {
-											f9elemf7f8f1elemf0f1elem.Type = f9elemf7f8f1elemf0f1iter.Type
+										priorityCopy := int64(f9elemf7f8f1elemf0f1iter.Priority)
+										f9elemf7f8f1elemf0f1elem.Priority = &priorityCopy
+										if f9elemf7f8f1elemf0f1iter.Type != "" {
+											f9elemf7f8f1elemf0f1elem.Type = aws.String(string(f9elemf7f8f1elemf0f1iter.Type))
 										}
 										f9elemf7f8f1elemf0f1 = append(f9elemf7f8f1elemf0f1, f9elemf7f8f1elemf0f1elem)
 									}
@@ -5786,11 +4009,10 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 									f9elemf7f8f1elemf3f1 := []*svcapitypes.TextTransformation{}
 									for _, f9elemf7f8f1elemf3f1iter := range f9elemf7f8f1iter.Header.TextTransformations {
 										f9elemf7f8f1elemf3f1elem := &svcapitypes.TextTransformation{}
-										if f9elemf7f8f1elemf3f1iter.Priority != nil {
-											f9elemf7f8f1elemf3f1elem.Priority = f9elemf7f8f1elemf3f1iter.Priority
-										}
-										if f9elemf7f8f1elemf3f1iter.Type != nil {
-											f9elemf7f8f1elemf3f1elem.Type = f9elemf7f8f1elemf3f1iter.Type
+										priorityCopy := int64(f9elemf7f8f1elemf3f1iter.Priority)
+										f9elemf7f8f1elemf3f1elem.Priority = &priorityCopy
+										if f9elemf7f8f1elemf3f1iter.Type != "" {
+											f9elemf7f8f1elemf3f1elem.Type = aws.String(string(f9elemf7f8f1elemf3f1iter.Type))
 										}
 										f9elemf7f8f1elemf3f1 = append(f9elemf7f8f1elemf3f1, f9elemf7f8f1elemf3f1elem)
 									}
@@ -5818,11 +4040,10 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 									f9elemf7f8f1elemf6f1 := []*svcapitypes.TextTransformation{}
 									for _, f9elemf7f8f1elemf6f1iter := range f9elemf7f8f1iter.QueryArgument.TextTransformations {
 										f9elemf7f8f1elemf6f1elem := &svcapitypes.TextTransformation{}
-										if f9elemf7f8f1elemf6f1iter.Priority != nil {
-											f9elemf7f8f1elemf6f1elem.Priority = f9elemf7f8f1elemf6f1iter.Priority
-										}
-										if f9elemf7f8f1elemf6f1iter.Type != nil {
-											f9elemf7f8f1elemf6f1elem.Type = f9elemf7f8f1elemf6f1iter.Type
+										priorityCopy := int64(f9elemf7f8f1elemf6f1iter.Priority)
+										f9elemf7f8f1elemf6f1elem.Priority = &priorityCopy
+										if f9elemf7f8f1elemf6f1iter.Type != "" {
+											f9elemf7f8f1elemf6f1elem.Type = aws.String(string(f9elemf7f8f1elemf6f1iter.Type))
 										}
 										f9elemf7f8f1elemf6f1 = append(f9elemf7f8f1elemf6f1, f9elemf7f8f1elemf6f1elem)
 									}
@@ -5836,11 +4057,10 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 									f9elemf7f8f1elemf7f0 := []*svcapitypes.TextTransformation{}
 									for _, f9elemf7f8f1elemf7f0iter := range f9elemf7f8f1iter.QueryString.TextTransformations {
 										f9elemf7f8f1elemf7f0elem := &svcapitypes.TextTransformation{}
-										if f9elemf7f8f1elemf7f0iter.Priority != nil {
-											f9elemf7f8f1elemf7f0elem.Priority = f9elemf7f8f1elemf7f0iter.Priority
-										}
-										if f9elemf7f8f1elemf7f0iter.Type != nil {
-											f9elemf7f8f1elemf7f0elem.Type = f9elemf7f8f1elemf7f0iter.Type
+										priorityCopy := int64(f9elemf7f8f1elemf7f0iter.Priority)
+										f9elemf7f8f1elemf7f0elem.Priority = &priorityCopy
+										if f9elemf7f8f1elemf7f0iter.Type != "" {
+											f9elemf7f8f1elemf7f0elem.Type = aws.String(string(f9elemf7f8f1elemf7f0iter.Type))
 										}
 										f9elemf7f8f1elemf7f0 = append(f9elemf7f8f1elemf7f0, f9elemf7f8f1elemf7f0elem)
 									}
@@ -5854,11 +4074,10 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 									f9elemf7f8f1elemf8f0 := []*svcapitypes.TextTransformation{}
 									for _, f9elemf7f8f1elemf8f0iter := range f9elemf7f8f1iter.UriPath.TextTransformations {
 										f9elemf7f8f1elemf8f0elem := &svcapitypes.TextTransformation{}
-										if f9elemf7f8f1elemf8f0iter.Priority != nil {
-											f9elemf7f8f1elemf8f0elem.Priority = f9elemf7f8f1elemf8f0iter.Priority
-										}
-										if f9elemf7f8f1elemf8f0iter.Type != nil {
-											f9elemf7f8f1elemf8f0elem.Type = f9elemf7f8f1elemf8f0iter.Type
+										priorityCopy := int64(f9elemf7f8f1elemf8f0iter.Priority)
+										f9elemf7f8f1elemf8f0elem.Priority = &priorityCopy
+										if f9elemf7f8f1elemf8f0iter.Type != "" {
+											f9elemf7f8f1elemf8f0elem.Type = aws.String(string(f9elemf7f8f1elemf8f0iter.Type))
 										}
 										f9elemf7f8f1elemf8f0 = append(f9elemf7f8f1elemf8f0, f9elemf7f8f1elemf8f0elem)
 									}
@@ -5870,13 +4089,11 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 						}
 						f9elemf7f8.CustomKeys = f9elemf7f8f1
 					}
-					if f9iter.Statement.RateBasedStatement.EvaluationWindowSec != nil {
-						f9elemf7f8.EvaluationWindowSec = f9iter.Statement.RateBasedStatement.EvaluationWindowSec
-					}
+					f9elemf7f8.EvaluationWindowSec = &f9iter.Statement.RateBasedStatement.EvaluationWindowSec
 					if f9iter.Statement.RateBasedStatement.ForwardedIPConfig != nil {
 						f9elemf7f8f3 := &svcapitypes.ForwardedIPConfig{}
-						if f9iter.Statement.RateBasedStatement.ForwardedIPConfig.FallbackBehavior != nil {
-							f9elemf7f8f3.FallbackBehavior = f9iter.Statement.RateBasedStatement.ForwardedIPConfig.FallbackBehavior
+						if f9iter.Statement.RateBasedStatement.ForwardedIPConfig.FallbackBehavior != "" {
+							f9elemf7f8f3.FallbackBehavior = aws.String(string(f9iter.Statement.RateBasedStatement.ForwardedIPConfig.FallbackBehavior))
 						}
 						if f9iter.Statement.RateBasedStatement.ForwardedIPConfig.HeaderName != nil {
 							f9elemf7f8f3.HeaderName = f9iter.Statement.RateBasedStatement.ForwardedIPConfig.HeaderName
@@ -5898,8 +4115,8 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 						}
 						if f9iter.Statement.RegexMatchStatement.FieldToMatch.Body != nil {
 							f9elemf7f9f0f1 := &svcapitypes.Body{}
-							if f9iter.Statement.RegexMatchStatement.FieldToMatch.Body.OversizeHandling != nil {
-								f9elemf7f9f0f1.OversizeHandling = f9iter.Statement.RegexMatchStatement.FieldToMatch.Body.OversizeHandling
+							if f9iter.Statement.RegexMatchStatement.FieldToMatch.Body.OversizeHandling != "" {
+								f9elemf7f9f0f1.OversizeHandling = aws.String(string(f9iter.Statement.RegexMatchStatement.FieldToMatch.Body.OversizeHandling))
 							}
 							f9elemf7f9f0.Body = f9elemf7f9f0f1
 						}
@@ -5912,37 +4129,25 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 									f9elemf7f9f0f2f0.All = f9elemf7f9f0f2f0f0
 								}
 								if f9iter.Statement.RegexMatchStatement.FieldToMatch.Cookies.MatchPattern.ExcludedCookies != nil {
-									f9elemf7f9f0f2f0f1 := []*string{}
-									for _, f9elemf7f9f0f2f0f1iter := range f9iter.Statement.RegexMatchStatement.FieldToMatch.Cookies.MatchPattern.ExcludedCookies {
-										var f9elemf7f9f0f2f0f1elem string
-										f9elemf7f9f0f2f0f1elem = *f9elemf7f9f0f2f0f1iter
-										f9elemf7f9f0f2f0f1 = append(f9elemf7f9f0f2f0f1, &f9elemf7f9f0f2f0f1elem)
-									}
-									f9elemf7f9f0f2f0.ExcludedCookies = f9elemf7f9f0f2f0f1
+									f9elemf7f9f0f2f0.ExcludedCookies = aws.StringSlice(f9iter.Statement.RegexMatchStatement.FieldToMatch.Cookies.MatchPattern.ExcludedCookies)
 								}
 								if f9iter.Statement.RegexMatchStatement.FieldToMatch.Cookies.MatchPattern.IncludedCookies != nil {
-									f9elemf7f9f0f2f0f2 := []*string{}
-									for _, f9elemf7f9f0f2f0f2iter := range f9iter.Statement.RegexMatchStatement.FieldToMatch.Cookies.MatchPattern.IncludedCookies {
-										var f9elemf7f9f0f2f0f2elem string
-										f9elemf7f9f0f2f0f2elem = *f9elemf7f9f0f2f0f2iter
-										f9elemf7f9f0f2f0f2 = append(f9elemf7f9f0f2f0f2, &f9elemf7f9f0f2f0f2elem)
-									}
-									f9elemf7f9f0f2f0.IncludedCookies = f9elemf7f9f0f2f0f2
+									f9elemf7f9f0f2f0.IncludedCookies = aws.StringSlice(f9iter.Statement.RegexMatchStatement.FieldToMatch.Cookies.MatchPattern.IncludedCookies)
 								}
 								f9elemf7f9f0f2.MatchPattern = f9elemf7f9f0f2f0
 							}
-							if f9iter.Statement.RegexMatchStatement.FieldToMatch.Cookies.MatchScope != nil {
-								f9elemf7f9f0f2.MatchScope = f9iter.Statement.RegexMatchStatement.FieldToMatch.Cookies.MatchScope
+							if f9iter.Statement.RegexMatchStatement.FieldToMatch.Cookies.MatchScope != "" {
+								f9elemf7f9f0f2.MatchScope = aws.String(string(f9iter.Statement.RegexMatchStatement.FieldToMatch.Cookies.MatchScope))
 							}
-							if f9iter.Statement.RegexMatchStatement.FieldToMatch.Cookies.OversizeHandling != nil {
-								f9elemf7f9f0f2.OversizeHandling = f9iter.Statement.RegexMatchStatement.FieldToMatch.Cookies.OversizeHandling
+							if f9iter.Statement.RegexMatchStatement.FieldToMatch.Cookies.OversizeHandling != "" {
+								f9elemf7f9f0f2.OversizeHandling = aws.String(string(f9iter.Statement.RegexMatchStatement.FieldToMatch.Cookies.OversizeHandling))
 							}
 							f9elemf7f9f0.Cookies = f9elemf7f9f0f2
 						}
 						if f9iter.Statement.RegexMatchStatement.FieldToMatch.HeaderOrder != nil {
 							f9elemf7f9f0f3 := &svcapitypes.HeaderOrder{}
-							if f9iter.Statement.RegexMatchStatement.FieldToMatch.HeaderOrder.OversizeHandling != nil {
-								f9elemf7f9f0f3.OversizeHandling = f9iter.Statement.RegexMatchStatement.FieldToMatch.HeaderOrder.OversizeHandling
+							if f9iter.Statement.RegexMatchStatement.FieldToMatch.HeaderOrder.OversizeHandling != "" {
+								f9elemf7f9f0f3.OversizeHandling = aws.String(string(f9iter.Statement.RegexMatchStatement.FieldToMatch.HeaderOrder.OversizeHandling))
 							}
 							f9elemf7f9f0.HeaderOrder = f9elemf7f9f0f3
 						}
@@ -5955,44 +4160,32 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 									f9elemf7f9f0f4f0.All = f9elemf7f9f0f4f0f0
 								}
 								if f9iter.Statement.RegexMatchStatement.FieldToMatch.Headers.MatchPattern.ExcludedHeaders != nil {
-									f9elemf7f9f0f4f0f1 := []*string{}
-									for _, f9elemf7f9f0f4f0f1iter := range f9iter.Statement.RegexMatchStatement.FieldToMatch.Headers.MatchPattern.ExcludedHeaders {
-										var f9elemf7f9f0f4f0f1elem string
-										f9elemf7f9f0f4f0f1elem = *f9elemf7f9f0f4f0f1iter
-										f9elemf7f9f0f4f0f1 = append(f9elemf7f9f0f4f0f1, &f9elemf7f9f0f4f0f1elem)
-									}
-									f9elemf7f9f0f4f0.ExcludedHeaders = f9elemf7f9f0f4f0f1
+									f9elemf7f9f0f4f0.ExcludedHeaders = aws.StringSlice(f9iter.Statement.RegexMatchStatement.FieldToMatch.Headers.MatchPattern.ExcludedHeaders)
 								}
 								if f9iter.Statement.RegexMatchStatement.FieldToMatch.Headers.MatchPattern.IncludedHeaders != nil {
-									f9elemf7f9f0f4f0f2 := []*string{}
-									for _, f9elemf7f9f0f4f0f2iter := range f9iter.Statement.RegexMatchStatement.FieldToMatch.Headers.MatchPattern.IncludedHeaders {
-										var f9elemf7f9f0f4f0f2elem string
-										f9elemf7f9f0f4f0f2elem = *f9elemf7f9f0f4f0f2iter
-										f9elemf7f9f0f4f0f2 = append(f9elemf7f9f0f4f0f2, &f9elemf7f9f0f4f0f2elem)
-									}
-									f9elemf7f9f0f4f0.IncludedHeaders = f9elemf7f9f0f4f0f2
+									f9elemf7f9f0f4f0.IncludedHeaders = aws.StringSlice(f9iter.Statement.RegexMatchStatement.FieldToMatch.Headers.MatchPattern.IncludedHeaders)
 								}
 								f9elemf7f9f0f4.MatchPattern = f9elemf7f9f0f4f0
 							}
-							if f9iter.Statement.RegexMatchStatement.FieldToMatch.Headers.MatchScope != nil {
-								f9elemf7f9f0f4.MatchScope = f9iter.Statement.RegexMatchStatement.FieldToMatch.Headers.MatchScope
+							if f9iter.Statement.RegexMatchStatement.FieldToMatch.Headers.MatchScope != "" {
+								f9elemf7f9f0f4.MatchScope = aws.String(string(f9iter.Statement.RegexMatchStatement.FieldToMatch.Headers.MatchScope))
 							}
-							if f9iter.Statement.RegexMatchStatement.FieldToMatch.Headers.OversizeHandling != nil {
-								f9elemf7f9f0f4.OversizeHandling = f9iter.Statement.RegexMatchStatement.FieldToMatch.Headers.OversizeHandling
+							if f9iter.Statement.RegexMatchStatement.FieldToMatch.Headers.OversizeHandling != "" {
+								f9elemf7f9f0f4.OversizeHandling = aws.String(string(f9iter.Statement.RegexMatchStatement.FieldToMatch.Headers.OversizeHandling))
 							}
 							f9elemf7f9f0.Headers = f9elemf7f9f0f4
 						}
 						if f9iter.Statement.RegexMatchStatement.FieldToMatch.JA3Fingerprint != nil {
 							f9elemf7f9f0f5 := &svcapitypes.JA3Fingerprint{}
-							if f9iter.Statement.RegexMatchStatement.FieldToMatch.JA3Fingerprint.FallbackBehavior != nil {
-								f9elemf7f9f0f5.FallbackBehavior = f9iter.Statement.RegexMatchStatement.FieldToMatch.JA3Fingerprint.FallbackBehavior
+							if f9iter.Statement.RegexMatchStatement.FieldToMatch.JA3Fingerprint.FallbackBehavior != "" {
+								f9elemf7f9f0f5.FallbackBehavior = aws.String(string(f9iter.Statement.RegexMatchStatement.FieldToMatch.JA3Fingerprint.FallbackBehavior))
 							}
 							f9elemf7f9f0.JA3Fingerprint = f9elemf7f9f0f5
 						}
 						if f9iter.Statement.RegexMatchStatement.FieldToMatch.JsonBody != nil {
 							f9elemf7f9f0f6 := &svcapitypes.JSONBody{}
-							if f9iter.Statement.RegexMatchStatement.FieldToMatch.JsonBody.InvalidFallbackBehavior != nil {
-								f9elemf7f9f0f6.InvalidFallbackBehavior = f9iter.Statement.RegexMatchStatement.FieldToMatch.JsonBody.InvalidFallbackBehavior
+							if f9iter.Statement.RegexMatchStatement.FieldToMatch.JsonBody.InvalidFallbackBehavior != "" {
+								f9elemf7f9f0f6.InvalidFallbackBehavior = aws.String(string(f9iter.Statement.RegexMatchStatement.FieldToMatch.JsonBody.InvalidFallbackBehavior))
 							}
 							if f9iter.Statement.RegexMatchStatement.FieldToMatch.JsonBody.MatchPattern != nil {
 								f9elemf7f9f0f6f1 := &svcapitypes.JSONMatchPattern{}
@@ -6001,21 +4194,15 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 									f9elemf7f9f0f6f1.All = f9elemf7f9f0f6f1f0
 								}
 								if f9iter.Statement.RegexMatchStatement.FieldToMatch.JsonBody.MatchPattern.IncludedPaths != nil {
-									f9elemf7f9f0f6f1f1 := []*string{}
-									for _, f9elemf7f9f0f6f1f1iter := range f9iter.Statement.RegexMatchStatement.FieldToMatch.JsonBody.MatchPattern.IncludedPaths {
-										var f9elemf7f9f0f6f1f1elem string
-										f9elemf7f9f0f6f1f1elem = *f9elemf7f9f0f6f1f1iter
-										f9elemf7f9f0f6f1f1 = append(f9elemf7f9f0f6f1f1, &f9elemf7f9f0f6f1f1elem)
-									}
-									f9elemf7f9f0f6f1.IncludedPaths = f9elemf7f9f0f6f1f1
+									f9elemf7f9f0f6f1.IncludedPaths = aws.StringSlice(f9iter.Statement.RegexMatchStatement.FieldToMatch.JsonBody.MatchPattern.IncludedPaths)
 								}
 								f9elemf7f9f0f6.MatchPattern = f9elemf7f9f0f6f1
 							}
-							if f9iter.Statement.RegexMatchStatement.FieldToMatch.JsonBody.MatchScope != nil {
-								f9elemf7f9f0f6.MatchScope = f9iter.Statement.RegexMatchStatement.FieldToMatch.JsonBody.MatchScope
+							if f9iter.Statement.RegexMatchStatement.FieldToMatch.JsonBody.MatchScope != "" {
+								f9elemf7f9f0f6.MatchScope = aws.String(string(f9iter.Statement.RegexMatchStatement.FieldToMatch.JsonBody.MatchScope))
 							}
-							if f9iter.Statement.RegexMatchStatement.FieldToMatch.JsonBody.OversizeHandling != nil {
-								f9elemf7f9f0f6.OversizeHandling = f9iter.Statement.RegexMatchStatement.FieldToMatch.JsonBody.OversizeHandling
+							if f9iter.Statement.RegexMatchStatement.FieldToMatch.JsonBody.OversizeHandling != "" {
+								f9elemf7f9f0f6.OversizeHandling = aws.String(string(f9iter.Statement.RegexMatchStatement.FieldToMatch.JsonBody.OversizeHandling))
 							}
 							f9elemf7f9f0.JSONBody = f9elemf7f9f0f6
 						}
@@ -6054,11 +4241,10 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 						f9elemf7f9f2 := []*svcapitypes.TextTransformation{}
 						for _, f9elemf7f9f2iter := range f9iter.Statement.RegexMatchStatement.TextTransformations {
 							f9elemf7f9f2elem := &svcapitypes.TextTransformation{}
-							if f9elemf7f9f2iter.Priority != nil {
-								f9elemf7f9f2elem.Priority = f9elemf7f9f2iter.Priority
-							}
-							if f9elemf7f9f2iter.Type != nil {
-								f9elemf7f9f2elem.Type = f9elemf7f9f2iter.Type
+							priorityCopy := int64(f9elemf7f9f2iter.Priority)
+							f9elemf7f9f2elem.Priority = &priorityCopy
+							if f9elemf7f9f2iter.Type != "" {
+								f9elemf7f9f2elem.Type = aws.String(string(f9elemf7f9f2iter.Type))
 							}
 							f9elemf7f9f2 = append(f9elemf7f9f2, f9elemf7f9f2elem)
 						}
@@ -6079,8 +4265,8 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 						}
 						if f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.Body != nil {
 							f9elemf7f10f1f1 := &svcapitypes.Body{}
-							if f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.Body.OversizeHandling != nil {
-								f9elemf7f10f1f1.OversizeHandling = f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.Body.OversizeHandling
+							if f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.Body.OversizeHandling != "" {
+								f9elemf7f10f1f1.OversizeHandling = aws.String(string(f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.Body.OversizeHandling))
 							}
 							f9elemf7f10f1.Body = f9elemf7f10f1f1
 						}
@@ -6093,37 +4279,25 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 									f9elemf7f10f1f2f0.All = f9elemf7f10f1f2f0f0
 								}
 								if f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.Cookies.MatchPattern.ExcludedCookies != nil {
-									f9elemf7f10f1f2f0f1 := []*string{}
-									for _, f9elemf7f10f1f2f0f1iter := range f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.Cookies.MatchPattern.ExcludedCookies {
-										var f9elemf7f10f1f2f0f1elem string
-										f9elemf7f10f1f2f0f1elem = *f9elemf7f10f1f2f0f1iter
-										f9elemf7f10f1f2f0f1 = append(f9elemf7f10f1f2f0f1, &f9elemf7f10f1f2f0f1elem)
-									}
-									f9elemf7f10f1f2f0.ExcludedCookies = f9elemf7f10f1f2f0f1
+									f9elemf7f10f1f2f0.ExcludedCookies = aws.StringSlice(f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.Cookies.MatchPattern.ExcludedCookies)
 								}
 								if f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.Cookies.MatchPattern.IncludedCookies != nil {
-									f9elemf7f10f1f2f0f2 := []*string{}
-									for _, f9elemf7f10f1f2f0f2iter := range f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.Cookies.MatchPattern.IncludedCookies {
-										var f9elemf7f10f1f2f0f2elem string
-										f9elemf7f10f1f2f0f2elem = *f9elemf7f10f1f2f0f2iter
-										f9elemf7f10f1f2f0f2 = append(f9elemf7f10f1f2f0f2, &f9elemf7f10f1f2f0f2elem)
-									}
-									f9elemf7f10f1f2f0.IncludedCookies = f9elemf7f10f1f2f0f2
+									f9elemf7f10f1f2f0.IncludedCookies = aws.StringSlice(f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.Cookies.MatchPattern.IncludedCookies)
 								}
 								f9elemf7f10f1f2.MatchPattern = f9elemf7f10f1f2f0
 							}
-							if f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.Cookies.MatchScope != nil {
-								f9elemf7f10f1f2.MatchScope = f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.Cookies.MatchScope
+							if f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.Cookies.MatchScope != "" {
+								f9elemf7f10f1f2.MatchScope = aws.String(string(f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.Cookies.MatchScope))
 							}
-							if f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.Cookies.OversizeHandling != nil {
-								f9elemf7f10f1f2.OversizeHandling = f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.Cookies.OversizeHandling
+							if f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.Cookies.OversizeHandling != "" {
+								f9elemf7f10f1f2.OversizeHandling = aws.String(string(f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.Cookies.OversizeHandling))
 							}
 							f9elemf7f10f1.Cookies = f9elemf7f10f1f2
 						}
 						if f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.HeaderOrder != nil {
 							f9elemf7f10f1f3 := &svcapitypes.HeaderOrder{}
-							if f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.HeaderOrder.OversizeHandling != nil {
-								f9elemf7f10f1f3.OversizeHandling = f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.HeaderOrder.OversizeHandling
+							if f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.HeaderOrder.OversizeHandling != "" {
+								f9elemf7f10f1f3.OversizeHandling = aws.String(string(f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.HeaderOrder.OversizeHandling))
 							}
 							f9elemf7f10f1.HeaderOrder = f9elemf7f10f1f3
 						}
@@ -6136,44 +4310,32 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 									f9elemf7f10f1f4f0.All = f9elemf7f10f1f4f0f0
 								}
 								if f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.Headers.MatchPattern.ExcludedHeaders != nil {
-									f9elemf7f10f1f4f0f1 := []*string{}
-									for _, f9elemf7f10f1f4f0f1iter := range f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.Headers.MatchPattern.ExcludedHeaders {
-										var f9elemf7f10f1f4f0f1elem string
-										f9elemf7f10f1f4f0f1elem = *f9elemf7f10f1f4f0f1iter
-										f9elemf7f10f1f4f0f1 = append(f9elemf7f10f1f4f0f1, &f9elemf7f10f1f4f0f1elem)
-									}
-									f9elemf7f10f1f4f0.ExcludedHeaders = f9elemf7f10f1f4f0f1
+									f9elemf7f10f1f4f0.ExcludedHeaders = aws.StringSlice(f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.Headers.MatchPattern.ExcludedHeaders)
 								}
 								if f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.Headers.MatchPattern.IncludedHeaders != nil {
-									f9elemf7f10f1f4f0f2 := []*string{}
-									for _, f9elemf7f10f1f4f0f2iter := range f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.Headers.MatchPattern.IncludedHeaders {
-										var f9elemf7f10f1f4f0f2elem string
-										f9elemf7f10f1f4f0f2elem = *f9elemf7f10f1f4f0f2iter
-										f9elemf7f10f1f4f0f2 = append(f9elemf7f10f1f4f0f2, &f9elemf7f10f1f4f0f2elem)
-									}
-									f9elemf7f10f1f4f0.IncludedHeaders = f9elemf7f10f1f4f0f2
+									f9elemf7f10f1f4f0.IncludedHeaders = aws.StringSlice(f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.Headers.MatchPattern.IncludedHeaders)
 								}
 								f9elemf7f10f1f4.MatchPattern = f9elemf7f10f1f4f0
 							}
-							if f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.Headers.MatchScope != nil {
-								f9elemf7f10f1f4.MatchScope = f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.Headers.MatchScope
+							if f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.Headers.MatchScope != "" {
+								f9elemf7f10f1f4.MatchScope = aws.String(string(f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.Headers.MatchScope))
 							}
-							if f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.Headers.OversizeHandling != nil {
-								f9elemf7f10f1f4.OversizeHandling = f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.Headers.OversizeHandling
+							if f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.Headers.OversizeHandling != "" {
+								f9elemf7f10f1f4.OversizeHandling = aws.String(string(f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.Headers.OversizeHandling))
 							}
 							f9elemf7f10f1.Headers = f9elemf7f10f1f4
 						}
 						if f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.JA3Fingerprint != nil {
 							f9elemf7f10f1f5 := &svcapitypes.JA3Fingerprint{}
-							if f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.JA3Fingerprint.FallbackBehavior != nil {
-								f9elemf7f10f1f5.FallbackBehavior = f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.JA3Fingerprint.FallbackBehavior
+							if f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.JA3Fingerprint.FallbackBehavior != "" {
+								f9elemf7f10f1f5.FallbackBehavior = aws.String(string(f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.JA3Fingerprint.FallbackBehavior))
 							}
 							f9elemf7f10f1.JA3Fingerprint = f9elemf7f10f1f5
 						}
 						if f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.JsonBody != nil {
 							f9elemf7f10f1f6 := &svcapitypes.JSONBody{}
-							if f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.JsonBody.InvalidFallbackBehavior != nil {
-								f9elemf7f10f1f6.InvalidFallbackBehavior = f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.JsonBody.InvalidFallbackBehavior
+							if f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.JsonBody.InvalidFallbackBehavior != "" {
+								f9elemf7f10f1f6.InvalidFallbackBehavior = aws.String(string(f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.JsonBody.InvalidFallbackBehavior))
 							}
 							if f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.JsonBody.MatchPattern != nil {
 								f9elemf7f10f1f6f1 := &svcapitypes.JSONMatchPattern{}
@@ -6182,21 +4344,15 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 									f9elemf7f10f1f6f1.All = f9elemf7f10f1f6f1f0
 								}
 								if f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.JsonBody.MatchPattern.IncludedPaths != nil {
-									f9elemf7f10f1f6f1f1 := []*string{}
-									for _, f9elemf7f10f1f6f1f1iter := range f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.JsonBody.MatchPattern.IncludedPaths {
-										var f9elemf7f10f1f6f1f1elem string
-										f9elemf7f10f1f6f1f1elem = *f9elemf7f10f1f6f1f1iter
-										f9elemf7f10f1f6f1f1 = append(f9elemf7f10f1f6f1f1, &f9elemf7f10f1f6f1f1elem)
-									}
-									f9elemf7f10f1f6f1.IncludedPaths = f9elemf7f10f1f6f1f1
+									f9elemf7f10f1f6f1.IncludedPaths = aws.StringSlice(f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.JsonBody.MatchPattern.IncludedPaths)
 								}
 								f9elemf7f10f1f6.MatchPattern = f9elemf7f10f1f6f1
 							}
-							if f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.JsonBody.MatchScope != nil {
-								f9elemf7f10f1f6.MatchScope = f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.JsonBody.MatchScope
+							if f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.JsonBody.MatchScope != "" {
+								f9elemf7f10f1f6.MatchScope = aws.String(string(f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.JsonBody.MatchScope))
 							}
-							if f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.JsonBody.OversizeHandling != nil {
-								f9elemf7f10f1f6.OversizeHandling = f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.JsonBody.OversizeHandling
+							if f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.JsonBody.OversizeHandling != "" {
+								f9elemf7f10f1f6.OversizeHandling = aws.String(string(f9iter.Statement.RegexPatternSetReferenceStatement.FieldToMatch.JsonBody.OversizeHandling))
 							}
 							f9elemf7f10f1.JSONBody = f9elemf7f10f1f6
 						}
@@ -6232,11 +4388,10 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 						f9elemf7f10f2 := []*svcapitypes.TextTransformation{}
 						for _, f9elemf7f10f2iter := range f9iter.Statement.RegexPatternSetReferenceStatement.TextTransformations {
 							f9elemf7f10f2elem := &svcapitypes.TextTransformation{}
-							if f9elemf7f10f2iter.Priority != nil {
-								f9elemf7f10f2elem.Priority = f9elemf7f10f2iter.Priority
-							}
-							if f9elemf7f10f2iter.Type != nil {
-								f9elemf7f10f2elem.Type = f9elemf7f10f2iter.Type
+							priorityCopy := int64(f9elemf7f10f2iter.Priority)
+							f9elemf7f10f2elem.Priority = &priorityCopy
+							if f9elemf7f10f2iter.Type != "" {
+								f9elemf7f10f2elem.Type = aws.String(string(f9elemf7f10f2iter.Type))
 							}
 							f9elemf7f10f2 = append(f9elemf7f10f2, f9elemf7f10f2elem)
 						}
@@ -6296,7 +4451,8 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 											f9elemf7f11f2elemf0f1f0.CustomResponseBodyKey = f9elemf7f11f2iter.ActionToUse.Block.CustomResponse.CustomResponseBodyKey
 										}
 										if f9elemf7f11f2iter.ActionToUse.Block.CustomResponse.ResponseCode != nil {
-											f9elemf7f11f2elemf0f1f0.ResponseCode = f9elemf7f11f2iter.ActionToUse.Block.CustomResponse.ResponseCode
+											responseCodeCopy := int64(*f9elemf7f11f2iter.ActionToUse.Block.CustomResponse.ResponseCode)
+											f9elemf7f11f2elemf0f1f0.ResponseCode = &responseCodeCopy
 										}
 										if f9elemf7f11f2iter.ActionToUse.Block.CustomResponse.ResponseHeaders != nil {
 											f9elemf7f11f2elemf0f1f0f2 := []*svcapitypes.CustomHTTPHeader{}
@@ -6395,8 +4551,8 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 				}
 				if f9iter.Statement.SizeConstraintStatement != nil {
 					f9elemf7f12 := &svcapitypes.SizeConstraintStatement{}
-					if f9iter.Statement.SizeConstraintStatement.ComparisonOperator != nil {
-						f9elemf7f12.ComparisonOperator = f9iter.Statement.SizeConstraintStatement.ComparisonOperator
+					if f9iter.Statement.SizeConstraintStatement.ComparisonOperator != "" {
+						f9elemf7f12.ComparisonOperator = aws.String(string(f9iter.Statement.SizeConstraintStatement.ComparisonOperator))
 					}
 					if f9iter.Statement.SizeConstraintStatement.FieldToMatch != nil {
 						f9elemf7f12f1 := &svcapitypes.FieldToMatch{}
@@ -6406,8 +4562,8 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 						}
 						if f9iter.Statement.SizeConstraintStatement.FieldToMatch.Body != nil {
 							f9elemf7f12f1f1 := &svcapitypes.Body{}
-							if f9iter.Statement.SizeConstraintStatement.FieldToMatch.Body.OversizeHandling != nil {
-								f9elemf7f12f1f1.OversizeHandling = f9iter.Statement.SizeConstraintStatement.FieldToMatch.Body.OversizeHandling
+							if f9iter.Statement.SizeConstraintStatement.FieldToMatch.Body.OversizeHandling != "" {
+								f9elemf7f12f1f1.OversizeHandling = aws.String(string(f9iter.Statement.SizeConstraintStatement.FieldToMatch.Body.OversizeHandling))
 							}
 							f9elemf7f12f1.Body = f9elemf7f12f1f1
 						}
@@ -6420,37 +4576,25 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 									f9elemf7f12f1f2f0.All = f9elemf7f12f1f2f0f0
 								}
 								if f9iter.Statement.SizeConstraintStatement.FieldToMatch.Cookies.MatchPattern.ExcludedCookies != nil {
-									f9elemf7f12f1f2f0f1 := []*string{}
-									for _, f9elemf7f12f1f2f0f1iter := range f9iter.Statement.SizeConstraintStatement.FieldToMatch.Cookies.MatchPattern.ExcludedCookies {
-										var f9elemf7f12f1f2f0f1elem string
-										f9elemf7f12f1f2f0f1elem = *f9elemf7f12f1f2f0f1iter
-										f9elemf7f12f1f2f0f1 = append(f9elemf7f12f1f2f0f1, &f9elemf7f12f1f2f0f1elem)
-									}
-									f9elemf7f12f1f2f0.ExcludedCookies = f9elemf7f12f1f2f0f1
+									f9elemf7f12f1f2f0.ExcludedCookies = aws.StringSlice(f9iter.Statement.SizeConstraintStatement.FieldToMatch.Cookies.MatchPattern.ExcludedCookies)
 								}
 								if f9iter.Statement.SizeConstraintStatement.FieldToMatch.Cookies.MatchPattern.IncludedCookies != nil {
-									f9elemf7f12f1f2f0f2 := []*string{}
-									for _, f9elemf7f12f1f2f0f2iter := range f9iter.Statement.SizeConstraintStatement.FieldToMatch.Cookies.MatchPattern.IncludedCookies {
-										var f9elemf7f12f1f2f0f2elem string
-										f9elemf7f12f1f2f0f2elem = *f9elemf7f12f1f2f0f2iter
-										f9elemf7f12f1f2f0f2 = append(f9elemf7f12f1f2f0f2, &f9elemf7f12f1f2f0f2elem)
-									}
-									f9elemf7f12f1f2f0.IncludedCookies = f9elemf7f12f1f2f0f2
+									f9elemf7f12f1f2f0.IncludedCookies = aws.StringSlice(f9iter.Statement.SizeConstraintStatement.FieldToMatch.Cookies.MatchPattern.IncludedCookies)
 								}
 								f9elemf7f12f1f2.MatchPattern = f9elemf7f12f1f2f0
 							}
-							if f9iter.Statement.SizeConstraintStatement.FieldToMatch.Cookies.MatchScope != nil {
-								f9elemf7f12f1f2.MatchScope = f9iter.Statement.SizeConstraintStatement.FieldToMatch.Cookies.MatchScope
+							if f9iter.Statement.SizeConstraintStatement.FieldToMatch.Cookies.MatchScope != "" {
+								f9elemf7f12f1f2.MatchScope = aws.String(string(f9iter.Statement.SizeConstraintStatement.FieldToMatch.Cookies.MatchScope))
 							}
-							if f9iter.Statement.SizeConstraintStatement.FieldToMatch.Cookies.OversizeHandling != nil {
-								f9elemf7f12f1f2.OversizeHandling = f9iter.Statement.SizeConstraintStatement.FieldToMatch.Cookies.OversizeHandling
+							if f9iter.Statement.SizeConstraintStatement.FieldToMatch.Cookies.OversizeHandling != "" {
+								f9elemf7f12f1f2.OversizeHandling = aws.String(string(f9iter.Statement.SizeConstraintStatement.FieldToMatch.Cookies.OversizeHandling))
 							}
 							f9elemf7f12f1.Cookies = f9elemf7f12f1f2
 						}
 						if f9iter.Statement.SizeConstraintStatement.FieldToMatch.HeaderOrder != nil {
 							f9elemf7f12f1f3 := &svcapitypes.HeaderOrder{}
-							if f9iter.Statement.SizeConstraintStatement.FieldToMatch.HeaderOrder.OversizeHandling != nil {
-								f9elemf7f12f1f3.OversizeHandling = f9iter.Statement.SizeConstraintStatement.FieldToMatch.HeaderOrder.OversizeHandling
+							if f9iter.Statement.SizeConstraintStatement.FieldToMatch.HeaderOrder.OversizeHandling != "" {
+								f9elemf7f12f1f3.OversizeHandling = aws.String(string(f9iter.Statement.SizeConstraintStatement.FieldToMatch.HeaderOrder.OversizeHandling))
 							}
 							f9elemf7f12f1.HeaderOrder = f9elemf7f12f1f3
 						}
@@ -6463,44 +4607,32 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 									f9elemf7f12f1f4f0.All = f9elemf7f12f1f4f0f0
 								}
 								if f9iter.Statement.SizeConstraintStatement.FieldToMatch.Headers.MatchPattern.ExcludedHeaders != nil {
-									f9elemf7f12f1f4f0f1 := []*string{}
-									for _, f9elemf7f12f1f4f0f1iter := range f9iter.Statement.SizeConstraintStatement.FieldToMatch.Headers.MatchPattern.ExcludedHeaders {
-										var f9elemf7f12f1f4f0f1elem string
-										f9elemf7f12f1f4f0f1elem = *f9elemf7f12f1f4f0f1iter
-										f9elemf7f12f1f4f0f1 = append(f9elemf7f12f1f4f0f1, &f9elemf7f12f1f4f0f1elem)
-									}
-									f9elemf7f12f1f4f0.ExcludedHeaders = f9elemf7f12f1f4f0f1
+									f9elemf7f12f1f4f0.ExcludedHeaders = aws.StringSlice(f9iter.Statement.SizeConstraintStatement.FieldToMatch.Headers.MatchPattern.ExcludedHeaders)
 								}
 								if f9iter.Statement.SizeConstraintStatement.FieldToMatch.Headers.MatchPattern.IncludedHeaders != nil {
-									f9elemf7f12f1f4f0f2 := []*string{}
-									for _, f9elemf7f12f1f4f0f2iter := range f9iter.Statement.SizeConstraintStatement.FieldToMatch.Headers.MatchPattern.IncludedHeaders {
-										var f9elemf7f12f1f4f0f2elem string
-										f9elemf7f12f1f4f0f2elem = *f9elemf7f12f1f4f0f2iter
-										f9elemf7f12f1f4f0f2 = append(f9elemf7f12f1f4f0f2, &f9elemf7f12f1f4f0f2elem)
-									}
-									f9elemf7f12f1f4f0.IncludedHeaders = f9elemf7f12f1f4f0f2
+									f9elemf7f12f1f4f0.IncludedHeaders = aws.StringSlice(f9iter.Statement.SizeConstraintStatement.FieldToMatch.Headers.MatchPattern.IncludedHeaders)
 								}
 								f9elemf7f12f1f4.MatchPattern = f9elemf7f12f1f4f0
 							}
-							if f9iter.Statement.SizeConstraintStatement.FieldToMatch.Headers.MatchScope != nil {
-								f9elemf7f12f1f4.MatchScope = f9iter.Statement.SizeConstraintStatement.FieldToMatch.Headers.MatchScope
+							if f9iter.Statement.SizeConstraintStatement.FieldToMatch.Headers.MatchScope != "" {
+								f9elemf7f12f1f4.MatchScope = aws.String(string(f9iter.Statement.SizeConstraintStatement.FieldToMatch.Headers.MatchScope))
 							}
-							if f9iter.Statement.SizeConstraintStatement.FieldToMatch.Headers.OversizeHandling != nil {
-								f9elemf7f12f1f4.OversizeHandling = f9iter.Statement.SizeConstraintStatement.FieldToMatch.Headers.OversizeHandling
+							if f9iter.Statement.SizeConstraintStatement.FieldToMatch.Headers.OversizeHandling != "" {
+								f9elemf7f12f1f4.OversizeHandling = aws.String(string(f9iter.Statement.SizeConstraintStatement.FieldToMatch.Headers.OversizeHandling))
 							}
 							f9elemf7f12f1.Headers = f9elemf7f12f1f4
 						}
 						if f9iter.Statement.SizeConstraintStatement.FieldToMatch.JA3Fingerprint != nil {
 							f9elemf7f12f1f5 := &svcapitypes.JA3Fingerprint{}
-							if f9iter.Statement.SizeConstraintStatement.FieldToMatch.JA3Fingerprint.FallbackBehavior != nil {
-								f9elemf7f12f1f5.FallbackBehavior = f9iter.Statement.SizeConstraintStatement.FieldToMatch.JA3Fingerprint.FallbackBehavior
+							if f9iter.Statement.SizeConstraintStatement.FieldToMatch.JA3Fingerprint.FallbackBehavior != "" {
+								f9elemf7f12f1f5.FallbackBehavior = aws.String(string(f9iter.Statement.SizeConstraintStatement.FieldToMatch.JA3Fingerprint.FallbackBehavior))
 							}
 							f9elemf7f12f1.JA3Fingerprint = f9elemf7f12f1f5
 						}
 						if f9iter.Statement.SizeConstraintStatement.FieldToMatch.JsonBody != nil {
 							f9elemf7f12f1f6 := &svcapitypes.JSONBody{}
-							if f9iter.Statement.SizeConstraintStatement.FieldToMatch.JsonBody.InvalidFallbackBehavior != nil {
-								f9elemf7f12f1f6.InvalidFallbackBehavior = f9iter.Statement.SizeConstraintStatement.FieldToMatch.JsonBody.InvalidFallbackBehavior
+							if f9iter.Statement.SizeConstraintStatement.FieldToMatch.JsonBody.InvalidFallbackBehavior != "" {
+								f9elemf7f12f1f6.InvalidFallbackBehavior = aws.String(string(f9iter.Statement.SizeConstraintStatement.FieldToMatch.JsonBody.InvalidFallbackBehavior))
 							}
 							if f9iter.Statement.SizeConstraintStatement.FieldToMatch.JsonBody.MatchPattern != nil {
 								f9elemf7f12f1f6f1 := &svcapitypes.JSONMatchPattern{}
@@ -6509,21 +4641,15 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 									f9elemf7f12f1f6f1.All = f9elemf7f12f1f6f1f0
 								}
 								if f9iter.Statement.SizeConstraintStatement.FieldToMatch.JsonBody.MatchPattern.IncludedPaths != nil {
-									f9elemf7f12f1f6f1f1 := []*string{}
-									for _, f9elemf7f12f1f6f1f1iter := range f9iter.Statement.SizeConstraintStatement.FieldToMatch.JsonBody.MatchPattern.IncludedPaths {
-										var f9elemf7f12f1f6f1f1elem string
-										f9elemf7f12f1f6f1f1elem = *f9elemf7f12f1f6f1f1iter
-										f9elemf7f12f1f6f1f1 = append(f9elemf7f12f1f6f1f1, &f9elemf7f12f1f6f1f1elem)
-									}
-									f9elemf7f12f1f6f1.IncludedPaths = f9elemf7f12f1f6f1f1
+									f9elemf7f12f1f6f1.IncludedPaths = aws.StringSlice(f9iter.Statement.SizeConstraintStatement.FieldToMatch.JsonBody.MatchPattern.IncludedPaths)
 								}
 								f9elemf7f12f1f6.MatchPattern = f9elemf7f12f1f6f1
 							}
-							if f9iter.Statement.SizeConstraintStatement.FieldToMatch.JsonBody.MatchScope != nil {
-								f9elemf7f12f1f6.MatchScope = f9iter.Statement.SizeConstraintStatement.FieldToMatch.JsonBody.MatchScope
+							if f9iter.Statement.SizeConstraintStatement.FieldToMatch.JsonBody.MatchScope != "" {
+								f9elemf7f12f1f6.MatchScope = aws.String(string(f9iter.Statement.SizeConstraintStatement.FieldToMatch.JsonBody.MatchScope))
 							}
-							if f9iter.Statement.SizeConstraintStatement.FieldToMatch.JsonBody.OversizeHandling != nil {
-								f9elemf7f12f1f6.OversizeHandling = f9iter.Statement.SizeConstraintStatement.FieldToMatch.JsonBody.OversizeHandling
+							if f9iter.Statement.SizeConstraintStatement.FieldToMatch.JsonBody.OversizeHandling != "" {
+								f9elemf7f12f1f6.OversizeHandling = aws.String(string(f9iter.Statement.SizeConstraintStatement.FieldToMatch.JsonBody.OversizeHandling))
 							}
 							f9elemf7f12f1.JSONBody = f9elemf7f12f1f6
 						}
@@ -6555,18 +4681,15 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 						}
 						f9elemf7f12.FieldToMatch = f9elemf7f12f1
 					}
-					if f9iter.Statement.SizeConstraintStatement.Size != nil {
-						f9elemf7f12.Size = f9iter.Statement.SizeConstraintStatement.Size
-					}
+					f9elemf7f12.Size = &f9iter.Statement.SizeConstraintStatement.Size
 					if f9iter.Statement.SizeConstraintStatement.TextTransformations != nil {
 						f9elemf7f12f3 := []*svcapitypes.TextTransformation{}
 						for _, f9elemf7f12f3iter := range f9iter.Statement.SizeConstraintStatement.TextTransformations {
 							f9elemf7f12f3elem := &svcapitypes.TextTransformation{}
-							if f9elemf7f12f3iter.Priority != nil {
-								f9elemf7f12f3elem.Priority = f9elemf7f12f3iter.Priority
-							}
-							if f9elemf7f12f3iter.Type != nil {
-								f9elemf7f12f3elem.Type = f9elemf7f12f3iter.Type
+							priorityCopy := int64(f9elemf7f12f3iter.Priority)
+							f9elemf7f12f3elem.Priority = &priorityCopy
+							if f9elemf7f12f3iter.Type != "" {
+								f9elemf7f12f3elem.Type = aws.String(string(f9elemf7f12f3iter.Type))
 							}
 							f9elemf7f12f3 = append(f9elemf7f12f3, f9elemf7f12f3elem)
 						}
@@ -6584,8 +4707,8 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 						}
 						if f9iter.Statement.SqliMatchStatement.FieldToMatch.Body != nil {
 							f9elemf7f13f0f1 := &svcapitypes.Body{}
-							if f9iter.Statement.SqliMatchStatement.FieldToMatch.Body.OversizeHandling != nil {
-								f9elemf7f13f0f1.OversizeHandling = f9iter.Statement.SqliMatchStatement.FieldToMatch.Body.OversizeHandling
+							if f9iter.Statement.SqliMatchStatement.FieldToMatch.Body.OversizeHandling != "" {
+								f9elemf7f13f0f1.OversizeHandling = aws.String(string(f9iter.Statement.SqliMatchStatement.FieldToMatch.Body.OversizeHandling))
 							}
 							f9elemf7f13f0.Body = f9elemf7f13f0f1
 						}
@@ -6598,37 +4721,25 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 									f9elemf7f13f0f2f0.All = f9elemf7f13f0f2f0f0
 								}
 								if f9iter.Statement.SqliMatchStatement.FieldToMatch.Cookies.MatchPattern.ExcludedCookies != nil {
-									f9elemf7f13f0f2f0f1 := []*string{}
-									for _, f9elemf7f13f0f2f0f1iter := range f9iter.Statement.SqliMatchStatement.FieldToMatch.Cookies.MatchPattern.ExcludedCookies {
-										var f9elemf7f13f0f2f0f1elem string
-										f9elemf7f13f0f2f0f1elem = *f9elemf7f13f0f2f0f1iter
-										f9elemf7f13f0f2f0f1 = append(f9elemf7f13f0f2f0f1, &f9elemf7f13f0f2f0f1elem)
-									}
-									f9elemf7f13f0f2f0.ExcludedCookies = f9elemf7f13f0f2f0f1
+									f9elemf7f13f0f2f0.ExcludedCookies = aws.StringSlice(f9iter.Statement.SqliMatchStatement.FieldToMatch.Cookies.MatchPattern.ExcludedCookies)
 								}
 								if f9iter.Statement.SqliMatchStatement.FieldToMatch.Cookies.MatchPattern.IncludedCookies != nil {
-									f9elemf7f13f0f2f0f2 := []*string{}
-									for _, f9elemf7f13f0f2f0f2iter := range f9iter.Statement.SqliMatchStatement.FieldToMatch.Cookies.MatchPattern.IncludedCookies {
-										var f9elemf7f13f0f2f0f2elem string
-										f9elemf7f13f0f2f0f2elem = *f9elemf7f13f0f2f0f2iter
-										f9elemf7f13f0f2f0f2 = append(f9elemf7f13f0f2f0f2, &f9elemf7f13f0f2f0f2elem)
-									}
-									f9elemf7f13f0f2f0.IncludedCookies = f9elemf7f13f0f2f0f2
+									f9elemf7f13f0f2f0.IncludedCookies = aws.StringSlice(f9iter.Statement.SqliMatchStatement.FieldToMatch.Cookies.MatchPattern.IncludedCookies)
 								}
 								f9elemf7f13f0f2.MatchPattern = f9elemf7f13f0f2f0
 							}
-							if f9iter.Statement.SqliMatchStatement.FieldToMatch.Cookies.MatchScope != nil {
-								f9elemf7f13f0f2.MatchScope = f9iter.Statement.SqliMatchStatement.FieldToMatch.Cookies.MatchScope
+							if f9iter.Statement.SqliMatchStatement.FieldToMatch.Cookies.MatchScope != "" {
+								f9elemf7f13f0f2.MatchScope = aws.String(string(f9iter.Statement.SqliMatchStatement.FieldToMatch.Cookies.MatchScope))
 							}
-							if f9iter.Statement.SqliMatchStatement.FieldToMatch.Cookies.OversizeHandling != nil {
-								f9elemf7f13f0f2.OversizeHandling = f9iter.Statement.SqliMatchStatement.FieldToMatch.Cookies.OversizeHandling
+							if f9iter.Statement.SqliMatchStatement.FieldToMatch.Cookies.OversizeHandling != "" {
+								f9elemf7f13f0f2.OversizeHandling = aws.String(string(f9iter.Statement.SqliMatchStatement.FieldToMatch.Cookies.OversizeHandling))
 							}
 							f9elemf7f13f0.Cookies = f9elemf7f13f0f2
 						}
 						if f9iter.Statement.SqliMatchStatement.FieldToMatch.HeaderOrder != nil {
 							f9elemf7f13f0f3 := &svcapitypes.HeaderOrder{}
-							if f9iter.Statement.SqliMatchStatement.FieldToMatch.HeaderOrder.OversizeHandling != nil {
-								f9elemf7f13f0f3.OversizeHandling = f9iter.Statement.SqliMatchStatement.FieldToMatch.HeaderOrder.OversizeHandling
+							if f9iter.Statement.SqliMatchStatement.FieldToMatch.HeaderOrder.OversizeHandling != "" {
+								f9elemf7f13f0f3.OversizeHandling = aws.String(string(f9iter.Statement.SqliMatchStatement.FieldToMatch.HeaderOrder.OversizeHandling))
 							}
 							f9elemf7f13f0.HeaderOrder = f9elemf7f13f0f3
 						}
@@ -6641,44 +4752,32 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 									f9elemf7f13f0f4f0.All = f9elemf7f13f0f4f0f0
 								}
 								if f9iter.Statement.SqliMatchStatement.FieldToMatch.Headers.MatchPattern.ExcludedHeaders != nil {
-									f9elemf7f13f0f4f0f1 := []*string{}
-									for _, f9elemf7f13f0f4f0f1iter := range f9iter.Statement.SqliMatchStatement.FieldToMatch.Headers.MatchPattern.ExcludedHeaders {
-										var f9elemf7f13f0f4f0f1elem string
-										f9elemf7f13f0f4f0f1elem = *f9elemf7f13f0f4f0f1iter
-										f9elemf7f13f0f4f0f1 = append(f9elemf7f13f0f4f0f1, &f9elemf7f13f0f4f0f1elem)
-									}
-									f9elemf7f13f0f4f0.ExcludedHeaders = f9elemf7f13f0f4f0f1
+									f9elemf7f13f0f4f0.ExcludedHeaders = aws.StringSlice(f9iter.Statement.SqliMatchStatement.FieldToMatch.Headers.MatchPattern.ExcludedHeaders)
 								}
 								if f9iter.Statement.SqliMatchStatement.FieldToMatch.Headers.MatchPattern.IncludedHeaders != nil {
-									f9elemf7f13f0f4f0f2 := []*string{}
-									for _, f9elemf7f13f0f4f0f2iter := range f9iter.Statement.SqliMatchStatement.FieldToMatch.Headers.MatchPattern.IncludedHeaders {
-										var f9elemf7f13f0f4f0f2elem string
-										f9elemf7f13f0f4f0f2elem = *f9elemf7f13f0f4f0f2iter
-										f9elemf7f13f0f4f0f2 = append(f9elemf7f13f0f4f0f2, &f9elemf7f13f0f4f0f2elem)
-									}
-									f9elemf7f13f0f4f0.IncludedHeaders = f9elemf7f13f0f4f0f2
+									f9elemf7f13f0f4f0.IncludedHeaders = aws.StringSlice(f9iter.Statement.SqliMatchStatement.FieldToMatch.Headers.MatchPattern.IncludedHeaders)
 								}
 								f9elemf7f13f0f4.MatchPattern = f9elemf7f13f0f4f0
 							}
-							if f9iter.Statement.SqliMatchStatement.FieldToMatch.Headers.MatchScope != nil {
-								f9elemf7f13f0f4.MatchScope = f9iter.Statement.SqliMatchStatement.FieldToMatch.Headers.MatchScope
+							if f9iter.Statement.SqliMatchStatement.FieldToMatch.Headers.MatchScope != "" {
+								f9elemf7f13f0f4.MatchScope = aws.String(string(f9iter.Statement.SqliMatchStatement.FieldToMatch.Headers.MatchScope))
 							}
-							if f9iter.Statement.SqliMatchStatement.FieldToMatch.Headers.OversizeHandling != nil {
-								f9elemf7f13f0f4.OversizeHandling = f9iter.Statement.SqliMatchStatement.FieldToMatch.Headers.OversizeHandling
+							if f9iter.Statement.SqliMatchStatement.FieldToMatch.Headers.OversizeHandling != "" {
+								f9elemf7f13f0f4.OversizeHandling = aws.String(string(f9iter.Statement.SqliMatchStatement.FieldToMatch.Headers.OversizeHandling))
 							}
 							f9elemf7f13f0.Headers = f9elemf7f13f0f4
 						}
 						if f9iter.Statement.SqliMatchStatement.FieldToMatch.JA3Fingerprint != nil {
 							f9elemf7f13f0f5 := &svcapitypes.JA3Fingerprint{}
-							if f9iter.Statement.SqliMatchStatement.FieldToMatch.JA3Fingerprint.FallbackBehavior != nil {
-								f9elemf7f13f0f5.FallbackBehavior = f9iter.Statement.SqliMatchStatement.FieldToMatch.JA3Fingerprint.FallbackBehavior
+							if f9iter.Statement.SqliMatchStatement.FieldToMatch.JA3Fingerprint.FallbackBehavior != "" {
+								f9elemf7f13f0f5.FallbackBehavior = aws.String(string(f9iter.Statement.SqliMatchStatement.FieldToMatch.JA3Fingerprint.FallbackBehavior))
 							}
 							f9elemf7f13f0.JA3Fingerprint = f9elemf7f13f0f5
 						}
 						if f9iter.Statement.SqliMatchStatement.FieldToMatch.JsonBody != nil {
 							f9elemf7f13f0f6 := &svcapitypes.JSONBody{}
-							if f9iter.Statement.SqliMatchStatement.FieldToMatch.JsonBody.InvalidFallbackBehavior != nil {
-								f9elemf7f13f0f6.InvalidFallbackBehavior = f9iter.Statement.SqliMatchStatement.FieldToMatch.JsonBody.InvalidFallbackBehavior
+							if f9iter.Statement.SqliMatchStatement.FieldToMatch.JsonBody.InvalidFallbackBehavior != "" {
+								f9elemf7f13f0f6.InvalidFallbackBehavior = aws.String(string(f9iter.Statement.SqliMatchStatement.FieldToMatch.JsonBody.InvalidFallbackBehavior))
 							}
 							if f9iter.Statement.SqliMatchStatement.FieldToMatch.JsonBody.MatchPattern != nil {
 								f9elemf7f13f0f6f1 := &svcapitypes.JSONMatchPattern{}
@@ -6687,21 +4786,15 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 									f9elemf7f13f0f6f1.All = f9elemf7f13f0f6f1f0
 								}
 								if f9iter.Statement.SqliMatchStatement.FieldToMatch.JsonBody.MatchPattern.IncludedPaths != nil {
-									f9elemf7f13f0f6f1f1 := []*string{}
-									for _, f9elemf7f13f0f6f1f1iter := range f9iter.Statement.SqliMatchStatement.FieldToMatch.JsonBody.MatchPattern.IncludedPaths {
-										var f9elemf7f13f0f6f1f1elem string
-										f9elemf7f13f0f6f1f1elem = *f9elemf7f13f0f6f1f1iter
-										f9elemf7f13f0f6f1f1 = append(f9elemf7f13f0f6f1f1, &f9elemf7f13f0f6f1f1elem)
-									}
-									f9elemf7f13f0f6f1.IncludedPaths = f9elemf7f13f0f6f1f1
+									f9elemf7f13f0f6f1.IncludedPaths = aws.StringSlice(f9iter.Statement.SqliMatchStatement.FieldToMatch.JsonBody.MatchPattern.IncludedPaths)
 								}
 								f9elemf7f13f0f6.MatchPattern = f9elemf7f13f0f6f1
 							}
-							if f9iter.Statement.SqliMatchStatement.FieldToMatch.JsonBody.MatchScope != nil {
-								f9elemf7f13f0f6.MatchScope = f9iter.Statement.SqliMatchStatement.FieldToMatch.JsonBody.MatchScope
+							if f9iter.Statement.SqliMatchStatement.FieldToMatch.JsonBody.MatchScope != "" {
+								f9elemf7f13f0f6.MatchScope = aws.String(string(f9iter.Statement.SqliMatchStatement.FieldToMatch.JsonBody.MatchScope))
 							}
-							if f9iter.Statement.SqliMatchStatement.FieldToMatch.JsonBody.OversizeHandling != nil {
-								f9elemf7f13f0f6.OversizeHandling = f9iter.Statement.SqliMatchStatement.FieldToMatch.JsonBody.OversizeHandling
+							if f9iter.Statement.SqliMatchStatement.FieldToMatch.JsonBody.OversizeHandling != "" {
+								f9elemf7f13f0f6.OversizeHandling = aws.String(string(f9iter.Statement.SqliMatchStatement.FieldToMatch.JsonBody.OversizeHandling))
 							}
 							f9elemf7f13f0.JSONBody = f9elemf7f13f0f6
 						}
@@ -6733,18 +4826,17 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 						}
 						f9elemf7f13.FieldToMatch = f9elemf7f13f0
 					}
-					if f9iter.Statement.SqliMatchStatement.SensitivityLevel != nil {
-						f9elemf7f13.SensitivityLevel = f9iter.Statement.SqliMatchStatement.SensitivityLevel
+					if f9iter.Statement.SqliMatchStatement.SensitivityLevel != "" {
+						f9elemf7f13.SensitivityLevel = aws.String(string(f9iter.Statement.SqliMatchStatement.SensitivityLevel))
 					}
 					if f9iter.Statement.SqliMatchStatement.TextTransformations != nil {
 						f9elemf7f13f2 := []*svcapitypes.TextTransformation{}
 						for _, f9elemf7f13f2iter := range f9iter.Statement.SqliMatchStatement.TextTransformations {
 							f9elemf7f13f2elem := &svcapitypes.TextTransformation{}
-							if f9elemf7f13f2iter.Priority != nil {
-								f9elemf7f13f2elem.Priority = f9elemf7f13f2iter.Priority
-							}
-							if f9elemf7f13f2iter.Type != nil {
-								f9elemf7f13f2elem.Type = f9elemf7f13f2iter.Type
+							priorityCopy := int64(f9elemf7f13f2iter.Priority)
+							f9elemf7f13f2elem.Priority = &priorityCopy
+							if f9elemf7f13f2iter.Type != "" {
+								f9elemf7f13f2elem.Type = aws.String(string(f9elemf7f13f2iter.Type))
 							}
 							f9elemf7f13f2 = append(f9elemf7f13f2, f9elemf7f13f2elem)
 						}
@@ -6762,8 +4854,8 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 						}
 						if f9iter.Statement.XssMatchStatement.FieldToMatch.Body != nil {
 							f9elemf7f14f0f1 := &svcapitypes.Body{}
-							if f9iter.Statement.XssMatchStatement.FieldToMatch.Body.OversizeHandling != nil {
-								f9elemf7f14f0f1.OversizeHandling = f9iter.Statement.XssMatchStatement.FieldToMatch.Body.OversizeHandling
+							if f9iter.Statement.XssMatchStatement.FieldToMatch.Body.OversizeHandling != "" {
+								f9elemf7f14f0f1.OversizeHandling = aws.String(string(f9iter.Statement.XssMatchStatement.FieldToMatch.Body.OversizeHandling))
 							}
 							f9elemf7f14f0.Body = f9elemf7f14f0f1
 						}
@@ -6776,37 +4868,25 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 									f9elemf7f14f0f2f0.All = f9elemf7f14f0f2f0f0
 								}
 								if f9iter.Statement.XssMatchStatement.FieldToMatch.Cookies.MatchPattern.ExcludedCookies != nil {
-									f9elemf7f14f0f2f0f1 := []*string{}
-									for _, f9elemf7f14f0f2f0f1iter := range f9iter.Statement.XssMatchStatement.FieldToMatch.Cookies.MatchPattern.ExcludedCookies {
-										var f9elemf7f14f0f2f0f1elem string
-										f9elemf7f14f0f2f0f1elem = *f9elemf7f14f0f2f0f1iter
-										f9elemf7f14f0f2f0f1 = append(f9elemf7f14f0f2f0f1, &f9elemf7f14f0f2f0f1elem)
-									}
-									f9elemf7f14f0f2f0.ExcludedCookies = f9elemf7f14f0f2f0f1
+									f9elemf7f14f0f2f0.ExcludedCookies = aws.StringSlice(f9iter.Statement.XssMatchStatement.FieldToMatch.Cookies.MatchPattern.ExcludedCookies)
 								}
 								if f9iter.Statement.XssMatchStatement.FieldToMatch.Cookies.MatchPattern.IncludedCookies != nil {
-									f9elemf7f14f0f2f0f2 := []*string{}
-									for _, f9elemf7f14f0f2f0f2iter := range f9iter.Statement.XssMatchStatement.FieldToMatch.Cookies.MatchPattern.IncludedCookies {
-										var f9elemf7f14f0f2f0f2elem string
-										f9elemf7f14f0f2f0f2elem = *f9elemf7f14f0f2f0f2iter
-										f9elemf7f14f0f2f0f2 = append(f9elemf7f14f0f2f0f2, &f9elemf7f14f0f2f0f2elem)
-									}
-									f9elemf7f14f0f2f0.IncludedCookies = f9elemf7f14f0f2f0f2
+									f9elemf7f14f0f2f0.IncludedCookies = aws.StringSlice(f9iter.Statement.XssMatchStatement.FieldToMatch.Cookies.MatchPattern.IncludedCookies)
 								}
 								f9elemf7f14f0f2.MatchPattern = f9elemf7f14f0f2f0
 							}
-							if f9iter.Statement.XssMatchStatement.FieldToMatch.Cookies.MatchScope != nil {
-								f9elemf7f14f0f2.MatchScope = f9iter.Statement.XssMatchStatement.FieldToMatch.Cookies.MatchScope
+							if f9iter.Statement.XssMatchStatement.FieldToMatch.Cookies.MatchScope != "" {
+								f9elemf7f14f0f2.MatchScope = aws.String(string(f9iter.Statement.XssMatchStatement.FieldToMatch.Cookies.MatchScope))
 							}
-							if f9iter.Statement.XssMatchStatement.FieldToMatch.Cookies.OversizeHandling != nil {
-								f9elemf7f14f0f2.OversizeHandling = f9iter.Statement.XssMatchStatement.FieldToMatch.Cookies.OversizeHandling
+							if f9iter.Statement.XssMatchStatement.FieldToMatch.Cookies.OversizeHandling != "" {
+								f9elemf7f14f0f2.OversizeHandling = aws.String(string(f9iter.Statement.XssMatchStatement.FieldToMatch.Cookies.OversizeHandling))
 							}
 							f9elemf7f14f0.Cookies = f9elemf7f14f0f2
 						}
 						if f9iter.Statement.XssMatchStatement.FieldToMatch.HeaderOrder != nil {
 							f9elemf7f14f0f3 := &svcapitypes.HeaderOrder{}
-							if f9iter.Statement.XssMatchStatement.FieldToMatch.HeaderOrder.OversizeHandling != nil {
-								f9elemf7f14f0f3.OversizeHandling = f9iter.Statement.XssMatchStatement.FieldToMatch.HeaderOrder.OversizeHandling
+							if f9iter.Statement.XssMatchStatement.FieldToMatch.HeaderOrder.OversizeHandling != "" {
+								f9elemf7f14f0f3.OversizeHandling = aws.String(string(f9iter.Statement.XssMatchStatement.FieldToMatch.HeaderOrder.OversizeHandling))
 							}
 							f9elemf7f14f0.HeaderOrder = f9elemf7f14f0f3
 						}
@@ -6819,44 +4899,32 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 									f9elemf7f14f0f4f0.All = f9elemf7f14f0f4f0f0
 								}
 								if f9iter.Statement.XssMatchStatement.FieldToMatch.Headers.MatchPattern.ExcludedHeaders != nil {
-									f9elemf7f14f0f4f0f1 := []*string{}
-									for _, f9elemf7f14f0f4f0f1iter := range f9iter.Statement.XssMatchStatement.FieldToMatch.Headers.MatchPattern.ExcludedHeaders {
-										var f9elemf7f14f0f4f0f1elem string
-										f9elemf7f14f0f4f0f1elem = *f9elemf7f14f0f4f0f1iter
-										f9elemf7f14f0f4f0f1 = append(f9elemf7f14f0f4f0f1, &f9elemf7f14f0f4f0f1elem)
-									}
-									f9elemf7f14f0f4f0.ExcludedHeaders = f9elemf7f14f0f4f0f1
+									f9elemf7f14f0f4f0.ExcludedHeaders = aws.StringSlice(f9iter.Statement.XssMatchStatement.FieldToMatch.Headers.MatchPattern.ExcludedHeaders)
 								}
 								if f9iter.Statement.XssMatchStatement.FieldToMatch.Headers.MatchPattern.IncludedHeaders != nil {
-									f9elemf7f14f0f4f0f2 := []*string{}
-									for _, f9elemf7f14f0f4f0f2iter := range f9iter.Statement.XssMatchStatement.FieldToMatch.Headers.MatchPattern.IncludedHeaders {
-										var f9elemf7f14f0f4f0f2elem string
-										f9elemf7f14f0f4f0f2elem = *f9elemf7f14f0f4f0f2iter
-										f9elemf7f14f0f4f0f2 = append(f9elemf7f14f0f4f0f2, &f9elemf7f14f0f4f0f2elem)
-									}
-									f9elemf7f14f0f4f0.IncludedHeaders = f9elemf7f14f0f4f0f2
+									f9elemf7f14f0f4f0.IncludedHeaders = aws.StringSlice(f9iter.Statement.XssMatchStatement.FieldToMatch.Headers.MatchPattern.IncludedHeaders)
 								}
 								f9elemf7f14f0f4.MatchPattern = f9elemf7f14f0f4f0
 							}
-							if f9iter.Statement.XssMatchStatement.FieldToMatch.Headers.MatchScope != nil {
-								f9elemf7f14f0f4.MatchScope = f9iter.Statement.XssMatchStatement.FieldToMatch.Headers.MatchScope
+							if f9iter.Statement.XssMatchStatement.FieldToMatch.Headers.MatchScope != "" {
+								f9elemf7f14f0f4.MatchScope = aws.String(string(f9iter.Statement.XssMatchStatement.FieldToMatch.Headers.MatchScope))
 							}
-							if f9iter.Statement.XssMatchStatement.FieldToMatch.Headers.OversizeHandling != nil {
-								f9elemf7f14f0f4.OversizeHandling = f9iter.Statement.XssMatchStatement.FieldToMatch.Headers.OversizeHandling
+							if f9iter.Statement.XssMatchStatement.FieldToMatch.Headers.OversizeHandling != "" {
+								f9elemf7f14f0f4.OversizeHandling = aws.String(string(f9iter.Statement.XssMatchStatement.FieldToMatch.Headers.OversizeHandling))
 							}
 							f9elemf7f14f0.Headers = f9elemf7f14f0f4
 						}
 						if f9iter.Statement.XssMatchStatement.FieldToMatch.JA3Fingerprint != nil {
 							f9elemf7f14f0f5 := &svcapitypes.JA3Fingerprint{}
-							if f9iter.Statement.XssMatchStatement.FieldToMatch.JA3Fingerprint.FallbackBehavior != nil {
-								f9elemf7f14f0f5.FallbackBehavior = f9iter.Statement.XssMatchStatement.FieldToMatch.JA3Fingerprint.FallbackBehavior
+							if f9iter.Statement.XssMatchStatement.FieldToMatch.JA3Fingerprint.FallbackBehavior != "" {
+								f9elemf7f14f0f5.FallbackBehavior = aws.String(string(f9iter.Statement.XssMatchStatement.FieldToMatch.JA3Fingerprint.FallbackBehavior))
 							}
 							f9elemf7f14f0.JA3Fingerprint = f9elemf7f14f0f5
 						}
 						if f9iter.Statement.XssMatchStatement.FieldToMatch.JsonBody != nil {
 							f9elemf7f14f0f6 := &svcapitypes.JSONBody{}
-							if f9iter.Statement.XssMatchStatement.FieldToMatch.JsonBody.InvalidFallbackBehavior != nil {
-								f9elemf7f14f0f6.InvalidFallbackBehavior = f9iter.Statement.XssMatchStatement.FieldToMatch.JsonBody.InvalidFallbackBehavior
+							if f9iter.Statement.XssMatchStatement.FieldToMatch.JsonBody.InvalidFallbackBehavior != "" {
+								f9elemf7f14f0f6.InvalidFallbackBehavior = aws.String(string(f9iter.Statement.XssMatchStatement.FieldToMatch.JsonBody.InvalidFallbackBehavior))
 							}
 							if f9iter.Statement.XssMatchStatement.FieldToMatch.JsonBody.MatchPattern != nil {
 								f9elemf7f14f0f6f1 := &svcapitypes.JSONMatchPattern{}
@@ -6865,21 +4933,15 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 									f9elemf7f14f0f6f1.All = f9elemf7f14f0f6f1f0
 								}
 								if f9iter.Statement.XssMatchStatement.FieldToMatch.JsonBody.MatchPattern.IncludedPaths != nil {
-									f9elemf7f14f0f6f1f1 := []*string{}
-									for _, f9elemf7f14f0f6f1f1iter := range f9iter.Statement.XssMatchStatement.FieldToMatch.JsonBody.MatchPattern.IncludedPaths {
-										var f9elemf7f14f0f6f1f1elem string
-										f9elemf7f14f0f6f1f1elem = *f9elemf7f14f0f6f1f1iter
-										f9elemf7f14f0f6f1f1 = append(f9elemf7f14f0f6f1f1, &f9elemf7f14f0f6f1f1elem)
-									}
-									f9elemf7f14f0f6f1.IncludedPaths = f9elemf7f14f0f6f1f1
+									f9elemf7f14f0f6f1.IncludedPaths = aws.StringSlice(f9iter.Statement.XssMatchStatement.FieldToMatch.JsonBody.MatchPattern.IncludedPaths)
 								}
 								f9elemf7f14f0f6.MatchPattern = f9elemf7f14f0f6f1
 							}
-							if f9iter.Statement.XssMatchStatement.FieldToMatch.JsonBody.MatchScope != nil {
-								f9elemf7f14f0f6.MatchScope = f9iter.Statement.XssMatchStatement.FieldToMatch.JsonBody.MatchScope
+							if f9iter.Statement.XssMatchStatement.FieldToMatch.JsonBody.MatchScope != "" {
+								f9elemf7f14f0f6.MatchScope = aws.String(string(f9iter.Statement.XssMatchStatement.FieldToMatch.JsonBody.MatchScope))
 							}
-							if f9iter.Statement.XssMatchStatement.FieldToMatch.JsonBody.OversizeHandling != nil {
-								f9elemf7f14f0f6.OversizeHandling = f9iter.Statement.XssMatchStatement.FieldToMatch.JsonBody.OversizeHandling
+							if f9iter.Statement.XssMatchStatement.FieldToMatch.JsonBody.OversizeHandling != "" {
+								f9elemf7f14f0f6.OversizeHandling = aws.String(string(f9iter.Statement.XssMatchStatement.FieldToMatch.JsonBody.OversizeHandling))
 							}
 							f9elemf7f14f0.JSONBody = f9elemf7f14f0f6
 						}
@@ -6915,11 +4977,10 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 						f9elemf7f14f1 := []*svcapitypes.TextTransformation{}
 						for _, f9elemf7f14f1iter := range f9iter.Statement.XssMatchStatement.TextTransformations {
 							f9elemf7f14f1elem := &svcapitypes.TextTransformation{}
-							if f9elemf7f14f1iter.Priority != nil {
-								f9elemf7f14f1elem.Priority = f9elemf7f14f1iter.Priority
-							}
-							if f9elemf7f14f1iter.Type != nil {
-								f9elemf7f14f1elem.Type = f9elemf7f14f1iter.Type
+							priorityCopy := int64(f9elemf7f14f1iter.Priority)
+							f9elemf7f14f1elem.Priority = &priorityCopy
+							if f9elemf7f14f1iter.Type != "" {
+								f9elemf7f14f1elem.Type = aws.String(string(f9elemf7f14f1iter.Type))
 							}
 							f9elemf7f14f1 = append(f9elemf7f14f1, f9elemf7f14f1elem)
 						}
@@ -6931,15 +4992,11 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 			}
 			if f9iter.VisibilityConfig != nil {
 				f9elemf8 := &svcapitypes.VisibilityConfig{}
-				if f9iter.VisibilityConfig.CloudWatchMetricsEnabled != nil {
-					f9elemf8.CloudWatchMetricsEnabled = f9iter.VisibilityConfig.CloudWatchMetricsEnabled
-				}
+				f9elemf8.CloudWatchMetricsEnabled = &f9iter.VisibilityConfig.CloudWatchMetricsEnabled
 				if f9iter.VisibilityConfig.MetricName != nil {
 					f9elemf8.MetricName = f9iter.VisibilityConfig.MetricName
 				}
-				if f9iter.VisibilityConfig.SampledRequestsEnabled != nil {
-					f9elemf8.SampledRequestsEnabled = f9iter.VisibilityConfig.SampledRequestsEnabled
-				}
+				f9elemf8.SampledRequestsEnabled = &f9iter.VisibilityConfig.SampledRequestsEnabled
 				f9elem.VisibilityConfig = f9elemf8
 			}
 			f9 = append(f9, f9elem)
@@ -6950,15 +5007,11 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 	}
 	if resp.RuleGroup.VisibilityConfig != nil {
 		f10 := &svcapitypes.VisibilityConfig{}
-		if resp.RuleGroup.VisibilityConfig.CloudWatchMetricsEnabled != nil {
-			f10.CloudWatchMetricsEnabled = resp.RuleGroup.VisibilityConfig.CloudWatchMetricsEnabled
-		}
+		f10.CloudWatchMetricsEnabled = &resp.RuleGroup.VisibilityConfig.CloudWatchMetricsEnabled
 		if resp.RuleGroup.VisibilityConfig.MetricName != nil {
 			f10.MetricName = resp.RuleGroup.VisibilityConfig.MetricName
 		}
-		if resp.RuleGroup.VisibilityConfig.SampledRequestsEnabled != nil {
-			f10.SampledRequestsEnabled = resp.RuleGroup.VisibilityConfig.SampledRequestsEnabled
-		}
+		f10.SampledRequestsEnabled = &resp.RuleGroup.VisibilityConfig.SampledRequestsEnabled
 		ko.Spec.VisibilityConfig = f10
 	} else {
 		ko.Spec.VisibilityConfig = nil

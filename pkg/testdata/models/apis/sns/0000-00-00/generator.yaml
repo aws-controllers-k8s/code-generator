@@ -50,3 +50,6 @@ resources:
         is_attribute: true
       Token:
         is_attribute: true
+ignore:
+  field_paths:
+  - CreateTopicInput.DataProtectionPolicy

@@ -8,6 +8,7 @@ import (
 	ackerrors "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	rtclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"github.com/aws/aws-sdk-go-v2/aws"
 
 	svcapitypes "github.com/aws-controllers-k8s/{{ .ControllerName }}-controller/apis/{{ .APIVersion}}"
 )

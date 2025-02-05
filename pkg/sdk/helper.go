@@ -16,18 +16,16 @@ package sdk
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"os"
 	"path/filepath"
-	"sort"
 
 	"github.com/go-git/go-git/v5"
 
+	"github.com/aws-controllers-k8s/code-generator/pkg/apiv2"
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
 
-	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
+	awssdkmodel "github.com/aws-controllers-k8s/code-generator/pkg/api"
 )
 
 var (
@@ -45,7 +43,7 @@ var (
 	)
 )
 
-// Helper is a helper struct that helps work with the aws-sdk-go models and
+// Helper is a helper struct that helps work with the aws-sdk-go-v2 models and
 // API model loader
 type Helper struct {
 	// Default is "services.k8s.aws"
@@ -93,17 +91,14 @@ func (h *Helper) WithAPIVersion(apiVersion string) {
 	h.apiVersion = apiVersion
 }
 
-// API returns the aws-sdk-go API model for a supplied service model name.
+// API returns the aws-sdk-go-v2 API model for a supplied service model name.
 func (h *Helper) API(serviceModelName string) (*model.SDKAPI, error) {
-	modelPath, _, err := h.ModelAndDocsPath(serviceModelName)
+	modelPath := h.ModelAndDocsPath(serviceModelName)
+	apis, err := apiv2.LoadAPI(modelPath)
 	if err != nil {
 		return nil, err
 	}
-	apis, err := h.loader.Load([]string{modelPath})
-	if err != nil {
-		return nil, err
-	}
-	// apis is a map, keyed by the service alias, of pointers to aws-sdk-go
+	// apis is a map, keyed by the service alias, of pointers to aws-sdk-go-v2
 	// model API objects
 	for _, api := range apis {
 		// If we don't do this, we can end up with panic()'s like this:
@@ -124,57 +119,13 @@ func (h *Helper) API(serviceModelName string) (*model.SDKAPI, error) {
 
 // ModelAndDocsPath returns two string paths to the supplied service's API and
 // doc JSON files
-func (h *Helper) ModelAndDocsPath(
-	serviceModelName string,
-) (string, string, error) {
-	if h.apiVersion == "" {
-		apiVersion, err := h.FirstAPIVersion(serviceModelName)
-		if err != nil {
-			return "", "", err
-		}
-		h.apiVersion = apiVersion
-	}
-	versionPath := filepath.Join(
-		h.basePath, "models", "apis", serviceModelName, h.apiVersion,
+func (h *Helper) ModelAndDocsPath(serviceModelName string) string {
+	modelPath := filepath.Join(
+		h.basePath,
+		"codegen",
+		"sdk-codegen",
+		"aws-models",
+		fmt.Sprintf("%s.json", serviceModelName),
 	)
-	modelPath := filepath.Join(versionPath, "api-2.json")
-	docsPath := filepath.Join(versionPath, "docs-2.json")
-	return modelPath, docsPath, nil
-}
-
-// FirstAPIVersion returns the first found API version for a service API.
-// (e.h. "2012-10-03")
-func (h *Helper) FirstAPIVersion(serviceModelName string) (string, error) {
-	versions, err := h.GetAPIVersions(serviceModelName)
-	if err != nil {
-		return "", err
-	}
-	sort.Strings(versions)
-	return versions[0], nil
-}
-
-// GetAPIVersions returns the list of API Versions found in a service directory.
-func (h *Helper) GetAPIVersions(serviceModelName string) ([]string, error) {
-	apiPath := filepath.Join(h.basePath, "models", "apis", serviceModelName)
-	versionDirs, err := ioutil.ReadDir(apiPath)
-	if err != nil {
-		return nil, err
-	}
-	versions := []string{}
-	for _, f := range versionDirs {
-		version := f.Name()
-		fp := filepath.Join(apiPath, version)
-		fi, err := os.Lstat(fp)
-		if err != nil {
-			return nil, err
-		}
-		if !fi.IsDir() {
-			return nil, fmt.Errorf("found %s: %v", version, ErrInvalidVersionDirectory)
-		}
-		versions = append(versions, version)
-	}
-	if len(versions) == 0 {
-		return nil, ErrNoValidVersionDirectory
-	}
-	return versions, nil
+	return modelPath
 }

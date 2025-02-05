@@ -18,8 +18,8 @@ import (
 	"sort"
 	"strings"
 
+	awssdkmodel "github.com/aws-controllers-k8s/code-generator/pkg/api"
 	"github.com/aws-controllers-k8s/pkg/names"
-	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
 
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
@@ -489,7 +489,7 @@ func compareSlice(
 			"%sif !ackcompare.SliceStringPEqual(%s, %s) {\n",
 			indent, firstResVarName, secondResVarName,
 		)
-	case "structure":
+	case "structure", "union":
 		// NOTE(jaypipes): Using reflect here is really punting. We should
 		// implement this in a cleaner, more efficient fashion by walking the
 		// struct values and comparing each struct individually, building up

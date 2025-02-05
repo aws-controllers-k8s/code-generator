@@ -19,11 +19,10 @@ import (
 	acktags "github.com/aws-controllers-k8s/runtime/pkg/tags"
 	acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
 	ackutil "github.com/aws-controllers-k8s/runtime/pkg/util"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
-	svcsdk "github.com/aws/aws-sdk-go/service/{{ .ServicePackageName }}"
-	svcsdkapi "github.com/aws/aws-sdk-go/service/{{ .ServicePackageName }}/{{ .ServicePackageName }}iface"
+	svcsdk "github.com/aws/aws-sdk-go-v2/service/{{ .ServicePackageName }}"
+	"github.com/aws/aws-sdk-go-v2/aws"
 
 	svcapitypes "github.com/aws-controllers-k8s/{{ .ControllerName }}-controller/apis/{{ .APIVersion }}"
 )
@@ -46,6 +45,9 @@ type resourceManager struct {
 	// cfg is a copy of the ackcfg.Config object passed on start of the service
 	// controller
 	cfg ackcfg.Config
+	// clientcfg is a copy of the client configuration passed on start of the
+	// service controller
+	clientcfg aws.Config
 	// log refers to the logr.Logger object handling logging for the service
 	// controller
 	log logr.Logger
@@ -60,12 +62,9 @@ type resourceManager struct {
 	awsAccountID ackv1alpha1.AWSAccountID
 	// The AWS Region that this resource manager targets
 	awsRegion ackv1alpha1.AWSRegion
-	// sess is the AWS SDK Session object used to communicate with the backend
-	// AWS service API
-	sess *session.Session
-	// sdk is a pointer to the AWS service API interface exposed by the
-	// aws-sdk-go/services/{alias}/{alias}iface package.
-	sdkapi svcsdkapi.{{ .ClientInterfaceTypeName }}
+	// sdk is a pointer to the AWS service API client exposed by the
+	// aws-sdk-go-v2/services/{alias} package.
+	sdkapi *svcsdk.Client
 }
 
 // concreteResource returns a pointer to a resource from the supplied
@@ -314,24 +313,25 @@ func (rm *resourceManager) EnsureTags(
 
 // newResourceManager returns a new struct implementing
 // acktypes.AWSResourceManager
+// This is for AWS-SDK-GO-V2 - Created newResourceManager With AWS sdk-Go-ClientV2
 func newResourceManager(
 	cfg ackcfg.Config,
+	clientcfg aws.Config,
 	log logr.Logger,
 	metrics *ackmetrics.Metrics,
 	rr acktypes.Reconciler,
-	sess *session.Session,
 	id ackv1alpha1.AWSAccountID,
 	region ackv1alpha1.AWSRegion,
 ) (*resourceManager, error) {
 	return &resourceManager{
-		cfg: cfg,
-		log: log,
-		metrics: metrics,
-		rr: rr,
+		cfg: 	      cfg,
+		clientcfg:    clientcfg,
+		log:          log,
+		metrics:      metrics,
+		rr:           rr,
 		awsAccountID: id,
-		awsRegion: region,
-		sess:		 sess,
-		sdkapi:	   svcsdk.New(sess),
+		awsRegion:    region,
+		sdkapi:	      svcsdk.NewFromConfig(clientcfg),
 	}, nil
 }
 

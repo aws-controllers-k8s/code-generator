@@ -17,8 +17,8 @@ import (
 	"fmt"
 	"strings"
 
+	awssdkmodel "github.com/aws-controllers-k8s/code-generator/pkg/api"
 	"github.com/aws-controllers-k8s/pkg/names"
-	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
 
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
@@ -36,7 +36,7 @@ var (
 	// private/model/api.Shape types
 	GoTypeToSDKShapeType = map[string]string{
 		"int":       "integer",
-		"int64":     "integer",
+		"int64":     "long",
 		"float64":   "float",
 		"string":    "string",
 		"bool":      "boolean",

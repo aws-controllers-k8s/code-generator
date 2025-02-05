@@ -69,14 +69,24 @@ func TestEnumDefs(t *testing.T) {
 			"ScanStatus",
 			"scanStatus",
 			[]string{
+				"ACTIVE",
 				"COMPLETE",
 				"FAILED",
+				"FINDINGS_UNAVAILABLE",
 				"IN_PROGRESS",
+				"PENDING",
+				"SCAN_ELIGIBILITY_EXPIRED",
+				"UNSUPPORTED_IMAGE",
 			},
 			[]string{
+				"ACTIVE",
 				"COMPLETE",
 				"FAILED",
+				"FINDINGS_UNAVAILABLE",
 				"IN_PROGRESS",
+				"PENDING",
+				"SCAN_ELIGIBILITY_EXPIRED",
+				"UNSUPPORTED_IMAGE",
 			},
 		},
 		{
@@ -104,7 +114,6 @@ func TestEnumDefs(t *testing.T) {
 		require.NotNil(edef)
 
 		assert.Equal(test.expNameCamelLower, edef.Names.CamelLower)
-
 		assert.Equal(len(test.expValuesOrig), len(edef.Values))
 		assert.Equal(test.expValuesOrig, sortedOriginalValues(edef.Values))
 		assert.Equal(test.expValuesClean, sortedCleanValues(edef.Values))

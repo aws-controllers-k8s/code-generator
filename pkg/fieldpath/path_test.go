@@ -16,7 +16,7 @@ package fieldpath_test
 import (
 	"testing"
 
-	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
+	awssdkmodel "github.com/aws-controllers-k8s/code-generator/pkg/api"
 	"github.com/stretchr/testify/require"
 
 	"github.com/aws-controllers-k8s/code-generator/pkg/fieldpath"

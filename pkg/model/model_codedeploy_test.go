@@ -80,6 +80,7 @@ func TestCodeDeploy_Deployment(t *testing.T) {
 		"Description",
 		"FileExistsBehavior",
 		"IgnoreApplicationStopFailures",
+		"OverrideAlarmConfiguration",
 		"Revision",
 		"TargetInstances",
 		"UpdateOutdatedInstancesOnly",

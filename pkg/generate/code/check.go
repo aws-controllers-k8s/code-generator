@@ -17,7 +17,7 @@ import (
 	"fmt"
 	"strings"
 
-	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
+	awssdkmodel "github.com/aws-controllers-k8s/code-generator/pkg/api"
 
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/fieldpath"
@@ -46,11 +46,11 @@ func CheckExceptionMessage(
 			return ""
 		}
 		if excConfig.MessagePrefix != nil {
-			return fmt.Sprintf("&& strings.HasPrefix(awsErr.Message(), \"%s\") ",
+			return fmt.Sprintf("&& strings.HasPrefix(awsErr.ErrorMessage(), \"%s\") ",
 				*excConfig.MessagePrefix)
 		}
 		if excConfig.MessageSuffix != nil {
-			return fmt.Sprintf("&& strings.HasSuffix(awsErr.Message(), \"%s\") ",
+			return fmt.Sprintf("&& strings.HasSuffix(awsErr.ErrorMessage(), \"%s\") ",
 				*excConfig.MessageSuffix)
 		}
 	}

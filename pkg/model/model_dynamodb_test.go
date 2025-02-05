@@ -91,14 +91,19 @@ func TestDynamoDB_Table(t *testing.T) {
 	expSpecFieldCamel := []string{
 		"AttributeDefinitions",
 		"BillingMode",
+		"DeletionProtectionEnabled",
 		"GlobalSecondaryIndexes",
 		"KeySchema",
 		"LocalSecondaryIndexes",
+		"OnDemandThroughput",
 		"ProvisionedThroughput",
+		"ResourcePolicy",
 		"SSESpecification",
 		"StreamSpecification",
+		"TableClass",
 		"TableName",
 		"Tags",
+		"WarmThroughput",
 	}
 	assert.Equal(expSpecFieldCamel, attrCamelNames(specFields))
 }

@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/aws-controllers-k8s/code-generator/pkg/api"
 	"github.com/aws-controllers-k8s/pkg/names"
-	"github.com/aws/aws-sdk-go/private/model/api"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -40,7 +40,7 @@ func TestFieldDocumentation(t *testing.T) {
 	require.NotNil(ltdField.ShapeRef)
 
 	require.Equal(
-		"// The desired Kubernetes version for your cluster. If you don't specify a value\n// here, the latest version available in Amazon EKS is used.",
+		"// The desired Kubernetes version for your cluster. If you don't specify a value\n// here, the default version available in Amazon EKS is used.\n// \n// The default version might not be the latest version available.",
 		ltdField.GetDocumentation(),
 	)
 

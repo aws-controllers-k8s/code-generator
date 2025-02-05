@@ -17,7 +17,7 @@ import (
 	"fmt"
 	"strings"
 
-	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
+	awssdkmodel "github.com/aws-controllers-k8s/code-generator/pkg/api"
 	"github.com/gertd/go-pluralize"
 
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/config"

@@ -21,7 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	rtclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/require"
 
@@ -90,10 +90,10 @@ func (rmf *fakeRMF) ResourceDescriptor() acktypes.AWSResourceDescriptor {
 
 func (rmf *fakeRMF) ManagerFor(
 	ackcfg.Config, // passed by-value to avoid mutation by consumers
+	aws.Config,
 	logr.Logger,
 	*ackmetrics.Metrics,
 	acktypes.Reconciler,
-	*session.Session,
 	ackv1alpha1.AWSAccountID,
 	ackv1alpha1.AWSRegion,
 	ackv1alpha1.AWSResourceName,
