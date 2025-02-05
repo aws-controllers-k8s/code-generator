@@ -95,12 +95,12 @@ func TestEnumDefs(t *testing.T) {
 			"InstanceLifecycle",
 			"instanceLifecycle",
 			[]string{
-				"ON_DEMAND",
-				"SPOT",
+				"on-demand",
+				"spot",
 			},
 			[]string{
-				"ON_DEMAND",
-				"SPOT",
+				"on_demand",
+				"spot",
 			},
 		},
 	}

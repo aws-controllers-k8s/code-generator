@@ -278,7 +278,7 @@ func compareNil(
 
 	switch shape.Type {
 	case "boolean", "string", "character", "byte", "short", "integer", "long",
-		"float", "double", "timestamp", "structure", "jsonvalue", "union":
+		"float", "double", "timestamp", "structure", "jsonvalue":
 		// if ackcompare.HasNilDifference(a.ko.Spec.Name, b.ko.Spec.Name) {
 		out += fmt.Sprintf(
 			"%sif ackcompare.HasNilDifference(%s, %s) {\n",

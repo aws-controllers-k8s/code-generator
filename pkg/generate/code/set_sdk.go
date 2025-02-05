@@ -403,6 +403,9 @@ func SetSDK(
 				)
 			}
 		}
+		if memberShape.RealType == "union" {
+			memberShape.Type = "structure"
+		}
 		out += fmt.Sprintf(
 			"%s}\n", indent,
 		)
@@ -940,6 +943,9 @@ func setSDKReadMany(
 				indentLevel+1,
 			)
 		}
+		if memberShapeRef.Shape.RealType == "union" {
+			memberShapeRef.Shape.Type = "structure"
+		}
 		out += fmt.Sprintf(
 			"%s}\n", indent,
 		)
@@ -1244,6 +1250,9 @@ func SetSDKForStruct(
 				)
 			}
 		}
+		if memberShape.RealType == "union" {
+			memberShapeRef.Shape.Type = "structure"
+		}
 		out += fmt.Sprintf(
 			"%s}\n", indent,
 		)
@@ -1316,6 +1325,9 @@ func setSDKForSlice(
 	setPointer := ""
 	if targetShape.MemberRef.Shape.Type == "structure" {
 		setPointer = "*"
+	}
+	if targetShape.MemberRef.Shape.RealType == "union" {
+		targetShape.MemberRef.Shape.Type = "structure"
 	}
 	out += fmt.Sprintf("%s\t%s = append(%s, %s%s)\n", indent, targetVarName, targetVarName, setPointer, elemVarName)
 	out += fmt.Sprintf("%s}\n", indent)
@@ -1729,6 +1741,9 @@ func setSDKForUnion(
 			}
 		default:
 			out += fmt.Sprintf("%s%s.Value = *%s\n", indent, elemVarName, sourceAdaptedVarName)
+		}
+		if memberShape.RealType == "union" {
+			memberShapeRef.Shape.Type = "structure"
 		}
 		out += fmt.Sprintf("%s}\n", indent)
 	}
