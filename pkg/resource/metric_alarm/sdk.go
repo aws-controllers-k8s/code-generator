@@ -19,6 +19,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"reflect"
 	"strings"
 
@@ -28,8 +29,10 @@ import (
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
-	"github.com/aws/aws-sdk-go/aws"
-	svcsdk "github.com/aws/aws-sdk-go/service/cloudwatch"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	svcsdk "github.com/aws/aws-sdk-go-v2/service/cloudwatch"
+	svcsdktypes "github.com/aws/aws-sdk-go-v2/service/cloudwatch/types"
+	smithy "github.com/aws/smithy-go"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -40,8 +43,7 @@ import (
 var (
 	_ = &metav1.Time{}
 	_ = strings.ToLower("")
-	_ = &aws.JSONValue{}
-	_ = &svcsdk.CloudWatch{}
+	_ = &svcsdk.Client{}
 	_ = &svcapitypes.MetricAlarm{}
 	_ = ackv1alpha1.AWSAccountID("")
 	_ = &ackerr.NotFound
@@ -49,6 +51,7 @@ var (
 	_ = &reflect.Value{}
 	_ = fmt.Sprintf("")
 	_ = &ackrequeue.NoRequeue{}
+	_ = &aws.Config{}
 )
 
 // sdkFind returns SDK-specific information about a supplied resource
@@ -72,13 +75,14 @@ func (rm *resourceManager) sdkFind(
 	if err != nil {
 		return nil, err
 	}
-	input.SetAlarmNames([]*string{r.ko.Spec.Name})
+	input.AlarmNames = []string{*r.ko.Spec.Name}
 
 	var resp *svcsdk.DescribeAlarmsOutput
-	resp, err = rm.sdkapi.DescribeAlarmsWithContext(ctx, input)
+	resp, err = rm.sdkapi.DescribeAlarms(ctx, input)
 	rm.metrics.RecordAPICall("READ_MANY", "DescribeAlarms", err)
 	if err != nil {
-		if awsErr, ok := ackerr.AWSError(err); ok && awsErr.Code() == "UNKNOWN" {
+		var awsErr smithy.APIError
+		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "UNKNOWN" {
 			return nil, ackerr.NotFound
 		}
 		return nil, err
@@ -96,13 +100,7 @@ func (rm *resourceManager) sdkFind(
 			ko.Spec.ActionsEnabled = nil
 		}
 		if elem.AlarmActions != nil {
-			f1 := []*string{}
-			for _, f1iter := range elem.AlarmActions {
-				var f1elem string
-				f1elem = *f1iter
-				f1 = append(f1, &f1elem)
-			}
-			ko.Spec.AlarmActions = f1
+			ko.Spec.AlarmActions = aws.StringSlice(elem.AlarmActions)
 		} else {
 			ko.Spec.AlarmActions = nil
 		}
@@ -111,13 +109,14 @@ func (rm *resourceManager) sdkFind(
 		} else {
 			ko.Spec.AlarmDescription = nil
 		}
-		if elem.ComparisonOperator != nil {
-			ko.Spec.ComparisonOperator = elem.ComparisonOperator
+		if elem.ComparisonOperator != "" {
+			ko.Spec.ComparisonOperator = aws.String(string(elem.ComparisonOperator))
 		} else {
 			ko.Spec.ComparisonOperator = nil
 		}
 		if elem.DatapointsToAlarm != nil {
-			ko.Spec.DatapointsToAlarm = elem.DatapointsToAlarm
+			datapointsToAlarmCopy := int64(*elem.DatapointsToAlarm)
+			ko.Spec.DatapointsToAlarm = &datapointsToAlarmCopy
 		} else {
 			ko.Spec.DatapointsToAlarm = nil
 		}
@@ -143,7 +142,8 @@ func (rm *resourceManager) sdkFind(
 			ko.Spec.EvaluateLowSampleCountPercentile = nil
 		}
 		if elem.EvaluationPeriods != nil {
-			ko.Spec.EvaluationPeriods = elem.EvaluationPeriods
+			evaluationPeriodsCopy := int64(*elem.EvaluationPeriods)
+			ko.Spec.EvaluationPeriods = &evaluationPeriodsCopy
 		} else {
 			ko.Spec.EvaluationPeriods = nil
 		}
@@ -153,13 +153,7 @@ func (rm *resourceManager) sdkFind(
 			ko.Spec.ExtendedStatistic = nil
 		}
 		if elem.InsufficientDataActions != nil {
-			f13 := []*string{}
-			for _, f13iter := range elem.InsufficientDataActions {
-				var f13elem string
-				f13elem = *f13iter
-				f13 = append(f13, &f13elem)
-			}
-			ko.Spec.InsufficientDataActions = f13
+			ko.Spec.InsufficientDataActions = aws.StringSlice(elem.InsufficientDataActions)
 		} else {
 			ko.Spec.InsufficientDataActions = nil
 		}
@@ -211,18 +205,20 @@ func (rm *resourceManager) sdkFind(
 						f15elemf4.Metric = f15elemf4f0
 					}
 					if f15iter.MetricStat.Period != nil {
-						f15elemf4.Period = f15iter.MetricStat.Period
+						periodCopy := int64(*f15iter.MetricStat.Period)
+						f15elemf4.Period = &periodCopy
 					}
 					if f15iter.MetricStat.Stat != nil {
 						f15elemf4.Stat = f15iter.MetricStat.Stat
 					}
-					if f15iter.MetricStat.Unit != nil {
-						f15elemf4.Unit = f15iter.MetricStat.Unit
+					if f15iter.MetricStat.Unit != "" {
+						f15elemf4.Unit = aws.String(string(f15iter.MetricStat.Unit))
 					}
 					f15elem.MetricStat = f15elemf4
 				}
 				if f15iter.Period != nil {
-					f15elem.Period = f15iter.Period
+					periodCopy := int64(*f15iter.Period)
+					f15elem.Period = &periodCopy
 				}
 				if f15iter.ReturnData != nil {
 					f15elem.ReturnData = f15iter.ReturnData
@@ -239,23 +235,18 @@ func (rm *resourceManager) sdkFind(
 			ko.Spec.Namespace = nil
 		}
 		if elem.OKActions != nil {
-			f17 := []*string{}
-			for _, f17iter := range elem.OKActions {
-				var f17elem string
-				f17elem = *f17iter
-				f17 = append(f17, &f17elem)
-			}
-			ko.Spec.OKActions = f17
+			ko.Spec.OKActions = aws.StringSlice(elem.OKActions)
 		} else {
 			ko.Spec.OKActions = nil
 		}
 		if elem.Period != nil {
-			ko.Spec.Period = elem.Period
+			periodCopy := int64(*elem.Period)
+			ko.Spec.Period = &periodCopy
 		} else {
 			ko.Spec.Period = nil
 		}
-		if elem.Statistic != nil {
-			ko.Spec.Statistic = elem.Statistic
+		if elem.Statistic != "" {
+			ko.Spec.Statistic = aws.String(string(elem.Statistic))
 		} else {
 			ko.Spec.Statistic = nil
 		}
@@ -274,8 +265,8 @@ func (rm *resourceManager) sdkFind(
 		} else {
 			ko.Spec.TreatMissingData = nil
 		}
-		if elem.Unit != nil {
-			ko.Spec.Unit = elem.Unit
+		if elem.Unit != "" {
+			ko.Spec.Unit = aws.String(string(elem.Unit))
 		} else {
 			ko.Spec.Unit = nil
 		}
@@ -328,7 +319,7 @@ func (rm *resourceManager) sdkCreate(
 
 	var resp *svcsdk.PutMetricAlarmOutput
 	_ = resp
-	resp, err = rm.sdkapi.PutMetricAlarmWithContext(ctx, input)
+	resp, err = rm.sdkapi.PutMetricAlarm(ctx, input)
 	rm.metrics.RecordAPICall("CREATE", "PutMetricAlarm", err)
 	if err != nil {
 		return nil, err
@@ -350,170 +341,177 @@ func (rm *resourceManager) newCreateRequestPayload(
 	res := &svcsdk.PutMetricAlarmInput{}
 
 	if r.ko.Spec.ActionsEnabled != nil {
-		res.SetActionsEnabled(*r.ko.Spec.ActionsEnabled)
+		res.ActionsEnabled = r.ko.Spec.ActionsEnabled
 	}
 	if r.ko.Spec.AlarmActions != nil {
-		f1 := []*string{}
-		for _, f1iter := range r.ko.Spec.AlarmActions {
-			var f1elem string
-			f1elem = *f1iter
-			f1 = append(f1, &f1elem)
-		}
-		res.SetAlarmActions(f1)
+		res.AlarmActions = aws.ToStringSlice(r.ko.Spec.AlarmActions)
 	}
 	if r.ko.Spec.AlarmDescription != nil {
-		res.SetAlarmDescription(*r.ko.Spec.AlarmDescription)
+		res.AlarmDescription = r.ko.Spec.AlarmDescription
 	}
 	if r.ko.Spec.Name != nil {
-		res.SetAlarmName(*r.ko.Spec.Name)
+		res.AlarmName = r.ko.Spec.Name
 	}
 	if r.ko.Spec.ComparisonOperator != nil {
-		res.SetComparisonOperator(*r.ko.Spec.ComparisonOperator)
+		res.ComparisonOperator = svcsdktypes.ComparisonOperator(*r.ko.Spec.ComparisonOperator)
 	}
 	if r.ko.Spec.DatapointsToAlarm != nil {
-		res.SetDatapointsToAlarm(*r.ko.Spec.DatapointsToAlarm)
+		datapointsToAlarmCopy0 := *r.ko.Spec.DatapointsToAlarm
+		if datapointsToAlarmCopy0 > math.MaxInt32 || datapointsToAlarmCopy0 < math.MinInt32 {
+			return nil, fmt.Errorf("error: field DatapointsToAlarm is of type int32")
+		}
+		datapointsToAlarmCopy := int32(datapointsToAlarmCopy0)
+		res.DatapointsToAlarm = &datapointsToAlarmCopy
 	}
 	if r.ko.Spec.Dimensions != nil {
-		f6 := []*svcsdk.Dimension{}
+		f6 := []svcsdktypes.Dimension{}
 		for _, f6iter := range r.ko.Spec.Dimensions {
-			f6elem := &svcsdk.Dimension{}
+			f6elem := &svcsdktypes.Dimension{}
 			if f6iter.Name != nil {
-				f6elem.SetName(*f6iter.Name)
+				f6elem.Name = f6iter.Name
 			}
 			if f6iter.Value != nil {
-				f6elem.SetValue(*f6iter.Value)
+				f6elem.Value = f6iter.Value
 			}
-			f6 = append(f6, f6elem)
+			f6 = append(f6, *f6elem)
 		}
-		res.SetDimensions(f6)
+		res.Dimensions = f6
 	}
 	if r.ko.Spec.EvaluateLowSampleCountPercentile != nil {
-		res.SetEvaluateLowSampleCountPercentile(*r.ko.Spec.EvaluateLowSampleCountPercentile)
+		res.EvaluateLowSampleCountPercentile = r.ko.Spec.EvaluateLowSampleCountPercentile
 	}
 	if r.ko.Spec.EvaluationPeriods != nil {
-		res.SetEvaluationPeriods(*r.ko.Spec.EvaluationPeriods)
+		evaluationPeriodsCopy0 := *r.ko.Spec.EvaluationPeriods
+		if evaluationPeriodsCopy0 > math.MaxInt32 || evaluationPeriodsCopy0 < math.MinInt32 {
+			return nil, fmt.Errorf("error: field EvaluationPeriods is of type int32")
+		}
+		evaluationPeriodsCopy := int32(evaluationPeriodsCopy0)
+		res.EvaluationPeriods = &evaluationPeriodsCopy
 	}
 	if r.ko.Spec.ExtendedStatistic != nil {
-		res.SetExtendedStatistic(*r.ko.Spec.ExtendedStatistic)
+		res.ExtendedStatistic = r.ko.Spec.ExtendedStatistic
 	}
 	if r.ko.Spec.InsufficientDataActions != nil {
-		f10 := []*string{}
-		for _, f10iter := range r.ko.Spec.InsufficientDataActions {
-			var f10elem string
-			f10elem = *f10iter
-			f10 = append(f10, &f10elem)
-		}
-		res.SetInsufficientDataActions(f10)
+		res.InsufficientDataActions = aws.ToStringSlice(r.ko.Spec.InsufficientDataActions)
 	}
 	if r.ko.Spec.MetricName != nil {
-		res.SetMetricName(*r.ko.Spec.MetricName)
+		res.MetricName = r.ko.Spec.MetricName
 	}
 	if r.ko.Spec.Metrics != nil {
-		f12 := []*svcsdk.MetricDataQuery{}
+		f12 := []svcsdktypes.MetricDataQuery{}
 		for _, f12iter := range r.ko.Spec.Metrics {
-			f12elem := &svcsdk.MetricDataQuery{}
+			f12elem := &svcsdktypes.MetricDataQuery{}
 			if f12iter.AccountID != nil {
-				f12elem.SetAccountId(*f12iter.AccountID)
+				f12elem.AccountId = f12iter.AccountID
 			}
 			if f12iter.Expression != nil {
-				f12elem.SetExpression(*f12iter.Expression)
+				f12elem.Expression = f12iter.Expression
 			}
 			if f12iter.ID != nil {
-				f12elem.SetId(*f12iter.ID)
+				f12elem.Id = f12iter.ID
 			}
 			if f12iter.Label != nil {
-				f12elem.SetLabel(*f12iter.Label)
+				f12elem.Label = f12iter.Label
 			}
 			if f12iter.MetricStat != nil {
-				f12elemf4 := &svcsdk.MetricStat{}
+				f12elemf4 := &svcsdktypes.MetricStat{}
 				if f12iter.MetricStat.Metric != nil {
-					f12elemf4f0 := &svcsdk.Metric{}
+					f12elemf4f0 := &svcsdktypes.Metric{}
 					if f12iter.MetricStat.Metric.Dimensions != nil {
-						f12elemf4f0f0 := []*svcsdk.Dimension{}
+						f12elemf4f0f0 := []svcsdktypes.Dimension{}
 						for _, f12elemf4f0f0iter := range f12iter.MetricStat.Metric.Dimensions {
-							f12elemf4f0f0elem := &svcsdk.Dimension{}
+							f12elemf4f0f0elem := &svcsdktypes.Dimension{}
 							if f12elemf4f0f0iter.Name != nil {
-								f12elemf4f0f0elem.SetName(*f12elemf4f0f0iter.Name)
+								f12elemf4f0f0elem.Name = f12elemf4f0f0iter.Name
 							}
 							if f12elemf4f0f0iter.Value != nil {
-								f12elemf4f0f0elem.SetValue(*f12elemf4f0f0iter.Value)
+								f12elemf4f0f0elem.Value = f12elemf4f0f0iter.Value
 							}
-							f12elemf4f0f0 = append(f12elemf4f0f0, f12elemf4f0f0elem)
+							f12elemf4f0f0 = append(f12elemf4f0f0, *f12elemf4f0f0elem)
 						}
-						f12elemf4f0.SetDimensions(f12elemf4f0f0)
+						f12elemf4f0.Dimensions = f12elemf4f0f0
 					}
 					if f12iter.MetricStat.Metric.MetricName != nil {
-						f12elemf4f0.SetMetricName(*f12iter.MetricStat.Metric.MetricName)
+						f12elemf4f0.MetricName = f12iter.MetricStat.Metric.MetricName
 					}
 					if f12iter.MetricStat.Metric.Namespace != nil {
-						f12elemf4f0.SetNamespace(*f12iter.MetricStat.Metric.Namespace)
+						f12elemf4f0.Namespace = f12iter.MetricStat.Metric.Namespace
 					}
-					f12elemf4.SetMetric(f12elemf4f0)
+					f12elemf4.Metric = f12elemf4f0
 				}
 				if f12iter.MetricStat.Period != nil {
-					f12elemf4.SetPeriod(*f12iter.MetricStat.Period)
+					periodCopy0 := *f12iter.MetricStat.Period
+					if periodCopy0 > math.MaxInt32 || periodCopy0 < math.MinInt32 {
+						return nil, fmt.Errorf("error: field Period is of type int32")
+					}
+					periodCopy := int32(periodCopy0)
+					f12elemf4.Period = &periodCopy
 				}
 				if f12iter.MetricStat.Stat != nil {
-					f12elemf4.SetStat(*f12iter.MetricStat.Stat)
+					f12elemf4.Stat = f12iter.MetricStat.Stat
 				}
 				if f12iter.MetricStat.Unit != nil {
-					f12elemf4.SetUnit(*f12iter.MetricStat.Unit)
+					f12elemf4.Unit = svcsdktypes.StandardUnit(*f12iter.MetricStat.Unit)
 				}
-				f12elem.SetMetricStat(f12elemf4)
+				f12elem.MetricStat = f12elemf4
 			}
 			if f12iter.Period != nil {
-				f12elem.SetPeriod(*f12iter.Period)
+				periodCopy0 := *f12iter.Period
+				if periodCopy0 > math.MaxInt32 || periodCopy0 < math.MinInt32 {
+					return nil, fmt.Errorf("error: field Period is of type int32")
+				}
+				periodCopy := int32(periodCopy0)
+				f12elem.Period = &periodCopy
 			}
 			if f12iter.ReturnData != nil {
-				f12elem.SetReturnData(*f12iter.ReturnData)
+				f12elem.ReturnData = f12iter.ReturnData
 			}
-			f12 = append(f12, f12elem)
+			f12 = append(f12, *f12elem)
 		}
-		res.SetMetrics(f12)
+		res.Metrics = f12
 	}
 	if r.ko.Spec.Namespace != nil {
-		res.SetNamespace(*r.ko.Spec.Namespace)
+		res.Namespace = r.ko.Spec.Namespace
 	}
 	if r.ko.Spec.OKActions != nil {
-		f14 := []*string{}
-		for _, f14iter := range r.ko.Spec.OKActions {
-			var f14elem string
-			f14elem = *f14iter
-			f14 = append(f14, &f14elem)
-		}
-		res.SetOKActions(f14)
+		res.OKActions = aws.ToStringSlice(r.ko.Spec.OKActions)
 	}
 	if r.ko.Spec.Period != nil {
-		res.SetPeriod(*r.ko.Spec.Period)
+		periodCopy0 := *r.ko.Spec.Period
+		if periodCopy0 > math.MaxInt32 || periodCopy0 < math.MinInt32 {
+			return nil, fmt.Errorf("error: field Period is of type int32")
+		}
+		periodCopy := int32(periodCopy0)
+		res.Period = &periodCopy
 	}
 	if r.ko.Spec.Statistic != nil {
-		res.SetStatistic(*r.ko.Spec.Statistic)
+		res.Statistic = svcsdktypes.Statistic(*r.ko.Spec.Statistic)
 	}
 	if r.ko.Spec.Tags != nil {
-		f17 := []*svcsdk.Tag{}
+		f17 := []svcsdktypes.Tag{}
 		for _, f17iter := range r.ko.Spec.Tags {
-			f17elem := &svcsdk.Tag{}
+			f17elem := &svcsdktypes.Tag{}
 			if f17iter.Key != nil {
-				f17elem.SetKey(*f17iter.Key)
+				f17elem.Key = f17iter.Key
 			}
 			if f17iter.Value != nil {
-				f17elem.SetValue(*f17iter.Value)
+				f17elem.Value = f17iter.Value
 			}
-			f17 = append(f17, f17elem)
+			f17 = append(f17, *f17elem)
 		}
-		res.SetTags(f17)
+		res.Tags = f17
 	}
 	if r.ko.Spec.Threshold != nil {
-		res.SetThreshold(*r.ko.Spec.Threshold)
+		res.Threshold = r.ko.Spec.Threshold
 	}
 	if r.ko.Spec.ThresholdMetricID != nil {
-		res.SetThresholdMetricId(*r.ko.Spec.ThresholdMetricID)
+		res.ThresholdMetricId = r.ko.Spec.ThresholdMetricID
 	}
 	if r.ko.Spec.TreatMissingData != nil {
-		res.SetTreatMissingData(*r.ko.Spec.TreatMissingData)
+		res.TreatMissingData = r.ko.Spec.TreatMissingData
 	}
 	if r.ko.Spec.Unit != nil {
-		res.SetUnit(*r.ko.Spec.Unit)
+		res.Unit = svcsdktypes.StandardUnit(*r.ko.Spec.Unit)
 	}
 
 	return res, nil
@@ -539,7 +537,7 @@ func (rm *resourceManager) sdkUpdate(
 
 	var resp *svcsdk.PutMetricAlarmOutput
 	_ = resp
-	resp, err = rm.sdkapi.PutMetricAlarmWithContext(ctx, input)
+	resp, err = rm.sdkapi.PutMetricAlarm(ctx, input)
 	rm.metrics.RecordAPICall("UPDATE", "PutMetricAlarm", err)
 	if err != nil {
 		return nil, err
@@ -562,170 +560,177 @@ func (rm *resourceManager) newUpdateRequestPayload(
 	res := &svcsdk.PutMetricAlarmInput{}
 
 	if r.ko.Spec.ActionsEnabled != nil {
-		res.SetActionsEnabled(*r.ko.Spec.ActionsEnabled)
+		res.ActionsEnabled = r.ko.Spec.ActionsEnabled
 	}
 	if r.ko.Spec.AlarmActions != nil {
-		f1 := []*string{}
-		for _, f1iter := range r.ko.Spec.AlarmActions {
-			var f1elem string
-			f1elem = *f1iter
-			f1 = append(f1, &f1elem)
-		}
-		res.SetAlarmActions(f1)
+		res.AlarmActions = aws.ToStringSlice(r.ko.Spec.AlarmActions)
 	}
 	if r.ko.Spec.AlarmDescription != nil {
-		res.SetAlarmDescription(*r.ko.Spec.AlarmDescription)
+		res.AlarmDescription = r.ko.Spec.AlarmDescription
 	}
 	if r.ko.Spec.Name != nil {
-		res.SetAlarmName(*r.ko.Spec.Name)
+		res.AlarmName = r.ko.Spec.Name
 	}
 	if r.ko.Spec.ComparisonOperator != nil {
-		res.SetComparisonOperator(*r.ko.Spec.ComparisonOperator)
+		res.ComparisonOperator = svcsdktypes.ComparisonOperator(*r.ko.Spec.ComparisonOperator)
 	}
 	if r.ko.Spec.DatapointsToAlarm != nil {
-		res.SetDatapointsToAlarm(*r.ko.Spec.DatapointsToAlarm)
+		datapointsToAlarmCopy0 := *r.ko.Spec.DatapointsToAlarm
+		if datapointsToAlarmCopy0 > math.MaxInt32 || datapointsToAlarmCopy0 < math.MinInt32 {
+			return nil, fmt.Errorf("error: field DatapointsToAlarm is of type int32")
+		}
+		datapointsToAlarmCopy := int32(datapointsToAlarmCopy0)
+		res.DatapointsToAlarm = &datapointsToAlarmCopy
 	}
 	if r.ko.Spec.Dimensions != nil {
-		f6 := []*svcsdk.Dimension{}
+		f6 := []svcsdktypes.Dimension{}
 		for _, f6iter := range r.ko.Spec.Dimensions {
-			f6elem := &svcsdk.Dimension{}
+			f6elem := &svcsdktypes.Dimension{}
 			if f6iter.Name != nil {
-				f6elem.SetName(*f6iter.Name)
+				f6elem.Name = f6iter.Name
 			}
 			if f6iter.Value != nil {
-				f6elem.SetValue(*f6iter.Value)
+				f6elem.Value = f6iter.Value
 			}
-			f6 = append(f6, f6elem)
+			f6 = append(f6, *f6elem)
 		}
-		res.SetDimensions(f6)
+		res.Dimensions = f6
 	}
 	if r.ko.Spec.EvaluateLowSampleCountPercentile != nil {
-		res.SetEvaluateLowSampleCountPercentile(*r.ko.Spec.EvaluateLowSampleCountPercentile)
+		res.EvaluateLowSampleCountPercentile = r.ko.Spec.EvaluateLowSampleCountPercentile
 	}
 	if r.ko.Spec.EvaluationPeriods != nil {
-		res.SetEvaluationPeriods(*r.ko.Spec.EvaluationPeriods)
+		evaluationPeriodsCopy0 := *r.ko.Spec.EvaluationPeriods
+		if evaluationPeriodsCopy0 > math.MaxInt32 || evaluationPeriodsCopy0 < math.MinInt32 {
+			return nil, fmt.Errorf("error: field EvaluationPeriods is of type int32")
+		}
+		evaluationPeriodsCopy := int32(evaluationPeriodsCopy0)
+		res.EvaluationPeriods = &evaluationPeriodsCopy
 	}
 	if r.ko.Spec.ExtendedStatistic != nil {
-		res.SetExtendedStatistic(*r.ko.Spec.ExtendedStatistic)
+		res.ExtendedStatistic = r.ko.Spec.ExtendedStatistic
 	}
 	if r.ko.Spec.InsufficientDataActions != nil {
-		f10 := []*string{}
-		for _, f10iter := range r.ko.Spec.InsufficientDataActions {
-			var f10elem string
-			f10elem = *f10iter
-			f10 = append(f10, &f10elem)
-		}
-		res.SetInsufficientDataActions(f10)
+		res.InsufficientDataActions = aws.ToStringSlice(r.ko.Spec.InsufficientDataActions)
 	}
 	if r.ko.Spec.MetricName != nil {
-		res.SetMetricName(*r.ko.Spec.MetricName)
+		res.MetricName = r.ko.Spec.MetricName
 	}
 	if r.ko.Spec.Metrics != nil {
-		f12 := []*svcsdk.MetricDataQuery{}
+		f12 := []svcsdktypes.MetricDataQuery{}
 		for _, f12iter := range r.ko.Spec.Metrics {
-			f12elem := &svcsdk.MetricDataQuery{}
+			f12elem := &svcsdktypes.MetricDataQuery{}
 			if f12iter.AccountID != nil {
-				f12elem.SetAccountId(*f12iter.AccountID)
+				f12elem.AccountId = f12iter.AccountID
 			}
 			if f12iter.Expression != nil {
-				f12elem.SetExpression(*f12iter.Expression)
+				f12elem.Expression = f12iter.Expression
 			}
 			if f12iter.ID != nil {
-				f12elem.SetId(*f12iter.ID)
+				f12elem.Id = f12iter.ID
 			}
 			if f12iter.Label != nil {
-				f12elem.SetLabel(*f12iter.Label)
+				f12elem.Label = f12iter.Label
 			}
 			if f12iter.MetricStat != nil {
-				f12elemf4 := &svcsdk.MetricStat{}
+				f12elemf4 := &svcsdktypes.MetricStat{}
 				if f12iter.MetricStat.Metric != nil {
-					f12elemf4f0 := &svcsdk.Metric{}
+					f12elemf4f0 := &svcsdktypes.Metric{}
 					if f12iter.MetricStat.Metric.Dimensions != nil {
-						f12elemf4f0f0 := []*svcsdk.Dimension{}
+						f12elemf4f0f0 := []svcsdktypes.Dimension{}
 						for _, f12elemf4f0f0iter := range f12iter.MetricStat.Metric.Dimensions {
-							f12elemf4f0f0elem := &svcsdk.Dimension{}
+							f12elemf4f0f0elem := &svcsdktypes.Dimension{}
 							if f12elemf4f0f0iter.Name != nil {
-								f12elemf4f0f0elem.SetName(*f12elemf4f0f0iter.Name)
+								f12elemf4f0f0elem.Name = f12elemf4f0f0iter.Name
 							}
 							if f12elemf4f0f0iter.Value != nil {
-								f12elemf4f0f0elem.SetValue(*f12elemf4f0f0iter.Value)
+								f12elemf4f0f0elem.Value = f12elemf4f0f0iter.Value
 							}
-							f12elemf4f0f0 = append(f12elemf4f0f0, f12elemf4f0f0elem)
+							f12elemf4f0f0 = append(f12elemf4f0f0, *f12elemf4f0f0elem)
 						}
-						f12elemf4f0.SetDimensions(f12elemf4f0f0)
+						f12elemf4f0.Dimensions = f12elemf4f0f0
 					}
 					if f12iter.MetricStat.Metric.MetricName != nil {
-						f12elemf4f0.SetMetricName(*f12iter.MetricStat.Metric.MetricName)
+						f12elemf4f0.MetricName = f12iter.MetricStat.Metric.MetricName
 					}
 					if f12iter.MetricStat.Metric.Namespace != nil {
-						f12elemf4f0.SetNamespace(*f12iter.MetricStat.Metric.Namespace)
+						f12elemf4f0.Namespace = f12iter.MetricStat.Metric.Namespace
 					}
-					f12elemf4.SetMetric(f12elemf4f0)
+					f12elemf4.Metric = f12elemf4f0
 				}
 				if f12iter.MetricStat.Period != nil {
-					f12elemf4.SetPeriod(*f12iter.MetricStat.Period)
+					periodCopy0 := *f12iter.MetricStat.Period
+					if periodCopy0 > math.MaxInt32 || periodCopy0 < math.MinInt32 {
+						return nil, fmt.Errorf("error: field Period is of type int32")
+					}
+					periodCopy := int32(periodCopy0)
+					f12elemf4.Period = &periodCopy
 				}
 				if f12iter.MetricStat.Stat != nil {
-					f12elemf4.SetStat(*f12iter.MetricStat.Stat)
+					f12elemf4.Stat = f12iter.MetricStat.Stat
 				}
 				if f12iter.MetricStat.Unit != nil {
-					f12elemf4.SetUnit(*f12iter.MetricStat.Unit)
+					f12elemf4.Unit = svcsdktypes.StandardUnit(*f12iter.MetricStat.Unit)
 				}
-				f12elem.SetMetricStat(f12elemf4)
+				f12elem.MetricStat = f12elemf4
 			}
 			if f12iter.Period != nil {
-				f12elem.SetPeriod(*f12iter.Period)
+				periodCopy0 := *f12iter.Period
+				if periodCopy0 > math.MaxInt32 || periodCopy0 < math.MinInt32 {
+					return nil, fmt.Errorf("error: field Period is of type int32")
+				}
+				periodCopy := int32(periodCopy0)
+				f12elem.Period = &periodCopy
 			}
 			if f12iter.ReturnData != nil {
-				f12elem.SetReturnData(*f12iter.ReturnData)
+				f12elem.ReturnData = f12iter.ReturnData
 			}
-			f12 = append(f12, f12elem)
+			f12 = append(f12, *f12elem)
 		}
-		res.SetMetrics(f12)
+		res.Metrics = f12
 	}
 	if r.ko.Spec.Namespace != nil {
-		res.SetNamespace(*r.ko.Spec.Namespace)
+		res.Namespace = r.ko.Spec.Namespace
 	}
 	if r.ko.Spec.OKActions != nil {
-		f14 := []*string{}
-		for _, f14iter := range r.ko.Spec.OKActions {
-			var f14elem string
-			f14elem = *f14iter
-			f14 = append(f14, &f14elem)
-		}
-		res.SetOKActions(f14)
+		res.OKActions = aws.ToStringSlice(r.ko.Spec.OKActions)
 	}
 	if r.ko.Spec.Period != nil {
-		res.SetPeriod(*r.ko.Spec.Period)
+		periodCopy0 := *r.ko.Spec.Period
+		if periodCopy0 > math.MaxInt32 || periodCopy0 < math.MinInt32 {
+			return nil, fmt.Errorf("error: field Period is of type int32")
+		}
+		periodCopy := int32(periodCopy0)
+		res.Period = &periodCopy
 	}
 	if r.ko.Spec.Statistic != nil {
-		res.SetStatistic(*r.ko.Spec.Statistic)
+		res.Statistic = svcsdktypes.Statistic(*r.ko.Spec.Statistic)
 	}
 	if r.ko.Spec.Tags != nil {
-		f17 := []*svcsdk.Tag{}
+		f17 := []svcsdktypes.Tag{}
 		for _, f17iter := range r.ko.Spec.Tags {
-			f17elem := &svcsdk.Tag{}
+			f17elem := &svcsdktypes.Tag{}
 			if f17iter.Key != nil {
-				f17elem.SetKey(*f17iter.Key)
+				f17elem.Key = f17iter.Key
 			}
 			if f17iter.Value != nil {
-				f17elem.SetValue(*f17iter.Value)
+				f17elem.Value = f17iter.Value
 			}
-			f17 = append(f17, f17elem)
+			f17 = append(f17, *f17elem)
 		}
-		res.SetTags(f17)
+		res.Tags = f17
 	}
 	if r.ko.Spec.Threshold != nil {
-		res.SetThreshold(*r.ko.Spec.Threshold)
+		res.Threshold = r.ko.Spec.Threshold
 	}
 	if r.ko.Spec.ThresholdMetricID != nil {
-		res.SetThresholdMetricId(*r.ko.Spec.ThresholdMetricID)
+		res.ThresholdMetricId = r.ko.Spec.ThresholdMetricID
 	}
 	if r.ko.Spec.TreatMissingData != nil {
-		res.SetTreatMissingData(*r.ko.Spec.TreatMissingData)
+		res.TreatMissingData = r.ko.Spec.TreatMissingData
 	}
 	if r.ko.Spec.Unit != nil {
-		res.SetUnit(*r.ko.Spec.Unit)
+		res.Unit = svcsdktypes.StandardUnit(*r.ko.Spec.Unit)
 	}
 
 	return res, nil
@@ -745,11 +750,11 @@ func (rm *resourceManager) sdkDelete(
 	if err != nil {
 		return nil, err
 	}
-	input.SetAlarmNames([]*string{r.ko.Spec.Name})
+	input.AlarmNames = []string{*r.ko.Spec.Name}
 
 	var resp *svcsdk.DeleteAlarmsOutput
 	_ = resp
-	resp, err = rm.sdkapi.DeleteAlarmsWithContext(ctx, input)
+	resp, err = rm.sdkapi.DeleteAlarms(ctx, input)
 	rm.metrics.RecordAPICall("DELETE", "DeleteAlarms", err)
 	return nil, err
 }

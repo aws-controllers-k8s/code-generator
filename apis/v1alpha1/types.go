@@ -38,6 +38,10 @@ type AlarmHistoryItem struct {
 // An anomaly detection model associated with a particular CloudWatch metric,
 // statistic, or metric math expression. You can use the model to display a
 // band of expected, normal values when the metric is graphed.
+//
+// If you have enabled unified cross-account observability, and this account
+// is a monitoring account, the metric can be in the same account or a source
+// account.
 type AnomalyDetector struct {
 	Dimensions []*Dimension `json:"dimensions,omitempty"`
 	MetricName *string      `json:"metricName,omitempty"`
@@ -257,8 +261,11 @@ type Range struct {
 }
 
 // Designates the CloudWatch metric and statistic that provides the time series
-// the anomaly detector uses as input.
+// the anomaly detector uses as input. If you have enabled unified cross-account
+// observability, and this account is a monitoring account, the metric can be
+// in the same account or a source account.
 type SingleMetricAnomalyDetector struct {
+	AccountID  *string      `json:"accountID,omitempty"`
 	Dimensions []*Dimension `json:"dimensions,omitempty"`
 	MetricName *string      `json:"metricName,omitempty"`
 	Namespace  *string      `json:"namespace,omitempty"`

@@ -1,1 +1,1 @@
-	input.SetAlarmNames([]*string{r.ko.Spec.Name})
+	input.AlarmNames = []string{*r.ko.Spec.Name}
