@@ -226,7 +226,9 @@ fi
 pushd "$SERVICE_CONTROLLER_SOURCE_PATH/pkg/resource" 1>/dev/null
 echo "Running GO mod tidy"
 go mod tidy 1>/dev/null
-
+go get github.com/aws-controllers-k8s/runtime@main
+go mod edit -dropreplace github.com/aws-controllers-k8s/runtime
+go mod tidy
 echo "Generating RBAC manifests for $SERVICE"
 controller-gen rbac:roleName="$K8S_RBAC_ROLE_NAME" paths=./... output:rbac:artifacts:config="$config_output_dir/rbac"
 # controller-gen rbac outputs a ClusterRole definition in a
