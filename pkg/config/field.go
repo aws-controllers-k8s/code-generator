@@ -408,8 +408,9 @@ type FieldConfig struct {
 	// IsSecret instructs the code generator that this field should be a
 	// SecretKeyReference.
 	IsSecret bool `json:"is_secret"`
-	// IsImmutable instructs the code generator to add advisory conditions
-	// if user modifies the spec field after resource was created.
+	// IsImmutable indicates that the field is enforced as immutable at the
+	// admission layer. The code generator will add kubebuilder:validation:XValidation
+	// lines to the CRD, preventing changes to this field after it’s set.
 	IsImmutable bool `json:"is_immutable"`
 	// From instructs the code generator that the value of the field should
 	// be retrieved from the specified operation and member path

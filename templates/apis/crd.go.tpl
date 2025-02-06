@@ -19,9 +19,15 @@ type {{ .CRD.Kind }}Spec struct {
 {{ if $field.GetDocumentation -}}
     {{ $field.GetDocumentation }}
 {{ end -}}
-{{- if and ($field.IsRequired) (not $field.HasReference) -}}
+
+{{- if $field.IsImmutable }}
+    // +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
+{{- end }}
+
+{{- if and ($field.IsRequired) (not $field.HasReference) }}
     // +kubebuilder:validation:Required
-{{ end -}}
+{{- end }}
+
     {{ $field.Names.Camel }} {{ $field.GoType }} {{ $field.GetGoTag }}
 {{- end }}
 }
@@ -33,7 +39,7 @@ type {{ .CRD.Kind }}Status struct {
 	// constructed ARN for the resource
 	// +kubebuilder:validation:Optional
 	ACKResourceMetadata *ackv1alpha1.ResourceMetadata `json:"ackResourceMetadata"`
-	// All CRS managed by ACK have a common `Status.Conditions` member that
+	// All CRs managed by ACK have a common `Status.Conditions` member that
 	// contains a collection of `ackv1alpha1.Condition` objects that describe
 	// the various terminal states of the CR and its backend AWS service API
 	// resource
