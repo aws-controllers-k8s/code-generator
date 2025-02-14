@@ -89,6 +89,7 @@ func (rm *resourceManager) ReadOne(
 		panic("resource manager's ReadOne() method received resource with nil CR object")
 	}
 	observed, err := rm.sdkFind(ctx, r)
+	mirrorAWSTags(r, observed)
 	if err != nil {
 		if observed != nil {
 			return rm.onError(observed, err)
@@ -140,7 +141,6 @@ func (rm *resourceManager) Update(
 		// Should never happen... if it does, it's buggy code.
 		panic("resource manager's Update() method received resource with nil CR object")
 	}
-	syncAWSTags(desired, latest)
 	updated, err := rm.sdkUpdate(ctx, desired, latest, delta)
 	if err != nil {
 	    if updated != nil {
@@ -312,13 +312,13 @@ func (rm *resourceManager) EnsureTags(
 {{- end }}
 }
 
-// filterAWSTags ignores tags that have keys that start with "aws:"
+// FilterAWSTags ignores tags that have keys that start with "aws:"
 // is needed to ensure the controller does not attempt to remove
 // tags set by AWS. This function needs to be called after each Read
 // operation.
 // Eg. resources created with cloudformation have tags that cannot be
 //removed by an ACK controller
-func (rm *resourceManager) FilterAWSTags(res acktypes.AWSResource) {
+func (rm *resourceManager) FilterSystemTags(res acktypes.AWSResource) {
 {{- if $hookCode := Hook .CRD "filter_tags" }}
 {{ $hookCode }}
 {{ else }}
@@ -342,21 +342,25 @@ func (rm *resourceManager) FilterAWSTags(res acktypes.AWSResource) {
 {{ end -}}
     existingTags = r.ko.Spec.{{ $tagField.Path }}
 	resourceTags := ToACKTags(existingTags)
-	acktags.IgnoreAWSTags(resourceTags)
+	IgnoreAWSTags(resourceTags)
 {{ GoCodeInitializeNestedStructField .CRD "r.ko" $tagField "svcapitypes" 1 -}}
 	r.ko.Spec.{{ $tagField.Path }} = FromACKTags(resourceTags)
 {{- end }}
 {{- end }}
 }
 
-
-// syncAWSTags ignores tags that have keys that start with "aws:"
-// is needed to ensure the controller does not attempt to remove
-// tags set by AWS. This function needs to be called after each Read
-// operation.
-// Eg. resources created with cloudformation have tags that cannot be
-//removed by an ACK controller
-func syncAWSTags(a *resource, b *resource) {
+// MirrorAWSTags ensures that AWS tags are included in the desired resource
+// if they are present in the latest resource. This will ensure that the
+// aws tags are not present in a diff. The logic of the controller will
+// ensure these tags aren't patched to the resource in the cluster, and
+// will only be present to make sure we don't try to remove these tags.
+//
+// Although there are a lot of similarities between this function and
+// EnsureTags, they are very much different.
+// While EnsureTags tries to make sure the resource contains the controller
+// tags, mirrowAWSTags tries to make sure tags injected by AWS are mirrored
+// from the latest resoruce to the desired resource.
+func mirrorAWSTags(a *resource, b *resource) {
 {{- if $hookCode := Hook .CRD "sync_tags" }}
 {{ $hookCode }}
 {{ else }}
@@ -370,8 +374,8 @@ func syncAWSTags(a *resource, b *resource) {
 	if a == nil || a.ko == nil || b == nil || b.ko == nil {
 		return
 	}
-	var existingLatestTags []*svcapitypes.Tag
-	var existingDesiredTags []*svcapitypes.Tag
+	var existingLatestTags {{ $tagFieldGoType }}
+	var existingDesiredTags {{ $tagFieldGoType }}
 {{ $nilCheck := CheckNilFieldPath $tagField "b.ko.Spec" -}}
 {{ if not (eq $nilCheck "") -}}
     if {{ $nilCheck }} {
@@ -391,7 +395,7 @@ func syncAWSTags(a *resource, b *resource) {
     existingLatestTags = b.ko.Spec.{{ $tagField.Path }}
 	desiredTags := ToACKTags(existingDesiredTags)
 	latestTags := ToACKTags(existingLatestTags)
-	acktags.SyncAWSTags(desiredTags, latestTags)
+	SyncAWSTags(desiredTags, latestTags)
 {{ GoCodeInitializeNestedStructField .CRD "a.ko" $tagField "svcapitypes" 1 -}}
 	a.ko.Spec.{{ $tagField.Path }} = FromACKTags(desiredTags)
 {{- end }}
