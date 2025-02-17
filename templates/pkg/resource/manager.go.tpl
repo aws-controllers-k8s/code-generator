@@ -342,14 +342,14 @@ func (rm *resourceManager) FilterSystemTags(res acktypes.AWSResource) {
 {{ end -}}
     existingTags = r.ko.Spec.{{ $tagField.Path }}
 	resourceTags := ToACKTags(existingTags)
-	IgnoreAWSTags(resourceTags)
+	ignoreSystemTags(resourceTags)
 {{ GoCodeInitializeNestedStructField .CRD "r.ko" $tagField "svcapitypes" 1 -}}
 	r.ko.Spec.{{ $tagField.Path }} = FromACKTags(resourceTags)
 {{- end }}
 {{- end }}
 }
 
-// MirrorAWSTags ensures that AWS tags are included in the desired resource
+// mirrorAWSTags ensures that AWS tags are included in the desired resource
 // if they are present in the latest resource. This will ensure that the
 // aws tags are not present in a diff. The logic of the controller will
 // ensure these tags aren't patched to the resource in the cluster, and
@@ -395,7 +395,7 @@ func mirrorAWSTags(a *resource, b *resource) {
     existingLatestTags = b.ko.Spec.{{ $tagField.Path }}
 	desiredTags := ToACKTags(existingDesiredTags)
 	latestTags := ToACKTags(existingLatestTags)
-	SyncAWSTags(desiredTags, latestTags)
+	syncAWSTags(desiredTags, latestTags)
 {{ GoCodeInitializeNestedStructField .CRD "a.ko" $tagField "svcapitypes" 1 -}}
 	a.ko.Spec.{{ $tagField.Path }} = FromACKTags(desiredTags)
 {{- end }}

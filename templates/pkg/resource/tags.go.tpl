@@ -11,6 +11,7 @@ import(
 var (
 	_ = svcapitypes.{{ .CRD.Kind }}{}
 	_ = acktags.NewTags()
+    ACKSystemTags = []string{"services.k8s.aws/namespace", "services.k8s.aws/controller-version"}
 )
 
 {{- if $hookCode := Hook .CRD "convert_tags" }}
@@ -87,21 +88,20 @@ func FromACKTags(tags acktags.Tags) {{ $tagFieldGoType }} {
 }
 {{ end }}
 
-// IgnoreAWSTags ignores tags that have keys that start with "aws:"
-// is needed to ensure the controller does not attempt to remove
-// tags set by AWS
+// ignoreSystemTags ignores tags that have keys that start with "aws:"
+// and ACKSystemTags, to avoid patching them to the resourceSpec.
 // Eg. resources created with cloudformation have tags that cannot be
 // removed by an ACK controller
-func IgnoreAWSTags(tags acktags.Tags) {
+func ignoreSystemTags(tags acktags.Tags) {
 	for k := range tags {
 		if strings.HasPrefix(k, "aws:") ||
-			strings.HasPrefix(k, "services.k8s.aws/") {
+			slices.Contains(ACKSystemTags, k) {
 			delete(tags, k)
 		}
 	}
 }
 
-// SyncAWSTags ensures AWS-managed tags (prefixed with "aws:") from the latest resource state
+// syncAWSTags ensures AWS-managed tags (prefixed with "aws:") from the latest resource state
 // are preserved in the desired state. This prevents the controller from attempting to
 // modify AWS-managed tags, which would result in an error.
 //
@@ -120,7 +120,7 @@ func IgnoreAWSTags(tags acktags.Tags) {
 //	desired := Tags{"environment": "dev"}
 //	SyncAWSTags(desired, latest)
 //	desired now contains {"aws:cloudformation:stack-name": "my-stack", "environment": "dev"}
-func SyncAWSTags(a acktags.Tags, b acktags.Tags) {
+func syncAWSTags(a acktags.Tags, b acktags.Tags) {
 	for k := range b {
 		if strings.HasPrefix(k, "aws:") {
 			a[k] = b[k]
