@@ -86,4 +86,45 @@ func FromACKTags(tags acktags.Tags) {{ $tagFieldGoType }} {
     return result
 }
 {{ end }}
+
+// IgnoreAWSTags ignores tags that have keys that start with "aws:"
+// is needed to ensure the controller does not attempt to remove
+// tags set by AWS
+// Eg. resources created with cloudformation have tags that cannot be
+// removed by an ACK controller
+func IgnoreAWSTags(tags acktags.Tags) {
+	for k := range tags {
+		if strings.HasPrefix(k, "aws:") ||
+			strings.HasPrefix(k, "services.k8s.aws/") {
+			delete(tags, k)
+		}
+	}
+}
+
+// SyncAWSTags ensures AWS-managed tags (prefixed with "aws:") from the latest resource state
+// are preserved in the desired state. This prevents the controller from attempting to
+// modify AWS-managed tags, which would result in an error.
+//
+// AWS-managed tags are automatically added by AWS services (e.g., CloudFormation, Service Catalog)
+// and cannot be modified or deleted through normal tag operations. Common examples include:
+// - aws:cloudformation:stack-name
+// - aws:servicecatalog:productArn
+//
+// Parameters:
+//   - a: The target Tags map to be updated (typically desired state)
+//   - b: The source Tags map containing AWS-managed tags (typically latest state)
+//
+// Example:
+//
+//	latest := Tags{"aws:cloudformation:stack-name": "my-stack", "environment": "prod"}
+//	desired := Tags{"environment": "dev"}
+//	SyncAWSTags(desired, latest)
+//	desired now contains {"aws:cloudformation:stack-name": "my-stack", "environment": "dev"}
+func SyncAWSTags(a acktags.Tags, b acktags.Tags) {
+	for k := range b {
+		if strings.HasPrefix(k, "aws:") {
+			a[k] = b[k]
+		}
+	}
+}
 {{ end }}

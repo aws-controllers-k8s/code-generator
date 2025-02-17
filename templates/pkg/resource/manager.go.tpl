@@ -89,6 +89,7 @@ func (rm *resourceManager) ReadOne(
 		panic("resource manager's ReadOne() method received resource with nil CR object")
 	}
 	observed, err := rm.sdkFind(ctx, r)
+	mirrorAWSTags(r, observed)
 	if err != nil {
 		if observed != nil {
 			return rm.onError(observed, err)
@@ -308,6 +309,96 @@ func (rm *resourceManager) EnsureTags(
 	r.ko.Spec.{{ $tagField.Path }} = FromACKTags(tags)
 {{- end }}
     return nil
+{{- end }}
+}
+
+// FilterAWSTags ignores tags that have keys that start with "aws:"
+// is needed to ensure the controller does not attempt to remove
+// tags set by AWS. This function needs to be called after each Read
+// operation.
+// Eg. resources created with cloudformation have tags that cannot be
+//removed by an ACK controller
+func (rm *resourceManager) FilterSystemTags(res acktypes.AWSResource) {
+{{- if $hookCode := Hook .CRD "filter_tags" }}
+{{ $hookCode }}
+{{ else }}
+{{ $tagField := .CRD.GetTagField -}}
+{{ if $tagField -}}
+{{ $tagFieldShapeType := $tagField.ShapeRef.Shape.Type -}}
+{{ $tagFieldGoType := $tagField.GoType -}}
+{{ if eq "list" $tagFieldShapeType -}}
+{{ $tagFieldGoType = (print "[]*svcapitypes." $tagField.GoTypeElem) -}}
+{{ end -}}
+	r := rm.concreteResource(res)
+	if r == nil || r.ko == nil {
+		return
+	}
+	var existingTags {{ $tagFieldGoType }}
+{{ $nilCheck := CheckNilFieldPath $tagField "r.ko.Spec" -}}
+{{ if not (eq $nilCheck "") -}}
+    if {{ $nilCheck }} {
+        return
+    }
+{{ end -}}
+    existingTags = r.ko.Spec.{{ $tagField.Path }}
+	resourceTags := ToACKTags(existingTags)
+	IgnoreAWSTags(resourceTags)
+{{ GoCodeInitializeNestedStructField .CRD "r.ko" $tagField "svcapitypes" 1 -}}
+	r.ko.Spec.{{ $tagField.Path }} = FromACKTags(resourceTags)
+{{- end }}
+{{- end }}
+}
+
+// MirrorAWSTags ensures that AWS tags are included in the desired resource
+// if they are present in the latest resource. This will ensure that the
+// aws tags are not present in a diff. The logic of the controller will
+// ensure these tags aren't patched to the resource in the cluster, and
+// will only be present to make sure we don't try to remove these tags.
+//
+// Although there are a lot of similarities between this function and
+// EnsureTags, they are very much different.
+// While EnsureTags tries to make sure the resource contains the controller
+// tags, mirrowAWSTags tries to make sure tags injected by AWS are mirrored
+// from the latest resoruce to the desired resource.
+func mirrorAWSTags(a *resource, b *resource) {
+{{- if $hookCode := Hook .CRD "sync_tags" }}
+{{ $hookCode }}
+{{ else }}
+{{ $tagField := .CRD.GetTagField -}}
+{{ if $tagField -}}
+{{ $tagFieldShapeType := $tagField.ShapeRef.Shape.Type -}}
+{{ $tagFieldGoType := $tagField.GoType -}}
+{{ if eq "list" $tagFieldShapeType -}}
+{{ $tagFieldGoType = (print "[]*svcapitypes." $tagField.GoTypeElem) -}}
+{{ end -}}
+	if a == nil || a.ko == nil || b == nil || b.ko == nil {
+		return
+	}
+	var existingLatestTags {{ $tagFieldGoType }}
+	var existingDesiredTags {{ $tagFieldGoType }}
+{{ $nilCheck := CheckNilFieldPath $tagField "b.ko.Spec" -}}
+{{ if not (eq $nilCheck "") -}}
+    if {{ $nilCheck }} {
+        return
+    }
+{{ end -}}
+{{ $nilCheck = CheckNilFieldPath $tagField "a.ko.Spec" -}}
+{{if not (eq $nilCheck "") -}}
+	if {{ $nilCheck }} {
+		existingDesiredTags = nil
+	} else {
+		existingDesiredTags = a.ko.Spec.{{ $tagField.Path }}
+	}
+{{ else -}}
+	existingDesiredTags = a.ko.Spec.{{ $tagField.Path }}
+{{ end -}}
+    existingLatestTags = b.ko.Spec.{{ $tagField.Path }}
+	desiredTags := ToACKTags(existingDesiredTags)
+	latestTags := ToACKTags(existingLatestTags)
+	SyncAWSTags(desiredTags, latestTags)
+{{ GoCodeInitializeNestedStructField .CRD "a.ko" $tagField "svcapitypes" 1 -}}
+	a.ko.Spec.{{ $tagField.Path }} = FromACKTags(desiredTags)
+{{- end }}
 {{- end }}
 }
 
