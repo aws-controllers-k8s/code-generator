@@ -147,6 +147,8 @@ func (frm *fakeRM) EnsureTags(
 	return nil
 }
 
+func (frm *fakeRM) FilterSystemTags(acktypes.AWSResource) {}
+
 // This test is mostly just a hack to introduce a Go module dependency between
 // the ACK runtime library and the code generator. The code generator doesn't
 // actually depend on Go code in the ACK runtime, but it *produces* templated
