@@ -188,6 +188,18 @@ func (f *Field) IsRequired() bool {
 	)
 }
 
+// IsImmutable checks the FieldConfig for the Field and returns true if the
+// field is marked as immutable.
+//
+// If the FieldConfig is nil or IsImmutable is false (or not set), this function
+// returns false.
+func (f *Field) IsImmutable() bool {
+	if f.FieldConfig != nil && f.FieldConfig.IsImmutable {
+		return true
+	}
+	return false
+}
+
 // GetSetterConfig returns the SetFieldConfig object associated with this field
 // and a supplied operation type, or nil if none exists.
 func (f *Field) GetSetterConfig(opType OpType) *ackgenconfig.SetFieldConfig {

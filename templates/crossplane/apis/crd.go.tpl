@@ -94,4 +94,3 @@ var (
 func init() {
 	SchemeBuilder.Register(&{{ .CRD.Kind }}{}, &{{ .CRD.Kind }}List{})
 }
-

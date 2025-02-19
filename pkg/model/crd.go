@@ -336,33 +336,6 @@ func (r *CRD) IsSecretField(path string) bool {
 	return false
 }
 
-// GetImmutableFieldPaths returns list of immutable field paths present in CRD
-func (r *CRD) GetImmutableFieldPaths() []string {
-	fConfigs := r.cfg.GetFieldConfigs(r.Names.Original)
-	var immutableFields []string
-
-	for field, fieldConfig := range fConfigs {
-		if fieldConfig.IsImmutable {
-			immutableFields = append(immutableFields, field)
-		}
-	}
-
-	// We need a deterministic order to traverse the immutable fields
-	sort.Strings(immutableFields)
-	return immutableFields
-}
-
-// HasImmutableFieldChanges helper function that return true if there are any immutable field changes
-func (r *CRD) HasImmutableFieldChanges() bool {
-	fConfigs := r.cfg.GetFieldConfigs(r.Names.Original)
-	for _, fieldConfig := range fConfigs {
-		if fieldConfig.IsImmutable {
-			return true
-		}
-	}
-	return false
-}
-
 // OmitUnchangedFieldsOnUpdate returns whether the controller needs to omit
 // unchanged fields from an update request or not.
 func (r *CRD) OmitUnchangedFieldsOnUpdate() bool {
