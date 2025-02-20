@@ -20,13 +20,13 @@ type {{ .CRD.Kind }}Spec struct {
     {{ $field.GetDocumentation }}
 {{ end -}}
 
-{{- if $field.IsImmutable }}
+{{- if $field.IsImmutable -}}
     // +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
-{{- end }}
+{{ end -}}
 
-{{- if and ($field.IsRequired) (not $field.HasReference) }}
+{{- if and ($field.IsRequired) (not $field.HasReference) -}}
     // +kubebuilder:validation:Required
-{{- end }}
+{{ end -}}
 
     {{ $field.Names.Camel }} {{ $field.GoType }} {{ $field.GetGoTag }}
 {{- end }}
