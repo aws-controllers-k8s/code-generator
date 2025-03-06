@@ -1,0 +1,97 @@
+ignore:
+  field_paths:
+  - ChangeResourceRecordSetsOutput.ChangeInfo.Comment
+  - ResourceRecordSet.GeoProximityLocation
+  - ChangeResourceRecordSetsInput.ChangeBatch
+sdk_names:
+  model_name: route-53
+operations:
+  ChangeResourceRecordSets:
+    operation_type:
+    - Create
+    - Delete
+    resource_name:
+      RecordSet
+  ListResourceRecordSets:
+    operation_type:
+    - List
+    resource_name:
+      RecordSet
+resources:
+  RecordSet:
+    fields:
+      AliasTarget:
+        from:
+          operation: ListResourceRecordSets
+          path: ResourceRecordSets.AliasTarget
+      CidrRoutingConfig:
+        from:
+          operation: ListResourceRecordSets
+          path: ResourceRecordSets.CidrRoutingConfig
+      Failover:
+        from:
+          operation: ListResourceRecordSets
+          path: ResourceRecordSets.Failover
+      GeoLocation:
+        from:
+          operation: ListResourceRecordSets
+          path: ResourceRecordSets.GeoLocation
+      HealthCheckId:
+        from:
+          operation: ListResourceRecordSets
+          path: ResourceRecordSets.HealthCheckId
+      # Changing this value after a CR has been created could result in orphaned record sets
+      HostedZoneId:
+        references:
+          resource: HostedZone
+          path: Status.ID
+        is_required: true
+        is_immutable: true
+      ID:
+        is_primary_key: true
+        documentation: "ID represents the ChangeID that is returned after a successful 
+        ChangeResourceRecordSet request"
+      MultiValueAnswer:
+        from:
+          operation: ListResourceRecordSets
+          path: ResourceRecordSets.MultiValueAnswer
+      # Changing this value after a CR has been created could result in orphaned record sets.
+      # Note that the name refers to the subdomain value of a record set and not the fully
+      # qualified DNS name
+      Name:
+        from:
+          operation: ListResourceRecordSets
+          path: ResourceRecordSets.Name
+        is_immutable: true
+      # Changing this value after a CR has been created could result in orphaned record sets
+      RecordType:
+        from:
+          operation: ListResourceRecordSets
+          path: ResourceRecordSets.Type
+        is_required: true
+        is_immutable: true
+      Region:
+        from:
+          operation: ListResourceRecordSets
+          path: ResourceRecordSets.Region
+      ResourceRecords:
+        from:
+          operation: ListResourceRecordSets
+          path: ResourceRecordSets.ResourceRecords
+      # Changing this value after a CR has been created could result in orphaned record sets
+      SetIdentifier:
+        from:
+          operation: ListResourceRecordSets
+          path: ResourceRecordSets.SetIdentifier
+        is_immutable: true
+      Status:
+        print:
+          name: STATUS
+      TTL:
+        from:
+          operation: ListResourceRecordSets
+          path: ResourceRecordSets.TTL
+      Weight:
+        from:
+          operation: ListResourceRecordSets
+          path: ResourceRecordSets.Weight
