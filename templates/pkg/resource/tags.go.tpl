@@ -62,6 +62,41 @@ func ToACKTags(tags {{ $tagFieldGoType }}) acktags.Tags {
     return result
 }
 
+// toACKTagsWithKeyOrder converts the tags parameter into 'acktags.Tags' shape.
+// This method helps in creating the hub(acktags.Tags) for merging
+// default controller tags with existing resource tags. It also returns a slice
+// of keys maintaining the original key Order when the tags are a list
+func toACKTagsWithKeyOrder(tags {{ $tagFieldGoType }}) (acktags.Tags, []string) {
+    result := acktags.NewTags()
+    keyOrder := []string{}
+{{- if $hookCode := Hook .CRD "pre_convert_to_ack_tags" }}
+{{ $hookCode }}
+{{ end }}
+    if tags == nil || len(tags) == 0 {
+        return result, keyOrder
+    }
+{{ if eq "map" $tagFieldShapeType }}
+    for k, v := range tags {
+        if v == nil {
+            result[k] = ""
+        } else {
+            result[k] = *v
+        }
+    }
+{{ else if eq "list" $tagFieldShapeType }}
+    for _, t := range tags {
+        if t.{{ $keyMemberName}} != nil {
+            keyOrder = append(keyOrder, *t.{{ $keyMemberName}})
+        }
+    }
+    result = ToACKTags(tags)
+{{ end }}
+{{- if $hookCode := Hook .CRD "post_convert_to_ack_tags" }}
+{{ $hookCode }}
+{{ end }}
+    return result, keyOrder
+}
+
 // FromACKTags converts the tags parameter into {{ $tagFieldGoType }} shape.
 // This method helps in setting the tags back inside AWSResource after merging
 // default controller tags with existing resource tags.
@@ -81,6 +116,43 @@ func FromACKTags(tags acktags.Tags) {{ $tagFieldGoType }} {
         result = append(result, &tag)
 {{- end }}
     }
+{{- if $hookCode := Hook .CRD "post_convert_from_ack_tags" }}
+{{ $hookCode }}
+{{ end }}
+    return result
+}
+
+// fromACKTagsWithTagKeys converts the tags parameter into {{ $tagFieldGoType }} shape.
+// This method helps in setting the tags back inside AWSResource after merging
+// default controller tags with existing resource tags. When a list, 
+// it maintains the order from original 
+func fromACKTagsWithKeyOrder(tags acktags.Tags, keyOrder []string) {{ $tagFieldGoType }} {
+    result := {{ $tagFieldGoType }}{}
+{{- if $hookCode := Hook .CRD "pre_convert_from_ack_tags" }}
+{{ $hookCode }}
+{{ end }}
+
+{{- if eq "list" $tagFieldShapeType }}
+    for _, k := range keyOrder {
+		v, ok := tags[k]
+        if ok {
+            tag := svcapitypes.Tag{Key: &k, Value: &v}
+            result = append(result, &tag)
+            delete(tags, k)
+        }
+	}
+
+{{- else }}
+    _ = keyOrder
+{{- end }}
+{{- if eq "map" $tagFieldShapeType }}
+    for k, v := range tags {
+        vCopy := v
+        result[k] = &vCopy
+    }
+{{- else if eq "list" $tagFieldShapeType }}
+        result = append(result, FromACKTags(tags)...)
+{{- end }}
 {{- if $hookCode := Hook .CRD "post_convert_from_ack_tags" }}
 {{ $hookCode }}
 {{ end }}
