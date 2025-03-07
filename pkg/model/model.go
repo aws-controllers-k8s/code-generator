@@ -176,6 +176,12 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 				memberShapeRef, found = m.SDKAPI.GetInputShapeRef(
 					from.Operation, from.Path,
 				)
+				// allowing getting spec fields from output shape
+				if !found {
+					memberShapeRef, found = m.SDKAPI.GetOutputShapeRef(
+						from.Operation, from.Path,
+					)
+				}
 				if !found {
 					// This is a compile-time failure, just bomb out...
 					msg := fmt.Sprintf(
@@ -289,6 +295,12 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 				memberShapeRef, found = m.SDKAPI.GetOutputShapeRef(
 					from.Operation, from.Path,
 				)
+				// allowing to get status fields from output shapes
+				if !found {
+					memberShapeRef, found = m.SDKAPI.GetInputShapeRef(
+						from.Operation, from.Path,
+					)
+				}
 				if !found {
 					// This is a compile-time failure, just bomb out...
 					msg := fmt.Sprintf(
