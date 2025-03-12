@@ -303,10 +303,10 @@ func (rm *resourceManager) EnsureTags(
 {{ else -}}
     existingTags = r.ko.Spec.{{ $tagField.Path }}
 {{ end -}}
-	resourceTags := ToACKTags(existingTags)
+	resourceTags, keyOrder := convertToOrderedACKTags(existingTags)
 	tags := acktags.Merge(resourceTags, defaultTags)
 {{ GoCodeInitializeNestedStructField .CRD "r.ko" $tagField "svcapitypes" 1 -}}
-	r.ko.Spec.{{ $tagField.Path }} = FromACKTags(tags)
+	r.ko.Spec.{{ $tagField.Path }} = fromACKTags(tags, keyOrder)
 {{- end }}
     return nil
 {{- end }}
@@ -341,10 +341,10 @@ func (rm *resourceManager) FilterSystemTags(res acktypes.AWSResource) {
     }
 {{ end -}}
     existingTags = r.ko.Spec.{{ $tagField.Path }}
-	resourceTags, tagKeyOrder := toACKTagsWithKeyOrder(existingTags)
+	resourceTags, tagKeyOrder := convertToOrderedACKTags(existingTags)
 	ignoreSystemTags(resourceTags)
 {{ GoCodeInitializeNestedStructField .CRD "r.ko" $tagField "svcapitypes" 1 -}}
-	r.ko.Spec.{{ $tagField.Path }} = fromACKTagsWithKeyOrder(resourceTags, tagKeyOrder)
+	r.ko.Spec.{{ $tagField.Path }} = fromACKTags(resourceTags, tagKeyOrder)
 {{- end }}
 {{- end }}
 }
@@ -393,11 +393,11 @@ func mirrorAWSTags(a *resource, b *resource) {
 	existingDesiredTags = a.ko.Spec.{{ $tagField.Path }}
 {{ end -}}
     existingLatestTags = b.ko.Spec.{{ $tagField.Path }}
-	desiredTags, desiredTagKeyOrder := toACKTagsWithKeyOrder(existingDesiredTags)
-	latestTags, _ := toACKTagsWithKeyOrder(existingLatestTags)
+	desiredTags, desiredTagKeyOrder := convertToOrderedACKTags(existingDesiredTags)
+	latestTags, _ := convertToOrderedACKTags(existingLatestTags)
 	syncAWSTags(desiredTags, latestTags)
 {{ GoCodeInitializeNestedStructField .CRD "a.ko" $tagField "svcapitypes" 1 -}}
-	a.ko.Spec.{{ $tagField.Path }} = fromACKTagsWithKeyOrder(desiredTags, desiredTagKeyOrder)
+	a.ko.Spec.{{ $tagField.Path }} = fromACKTags(desiredTags, desiredTagKeyOrder)
 {{- end }}
 {{- end }}
 }

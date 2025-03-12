@@ -127,7 +127,9 @@ func TestCompareResource_S3_Bucket(t *testing.T) {
 	if ackcompare.HasNilDifference(a.ko.Spec.Tagging, b.ko.Spec.Tagging) {
 		delta.Add("Spec.Tagging", a.ko.Spec.Tagging, b.ko.Spec.Tagging)
 	} else if a.ko.Spec.Tagging != nil && b.ko.Spec.Tagging != nil {
-		if !ackcompare.MapStringStringEqual(ToACKTags(a.ko.Spec.Tagging.TagSet), ToACKTags(b.ko.Spec.Tagging.TagSet)) {
+		desiredACKTags, _ := convertToOrderedACKTags(a.ko.Spec.Tagging.TagSet)
+		latestACKTags, _ := convertToOrderedACKTags(b.ko.Spec.Tagging.TagSet)
+		if !ackcompare.MapStringStringEqual(desiredACKTags, latestACKTags) {
 			delta.Add("Spec.Tagging", a.ko.Spec.Tagging.TagSet, b.ko.Spec.Tagging.TagSet)
 		}
 	}
@@ -364,7 +366,9 @@ func TestCompareResource_Lambda_Function(t *testing.T) {
 			delta.Add("Spec.Runtime", a.ko.Spec.Runtime, b.ko.Spec.Runtime)
 		}
 	}
-	if !ackcompare.MapStringStringEqual(ToACKTags(a.ko.Spec.Tags), ToACKTags(b.ko.Spec.Tags)) {
+	desiredACKTags, _ := convertToOrderedACKTags(a.ko.Spec.Tags)
+	latestACKTags, _ := convertToOrderedACKTags(b.ko.Spec.Tags)
+	if !ackcompare.MapStringStringEqual(desiredACKTags, latestACKTags) {
 		delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
 	}
 	if ackcompare.HasNilDifference(a.ko.Spec.Timeout, b.ko.Spec.Timeout) {
@@ -533,7 +537,9 @@ func TestCompareResource_IAM_OIDC_URL(t *testing.T) {
 			delta.Add("Spec.ClientIDList", a.ko.Spec.ClientIDList, b.ko.Spec.ClientIDList)
 		}
 	}
-	if !ackcompare.MapStringStringEqual(ToACKTags(a.ko.Spec.Tags), ToACKTags(b.ko.Spec.Tags)) {
+	desiredACKTags, _ := convertToOrderedACKTags(a.ko.Spec.Tags)
+	latestACKTags, _ := convertToOrderedACKTags(b.ko.Spec.Tags)
+	if !ackcompare.MapStringStringEqual(desiredACKTags, latestACKTags) {
 		delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
 	}
 	if len(a.ko.Spec.ThumbprintList) != len(b.ko.Spec.ThumbprintList) {
@@ -586,7 +592,9 @@ func TestCompareResource_MemoryDB_User(t *testing.T) {
 			delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
 		}
 	}
-	if !ackcompare.MapStringStringEqual(ToACKTags(a.ko.Spec.Tags), ToACKTags(b.ko.Spec.Tags)) {
+	desiredACKTags, _ := convertToOrderedACKTags(a.ko.Spec.Tags)
+	latestACKTags, _ := convertToOrderedACKTags(b.ko.Spec.Tags)
+	if !ackcompare.MapStringStringEqual(desiredACKTags, latestACKTags) {
 		delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
 	}
 `
