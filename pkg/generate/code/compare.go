@@ -523,9 +523,11 @@ func compareSlice(
 //
 // Output code will look something like this:
 //
-//	if !ackcompare.MapStringStringEqual(ToACKTags(a.ko.Spec.Tags), ToACKTags(b.ko.Spec.Tags)) {
-//	  delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
-//	}
+//	 desiredACKTags, _ := convertToOrderedACKTags(a.ko.Spec.Tags)
+//	 latestACKTags, _ := convertToOrderedACKTags(b.ko.Spec.Tags)
+//		if !ackcompare.MapStringStringEqual(desiredACKTags, latestACKTags) {
+//		  delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
+//		}
 func compareTags(
 	// String representing the name of the variable that is of type
 	// `*ackcompare.Delta`. We will generate Go code that calls the `Add()`
@@ -549,7 +551,9 @@ func compareTags(
 	out := ""
 	indent := strings.Repeat("\t", indentLevel)
 
-	out += fmt.Sprintf("%sif !ackcompare.MapStringStringEqual(ToACKTags(%s), ToACKTags(%s)) {\n", indent, firstResVarName, secondResVarName)
+	out += fmt.Sprintf("%sdesiredACKTags, _ := convertToOrderedACKTags(%s)\n", indent, firstResVarName)
+	out += fmt.Sprintf("%slatestACKTags, _ := convertToOrderedACKTags(%s)\n", indent, secondResVarName)
+	out += fmt.Sprintf("%sif !ackcompare.MapStringStringEqual(desiredACKTags, latestACKTags) {\n", indent)
 	out += fmt.Sprintf("%s\t%s.Add(\"%s\", %s, %s)\n", indent, deltaVarName, fieldPath, firstResVarName, secondResVarName)
 	out += fmt.Sprintf("%s}\n", indent)
 
