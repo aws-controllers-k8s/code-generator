@@ -54,6 +54,22 @@ type Config struct {
 	// documentdb.
 	// This will also change the helm chart and image names.
 	ControllerName string `json:"controller_name,omitempty"`
+	// CustomShapes defines custom structure types that can be referenced in resource fields.
+	// The outer map is keyed by shape name (e.g., "ReplicaStatus"), and the inner map
+	// is keyed by field name with string values representing field types.
+	//
+	// Example:
+	//   custom_shapes:
+	//     ReplicaStatus:
+	//       Status: string
+	//       Region: string
+	//       Description: string
+	// These shapes can be referenced in a resource's fields section using:
+	//   custom_field:
+	//     list_of: ShapeName    # For arrays of the shape
+	//     map_of: ShapeName     # For maps with the shape as values
+	//
+	CustomShapes map[string]map[string]string `json:"custom_shapes,omitempty"`
 }
 
 // SDKNames contains information on the SDK Client package. More precisely

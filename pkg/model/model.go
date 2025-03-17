@@ -412,7 +412,7 @@ func (m *Model) GetTypeDefs() ([]*TypeDef, error) {
 	if m.typeDefs != nil {
 		return m.typeDefs, nil
 	}
-
+	
 	tdefs := []*TypeDef{}
 	// Map, keyed by original Shape GoTypeElem(), with the values being a
 	// renamed type name (due to conflicting names)

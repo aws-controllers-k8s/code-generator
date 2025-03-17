@@ -110,8 +110,10 @@ func (h *Helper) API(serviceModelName string) (*model.SDKAPI, error) {
 		_ = api.ServicePackageDoc()
 		sdkapi := model.NewSDKAPI(api, h.APIGroupSuffix)
 
-		h.InjectCustomShapes(sdkapi)
-
+		err := h.InjectCustomShapes(sdkapi)
+		if err != nil {
+			return nil, err
+		}
 		return sdkapi, nil
 	}
 	return nil, ErrServiceNotFound

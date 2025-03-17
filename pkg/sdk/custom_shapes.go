@@ -41,6 +41,10 @@ type customShapeInjector struct {
 // into the list of shapes in the API and update the list of custom shapes in
 // the SDKAPI object.
 func (h *Helper) InjectCustomShapes(sdkapi *ackmodel.SDKAPI) error {
+	err := h.InjectSimpleSchemaShapes(sdkapi)
+	if err != nil {
+		return err
+	}
 	injector := customShapeInjector{sdkapi}
 
 	for _, memberShape := range h.cfg.GetCustomMapFieldMembers() {
@@ -52,7 +56,6 @@ func (h *Helper) InjectCustomShapes(sdkapi *ackmodel.SDKAPI) error {
 		sdkapi.API.Shapes[customShape.Shape.ShapeName] = customShape.Shape
 		sdkapi.CustomShapes = append(sdkapi.CustomShapes, customShape)
 	}
-
 	for _, memberShape := range h.cfg.GetCustomListFieldMembers() {
 		customShape, err := injector.newList(memberShape)
 		if err != nil {
@@ -62,7 +65,6 @@ func (h *Helper) InjectCustomShapes(sdkapi *ackmodel.SDKAPI) error {
 		sdkapi.API.Shapes[customShape.Shape.ShapeName] = customShape.Shape
 		sdkapi.CustomShapes = append(sdkapi.CustomShapes, customShape)
 	}
-
 	return nil
 }
 
