@@ -1,0 +1,15 @@
+custom_shapes:
+  RepicasState:
+    RegionName: string
+    RegionStatus: string
+    RegionStatusDescription: string
+    RegionStatusPercentProgress: string
+    RegionInaccessibleDateTime: string
+
+resources:
+  Table:
+    fields:
+      ReplicaStates:
+        custom_field:
+          list_of: RepicasState
+        is_read_only: true 

@@ -382,8 +382,7 @@ func (r *CRD) GetPrimaryKeyField() (*Field, error) {
 		var found bool
 		primaryField, found = r.Fields[fPath]
 		if !found {
-			return nil, fmt.Errorf("could not find field with path " + fPath +
-				" for primary key " + fieldName)
+			return nil, fmt.Errorf("could not find field with path %s for primary key %s", fPath, fieldName)
 		}
 	}
 	return primaryField, nil

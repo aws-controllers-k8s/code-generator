@@ -189,7 +189,7 @@ func ComputeFieldDeltas(
 			if !ok2 {
 				// if a field was renamed and we can't find it in dstNames, something
 				// very wrong happened during CRD loading.
-				return nil, fmt.Errorf("cannot find renamed field %s " + newName)
+				return nil, fmt.Errorf("cannot find renamed field %s in %s", newName, srcName)
 			}
 
 			// mark field as visited, both old and new names.
