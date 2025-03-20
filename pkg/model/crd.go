@@ -834,7 +834,7 @@ func (r *CRD) ReferencedServiceNames() (serviceNames []string) {
 		}
 	}
 
-	for serviceName, _ := range serviceNamesMap {
+	for serviceName := range serviceNamesMap {
 		serviceNames = append(serviceNames, serviceName)
 	}
 	sort.Strings(serviceNames)

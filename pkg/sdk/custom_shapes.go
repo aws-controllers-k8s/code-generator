@@ -17,8 +17,10 @@ import (
 	"errors"
 	"fmt"
 
-	awssdkmodel "github.com/aws-controllers-k8s/code-generator/pkg/api"
+	simpleschema "github.com/kro-run/kro/pkg/simpleschema"
+	apiextv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 
+	awssdkmodel "github.com/aws-controllers-k8s/code-generator/pkg/api"
 	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
 )
 
@@ -41,11 +43,11 @@ type customShapeInjector struct {
 // into the list of shapes in the API and update the list of custom shapes in
 // the SDKAPI object.
 func (h *Helper) InjectCustomShapes(sdkapi *ackmodel.SDKAPI) error {
-	err := h.InjectSimpleSchemaShapes(sdkapi)
-	if err != nil {
+	injector := customShapeInjector{sdkapi}
+
+	if err := injector.injectSimpleSchemaShapes(h.cfg.CustomShapes); err != nil {
 		return err
 	}
-	injector := customShapeInjector{sdkapi}
 
 	for _, memberShape := range h.cfg.GetCustomMapFieldMembers() {
 		customShape, err := injector.newMap(memberShape)
@@ -66,6 +68,86 @@ func (h *Helper) InjectCustomShapes(sdkapi *ackmodel.SDKAPI) error {
 		sdkapi.CustomShapes = append(sdkapi.CustomShapes, customShape)
 	}
 	return nil
+}
+
+// injectSimpleSchemaShapes processes custom shapes from the top-level custom_shapes
+// section and injects them into the SDK API model.
+// Only string types are supported - all other types will cause a panic.
+func (i *customShapeInjector) injectSimpleSchemaShapes(customShapes map[string]map[string]interface{}) error {
+	if len(customShapes) == 0 {
+		return nil
+	}
+
+	apiShapeNames := i.sdkAPI.API.ShapeNames()
+	for shapeName, fieldsMap := range customShapes {
+		// check for duplicates
+		for _, as := range apiShapeNames {
+			if as == shapeName {
+				return fmt.Errorf("CustomType name %s already exists in the API", shapeName)
+			}
+		}
+		openAPISchema, err := simpleschema.ToOpenAPISpec(fieldsMap)
+		if err != nil {
+			return err
+		}
+
+		// Create and register the base structure shape
+		shape, shapeRef := i.newStructureShape(shapeName, openAPISchema)
+		i.sdkAPI.API.Shapes[shape.ShapeName] = shape
+		i.sdkAPI.CustomShapes = append(i.sdkAPI.CustomShapes, &ackmodel.CustomShape{
+			Shape:           shape,
+			ShapeRef:        shapeRef,
+			MemberShapeName: nil,
+			ValueShapeName:  nil,
+		})
+	}
+
+	return nil
+}
+
+// newStructureShape creates a base shape with its member fields
+func (i *customShapeInjector) newStructureShape(
+	shapeName string,
+	openAPISchema *apiextv1.JSONSchemaProps,
+) (*awssdkmodel.Shape, *awssdkmodel.ShapeRef) {
+	shape := &awssdkmodel.Shape{
+		API:           i.sdkAPI.API,
+		ShapeName:     shapeName,
+		Type:          "structure",
+		Documentation: "// Custom ACK type for " + shapeName,
+		MemberRefs:    make(map[string]*awssdkmodel.ShapeRef),
+	}
+
+	properties := openAPISchema.Properties
+	for fieldName, propObj := range properties {
+		propType := propObj.Type
+		if propType != "string" {
+			panic(fmt.Sprintf("Field %s in shape %s has non-string type '%s'",
+				fieldName, shapeName, propType))
+		}
+		addStringFieldToShape(i.sdkAPI, shape, fieldName, shapeName)
+	}
+
+	shapeRef := i.createShapeRefForMember(shape)
+	return shape, shapeRef
+}
+
+// addStringFieldToShape adds a string field to the parent shape
+func addStringFieldToShape(
+	sdkapi *ackmodel.SDKAPI,
+	parentShape *awssdkmodel.Shape,
+	fieldName string,
+	shapeName string,
+) {
+	injector := customShapeInjector{sdkapi}
+	fieldShape := &awssdkmodel.Shape{
+		API:       sdkapi.API,
+		ShapeName: fieldName,
+		Type:      "string",
+	}
+
+	sdkapi.API.Shapes[fieldShape.ShapeName] = fieldShape
+	parentShape.MemberRefs[fieldName] = injector.createShapeRefForMember(fieldShape)
 }
 
 // createShapeRefForMember creates a minimal ShapeRef type to encapsulate a

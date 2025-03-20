@@ -69,7 +69,7 @@ type Config struct {
 	//     list_of: ShapeName    # For arrays of the shape
 	//     map_of: ShapeName     # For maps with the shape as values
 	//
-	CustomShapes map[string]map[string]string `json:"custom_shapes,omitempty"`
+	CustomShapes map[string]map[string]interface{} `json:"custom_shapes,omitempty"`
 }
 
 // SDKNames contains information on the SDK Client package. More precisely

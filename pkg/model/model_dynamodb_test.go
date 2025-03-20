@@ -122,11 +122,10 @@ func TestDynamoDB_CustomShape_ReplicasState(t *testing.T) {
 	crd := getCRDByName("Table", crds)
 	require.NotNil(crd)
 
-	// Verify the ReplicaStates field exists 
+	// Verify the ReplicaStates field exists
 	assert.Contains(crd.StatusFields, "ReplicaStates")
 	replicasDescField := crd.StatusFields["ReplicaStates"]
 	require.NotNil(replicasDescField)
-
 
 	replicasStateShape := replicasDescField.ShapeRef.Shape.MemberRef.Shape
 	require.NotNil(replicasStateShape)
@@ -145,4 +144,6 @@ func TestDynamoDB_CustomShape_ReplicasState(t *testing.T) {
 		field := replicasStateShape.MemberRefs[fieldName]
 		assert.Equal("string", field.Shape.Type, "Field "+fieldName+" should be of type string")
 	}
+
+	assert.Equal(len(expectedFields), len(replicasStateShape.MemberRefs), "ReplicasState shape has unexpected number of fields")
 }
