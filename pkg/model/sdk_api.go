@@ -134,14 +134,14 @@ func (a *SDKAPI) GetShapeRefFromType(
 	// TODO(jaypipes): Only handling maps with string keys at the moment...
 	isMap := strings.HasPrefix(typeOverride, "map[string]")
 	if isMap {
-		elemType = typeOverride[11:len(typeOverride)]
+		elemType = typeOverride[11:]
 	}
 	if isSlice {
-		elemType = typeOverride[2:len(typeOverride)]
+		elemType = typeOverride[2:]
 	}
 	isPtrElem := strings.HasPrefix(elemType, "*")
 	if isPtrElem {
-		elemType = elemType[1:len(elemType)]
+		elemType = elemType[1:]
 	}
 	// first check to see if the element type is a scalar and if it is, just
 	// create a ShapeRef to represent the type.

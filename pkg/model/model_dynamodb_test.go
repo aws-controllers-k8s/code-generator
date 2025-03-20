@@ -107,3 +107,43 @@ func TestDynamoDB_Table(t *testing.T) {
 	}
 	assert.Equal(expSpecFieldCamel, attrCamelNames(specFields))
 }
+
+func TestDynamoDB_CustomShape_ReplicasState(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "dynamodb", &testutil.TestingModelOptions{
+		GeneratorConfigFile: "generator-with-custom-shapes.yaml",
+	})
+
+	crds, err := g.GetCRDs()
+	require.Nil(err)
+
+	crd := getCRDByName("Table", crds)
+	require.NotNil(crd)
+
+	// Verify the ReplicaStates field exists
+	assert.Contains(crd.StatusFields, "ReplicaStates")
+	replicasDescField := crd.StatusFields["ReplicaStates"]
+	require.NotNil(replicasDescField)
+
+	replicasStateShape := replicasDescField.ShapeRef.Shape.MemberRef.Shape
+	require.NotNil(replicasStateShape)
+
+	// Verify all the expected fields exist in the RepicasState shape
+	expectedFields := []string{
+		"RegionName",
+		"RegionStatus",
+		"RegionStatusDescription",
+		"RegionStatusPercentProgress",
+		"RegionInaccessibleDateTime",
+	}
+
+	for _, fieldName := range expectedFields {
+		assert.Contains(replicasStateShape.MemberRefs, fieldName, "RepicasState shape is missing field: "+fieldName)
+		field := replicasStateShape.MemberRefs[fieldName]
+		assert.Equal("string", field.Shape.Type, "Field "+fieldName+" should be of type string")
+	}
+
+	assert.Equal(len(expectedFields), len(replicasStateShape.MemberRefs), "ReplicasState shape has unexpected number of fields")
+}
