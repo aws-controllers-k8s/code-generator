@@ -110,6 +110,10 @@ installScope: cluster
 # You can set multiple namespaces by providing a comma separated list of namespaces. e.g "namespace1,namespace2"
 watchNamespace: ""
 
+# Set the value of labelsSelectors to be used by the controller to filter the resources to watch.
+# You can set multiple labelsSelectors by providing a comma separated list of a=b arguments. e.g "label1=value1,label2=value2" 
+watchSelectors: ""
+
 resourceTags:
   # Configures the ACK service controller to always set key/value pairs tags on
   # resources that it manages.
