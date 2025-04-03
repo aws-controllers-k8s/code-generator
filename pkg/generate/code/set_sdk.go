@@ -1374,7 +1374,7 @@ func setSDKForMap(
 			out += fmt.Sprintf("%s}\n", indent)
 			return out
 		} else if targetShape.ValueRef.Shape.ValueRef.Shape.Type == "boolean" {
-			out += fmt.Sprintf("%s\t%s[%s] = aws.ToBoolgMap(%s)\n", indent, targetVarName, keyVarName, valIterVarName)
+			out += fmt.Sprintf("%s\t%s[%s] = aws.ToBoolMap(%s)\n", indent, targetVarName, keyVarName, valIterVarName)
 			out += fmt.Sprintf("%s}\n", indent)
 			return out
 		}
@@ -1636,13 +1636,38 @@ func setSDKAdaptiveResourceCollection(
 			out += fmt.Sprintf("%s\t%s.%s = aws.ToInt64Slice(%s)\n", indent, targetVarName, memberName, sourceAdaptedVarName)
 
 		}
-	} else if shape.Type == "map" &&
+		} else if shape.Type == "map" &&
 		shape.KeyRef.Shape.Type == "string" &&
-		shape.ValueRef.Shape.Type == "string" {
-		out += fmt.Sprintf("%s\t%s.%s = aws.ToStringMap(%s)\n", indent, targetVarName, memberName, sourceAdaptedVarName)
+		isPrimitiveType(shape.ValueRef.Shape.Type) {
+		mapType := resolveAWSMapValueType(shape.ValueRef.Shape.Type)
+		out += fmt.Sprintf("%s\t%s.%s = aws.To%sMap(%s)\n", indent, targetVarName, memberName, mapType, sourceAdaptedVarName)
 	}
-
 	return out
+}
+
+func isPrimitiveType(valueType string) bool {
+	switch valueType {
+	case "string", "boolean", "integer", "long", "float", "double":
+		return true
+	default:
+		return false
+	}
+}
+
+func resolveAWSMapValueType(valueType string) string {
+	switch valueType {
+	case "string":
+		return "String"
+	case "boolean":
+		return "Bool"
+	case "integer", "long":
+		return "Int64"
+	case "float", "double":
+		return "Float64"
+	default:
+		// For any other type, return String as a safe fallback
+		return "String"
+	}
 }
 
 func setSDKForUnion(
