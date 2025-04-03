@@ -1636,13 +1636,25 @@ func setSDKAdaptiveResourceCollection(
 			out += fmt.Sprintf("%s\t%s.%s = aws.ToInt64Slice(%s)\n", indent, targetVarName, memberName, sourceAdaptedVarName)
 
 		}
-	} else if shape.Type == "map" &&
-		shape.KeyRef.Shape.Type == "string" &&
-		shape.ValueRef.Shape.Type == "string" {
-		out += fmt.Sprintf("%s\t%s.%s = aws.ToStringMap(%s)\n", indent, targetVarName, memberName, sourceAdaptedVarName)
+		} else if shape.Type == "map" &&
+		shape.KeyRef.Shape.Type == "string" {
+		mapType := getAWSMapType(shape.ValueRef.Shape.Type)
+		out += fmt.Sprintf("%s\t%s.%s = aws.To%sMap(%s)\n", indent, targetVarName, memberName, mapType, sourceAdaptedVarName)
 	}
-
 	return out
+}
+
+func getAWSMapType(valueType string) string {
+	switch valueType {
+	case "string":
+		return "String"
+	case "boolean":
+		return "Bool"
+	default:
+		// For any other type, return String as a safe fallback
+		// This avoids generating undefined function calls
+		return "String"
+	}
 }
 
 func setSDKForUnion(
