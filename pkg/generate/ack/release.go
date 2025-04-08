@@ -104,6 +104,17 @@ func Release(
 	)
 	metaVars := m.MetaVars()
 
+	crds, err := m.GetCRDs()
+	if err != nil {
+		return nil, err
+	}
+
+	reconcileResources := make([]string, 0)
+
+	for _, crd := range crds {
+		reconcileResources = append(reconcileResources, crd.Names.Camel)
+	}
+
 	releaseVars := &templateReleaseVars{
 		metaVars,
 		ImageReleaseVars{
@@ -112,6 +123,7 @@ func Release(
 		},
 		metadata,
 		serviceAccountName,
+		reconcileResources,
 	}
 	for _, path := range releaseTemplatePaths {
 		outPath := strings.TrimSuffix(path, ".tpl")
@@ -140,4 +152,6 @@ type templateReleaseVars struct {
 	Metadata *ackmetadata.ServiceMetadata
 	// ServiceAccountName is the name of the ServiceAccount used in the Helm chart
 	ServiceAccountName string
+	// ReconcileResources contains all CRD names in their original format
+	ReconcileResources []string
 }
