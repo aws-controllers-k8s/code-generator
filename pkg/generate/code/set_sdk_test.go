@@ -85,6 +85,67 @@ func TestSetSDK_APIGWv2_Route_Create(t *testing.T) {
 	)
 }
 
+func TestSetSDK_MemoryDB_User_Create(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "memorydb")
+
+	crd := testutil.GetCRDByName(t, g, "User")
+	require.NotNil(crd)
+
+	expected := `
+	if r.ko.Spec.AccessString != nil {
+		res.AccessString = r.ko.Spec.AccessString
+	}
+	if r.ko.Spec.AuthenticationMode != nil {
+		f1 := &svcsdktypes.AuthenticationMode{}
+		if r.ko.Spec.AuthenticationMode.Passwords != nil {
+			f1f0 := []string{}
+			for _, f1f0iter := range r.ko.Spec.AuthenticationMode.Passwords {
+				var f1f0elem string
+				if f1f0iter != nil {
+					tmpSecret, err := rm.rr.SecretValueFromReference(ctx, f1f0iter)
+					if err != nil {
+						return nil, ackrequeue.Needed(err)
+					}
+					if tmpSecret != "" {
+						f1f0elem = tmpSecret
+					}
+				}
+				f1f0 = append(f1f0, f1f0elem)
+			}
+			f1.Passwords = f1f0
+		}
+		if r.ko.Spec.AuthenticationMode.Type != nil {
+			f1.Type = svcsdktypes.InputAuthenticationType(*r.ko.Spec.AuthenticationMode.Type)
+		}
+		res.AuthenticationMode = f1
+	}
+	if r.ko.Spec.Tags != nil {
+		f2 := []svcsdktypes.Tag{}
+		for _, f2iter := range r.ko.Spec.Tags {
+			f2elem := &svcsdktypes.Tag{}
+			if f2iter.Key != nil {
+				f2elem.Key = f2iter.Key
+			}
+			if f2iter.Value != nil {
+				f2elem.Value = f2iter.Value
+			}
+			f2 = append(f2, *f2elem)
+		}
+		res.Tags = f2
+	}
+	if r.ko.Spec.Name != nil {
+		res.UserName = r.ko.Spec.Name
+	}
+`
+	assert.Equal(
+		expected,
+		code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1),
+	)
+}
+
 func TestSetSDK_OpenSearch_Domain_Create(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)

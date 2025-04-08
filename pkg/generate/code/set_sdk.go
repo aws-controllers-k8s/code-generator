@@ -1187,7 +1187,7 @@ func SetSDKForStruct(
 		)
 		switch memberShape.Type {
 		case "list", "structure", "map", "union":
-			adaptiveCollection := setSDKAdaptiveResourceCollection(memberShape, targetVarName, memberName, sourceAdaptedVarName, indent, r.IsSecretField(memberName))
+			adaptiveCollection := setSDKAdaptiveResourceCollection(memberShape, targetVarName, memberName, sourceAdaptedVarName, indent, r.IsSecretField(memberFieldPath))
 			out += adaptiveCollection
 			if adaptiveCollection != "" {
 				break
@@ -1739,7 +1739,7 @@ func setSDKForUnion(
 
 		switch memberShape.Type {
 		case "list", "structure", "map", "union":
-			adaption := setSDKAdaptiveResourceCollection(memberShape, targetVarName, memberName, sourceAdaptedVarName, indent, r.IsSecretField(memberName))
+			adaption := setSDKAdaptiveResourceCollection(memberShape, targetVarName, memberName, sourceAdaptedVarName, indent, r.IsSecretField(memberFieldPath))
 			out += adaption
 			if adaption != "" {
 				break
