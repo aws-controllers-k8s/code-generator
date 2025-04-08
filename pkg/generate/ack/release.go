@@ -21,6 +21,7 @@ import (
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate/templateset"
 	ackmetadata "github.com/aws-controllers-k8s/code-generator/pkg/metadata"
 	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
+	"github.com/aws-controllers-k8s/pkg/names"
 )
 
 var (
@@ -103,16 +104,9 @@ func Release(
 		releaseFuncMap(m.MetaVars().ControllerName),
 	)
 	metaVars := m.MetaVars()
-
-	crds, err := m.GetCRDs()
-	if err != nil {
-		return nil, err
-	}
-
-	reconcileResources := make([]string, 0)
-
-	for _, crd := range crds {
-		reconcileResources = append(reconcileResources, crd.Names.Camel)
+	reconcileResources := make([]string, len(metaVars.CRDNames))
+	for i, name := range metaVars.CRDNames {
+		reconcileResources[i] = names.New(name).Camel
 	}
 
 	releaseVars := &templateReleaseVars{

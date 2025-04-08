@@ -141,10 +141,9 @@ reconcile:
   # Set the value of resources to specify which resource kinds to reconcile.
   # If empty, all resources will be reconciled.
   # If specified, only the listed resource kinds will be reconciled.
-  resources: []
-  # Available resource kinds for this controller:
+  resources:
   {{- range $resource := .ReconcileResources }}
-#   - {{ $resource }}
+    - {{ $resource }}
   {{- end }}
 
 serviceAccount:
