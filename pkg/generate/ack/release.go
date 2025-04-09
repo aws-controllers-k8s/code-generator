@@ -21,6 +21,7 @@ import (
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate/templateset"
 	ackmetadata "github.com/aws-controllers-k8s/code-generator/pkg/metadata"
 	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
+	"github.com/aws-controllers-k8s/pkg/names"
 )
 
 var (
@@ -103,6 +104,10 @@ func Release(
 		releaseFuncMap(m.MetaVars().ControllerName),
 	)
 	metaVars := m.MetaVars()
+	reconcileResources := make([]string, len(metaVars.CRDNames))
+	for i, name := range metaVars.CRDNames {
+		reconcileResources[i] = names.New(name).Camel
+	}
 
 	releaseVars := &templateReleaseVars{
 		metaVars,
@@ -112,6 +117,7 @@ func Release(
 		},
 		metadata,
 		serviceAccountName,
+		reconcileResources,
 	}
 	for _, path := range releaseTemplatePaths {
 		outPath := strings.TrimSuffix(path, ".tpl")
@@ -140,4 +146,6 @@ type templateReleaseVars struct {
 	Metadata *ackmetadata.ServiceMetadata
 	// ServiceAccountName is the name of the ServiceAccount used in the Helm chart
 	ServiceAccountName string
+	// ReconcileResources contains all CRD names in their original format
+	ReconcileResources []string
 }

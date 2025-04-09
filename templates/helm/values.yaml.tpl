@@ -137,6 +137,14 @@ reconcile:
   # An object representing the reconcile max concurrent syncs configuration for each specific
   # resource.
   resourceMaxConcurrentSyncs: {}
+  
+  # Set the value of resources to specify which resource kinds to reconcile.
+  # If empty, all resources will be reconciled.
+  # If specified, only the listed resource kinds will be reconciled.
+  resources:
+  {{- range $resource := .ReconcileResources }}
+    - {{ $resource }}
+  {{- end }}
 
 serviceAccount:
   # Specifies whether a service account should be created
