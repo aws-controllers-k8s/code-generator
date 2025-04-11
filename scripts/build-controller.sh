@@ -205,6 +205,7 @@ if ! $ACK_GENERATE_BIN_PATH "${apis_args[@]}"; then
 fi
 
 pushd "$SERVICE_CONTROLLER_SOURCE_PATH/apis/$ACK_GENERATE_API_VERSION" 1>/dev/null
+  git pull upstream main --tags 2>/dev/null
 
 echo "Generating deepcopy code for $SERVICE"
 controller-gen object:headerFile="$BOILERPLATE_TXT_PATH" paths=./...
