@@ -858,7 +858,7 @@ func requiredFieldGuardContructor(
 	indent := strings.Repeat("\t", indentLevel)
 	out := fmt.Sprintf("%stmp, ok := %s[\"%s\"]\n", indent, sourceVarName, requiredField)
 	out += fmt.Sprintf("%sif !ok {\n", indent)
-	out += fmt.Sprintf("%s\treturn ackerrors.MissingNameIdentifier\n", indent)
+	out += fmt.Sprintf("%s\treturn ackerrors.NewTerminalError(fmt.Errorf(\"required field missing: %s\"))\n", indent, requiredField)
 	out += fmt.Sprintf("%s}\n", indent)
 	return out
 }
