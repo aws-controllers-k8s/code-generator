@@ -1802,7 +1802,7 @@ func TestSetResource_EKS_Cluster_PopulateResourceFromAnnotation(t *testing.T) {
 	expected := `
 	tmp, ok := fields["name"]
 	if !ok {
-		return ackerrors.MissingNameIdentifier
+		return ackerrors.NewTerminalError(fmt.Errorf("required field missing: name"))
 	}
 	r.ko.Spec.Name = &tmp
 
@@ -1825,7 +1825,7 @@ func TestSetResource_SageMaker_ModelPackage_PopulateResourceFromAnnotation(t *te
 	expected := `
 	tmp, ok := identifier["arn"]
 	if !ok {
-		return ackerrors.MissingNameIdentifier
+		return ackerrors.NewTerminalError(fmt.Errorf("required field missing: arn"))
 	}
 
 	if r.ko.Status.ACKResourceMetadata == nil {
@@ -1852,7 +1852,7 @@ func TestSetResource_APIGWV2_ApiMapping_PopulateResourceFromAnnotation(t *testin
 	expected := `
 	tmp, ok := fields["apiMappingID"]
 	if !ok {
-		return ackerrors.MissingNameIdentifier
+		return ackerrors.NewTerminalError(fmt.Errorf("required field missing: apiMappingID"))
 	}
 	r.ko.Status.APIMappingID = &tmp
 
