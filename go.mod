@@ -3,7 +3,7 @@ module github.com/aws-controllers-k8s/code-generator
 go 1.24.0
 
 require (
-	github.com/aws-controllers-k8s/pkg v0.0.15
+	github.com/aws-controllers-k8s/pkg v0.0.16
 	github.com/aws-controllers-k8s/runtime v0.45.0
 	github.com/aws/aws-sdk-go v1.49.0
 	github.com/aws/aws-sdk-go-v2 v1.32.7
