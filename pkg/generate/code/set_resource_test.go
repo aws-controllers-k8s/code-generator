@@ -204,7 +204,6 @@ func TestSetResource_APIGWv2_Route_ReadOne(t *testing.T) {
 	)
 }
 
-
 func TestSetResource_SageMaker_Domain_ReadOne(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
@@ -2264,17 +2263,17 @@ func TestSetResource_EC2_Instance_Create(t *testing.T) {
 		if elem.MetadataOptions != nil {
 			f23 := &svcapitypes.InstanceMetadataOptionsRequest{}
 			if elem.MetadataOptions.HttpEndpoint != "" {
-				f23.HTTPEndpoint = aws.String(string(elem.MetadataOptions.HttpEndpoint))
+				f23.HttpEndpoint = aws.String(string(elem.MetadataOptions.HttpEndpoint))
 			}
 			if elem.MetadataOptions.HttpProtocolIpv6 != "" {
-				f23.HTTPProtocolIPv6 = aws.String(string(elem.MetadataOptions.HttpProtocolIpv6))
+				f23.HttpProtocolIPv6 = aws.String(string(elem.MetadataOptions.HttpProtocolIpv6))
 			}
 			if elem.MetadataOptions.HttpPutResponseHopLimit != nil {
 				httpPutResponseHopLimitCopy := int64(*elem.MetadataOptions.HttpPutResponseHopLimit)
-				f23.HTTPPutResponseHopLimit = &httpPutResponseHopLimitCopy
+				f23.HttpPutResponseHopLimit = &httpPutResponseHopLimitCopy
 			}
 			if elem.MetadataOptions.HttpTokens != "" {
-				f23.HTTPTokens = aws.String(string(elem.MetadataOptions.HttpTokens))
+				f23.HttpTokens = aws.String(string(elem.MetadataOptions.HttpTokens))
 			}
 			ko.Spec.MetadataOptions = f23
 		} else {
@@ -2793,17 +2792,17 @@ func TestSetResource_EC2_Instance_ReadMany(t *testing.T) {
 			if elem.MetadataOptions != nil {
 				f23 := &svcapitypes.InstanceMetadataOptionsRequest{}
 				if elem.MetadataOptions.HttpEndpoint != "" {
-					f23.HTTPEndpoint = aws.String(string(elem.MetadataOptions.HttpEndpoint))
+					f23.HttpEndpoint = aws.String(string(elem.MetadataOptions.HttpEndpoint))
 				}
 				if elem.MetadataOptions.HttpProtocolIpv6 != "" {
-					f23.HTTPProtocolIPv6 = aws.String(string(elem.MetadataOptions.HttpProtocolIpv6))
+					f23.HttpProtocolIPv6 = aws.String(string(elem.MetadataOptions.HttpProtocolIpv6))
 				}
 				if elem.MetadataOptions.HttpPutResponseHopLimit != nil {
 					httpPutResponseHopLimitCopy := int64(*elem.MetadataOptions.HttpPutResponseHopLimit)
-					f23.HTTPPutResponseHopLimit = &httpPutResponseHopLimitCopy
+					f23.HttpPutResponseHopLimit = &httpPutResponseHopLimitCopy
 				}
 				if elem.MetadataOptions.HttpTokens != "" {
-					f23.HTTPTokens = aws.String(string(elem.MetadataOptions.HttpTokens))
+					f23.HttpTokens = aws.String(string(elem.MetadataOptions.HttpTokens))
 				}
 				ko.Spec.MetadataOptions = f23
 			} else {
