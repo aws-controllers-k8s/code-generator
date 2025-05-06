@@ -3,7 +3,7 @@
 ## tl;dr
 
 If you want to just build a service controller, there's a
-[script](../scripts/build-controller.sh) for that:
+[script](/scripts/build-controller.sh) for that:
 
 For example, to generate the SNS service controller for ACK:
 
