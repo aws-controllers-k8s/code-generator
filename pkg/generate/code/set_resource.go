@@ -1988,6 +1988,28 @@ func setResourceForSlice(
 	elemVarName := fmt.Sprintf("%selem", targetVarName)
 	// for _, f0iter0 := range resp.TagSpecifications {
 	out += fmt.Sprintf("%sfor _, %s := range %s {\n", indent, iterVarName, sourceVarName)
+	if sourceShape.MemberRef.Shape.Type == "list" &&
+		!sourceShape.MemberRef.Shape.MemberRef.Shape.IsEnum() &&
+		sourceShape.MemberRef.Shape.MemberRef.Shape.Type == "string" {
+		out += fmt.Sprintf("%s\t%s := aws.StringSlice(%s)\n", indent, elemVarName, iterVarName)
+		out += fmt.Sprintf("%s\t%s = append(%s, %s)\n", indent, targetVarName, targetVarName, elemVarName)
+		out += fmt.Sprintf("%s}\n", indent)
+		return out
+	} else if sourceShape.MemberRef.Shape.Type == "map" &&
+		!sourceShape.MemberRef.Shape.ValueRef.Shape.IsEnum() &&
+		sourceShape.MemberRef.Shape.KeyRef.Shape.Type == "string" {
+		if sourceShape.MemberRef.Shape.ValueRef.Shape.Type == "string" {
+			out += fmt.Sprintf("%s\t%s := aws.StringMap(%s)\n", indent, elemVarName, iterVarName)
+			out += fmt.Sprintf("%s\t%s = append(%s, %s)\n", indent, targetVarName, targetVarName, elemVarName)
+			out += fmt.Sprintf("%s}\n", indent)
+			return out
+		} else if sourceShape.MemberRef.Shape.ValueRef.Shape.Type == "boolean" {
+			out += fmt.Sprintf("%s\t%s := aws.BoolMap(%s)\n", indent, elemVarName, iterVarName)
+			out += fmt.Sprintf("%s\t%s = append(%s, %s)\n", indent, targetVarName, targetVarName, elemVarName)
+			out += fmt.Sprintf("%s}\n", indent)
+			return out
+		}
+	}
 	//		var f0elem0 string
 	out += varEmptyConstructorK8sType(
 		cfg, r,
@@ -2118,6 +2140,7 @@ func setResourceForMap(
 		out += fmt.Sprintf("%s}\n", indent)
 		return out
 	} else if sourceShape.ValueRef.Shape.Type == "map" &&
+		!sourceShape.ValueRef.Shape.ValueRef.Shape.IsEnum() &&
 		sourceShape.ValueRef.Shape.KeyRef.Shape.Type == "string" {
 		if sourceShape.ValueRef.Shape.ValueRef.Shape.Type == "string" {
 			out += fmt.Sprintf("%s\t%s[%s] = aws.StringMap(%s)\n", indent, targetVarName, keyVarName, valIterVarName)
@@ -2155,7 +2178,9 @@ func setResourceForMap(
 	case "structure", "list", "map":
 		break
 	default:
-		addressOfVar = "&"
+		if !sourceShape.ValueRef.Shape.IsEnum() {
+			addressOfVar = "&"
+		}
 	}
 	// f0[f0key] = f0val
 	out += fmt.Sprintf("%s\t%s[%s] = %s%s\n", indent, targetVarName, keyVarName, addressOfVar, valVarName)
@@ -2183,17 +2208,17 @@ func setResourceForScalar(
 	if shape.Type == "timestamp" {
 		setTo = "&metav1.Time{*" + sourceVar + "}"
 	}
-	
+
 	targetVar = strings.TrimPrefix(targetVar, ".")
 	address := ""
 
-	if (shape.Type == "long"  && isList) || (shape.Type == "string" && isUnion) {
+	if (shape.Type == "long" && isList) || (shape.Type == "string" && isUnion) {
 		address = "&"
 	}
 
 	intOrFloat := map[string]string{
 		"integer": "int",
-		"float": "float",
+		"float":   "float",
 	}
 
 	targetVar = strings.TrimPrefix(targetVar, ".")
@@ -2320,6 +2345,7 @@ func setResourceAdaptPrimitiveCollection(shape *awssdkmodel.Shape, qualifiedTarg
 
 		}
 	} else if shape.Type == "map" &&
+		!shape.ValueRef.Shape.IsEnum() &&
 		shape.KeyRef.Shape.Type == "string" &&
 		(shape.ValueRef.Shape.Type == "string" || shape.ValueRef.Shape.Type == "boolean" || shape.ValueRef.Shape.Type == "long" || shape.ValueRef.Shape.Type == "double") {
 		if shape.ValueRef.Shape.Type == "string" {
