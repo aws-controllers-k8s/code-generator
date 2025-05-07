@@ -1289,6 +1289,28 @@ func setSDKForSlice(
 	if targetShape.MemberRef.Shape.RealType == "union" {
 		targetShape.MemberRef.Shape.Type = "union"
 	}
+	if targetShape.MemberRef.Shape.Type == "list" &&
+		targetShape.MemberRef.Shape.MemberRef.Shape.Type == "string" &&
+		!targetShape.MemberRef.Shape.MemberRef.Shape.IsEnum() {
+		out += fmt.Sprintf("%s\t%s := aws.ToStringSlice(%s)\n", indent, elemVarName, iterVarName)
+		out += fmt.Sprintf("%s\t%s = append(%s, %s)\n", indent, targetVarName, targetVarName, elemVarName)
+		out += fmt.Sprintf("%s}\n", indent)
+		return out
+	} else if targetShape.MemberRef.Shape.Type == "map" &&
+		!targetShape.MemberRef.Shape.ValueRef.Shape.IsEnum() &&
+		targetShape.MemberRef.Shape.KeyRef.Shape.Type == "string" {
+		if targetShape.MemberRef.Shape.ValueRef.Shape.Type == "string" {
+			out += fmt.Sprintf("%s\t%s := aws.ToStringMap(%s)\n", indent, elemVarName, iterVarName)
+			out += fmt.Sprintf("%s\t%s = append(%s, %s)\n", indent, targetVarName, targetVarName, elemVarName)
+			out += fmt.Sprintf("%s}\n", indent)
+			return out
+		} else if targetShape.ValueRef.Shape.ValueRef.Shape.Type == "boolean" {
+			out += fmt.Sprintf("%s\t%s := aws.ToBoolMap(%s)\n", indent, elemVarName, iterVarName)
+			out += fmt.Sprintf("%s\t%s = append(%s, %s)\n", indent, targetVarName, targetVarName, elemVarName)
+			out += fmt.Sprintf("%s}\n", indent)
+			return out
+		}
+	}
 	//		f0elem := string{}
 	out += varEmptyConstructorSDKType(
 		cfg, r,
@@ -1368,7 +1390,8 @@ func setSDKForMap(
 		out += fmt.Sprintf("%s}\n", indent)
 		return out
 	} else if targetShape.ValueRef.Shape.Type == "map" &&
-		targetShape.ValueRef.Shape.KeyRef.Shape.Type == "string" {
+		targetShape.ValueRef.Shape.KeyRef.Shape.Type == "string" &&
+		!targetShape.ValueRef.Shape.ValueRef.Shape.IsEnum() {
 		if targetShape.ValueRef.Shape.ValueRef.Shape.Type == "string" {
 			out += fmt.Sprintf("%s\t%s[%s] = aws.ToStringMap(%s)\n", indent, targetVarName, keyVarName, valIterVarName)
 			out += fmt.Sprintf("%s}\n", indent)
@@ -1394,17 +1417,22 @@ func setSDKForMap(
 	if targetShape.ValueRef.Shape.Type == "structure" {
 		containerFieldName = targetFieldName
 	}
-	out += setSDKForContainer(
-		cfg, r,
-		containerFieldName,
-		valVarName,
-		sourceFieldPath,
-		valIterVarName,
-		&targetShape.ValueRef,
-		false,
-		op,
-		indentLevel+1,
-	)
+	if targetShape.ValueRef.Shape.IsEnum() {
+		out += fmt.Sprintf("%s\t%s = string(*%s)\n", indent, valVarName, valIterVarName)
+		valVarName = fmt.Sprintf("svcsdktypes.%s(%s)", targetShape.ValueRef.ShapeName, valVarName)
+	} else {
+		out += setSDKForContainer(
+			cfg, r,
+			containerFieldName,
+			valVarName,
+			sourceFieldPath,
+			valIterVarName,
+			&targetShape.ValueRef,
+			true,
+			op,
+			indentLevel+1,
+		)
+	}
 
 	dereference := "*"
 	if !targetShapeRef.HasDefaultValue() && targetShape.ValueRef.Shape.Type != "structure" {
@@ -1457,6 +1485,9 @@ func varEmptyConstructorSDKType(
 
 		if goType == "map[string][]*string" || goType == "map[string][]*int32" || goType == "map[string][]*int64" {
 			goType = "map[string][]" + strings.TrimPrefix(goType, "map[string][]*")
+		}
+		if shape.ValueRef.Shape.IsEnum() {
+			goType = fmt.Sprintf("map[string]svcsdktypes.%s", shape.ValueRef.ShapeName)
 		}
 		out += fmt.Sprintf("%s%s := %s{}\n", indent, varName, goType)
 
@@ -1636,8 +1667,9 @@ func setSDKAdaptiveResourceCollection(
 			out += fmt.Sprintf("%s\t%s.%s = aws.ToInt64Slice(%s)\n", indent, targetVarName, memberName, sourceAdaptedVarName)
 
 		}
-		} else if shape.Type == "map" &&
+	} else if shape.Type == "map" &&
 		shape.KeyRef.Shape.Type == "string" &&
+		!shape.ValueRef.Shape.IsEnum() &&
 		isPrimitiveType(shape.ValueRef.Shape.Type) {
 		mapType := resolveAWSMapValueType(shape.ValueRef.Shape.Type)
 		out += fmt.Sprintf("%s\t%s.%s = aws.To%sMap(%s)\n", indent, targetVarName, memberName, mapType, sourceAdaptedVarName)
