@@ -21,7 +21,6 @@ import (
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate/templateset"
 	ackmetadata "github.com/aws-controllers-k8s/code-generator/pkg/metadata"
 	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
-	"github.com/aws-controllers-k8s/pkg/names"
 )
 
 var (
@@ -104,9 +103,20 @@ func Release(
 		releaseFuncMap(m.MetaVars().ControllerName),
 	)
 	metaVars := m.MetaVars()
-	reconcileResources := make([]string, len(metaVars.CRDNames))
-	for i, name := range metaVars.CRDNames {
-		reconcileResources[i] = names.New(name).Camel
+	// Using GetCRDs() directly gives us the proper CamelCase format
+	// that matches the Kubernetes API resource kinds. The previous approach using
+	// metaVars.CRDNames with names.New(name).Camel was incorrect because CRDNames
+	// contains lowercase plural forms (e.g., "preparedstatements", "workgroups")
+	// and the names package's Camel conversion wasn't handling the internal word
+	// breaks correctly, resulting in "Preparedstatements" instead of "PreparedStatement".
+	crds, err := m.GetCRDs()
+	if err != nil {
+		return nil, err
+	}
+
+	reconcileResources := make([]string, 0)
+	for _, crd := range crds {
+		reconcileResources = append(reconcileResources, crd.Kind)
 	}
 
 	releaseVars := &templateReleaseVars{
