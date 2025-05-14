@@ -27,7 +27,7 @@ metadata:
 roleRef:
   kind: Role
   apiGroup: rbac.authorization.k8s.io
-  name: ack-{{ .ControllerName }}-controller
+  name: {{ IncludeTemplate "app.fullname" }}-controller
 subjects:
 - kind: ServiceAccount
   name: {{ "{{ $serviceAccountName }}" }}
