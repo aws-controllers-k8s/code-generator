@@ -204,7 +204,6 @@ func TestSetResource_APIGWv2_Route_ReadOne(t *testing.T) {
 	)
 }
 
-
 func TestSetResource_SageMaker_Domain_ReadOne(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
@@ -617,12 +616,12 @@ func TestSetResource_DynamoDB_Backup_ReadOne(t *testing.T) {
 		ko.Status.ACKResourceMetadata.ARN = &arn
 	}
 	if resp.BackupDescription.BackupDetails.BackupCreationDateTime != nil {
-		ko.Status.BackupCreationDateTime = &metav1.Time{*resp.BackupDescription.BackupDetails.BackupCreationDateTime}
+		ko.Status.BackupCreationDateTime = &metav1.Time{Time: *resp.BackupDescription.BackupDetails.BackupCreationDateTime}
 	} else {
 		ko.Status.BackupCreationDateTime = nil
 	}
 	if resp.BackupDescription.BackupDetails.BackupExpiryDateTime != nil {
-		ko.Status.BackupExpiryDateTime = &metav1.Time{*resp.BackupDescription.BackupDetails.BackupExpiryDateTime}
+		ko.Status.BackupExpiryDateTime = &metav1.Time{Time: *resp.BackupDescription.BackupDetails.BackupExpiryDateTime}
 	} else {
 		ko.Status.BackupExpiryDateTime = nil
 	}
@@ -709,7 +708,7 @@ func TestSetResource_DynamoDB_Table_ReadOne(t *testing.T) {
 			f0.ArchivalBackupARN = resp.Table.ArchivalSummary.ArchivalBackupArn
 		}
 		if resp.Table.ArchivalSummary.ArchivalDateTime != nil {
-			f0.ArchivalDateTime = &metav1.Time{*resp.Table.ArchivalSummary.ArchivalDateTime}
+			f0.ArchivalDateTime = &metav1.Time{Time: *resp.Table.ArchivalSummary.ArchivalDateTime}
 		}
 		if resp.Table.ArchivalSummary.ArchivalReason != nil {
 			f0.ArchivalReason = resp.Table.ArchivalSummary.ArchivalReason
@@ -740,14 +739,14 @@ func TestSetResource_DynamoDB_Table_ReadOne(t *testing.T) {
 			f2.BillingMode = aws.String(string(resp.Table.BillingModeSummary.BillingMode))
 		}
 		if resp.Table.BillingModeSummary.LastUpdateToPayPerRequestDateTime != nil {
-			f2.LastUpdateToPayPerRequestDateTime = &metav1.Time{*resp.Table.BillingModeSummary.LastUpdateToPayPerRequestDateTime}
+			f2.LastUpdateToPayPerRequestDateTime = &metav1.Time{Time: *resp.Table.BillingModeSummary.LastUpdateToPayPerRequestDateTime}
 		}
 		ko.Status.BillingModeSummary = f2
 	} else {
 		ko.Status.BillingModeSummary = nil
 	}
 	if resp.Table.CreationDateTime != nil {
-		ko.Status.CreationDateTime = &metav1.Time{*resp.Table.CreationDateTime}
+		ko.Status.CreationDateTime = &metav1.Time{Time: *resp.Table.CreationDateTime}
 	} else {
 		ko.Status.CreationDateTime = nil
 	}
@@ -936,7 +935,7 @@ func TestSetResource_DynamoDB_Table_ReadOne(t *testing.T) {
 	if resp.Table.RestoreSummary != nil {
 		f13 := &svcapitypes.RestoreSummary{}
 		if resp.Table.RestoreSummary.RestoreDateTime != nil {
-			f13.RestoreDateTime = &metav1.Time{*resp.Table.RestoreSummary.RestoreDateTime}
+			f13.RestoreDateTime = &metav1.Time{Time: *resp.Table.RestoreSummary.RestoreDateTime}
 		}
 		if resp.Table.RestoreSummary.RestoreInProgress != nil {
 			f13.RestoreInProgress = resp.Table.RestoreSummary.RestoreInProgress
@@ -954,7 +953,7 @@ func TestSetResource_DynamoDB_Table_ReadOne(t *testing.T) {
 	if resp.Table.SSEDescription != nil {
 		f14 := &svcapitypes.SSEDescription{}
 		if resp.Table.SSEDescription.InaccessibleEncryptionDateTime != nil {
-			f14.InaccessibleEncryptionDateTime = &metav1.Time{*resp.Table.SSEDescription.InaccessibleEncryptionDateTime}
+			f14.InaccessibleEncryptionDateTime = &metav1.Time{Time: *resp.Table.SSEDescription.InaccessibleEncryptionDateTime}
 		}
 		if resp.Table.SSEDescription.KMSMasterKeyArn != nil {
 			f14.KMSMasterKeyARN = resp.Table.SSEDescription.KMSMasterKeyArn
@@ -1029,7 +1028,7 @@ func TestSetResource_EC2_LaunchTemplate_Create(t *testing.T) {
 	// "LaunchTemplate" that contains the CreatedBy field.
 	expected := `
 	if resp.LaunchTemplate.CreateTime != nil {
-		ko.Status.CreateTime = &metav1.Time{*resp.LaunchTemplate.CreateTime}
+		ko.Status.CreateTime = &metav1.Time{Time: *resp.LaunchTemplate.CreateTime}
 	} else {
 		ko.Status.CreateTime = nil
 	}
@@ -1095,7 +1094,7 @@ func TestSetResource_ECR_Repository_Create(t *testing.T) {
 	// "Repository" that contains the RegistryId field.
 	expected := `
 	if resp.Repository.CreatedAt != nil {
-		ko.Status.CreatedAt = &metav1.Time{*resp.Repository.CreatedAt}
+		ko.Status.CreatedAt = &metav1.Time{Time: *resp.Repository.CreatedAt}
 	} else {
 		ko.Status.CreatedAt = nil
 	}
@@ -1158,7 +1157,7 @@ func TestSetResource_ECR_Repository_ReadMany(t *testing.T) {
 	found := false
 	for _, elem := range resp.Repositories {
 		if elem.CreatedAt != nil {
-			ko.Status.CreatedAt = &metav1.Time{*elem.CreatedAt}
+			ko.Status.CreatedAt = &metav1.Time{Time: *elem.CreatedAt}
 		} else {
 			ko.Status.CreatedAt = nil
 		}
@@ -1895,7 +1894,7 @@ func TestSetResource_IAM_Role_NestedSetConfig(t *testing.T) {
 		ko.Spec.AssumeRolePolicyDocument = nil
 	}
 	if resp.Role.CreateDate != nil {
-		ko.Status.CreateDate = &metav1.Time{*resp.Role.CreateDate}
+		ko.Status.CreateDate = &metav1.Time{Time: *resp.Role.CreateDate}
 	} else {
 		ko.Status.CreateDate = nil
 	}
@@ -1928,7 +1927,7 @@ func TestSetResource_IAM_Role_NestedSetConfig(t *testing.T) {
 	if resp.Role.RoleLastUsed != nil {
 		f8 := &svcapitypes.RoleLastUsed{}
 		if resp.Role.RoleLastUsed.LastUsedDate != nil {
-			f8.LastUsedDate = &metav1.Time{*resp.Role.RoleLastUsed.LastUsedDate}
+			f8.LastUsedDate = &metav1.Time{Time: *resp.Role.RoleLastUsed.LastUsedDate}
 		}
 		if resp.Role.RoleLastUsed.Region != nil {
 			f8.Region = resp.Role.RoleLastUsed.Region
@@ -2168,7 +2167,7 @@ func TestSetResource_EC2_Instance_Create(t *testing.T) {
 					f9elem.ElasticInferenceAcceleratorAssociationState = f9iter.ElasticInferenceAcceleratorAssociationState
 				}
 				if f9iter.ElasticInferenceAcceleratorAssociationTime != nil {
-					f9elem.ElasticInferenceAcceleratorAssociationTime = &metav1.Time{*f9iter.ElasticInferenceAcceleratorAssociationTime}
+					f9elem.ElasticInferenceAcceleratorAssociationTime = &metav1.Time{Time: *f9iter.ElasticInferenceAcceleratorAssociationTime}
 				}
 				f9 = append(f9, f9elem)
 			}
@@ -2244,7 +2243,7 @@ func TestSetResource_EC2_Instance_Create(t *testing.T) {
 			ko.Spec.KeyName = nil
 		}
 		if elem.LaunchTime != nil {
-			ko.Status.LaunchTime = &metav1.Time{*elem.LaunchTime}
+			ko.Status.LaunchTime = &metav1.Time{Time: *elem.LaunchTime}
 		} else {
 			ko.Status.LaunchTime = nil
 		}
@@ -2538,7 +2537,7 @@ func TestSetResource_EC2_Instance_Create(t *testing.T) {
 			ko.Status.UsageOperation = nil
 		}
 		if elem.UsageOperationUpdateTime != nil {
-			ko.Status.UsageOperationUpdateTime = &metav1.Time{*elem.UsageOperationUpdateTime}
+			ko.Status.UsageOperationUpdateTime = &metav1.Time{Time: *elem.UsageOperationUpdateTime}
 		} else {
 			ko.Status.UsageOperationUpdateTime = nil
 		}
@@ -2697,7 +2696,7 @@ func TestSetResource_EC2_Instance_ReadMany(t *testing.T) {
 						f9elem.ElasticInferenceAcceleratorAssociationState = f9iter.ElasticInferenceAcceleratorAssociationState
 					}
 					if f9iter.ElasticInferenceAcceleratorAssociationTime != nil {
-						f9elem.ElasticInferenceAcceleratorAssociationTime = &metav1.Time{*f9iter.ElasticInferenceAcceleratorAssociationTime}
+						f9elem.ElasticInferenceAcceleratorAssociationTime = &metav1.Time{Time: *f9iter.ElasticInferenceAcceleratorAssociationTime}
 					}
 					f9 = append(f9, f9elem)
 				}
@@ -2773,7 +2772,7 @@ func TestSetResource_EC2_Instance_ReadMany(t *testing.T) {
 				ko.Spec.KeyName = nil
 			}
 			if elem.LaunchTime != nil {
-				ko.Status.LaunchTime = &metav1.Time{*elem.LaunchTime}
+				ko.Status.LaunchTime = &metav1.Time{Time: *elem.LaunchTime}
 			} else {
 				ko.Status.LaunchTime = nil
 			}
@@ -3067,7 +3066,7 @@ func TestSetResource_EC2_Instance_ReadMany(t *testing.T) {
 				ko.Status.UsageOperation = nil
 			}
 			if elem.UsageOperationUpdateTime != nil {
-				ko.Status.UsageOperationUpdateTime = &metav1.Time{*elem.UsageOperationUpdateTime}
+				ko.Status.UsageOperationUpdateTime = &metav1.Time{Time: *elem.UsageOperationUpdateTime}
 			} else {
 				ko.Status.UsageOperationUpdateTime = nil
 			}
