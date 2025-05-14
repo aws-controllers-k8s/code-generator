@@ -1,7 +1,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: ack-namespaces-cache-{{ .ControllerName }}-controller
+  name: {{ IncludeTemplate "app.fullname" }}-clusterrole
 rules:
 - apiGroups:
   - ""
@@ -15,7 +15,7 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: ack-configmaps-cache-{{ .ControllerName }}-controller
+  name: {{ IncludeTemplate "app.fullname" }}-role
   namespace: {{ "{{ .Release.Namespace }}" }}
 rules:
 - apiGroups:

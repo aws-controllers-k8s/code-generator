@@ -2,11 +2,11 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: {{ IncludeTemplate "app.fullname" }}
+  name: {{ IncludeTemplate "app.fullname" }}-rolebinding
 roleRef:
   kind: ClusterRole
   apiGroup: rbac.authorization.k8s.io
-  name: ack-{{ .ControllerName }}-controller
+  name: {{ IncludeTemplate "app.fullname" }}
 subjects:
 - kind: ServiceAccount
   name: {{ IncludeTemplate "service-account.name" }}
@@ -22,12 +22,12 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: {{ "{{ $fullname }}" }}
+  name: {{ "{{ $fullname }}" }}-{{ "{{ . }}" }}
   namespace: {{ "{{ . }}" }}
 roleRef:
   kind: Role
   apiGroup: rbac.authorization.k8s.io
-  name: ack-{{ .ControllerName }}-controller
+  name: {{ "{{ $fullname }}" }}-{{ "{{ . }}" }}
 subjects:
 - kind: ServiceAccount
   name: {{ "{{ $serviceAccountName }}" }}

@@ -2,7 +2,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: {{.ControllerName}}-leader-election-rolebinding
+  name: {{ IncludeTemplate "app.fullname" }}-leaderelection
 {{ "{{ if .Values.leaderElection.namespace }}" }}
   namespace: {{ "{{ .Values.leaderElection.namespace }}" }}
 {{ "{{ else }}" }}
@@ -11,7 +11,7 @@ metadata:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: {{.ControllerName}}-leader-election-role
+  name: {{ IncludeTemplate "app.fullname" }}-leaderelection
 subjects:
 - kind: ServiceAccount
   name: {{ IncludeTemplate "service-account.name" }}

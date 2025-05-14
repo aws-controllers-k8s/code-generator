@@ -1,10 +1,11 @@
 {{ "{{ $labels := .Values.role.labels }}" }}
 {{ VarIncludeTemplate "rbacRules" "rbac-rules" }}
+{{ VarIncludeTemplate "fullname" "app.fullname" }}
 {{ "{{ if eq .Values.installScope \"cluster\" }}" }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: ack-{{ .ControllerName }}-controller
+  name: {{ IncludeTemplate "app.fullname" }}
   labels:
   {{ "{{- range $key, $value := $labels }}" }}
     {{ "{{ $key }}: {{ $value | quote }}" }}
@@ -18,7 +19,7 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: ack-{{ .ControllerName }}-controller
+  name: {{ "{{ $fullname }}" }}-{{ "{{ . }}" }}
   namespace: {{ "{{ . }}" }}
   labels:
   {{ "{{- range $key, $value := $labels }}" }}

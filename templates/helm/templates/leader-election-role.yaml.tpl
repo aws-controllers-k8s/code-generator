@@ -2,7 +2,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: {{.ControllerName}}-leader-election-role
+  name: {{ IncludeTemplate "app.fullname" }}-leaderelection
 {{ "{{ if .Values.leaderElection.namespace }}" }}
   namespace: {{ "{{ .Values.leaderElection.namespace }}" }}
 {{ "{{ else }}" }}
