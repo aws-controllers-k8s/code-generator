@@ -1606,7 +1606,17 @@ func setSDKForScalar(
 		dereferencedVal := ogShapeName.CamelLower + "Copy0"
 		out += fmt.Sprintf("%s%s := %s\n", indent, dereferencedVal, setTo)
 
-		out += fmt.Sprintf("%sif %s > math.Max%s32 || %s < math.%s32 {\n", indent, dereferencedVal, actualType[0], dereferencedVal, actualType[1])
+		if shape.Type == "float" {
+			out += fmt.Sprintf(
+				"%[1]sif %[2]s > math.Max%[3]s32 || %[2]s < -math.Max%[3]s32 || (%[2]s < math.%[4]s32 && !(%[2]s <= 0)) || (%[2]s > -math.%[4]s32 && !(%[2]s >= 0)) {\n",
+				indent,
+				dereferencedVal,
+				actualType[0],
+				actualType[1],
+			)
+		} else {
+			out += fmt.Sprintf("%sif %s > math.Max%s32 || %s < math.%s32 {\n", indent, dereferencedVal, actualType[0], dereferencedVal, actualType[1])
+		}
 		out += fmt.Sprintf("%s\treturn nil, fmt.Errorf(\"error: field %s is of type %s32\")\n", indent, ogShapeName.Original, actualType[2])
 		out += fmt.Sprintf("%s}\n", indent)
 		tempVar := ogShapeName.CamelLower + "Copy"
