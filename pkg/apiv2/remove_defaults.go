@@ -26,6 +26,9 @@ var BadDefaultsAssignment = map[string]map[string]bool{
 	"imagebuilder": {
 		"setDefaultVersion": true,
 	},
+	"AmazonBedrockAgentBuildTimeLambda": {
+		"StorageDays": true,
+	},
 }
 
 func hasBadDefualtAssignment(serviceName, shapeName string) bool {
