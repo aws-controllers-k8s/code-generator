@@ -369,7 +369,6 @@ func SetSDK(
 					indentLevel+1,
 				)
 				out += setSDKForScalar(
-					cfg, r,
 					memberName,
 					targetVarName,
 					inputShape.Type,
@@ -391,7 +390,6 @@ func SetSDK(
 				)
 			} else {
 				out += setSDKForScalar(
-					cfg, r,
 					memberName,
 					targetVarName,
 					inputShape.Type,
@@ -577,7 +575,6 @@ func SetSDKGetAttributes(
 			indent, sourceVarPath,
 		)
 		out += setSDKForScalar(
-			cfg, r,
 			memberName,
 			targetVarName,
 			inputShape.Type,
@@ -788,7 +785,6 @@ func SetSDKSetAttributes(
 			indent, sourceVarPath,
 		)
 		out += setSDKForScalar(
-			cfg, r,
 			memberName,
 			targetVarName,
 			inputShape.Type,
@@ -918,7 +914,6 @@ func setSDKReadMany(
 
 			// res.SetIds(f0)
 			out += setSDKForScalar(
-				cfg, r,
 				memberName,
 				targetVarName,
 				inputShape.Type,
@@ -932,7 +927,6 @@ func setSDKReadMany(
 			// For ReadMany that have a singular identifier field.
 			// ex: DescribeReplicationGroups
 			out += setSDKForScalar(
-				cfg, r,
 				memberName,
 				targetVarName,
 				inputShape.Type,
@@ -1041,7 +1035,6 @@ func setSDKForContainer(
 		}
 
 		return setSDKForScalar(
-			cfg, r,
 			targetFieldName,
 			targetVarName,
 			targetShapeRef.Shape.Type,
@@ -1215,7 +1208,6 @@ func SetSDKForStruct(
 					indentLevel+1,
 				)
 				out += setSDKForScalar(
-					cfg, r,
 					memberName,
 					targetVarName,
 					targetShape.Type,
@@ -1238,7 +1230,6 @@ func SetSDKForStruct(
 			} else {
 
 				out += setSDKForScalar(
-					cfg, r,
 					memberName,
 					targetVarName,
 					targetShape.Type,
@@ -1558,8 +1549,6 @@ func varEmptyConstructorK8sType(
 // the aws-sdk-go's common SetXXX() method. For everything else, we output
 // normal assignment operations.
 func setSDKForScalar(
-	cfg *ackgenconfig.Config,
-	r *model.CRD,
 	// The name of the Input SDK Shape member we're outputting for
 	targetFieldName string,
 	// The variable name that we want to set a value to

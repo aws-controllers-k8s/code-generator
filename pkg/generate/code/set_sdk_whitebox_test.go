@@ -116,8 +116,6 @@ func TestSetSDKForScalar(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			result := setSDKForScalar(
-				nil,
-				nil,
 				tc.targetFieldName,
 				tc.targetVarName,
 				tc.targetVarType,
