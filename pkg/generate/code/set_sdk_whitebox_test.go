@@ -47,6 +47,7 @@ func TestSetSDKForScalar(t *testing.T) {
 				Shape: &awssdkmodel.Shape{
 					Type: "string",
 				},
+				OriginalMemberName: "BucketName",
 			},
 			indentLevel: 1,
 			expected:    "\tres.BucketName = ko.Spec.Name\n",
@@ -63,6 +64,7 @@ func TestSetSDKForScalar(t *testing.T) {
 				Shape: &awssdkmodel.Shape{
 					Type: "boolean",
 				},
+				OriginalMemberName: "Enabled",
 			},
 			indentLevel: 1,
 			expected:    "\tres.Enabled = ko.Spec.Enabled\n",
@@ -79,14 +81,15 @@ func TestSetSDKForScalar(t *testing.T) {
 				Shape: &awssdkmodel.Shape{
 					Type: "integer",
 				},
+				OriginalMemberName: "MaxKeys",
 			},
 			indentLevel: 1,
-			expected: `	Copy0 := *ko.Spec.MaxKeys
-	if Copy0 > math.MaxInt32 || Copy0 < math.MinInt32 {
-		return nil, fmt.Errorf("error: field  is of type int32")
+			expected: `	maxKeysCopy0 := *ko.Spec.MaxKeys
+	if maxKeysCopy0 > math.MaxInt32 || maxKeysCopy0 < math.MinInt32 {
+		return nil, fmt.Errorf("error: field MaxKeys is of type int32")
 	}
-	Copy := int32(Copy0)
-	res.MaxKeys = &Copy
+	maxKeysCopy := int32(maxKeysCopy0)
+	res.MaxKeys = &maxKeysCopy
 `,
 		},
 		{
@@ -101,14 +104,15 @@ func TestSetSDKForScalar(t *testing.T) {
 				Shape: &awssdkmodel.Shape{
 					Type: "float",
 				},
+				OriginalMemberName: "Temperature",
 			},
 			indentLevel: 1,
-			expected: `	Copy0 := *ko.Spec.Temperature
-	if Copy0 > math.MaxFloat32 || Copy0 < -math.MaxFloat32 || (Copy0 < math.SmallestNonzeroFloat32 && !(Copy0 <= 0)) || (Copy0 > -math.SmallestNonzeroFloat32 && !(Copy0 >= 0)) {
-		return nil, fmt.Errorf("error: field  is of type float32")
+			expected: `	temperatureCopy0 := *ko.Spec.Temperature
+	if temperatureCopy0 > math.MaxFloat32 || temperatureCopy0 < -math.MaxFloat32 || (temperatureCopy0 < math.SmallestNonzeroFloat32 && !(temperatureCopy0 <= 0)) || (temperatureCopy0 > -math.SmallestNonzeroFloat32 && !(temperatureCopy0 >= 0)) {
+		return nil, fmt.Errorf("error: field Temperature is of type float32")
 	}
-	Copy := float32(Copy0)
-	res.Temperature = &Copy
+	temperatureCopy := float32(temperatureCopy0)
+	res.Temperature = &temperatureCopy
 `,
 		},
 	}
