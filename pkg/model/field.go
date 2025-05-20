@@ -111,7 +111,6 @@ func (f *Field) GetDocumentation() string {
 		}
 		out.WriteString("// ")
 		out.WriteString(fmt.Sprintf("Regex Pattern: `%s`", f.ShapeRef.Shape.Pattern))
-
 	}
 
 	if cfg == nil {
