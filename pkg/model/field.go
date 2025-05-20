@@ -104,6 +104,16 @@ func (f *Field) GetDocumentation() string {
 			out.WriteString(f.ShapeRef.Documentation)
 		}
 	}
+
+	if f.ShapeRef != nil && f.ShapeRef.Shape != nil && f.ShapeRef.Shape.Pattern != "" {
+		if hasShapeDoc {
+			out.WriteString("\n//\n")
+		}
+		out.WriteString("// ")
+		out.WriteString(fmt.Sprintf("Regex Pattern: `%s`", f.ShapeRef.Shape.Pattern))
+
+	}
+
 	if cfg == nil {
 		return out.String()
 	}

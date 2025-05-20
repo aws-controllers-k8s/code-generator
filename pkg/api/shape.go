@@ -90,16 +90,17 @@ type Shape struct {
 	OriginalShapeName string `json:"-"`
 
 	// Map of exported member names to the ShapeReference.
-	MemberRefs       map[string]*ShapeRef `json:"members"`
-	MemberRef        ShapeRef             `json:"member"` // List ref
-	KeyRef           ShapeRef             `json:"key"`    // map key ref
-	ValueRef         ShapeRef             `json:"value"`  // map value ref
-	Required         []string
-	Payload          string
-	Type             string
+	MemberRefs map[string]*ShapeRef `json:"members"`
+	MemberRef  ShapeRef             `json:"member"` // List ref
+	KeyRef     ShapeRef             `json:"key"`    // map key ref
+	ValueRef   ShapeRef             `json:"value"`  // map value ref
+	Pattern    string               `json:"pattern"`
+	Required   []string
+	Payload    string
+	Type       string
 	// this is being added for type union specifically. We want to generate
 	//  api as struct and handle setSDK and setResource differently
-	RealType         string		
+	RealType         string
 	Exception        bool
 	Enum             []string
 	EnumConsts       []string

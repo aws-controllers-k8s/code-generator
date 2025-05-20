@@ -231,6 +231,12 @@ func createApiShape(shape Shape) (*awssdkmodel.Shape, error) {
 	if ok {
 		apiShape.DefaultValue = fmt.Sprintf("%v", val)
 	}
+
+	pattern, ok := shape.Traits["smithy.api#pattern"]
+	if ok {
+		apiShape.Pattern = pattern.(string)
+	}
+
 	documentation, _ := shape.Traits["smithy.api#documentation"].(string)
 	apiShape.Documentation = awssdkmodel.AppendDocstring("", documentation)
 
