@@ -338,3 +338,34 @@ func TestFieldPathWithUnderscore(t *testing.T) {
 	field.Path = "subPathA.subPathB.MyField"
 	assert.Equal("subPathA_subPathB_MyField", field.FieldPathWithUnderscore())
 }
+
+func TestFieldWithPattern(t *testing.T) {
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "eks",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile:     "generator.yaml",
+			DocumentationConfigFile: "documentation.yaml",
+		},
+	)
+
+	crds, err := g.GetCRDs()
+	require.Nil(err)
+
+	crd := getCRDByName("AddOn", crds)
+	require.NotNil(crd)
+
+	specFields := crd.SpecFields
+
+	// We have not altered the docstring for Version from the
+	// docstring that comes in the doc-2.json file...
+	ltdField := specFields["ClusterName"]
+	require.NotNil(ltdField)
+	require.NotNil(ltdField.ShapeRef)
+	require.NotEmpty(ltdField.ShapeRef.Shape.Pattern)
+
+	require.Equal(
+		"// The name of your cluster.\n//\n// Regex Pattern: `^[0-9A-Za-z][A-Za-z0-9\\-_]*$`",
+		ltdField.GetDocumentation(),
+	)
+}
