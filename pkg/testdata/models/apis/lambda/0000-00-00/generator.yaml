@@ -21,10 +21,12 @@ resources:
           in:
             - AVAILABLE
             - ACTIVE
+          requeueTime: 0
         - path: Status.CodeSize
           in:
             - 1
             - 2
+          requeueTime: 100
   CodeSigningConfig:
     fields:
       Tags:
