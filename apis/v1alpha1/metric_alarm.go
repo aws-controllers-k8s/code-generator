@@ -213,6 +213,8 @@ type MetricAlarmSpec struct {
 	// +kubebuilder:validation:Required
 	Name *string `json:"name"`
 	// The namespace for the metric associated specified in MetricName.
+	//
+	// Regex Pattern: `^[^:]`
 	Namespace *string `json:"namespace,omitempty"`
 	// The actions to execute when this alarm transitions to an OK state from any
 	// other state. Each action is specified as an Amazon Resource Name (ARN). Valid

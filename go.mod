@@ -5,7 +5,7 @@ go 1.24.0
 toolchain go1.24.1
 
 require (
-	github.com/aws-controllers-k8s/runtime v0.46.1
+	github.com/aws-controllers-k8s/runtime v0.47.0
 	github.com/aws/aws-sdk-go v1.49.0
 	github.com/aws/aws-sdk-go-v2 v1.36.0
 	github.com/aws/aws-sdk-go-v2/service/cloudwatch v1.43.12

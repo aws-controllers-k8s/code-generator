@@ -354,8 +354,10 @@ spec:
                   characters
                 type: string
               namespace:
-                description: The namespace for the metric associated specified in
-                  MetricName.
+                description: |-
+                  The namespace for the metric associated specified in MetricName.
+
+                  Regex Pattern: `^[^:]`
                 type: string
               oKActions:
                 description: |-
