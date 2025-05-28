@@ -41,6 +41,9 @@ deployment:
   # To have DNS options set along with hostNetwork, you have to specify DNS policy
   # explicitly to 'ClusterFirstWithHostNet'.
   dnsPolicy: ClusterFirst
+  # Set rollout strategy for deployment.
+  # See: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
+  strategy: {}
   extraVolumes: []
   extraVolumeMounts: []
 
