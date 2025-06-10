@@ -85,10 +85,12 @@ func saveGeneratedMetadata(cmd *cobra.Command, args []string) error {
 // generateAPIs generates the Go files for each resource in the AWS service
 // API.
 func generateAPIs(cmd *cobra.Command, args []string) error {
-	if len(args) != 1 {
+	if len(args) < 1 {
 		return fmt.Errorf("please specify the service alias for the AWS service API to generate")
 	}
 	svcAlias := strings.ToLower(args[0])
+	releaseVersion := strings.ToLower(args[1])
+	releaseVersion = strings.TrimPrefix(releaseVersion, "v")
 	if optOutputPath == "" {
 		optOutputPath = filepath.Join(optServicesDir, svcAlias)
 	}
@@ -107,7 +109,7 @@ func generateAPIs(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	ts, err := ackgenerate.APIs(m, optTemplateDirs)
+	ts, err := ackgenerate.APIs(m, optTemplateDirs, releaseVersion)
 	if err != nil {
 		return err
 	}

@@ -45,10 +45,12 @@ func init() {
 
 // generateController generates the Go files for a service controller
 func generateController(cmd *cobra.Command, args []string) error {
-	if len(args) != 1 {
-		return fmt.Errorf("please specify the service alias for the AWS service API to generate")
+	if len(args) < 1 {
+		return fmt.Errorf("please specify the service alias for the AWS service API to generate: controller")
 	}
 	svcAlias := strings.ToLower(args[0])
+	releaseVersion := strings.ToLower(args[1])
+	releaseVersion = strings.TrimPrefix(releaseVersion, "v")
 	if optOutputPath == "" {
 		optOutputPath = filepath.Join(optServicesDir, svcAlias)
 	}
@@ -72,7 +74,7 @@ func generateController(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	ts, err := ackgenerate.Controller(m, optTemplateDirs, serviceAccountName)
+	ts, err := ackgenerate.Controller(m, optTemplateDirs, serviceAccountName, releaseVersion)
 	if err != nil {
 		return err
 	}
