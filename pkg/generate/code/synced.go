@@ -75,11 +75,17 @@ func ResourceIsSynced(
 			msg := fmt.Sprintf("cannot find top level field of path '%s': %v", *condCfg.Path, err)
 			panic(msg)
 		}
+		notSyncedErr := ""
+		if condCfg.RequeueTime != nil {
+			notSyncedErr = fmt.Sprintf("ackrequeue.NeededAfter(fmt.Errorf(\"requeing until %s is %v\"), time.Duration(%d)*time.Second)", *condCfg.Path, condCfg.In, *condCfg.RequeueTime)
+		} else {
+			notSyncedErr = fmt.Sprintf("ackrequeue.Needed(fmt.Errorf(\"requeing until %s is %v\"))", *condCfg.Path, condCfg.In)
+		}
 		candidatesVarName := fmt.Sprintf("%sCandidates", field.Names.CamelLower)
 		if fp.Size() == 2 {
-			out += scalarFieldEqual(resVarName, candidatesVarName, field.ShapeRef.GoTypeElem(), condCfg)
+			out += scalarFieldEqual(resVarName, candidatesVarName, field.ShapeRef.GoTypeElem(), condCfg, notSyncedErr)
 		} else {
-			out += fieldPathSafeEqual(resVarName, candidatesVarName, field, condCfg)
+			out += fieldPathSafeEqual(resVarName, candidatesVarName, field, condCfg, notSyncedErr)
 		}
 	}
 
@@ -118,6 +124,7 @@ func scalarFieldEqual(
 	candidatesVarName string,
 	goType string,
 	condCfg ackgenconfig.SyncedCondition,
+	notSyncedErr string,
 ) string {
 	out := ""
 	fieldPath := fmt.Sprintf("%s.%s", resVarName, *condCfg.Path)
@@ -156,7 +163,7 @@ func scalarFieldEqual(
 	)
 
 	// return false, nil
-	out += "\t\treturn false, nil\n"
+	out += fmt.Sprintf("\t\treturn false, %s\n", notSyncedErr)
 	// }
 	out += "\t}\n"
 	return out
@@ -168,6 +175,7 @@ func fieldPathSafeEqual(
 	candidatesVarName string,
 	field *model.Field,
 	condCfg ackgenconfig.SyncedCondition,
+	notSyncedErr string,
 ) string {
 	out := ""
 	rootPath := fmt.Sprintf("%s.%s", resVarName, strings.Split(*condCfg.Path, ".")[0])
@@ -191,7 +199,7 @@ func fieldPathSafeEqual(
 		// }
 		out += "\t}\n"
 	}
-	out += scalarFieldEqual(resVarName, candidatesVarName, shapes[len(shapes)-1].GoTypeElem(), condCfg)
+	out += scalarFieldEqual(resVarName, candidatesVarName, shapes[len(shapes)-1].GoTypeElem(), condCfg, notSyncedErr)
 	return out
 }
 
