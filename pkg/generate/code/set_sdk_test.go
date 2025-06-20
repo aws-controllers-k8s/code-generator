@@ -14,6 +14,7 @@
 package code_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -4325,4 +4326,329 @@ func TestSetSDK_WAFv2_RuleGroup_Create(t *testing.T) {
 		expected,
 		code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1),
 	)
+}
+
+func TestSetSDK_Lambda_Function_EnvironmentVariable_MapOfSecrets_Create(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	lambdaModel := testutil.NewModelForServiceWithOptions(t, "lambda", &testutil.TestingModelOptions{
+		GeneratorConfigFile: "generator-environment-vars-secret.yaml",
+	})
+
+	crd := testutil.GetCRDByName(t, lambdaModel, "Function")
+	require.NotNil(crd)
+
+	expected := `
+	if r.ko.Spec.Code != nil {
+		f0 := &svcsdktypes.FunctionCode{}
+		if r.ko.Spec.Code.ImageURI != nil {
+			f0.ImageUri = r.ko.Spec.Code.ImageURI
+		}
+		if r.ko.Spec.Code.S3Bucket != nil {
+			f0.S3Bucket = r.ko.Spec.Code.S3Bucket
+		}
+		if r.ko.Spec.Code.S3Key != nil {
+			f0.S3Key = r.ko.Spec.Code.S3Key
+		}
+		if r.ko.Spec.Code.S3ObjectVersion != nil {
+			f0.S3ObjectVersion = r.ko.Spec.Code.S3ObjectVersion
+		}
+		if r.ko.Spec.Code.ZipFile != nil {
+			f0.ZipFile = r.ko.Spec.Code.ZipFile
+		}
+		res.Code = f0
+	}
+	if r.ko.Spec.CodeSigningConfigARN != nil {
+		res.CodeSigningConfigArn = r.ko.Spec.CodeSigningConfigARN
+	}
+	if r.ko.Spec.DeadLetterConfig != nil {
+		f2 := &svcsdktypes.DeadLetterConfig{}
+		if r.ko.Spec.DeadLetterConfig.TargetARN != nil {
+			f2.TargetArn = r.ko.Spec.DeadLetterConfig.TargetARN
+		}
+		res.DeadLetterConfig = f2
+	}
+	if r.ko.Spec.Description != nil {
+		res.Description = r.ko.Spec.Description
+	}
+	if r.ko.Spec.Environment != nil {
+		f4 := &svcsdktypes.Environment{}
+		if r.ko.Spec.Environment.Variables != nil {
+			f4f0 := map[string]string{}
+			for f4f0key, f4f0valiter := range r.ko.Spec.Environment.Variables {
+				var f4f0val string
+				if f4f0valiter != nil {
+					tmpSecret, err := rm.rr.SecretValueFromReference(ctx, f4f0valiter)
+					if err != nil {
+						return nil, ackrequeue.Needed(err)
+					}
+					if tmpSecret != "" {
+						f4f0val = tmpSecret
+					}
+				}
+				f4f0[f4f0key] = f4f0val
+			}
+			f4.Variables = f4f0
+		}
+		res.Environment = f4
+	}
+	if r.ko.Spec.FileSystemConfigs != nil {
+		f5 := []svcsdktypes.FileSystemConfig{}
+		for _, f5iter := range r.ko.Spec.FileSystemConfigs {
+			f5elem := &svcsdktypes.FileSystemConfig{}
+			if f5iter.ARN != nil {
+				f5elem.Arn = f5iter.ARN
+			}
+			if f5iter.LocalMountPath != nil {
+				f5elem.LocalMountPath = f5iter.LocalMountPath
+			}
+			f5 = append(f5, *f5elem)
+		}
+		res.FileSystemConfigs = f5
+	}
+	if r.ko.Spec.FunctionName != nil {
+		res.FunctionName = r.ko.Spec.FunctionName
+	}
+	if r.ko.Spec.Handler != nil {
+		res.Handler = r.ko.Spec.Handler
+	}
+	if r.ko.Spec.ImageConfig != nil {
+		f8 := &svcsdktypes.ImageConfig{}
+		if r.ko.Spec.ImageConfig.Command != nil {
+			f8.Command = aws.ToStringSlice(r.ko.Spec.ImageConfig.Command)
+		}
+		if r.ko.Spec.ImageConfig.EntryPoint != nil {
+			f8.EntryPoint = aws.ToStringSlice(r.ko.Spec.ImageConfig.EntryPoint)
+		}
+		if r.ko.Spec.ImageConfig.WorkingDirectory != nil {
+			f8.WorkingDirectory = r.ko.Spec.ImageConfig.WorkingDirectory
+		}
+		res.ImageConfig = f8
+	}
+	if r.ko.Spec.KMSKeyARN != nil {
+		res.KMSKeyArn = r.ko.Spec.KMSKeyARN
+	}
+	if r.ko.Spec.Layers != nil {
+		res.Layers = aws.ToStringSlice(r.ko.Spec.Layers)
+	}
+	if r.ko.Spec.MemorySize != nil {
+		memorySizeCopy0 := *r.ko.Spec.MemorySize
+		if memorySizeCopy0 > math.MaxInt32 || memorySizeCopy0 < math.MinInt32 {
+			return nil, fmt.Errorf("error: field MemorySize is of type int32")
+		}
+		memorySizeCopy := int32(memorySizeCopy0)
+		res.MemorySize = &memorySizeCopy
+	}
+	if r.ko.Spec.PackageType != nil {
+		res.PackageType = svcsdktypes.PackageType(*r.ko.Spec.PackageType)
+	}
+	if r.ko.Spec.Publish != nil {
+		res.Publish = *r.ko.Spec.Publish
+	}
+	if r.ko.Spec.Role != nil {
+		res.Role = r.ko.Spec.Role
+	}
+	if r.ko.Spec.Runtime != nil {
+		res.Runtime = svcsdktypes.Runtime(*r.ko.Spec.Runtime)
+	}
+	if r.ko.Spec.Tags != nil {
+		res.Tags = aws.ToStringMap(r.ko.Spec.Tags)
+	}
+	if r.ko.Spec.Timeout != nil {
+		timeoutCopy0 := *r.ko.Spec.Timeout
+		if timeoutCopy0 > math.MaxInt32 || timeoutCopy0 < math.MinInt32 {
+			return nil, fmt.Errorf("error: field Timeout is of type int32")
+		}
+		timeoutCopy := int32(timeoutCopy0)
+		res.Timeout = &timeoutCopy
+	}
+	if r.ko.Spec.TracingConfig != nil {
+		f18 := &svcsdktypes.TracingConfig{}
+		if r.ko.Spec.TracingConfig.Mode != nil {
+			f18.Mode = svcsdktypes.TracingMode(*r.ko.Spec.TracingConfig.Mode)
+		}
+		res.TracingConfig = f18
+	}
+	if r.ko.Spec.VPCConfig != nil {
+		f19 := &svcsdktypes.VpcConfig{}
+		if r.ko.Spec.VPCConfig.SecurityGroupIDs != nil {
+			f19.SecurityGroupIds = aws.ToStringSlice(r.ko.Spec.VPCConfig.SecurityGroupIDs)
+		}
+		if r.ko.Spec.VPCConfig.SubnetIDs != nil {
+			f19.SubnetIds = aws.ToStringSlice(r.ko.Spec.VPCConfig.SubnetIDs)
+		}
+		res.VpcConfig = f19
+	}
+`
+	actual := code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1)
+	fmt.Print(actual)
+
+	assert.Equal(expected, actual)
+}
+
+func TestSetSDK_Lambda_Function_EnvironmentVariable_MapOfSecrets_Update(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	lambdaModel := testutil.NewModelForServiceWithOptions(t, "lambda", &testutil.TestingModelOptions{
+		GeneratorConfigFile: "generator-environment-vars-secret.yaml",
+	})
+
+	crd := testutil.GetCRDByName(t, lambdaModel, "Function")
+	require.NotNil(crd)
+
+	expected := `
+	if r.ko.Spec.DeadLetterConfig != nil {
+		f0 := &svcsdktypes.DeadLetterConfig{}
+		if r.ko.Spec.DeadLetterConfig.TargetARN != nil {
+			f0.TargetArn = r.ko.Spec.DeadLetterConfig.TargetARN
+		}
+		res.DeadLetterConfig = f0
+	}
+	if r.ko.Spec.Description != nil {
+		res.Description = r.ko.Spec.Description
+	}
+	if r.ko.Spec.Environment != nil {
+		f2 := &svcsdktypes.Environment{}
+		if r.ko.Spec.Environment.Variables != nil {
+			f2f0 := map[string]string{}
+			for f2f0key, f2f0valiter := range r.ko.Spec.Environment.Variables {
+				var f2f0val string
+				if f2f0valiter != nil {
+					tmpSecret, err := rm.rr.SecretValueFromReference(ctx, f2f0valiter)
+					if err != nil {
+						return nil, ackrequeue.Needed(err)
+					}
+					if tmpSecret != "" {
+						f2f0val = tmpSecret
+					}
+				}
+				f2f0[f2f0key] = f2f0val
+			}
+			f2.Variables = f2f0
+		}
+		res.Environment = f2
+	}
+	if r.ko.Status.EphemeralStorage != nil {
+		f3 := &svcsdktypes.EphemeralStorage{}
+		if r.ko.Status.EphemeralStorage.Size != nil {
+			sizeCopy0 := *r.ko.Status.EphemeralStorage.Size
+			if sizeCopy0 > math.MaxInt32 || sizeCopy0 < math.MinInt32 {
+				return nil, fmt.Errorf("error: field Size is of type int32")
+			}
+			sizeCopy := int32(sizeCopy0)
+			f3.Size = &sizeCopy
+		}
+		res.EphemeralStorage = f3
+	}
+	if r.ko.Spec.FileSystemConfigs != nil {
+		f4 := []svcsdktypes.FileSystemConfig{}
+		for _, f4iter := range r.ko.Spec.FileSystemConfigs {
+			f4elem := &svcsdktypes.FileSystemConfig{}
+			if f4iter.ARN != nil {
+				f4elem.Arn = f4iter.ARN
+			}
+			if f4iter.LocalMountPath != nil {
+				f4elem.LocalMountPath = f4iter.LocalMountPath
+			}
+			f4 = append(f4, *f4elem)
+		}
+		res.FileSystemConfigs = f4
+	}
+	if r.ko.Spec.FunctionName != nil {
+		res.FunctionName = r.ko.Spec.FunctionName
+	}
+	if r.ko.Spec.Handler != nil {
+		res.Handler = r.ko.Spec.Handler
+	}
+	if r.ko.Spec.ImageConfig != nil {
+		f7 := &svcsdktypes.ImageConfig{}
+		if r.ko.Spec.ImageConfig.Command != nil {
+			f7.Command = aws.ToStringSlice(r.ko.Spec.ImageConfig.Command)
+		}
+		if r.ko.Spec.ImageConfig.EntryPoint != nil {
+			f7.EntryPoint = aws.ToStringSlice(r.ko.Spec.ImageConfig.EntryPoint)
+		}
+		if r.ko.Spec.ImageConfig.WorkingDirectory != nil {
+			f7.WorkingDirectory = r.ko.Spec.ImageConfig.WorkingDirectory
+		}
+		res.ImageConfig = f7
+	}
+	if r.ko.Spec.KMSKeyARN != nil {
+		res.KMSKeyArn = r.ko.Spec.KMSKeyARN
+	}
+	if r.ko.Spec.Layers != nil {
+		res.Layers = aws.ToStringSlice(r.ko.Spec.Layers)
+	}
+	if r.ko.Status.LoggingConfig != nil {
+		f10 := &svcsdktypes.LoggingConfig{}
+		if r.ko.Status.LoggingConfig.ApplicationLogLevel != nil {
+			f10.ApplicationLogLevel = svcsdktypes.ApplicationLogLevel(*r.ko.Status.LoggingConfig.ApplicationLogLevel)
+		}
+		if r.ko.Status.LoggingConfig.LogFormat != nil {
+			f10.LogFormat = svcsdktypes.LogFormat(*r.ko.Status.LoggingConfig.LogFormat)
+		}
+		if r.ko.Status.LoggingConfig.LogGroup != nil {
+			f10.LogGroup = r.ko.Status.LoggingConfig.LogGroup
+		}
+		if r.ko.Status.LoggingConfig.SystemLogLevel != nil {
+			f10.SystemLogLevel = svcsdktypes.SystemLogLevel(*r.ko.Status.LoggingConfig.SystemLogLevel)
+		}
+		res.LoggingConfig = f10
+	}
+	if r.ko.Spec.MemorySize != nil {
+		memorySizeCopy0 := *r.ko.Spec.MemorySize
+		if memorySizeCopy0 > math.MaxInt32 || memorySizeCopy0 < math.MinInt32 {
+			return nil, fmt.Errorf("error: field MemorySize is of type int32")
+		}
+		memorySizeCopy := int32(memorySizeCopy0)
+		res.MemorySize = &memorySizeCopy
+	}
+	if r.ko.Status.RevisionID != nil {
+		res.RevisionId = r.ko.Status.RevisionID
+	}
+	if r.ko.Spec.Role != nil {
+		res.Role = r.ko.Spec.Role
+	}
+	if r.ko.Spec.Runtime != nil {
+		res.Runtime = svcsdktypes.Runtime(*r.ko.Spec.Runtime)
+	}
+	if r.ko.Status.SnapStart != nil {
+		f15 := &svcsdktypes.SnapStart{}
+		if r.ko.Status.SnapStart.ApplyOn != nil {
+			f15.ApplyOn = svcsdktypes.SnapStartApplyOn(*r.ko.Status.SnapStart.ApplyOn)
+		}
+		res.SnapStart = f15
+	}
+	if r.ko.Spec.Timeout != nil {
+		timeoutCopy0 := *r.ko.Spec.Timeout
+		if timeoutCopy0 > math.MaxInt32 || timeoutCopy0 < math.MinInt32 {
+			return nil, fmt.Errorf("error: field Timeout is of type int32")
+		}
+		timeoutCopy := int32(timeoutCopy0)
+		res.Timeout = &timeoutCopy
+	}
+	if r.ko.Spec.TracingConfig != nil {
+		f17 := &svcsdktypes.TracingConfig{}
+		if r.ko.Spec.TracingConfig.Mode != nil {
+			f17.Mode = svcsdktypes.TracingMode(*r.ko.Spec.TracingConfig.Mode)
+		}
+		res.TracingConfig = f17
+	}
+	if r.ko.Spec.VPCConfig != nil {
+		f18 := &svcsdktypes.VpcConfig{}
+		if r.ko.Spec.VPCConfig.SecurityGroupIDs != nil {
+			f18.SecurityGroupIds = aws.ToStringSlice(r.ko.Spec.VPCConfig.SecurityGroupIDs)
+		}
+		if r.ko.Spec.VPCConfig.SubnetIDs != nil {
+			f18.SubnetIds = aws.ToStringSlice(r.ko.Spec.VPCConfig.SubnetIDs)
+		}
+		res.VpcConfig = f18
+	}
+`
+
+	actual := code.SetSDK(crd.Config(), crd, model.OpTypeUpdate, "r.ko", "res", 1)
+
+	assert.Equal(expected, actual)
 }

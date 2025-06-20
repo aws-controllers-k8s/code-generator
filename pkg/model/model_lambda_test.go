@@ -183,3 +183,23 @@ func TestLambda_customNestedFields_Status_Depth3(t *testing.T) {
 	assert.Contains(ErrorField.MemberFields, "New")
 	assert.Contains(ErrorField.ShapeRef.Shape.MemberRefs, "New")
 }
+
+func TestLambda_EnvironmentVariables_MapOfSecrets(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	model := testutil.NewModelForServiceWithOptions(t, "lambda", &testutil.TestingModelOptions{
+		GeneratorConfigFile: "generator-environment-vars-secret.yaml",
+	})
+	crds, err := model.GetCRDs()
+	require.Nil(err)
+
+	crd := getCRDByName("Function", crds)
+
+	variablesField := crd.SpecFields["Environment"].MemberFields["Variables"]
+	require.NotNil(variablesField)
+
+	assert.Equal("map[string]*ackv1alpha1.SecretKeyReference", variablesField.GoType)
+	assert.Equal("map[string]*ackv1alpha1.SecretKeyReference", variablesField.GoTypeElem)
+	assert.Equal("map[string]*ackv1alpha1.SecretKeyReference", variablesField.GoTypeWithPkgName)
+}

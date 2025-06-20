@@ -58,6 +58,15 @@ func CleanGoType(
 
 		gt = "[]" + mgt
 		gtwp = "[]" + mgtwp
+	} else if shape.Type == "map" && fieldCfg != nil && fieldCfg.IsSecret {
+		_, _, vgtwp := CleanGoType(api, cfg, shape.ValueRef.Shape, fieldCfg)
+		kgte, _, _ := CleanGoType(api, cfg, shape.KeyRef.Shape, nil)
+
+		gte = "map[" + kgte + "]" + vgtwp
+		gt = "map[" + kgte + "]" + vgtwp
+		gtwp = "map[" + kgte + "]" + vgtwp
+
+		return gte, gt, gtwp
 	} else if shape.Type == "timestamp" {
 		// time.Time needs to be converted to apimachinery/metav1.Time
 		// otherwise there is no DeepCopy support
