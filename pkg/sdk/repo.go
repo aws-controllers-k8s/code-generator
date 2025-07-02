@@ -32,7 +32,7 @@ import (
 const (
 	sdkRepoURLV2           = "https://github.com/aws/aws-sdk-go-v2"
 	defaultGitCloneTimeout = 180 * time.Second
-	defaultGitFetchTimeout = 30 * time.Second
+	defaultGitFetchTimeout = 180 * time.Second
 )
 
 func ContextWithSigterm(ctx context.Context) (context.Context, context.CancelFunc) {
