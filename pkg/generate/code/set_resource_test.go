@@ -14,6 +14,7 @@
 package code_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -203,7 +204,6 @@ func TestSetResource_APIGWv2_Route_ReadOne(t *testing.T) {
 		code.SetResource(crd.Config(), crd, model.OpTypeGet, "resp", "ko", 1),
 	)
 }
-
 
 func TestSetResource_SageMaker_Domain_ReadOne(t *testing.T) {
 	assert := assert.New(t)
@@ -5021,4 +5021,167 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 		expected,
 		code.SetResource(crd.Config(), crd, op, "resp", "ko", 1),
 	)
+}
+
+func TestSetResource_EC2_VpcEndpointServiceConfiguration_ReadMany(t *testing.T) {
+	// DescribeInstances returns a list of Reservations
+	// containing a list of Instances. The first Instance
+	// in the first Reservation list should be used to populate CR.
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "ec2", &testutil.TestingModelOptions{
+		GeneratorConfigFile: "generator-with-vpc-endpoint-service-read-many.yaml",
+	})
+	op := model.OpTypeList
+
+	crd := testutil.GetCRDByName(t, g, "VpcEndpointServiceConfiguration")
+	require.NotNil(crd)
+
+	expected := `
+	found := false
+	for _, elem := range resp.ServiceConfigurations {
+		if elem.AcceptanceRequired != nil {
+			ko.Spec.AcceptanceRequired = elem.AcceptanceRequired
+		} else {
+			ko.Spec.AcceptanceRequired = nil
+		}
+		if elem.AvailabilityZones != nil {
+			ko.Status.AvailabilityZones = aws.StringSlice(elem.AvailabilityZones)
+		} else {
+			ko.Status.AvailabilityZones = nil
+		}
+		if elem.BaseEndpointDnsNames != nil {
+			ko.Status.BaseEndpointDNSNames = aws.StringSlice(elem.BaseEndpointDnsNames)
+		} else {
+			ko.Status.BaseEndpointDNSNames = nil
+		}
+		if elem.GatewayLoadBalancerArns != nil {
+			ko.Spec.GatewayLoadBalancerARNs = aws.StringSlice(elem.GatewayLoadBalancerArns)
+		} else {
+			ko.Spec.GatewayLoadBalancerARNs = nil
+		}
+		if elem.ManagesVpcEndpoints != nil {
+			ko.Status.ManagesVPCEndpoints = elem.ManagesVpcEndpoints
+		} else {
+			ko.Status.ManagesVPCEndpoints = nil
+		}
+		if elem.NetworkLoadBalancerArns != nil {
+			ko.Spec.NetworkLoadBalancerARNs = aws.StringSlice(elem.NetworkLoadBalancerArns)
+		} else {
+			ko.Spec.NetworkLoadBalancerARNs = nil
+		}
+		if elem.PayerResponsibility != "" {
+			ko.Status.PayerResponsibility = aws.String(string(elem.PayerResponsibility))
+		} else {
+			ko.Status.PayerResponsibility = nil
+		}
+		if elem.PrivateDnsName != nil {
+			ko.Spec.PrivateDNSName = elem.PrivateDnsName
+		} else {
+			ko.Spec.PrivateDNSName = nil
+		}
+		if elem.PrivateDnsNameConfiguration != nil {
+			f8 := &svcapitypes.PrivateDNSNameConfiguration{}
+			if elem.PrivateDnsNameConfiguration.Name != nil {
+				f8.Name = elem.PrivateDnsNameConfiguration.Name
+			}
+			if elem.PrivateDnsNameConfiguration.State != "" {
+				f8.State = aws.String(string(elem.PrivateDnsNameConfiguration.State))
+			}
+			if elem.PrivateDnsNameConfiguration.Type != nil {
+				f8.Type = elem.PrivateDnsNameConfiguration.Type
+			}
+			if elem.PrivateDnsNameConfiguration.Value != nil {
+				f8.Value = elem.PrivateDnsNameConfiguration.Value
+			}
+			ko.Status.PrivateDNSNameConfiguration = f8
+		} else {
+			ko.Status.PrivateDNSNameConfiguration = nil
+		}
+		if elem.RemoteAccessEnabled != nil {
+			ko.Status.RemoteAccessEnabled = elem.RemoteAccessEnabled
+		} else {
+			ko.Status.RemoteAccessEnabled = nil
+		}
+		if elem.ServiceId != nil {
+			if ko.Status.ServiceID == nil || *elem.ServiceId != *ko.Status.ServiceID {
+				continue
+			}
+			ko.Status.ServiceID = elem.ServiceId
+		} else {
+			ko.Status.ServiceID = nil
+		}
+		if elem.ServiceName != nil {
+			ko.Status.ServiceName = elem.ServiceName
+		} else {
+			ko.Status.ServiceName = nil
+		}
+		if elem.ServiceState != "" {
+			ko.Status.ServiceState = aws.String(string(elem.ServiceState))
+		} else {
+			ko.Status.ServiceState = nil
+		}
+		if elem.ServiceType != nil {
+			f13 := []*svcapitypes.ServiceTypeDetail{}
+			for _, f13iter := range elem.ServiceType {
+				f13elem := &svcapitypes.ServiceTypeDetail{}
+				if f13iter.ServiceType != "" {
+					f13elem.ServiceType = aws.String(string(f13iter.ServiceType))
+				}
+				f13 = append(f13, f13elem)
+			}
+			ko.Status.ServiceType = f13
+		} else {
+			ko.Status.ServiceType = nil
+		}
+		if elem.SupportedIpAddressTypes != nil {
+			f14 := []*string{}
+			for _, f14iter := range elem.SupportedIpAddressTypes {
+				var f14elem *string
+				f14elem = aws.String(string(f14iter))
+				f14 = append(f14, f14elem)
+			}
+			ko.Spec.SupportedIPAddressTypes = f14
+		} else {
+			ko.Spec.SupportedIPAddressTypes = nil
+		}
+		if elem.SupportedRegions != nil {
+			f15 := []*string{}
+			for _, f15iter := range elem.SupportedRegions {
+				var f15elem *string
+				f15 = append(f15, f15elem)
+			}
+			ko.Spec.SupportedRegions = f15
+		} else {
+			ko.Spec.SupportedRegions = nil
+		}
+		if elem.Tags != nil {
+			f16 := []*svcapitypes.Tag{}
+			for _, f16iter := range elem.Tags {
+				f16elem := &svcapitypes.Tag{}
+				if f16iter.Key != nil {
+					f16elem.Key = f16iter.Key
+				}
+				if f16iter.Value != nil {
+					f16elem.Value = f16iter.Value
+				}
+				f16 = append(f16, f16elem)
+			}
+			ko.Spec.Tags = f16
+		} else {
+			ko.Spec.Tags = nil
+		}
+		found = true
+		break
+	}
+	if !found {
+		return nil, ackerr.NotFound
+	}
+`
+
+	actual := code.SetResource(crd.Config(), crd, op, "resp", "ko", 1)
+	fmt.Println(actual)
+
+	assert.Equal(expected, actual)
 }

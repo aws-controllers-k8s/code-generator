@@ -709,34 +709,66 @@ func setResourceReadMany(
 				)
 			}
 		default:
+			//         When in Spec we can assume the matching field is initially populated
+			//
 			//          if ko.Spec.CacheClusterID != nil {
 			//              if *elem.CacheClusterId != *ko.Spec.CacheClusterID {
 			//                  continue
 			//              }
 			//          }
+			//
+			//        When in the Status the matching field won't be set until after initial creation.
+			//        If the Status field isn't set we need to assume that the field doesn't match anything non-nil value.
+			//        Otherwise, prior to creation the Status field being nil will result in any pre-existing resource matching
+			//        resulting in erroneous errors related to the new resource already existing when it does not.
+			//
+			//        if ko.Status.ServiceID == nil. ||  *elem.ServiceId != *ko.Status.ServiceID {
+			//              continue
+			//        }
+			//
 			if util.InStrings(fieldName, matchFieldNames) {
-				out += fmt.Sprintf(
-					"%s\tif %s.%s != nil {\n",
-					innerForIndent,
-					targetAdaptedVarName,
-					f.Names.Camel,
-				)
-				out += fmt.Sprintf(
-					"%s\t\tif *%s != *%s.%s {\n",
-					innerForIndent,
-					sourceAdaptedVarName,
-					targetAdaptedVarName,
-					f.Names.Camel,
-				)
-				out += fmt.Sprintf(
-					"%s\t\t\tcontinue\n", innerForIndent,
-				)
-				out += fmt.Sprintf(
-					"%s\t\t}\n", innerForIndent,
-				)
-				out += fmt.Sprintf(
-					"%s\t}\n", innerForIndent,
-				)
+				inSpec, inStat := r.HasMember(fieldName, op.ExportedName)
+
+				if inSpec {
+					out += fmt.Sprintf(
+						"%s\tif %s.%s != nil {\n",
+						innerForIndent,
+						targetAdaptedVarName,
+						f.Names.Camel,
+					)
+					out += fmt.Sprintf(
+						"%s\t\tif *%s != *%s.%s {\n",
+						innerForIndent,
+						sourceAdaptedVarName,
+						targetAdaptedVarName,
+						f.Names.Camel,
+					)
+					out += fmt.Sprintf(
+						"%s\t\t\tcontinue\n", innerForIndent,
+					)
+					out += fmt.Sprintf(
+						"%s\t\t}\n", innerForIndent,
+					)
+					out += fmt.Sprintf(
+						"%s\t}\n", innerForIndent,
+					)
+				} else if inStat {
+					out += fmt.Sprintf(
+						"%s\tif %s.%s == nil || *%s != *%s.%s {\n",
+						innerForIndent,
+						targetAdaptedVarName,
+						f.Names.Camel,
+						sourceAdaptedVarName,
+						targetAdaptedVarName,
+						f.Names.Camel,
+					)
+					out += fmt.Sprintf(
+						"%s\t\tcontinue\n", innerForIndent,
+					)
+					out += fmt.Sprintf(
+						"%s\t}\n", innerForIndent,
+					)
+				}
 			}
 			//          r.ko.Spec.CacheClusterID = elem.CacheClusterId
 			out += setResourceForScalar(
