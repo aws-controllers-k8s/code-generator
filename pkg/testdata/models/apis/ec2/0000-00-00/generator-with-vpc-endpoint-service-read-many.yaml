@@ -1,0 +1,126 @@
+ignore:
+  field_paths:
+    - CreateDhcpOptionsInput.DryRun
+    - CreateVpcInput.DryRun
+    - CreateVpcEndpointInput.DryRun
+    - Instance.ClientToken
+    - InstanceNetworkInterfaceSpecification.Groups
+    - RunInstancesInput.AdditionalInfo
+    - RunInstancesInput.ClientToken
+    - RunInstancesInput.DryRun
+    - LaunchTemplate.Operator
+    - Instance.CpuOptions.AmdSevSnp
+    - Instance.CurrentInstanceBootMode
+    - Instance.Ipv6Address
+    - Instance.MaintenanceOptions
+    - Instance.MetadataOptions.InstanceMetadataTags
+    - Instance.NetworkPerformanceOptions
+    - Instance.Operator
+    - Instance.PrivateDnsNameOptions
+    - Instance.Placement.GroupId
+    - Instance.TpmSupport
+    - InstanceIpv6Address.IsPrimaryIpv6
+  resource_names:
+    - AccountAttribute
+    - CapacityReservation
+    - CarrierGateway
+    - ClientVpnEndpoint
+    - ClientVpnRoute
+    - CustomerGateway
+    - DefaultSubnet
+    - DefaultVpc
+    - DhcpOptions
+    - EgressOnlyInternetGateway
+    - Fleet
+    - FpgaImage
+    - Image
+    - Instance
+    - InstanceExportTask
+    - InternetGateway
+    - KeyPair
+    - LaunchTemplateVersion
+    - LaunchTemplate
+    - LocalGatewayRouteTableVpcAssociation
+    - LocalGatewayRoute
+    - ManagedPrefixList
+    - NatGateway
+    - NetworkAclEntry
+    - NetworkAcl
+    - NetworkInsightsPath
+    - NetworkInterfacePermission
+    - NetworkInterface
+    - PlacementGroup
+    - ReservedInstancesListing
+    - RouteTable
+    - Route
+    - SecurityGroup
+    - Snapshot
+    - SpotDatafeedSubscription
+    - Subnet 
+    - TrafficMirrorFilterRule
+    - TrafficMirrorFilter
+    - TrafficMirrorSession
+    - TrafficMirrorTarget
+    - TransitGatewayConnectPeer
+    - TransitGatewayConnect
+    - TransitGatewayMulticastDomain
+    - TransitGatewayPeeringAttachment
+    - TransitGatewayPrefixListReference
+    - TransitGatewayRouteTable
+    - TransitGatewayRoute
+    - TransitGatewayVpcAttachment
+    - TransitGateway
+    - Volume
+    - VpcEndpointConnectionNotification
+    # - VpcEndpointServiceConfiguration
+    - VpcEndpoint
+    - Vpc
+    - VpcCidrBlock
+    - VpcPeeringConnection
+    - VpnConnectionRoute
+    - VpnConnection
+    - VpnGateway
+
+operations:
+  CreateVpcEndpointServiceConfiguration:
+    output_wrapper_field_path: ServiceConfiguration
+  DeleteVpcEndpointServiceConfigurations:
+    operation_type:
+      - Delete
+    resource_name: VpcEndpointServiceConfiguration
+  CreateVpcEndpointServiceConfiguration:
+    output_wrapper_field_path: ServiceConfiguration
+  DeleteVpcEndpointServiceConfigurations:
+    operation_type:
+      - Delete
+    resource_name: VpcEndpointServiceConfiguration
+resources:
+  VpcEndpointServiceConfiguration:
+    fields:
+      AllowedPrincipals:
+        from:
+          operation: ModifyVpcEndpointServicePermissions
+          path: AddAllowedPrincipals
+      ServiceID:
+        is_primary_key: true
+        is_read_only: true
+        print:
+          path: Status.serviceID
+          name: ServiceID
+      ServiceState:
+        is_read_only: true
+        print:
+          path: Status.serviceState
+          name: ServiceState
+      Tags:
+        from:
+          operation: CreateTags
+          path: Tags
+    synced:
+      when:
+      - path: Status.ServiceState
+        in:
+        - available
+    list_operation:
+      match_fields:
+        - ServiceId
