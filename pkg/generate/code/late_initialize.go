@@ -276,7 +276,10 @@ func IncompleteLateInitialization(
 	indent := strings.Repeat("\t", indentLevel)
 	var lateInitFieldNames []string
 	lateInitConfigs := cfg.GetLateInitConfigs(r.Names.Original)
-	for fieldName := range lateInitConfigs {
+	for fieldName, lateInitConfig := range lateInitConfigs {
+		if lateInitConfig.SkipIncompleteCheck != nil {
+			continue
+		}
 		lateInitFieldNames = append(lateInitFieldNames, fieldName)
 	}
 	if len(lateInitFieldNames) == 0 {

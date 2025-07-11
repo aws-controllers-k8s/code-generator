@@ -318,6 +318,17 @@ type LateInitializeConfig struct {
 	// MaxBackoffSeconds provide the maximum allowed backoff when retrying late initialization after an
 	// unsuccessful attempt.
 	MaxBackoffSeconds int `json:"max_backoff_seconds"`
+	// SkipIncompleteCheck skips the LateInitialization incomplete check for resources.
+	// NOTE: (michaelhtm) This skip is best used on resource fields we're sure will be set before being synced
+	// eg. A resource is marked as synced before the field is lateInitialized, we wouldn't want to wait until
+	// the next drift detection for the field to be set
+	SkipIncompleteCheck *SkipIncompleteLateInitializeCheckConfig `json:"skip_incomplete_check,omitempty"`
+}
+
+// SkipIncompleteLateInitializeCheckConfig is a config that defines the scenarios in which
+// we would want to skip lateInitialization.
+// TODO: (michaelhtm) Populate this struct with conditions...?
+type SkipIncompleteLateInitializeCheckConfig struct {
 }
 
 // ReferencesConfig contains the instructions for how to add the referenced resource
