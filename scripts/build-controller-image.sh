@@ -20,6 +20,8 @@ if [ "$GOARCH" != "arm64" ] && [ "$GOARCH" != "amd64" ]; then
   GOARCH="amd64"
 fi
 
+DOCKER_PLATFORM_ARG="--platform linux/$GOARCH"
+
 if [[ $QUIET = "false" ]]; then
   echo "Using $GOARCH platform."
 fi
@@ -112,7 +114,8 @@ if ! docker build \
   --build-arg build_date="$BUILD_DATE" \
   --build-arg golang_version="${GOLANG_VERSION}" \
   --build-arg eks_distro_version="${BASE_IMAGE_VERSION}" \
-  --build-arg go_arch="$GOARCH" \
+  --build-arg target_arch="$GOARCH" \
+  ${DOCKER_PLATFORM_ARG} \
   --progress plain \
   "${DOCKER_BUILD_CONTEXT}"; then
   exit 2
