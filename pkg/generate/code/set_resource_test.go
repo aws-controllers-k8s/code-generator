@@ -204,7 +204,6 @@ func TestSetResource_APIGWv2_Route_ReadOne(t *testing.T) {
 	)
 }
 
-
 func TestSetResource_SageMaker_Domain_ReadOne(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
@@ -1800,11 +1799,11 @@ func TestSetResource_EKS_Cluster_PopulateResourceFromAnnotation(t *testing.T) {
 	require.NotNil(crd)
 
 	expected := `
-	tmp, ok := fields["name"]
+	f0, ok := fields["name"]
 	if !ok {
 		return ackerrors.NewTerminalError(fmt.Errorf("required field missing: name"))
 	}
-	r.ko.Spec.Name = &tmp
+	r.ko.Spec.Name = &f0
 
 `
 	assert.Equal(
@@ -1823,7 +1822,7 @@ func TestSetResource_SageMaker_ModelPackage_PopulateResourceFromAnnotation(t *te
 	require.NotNil(crd)
 
 	expected := `
-	tmp, ok := identifier["arn"]
+	resourceARN, ok := identifier["arn"]
 	if !ok {
 		return ackerrors.NewTerminalError(fmt.Errorf("required field missing: arn"))
 	}
@@ -1831,7 +1830,7 @@ func TestSetResource_SageMaker_ModelPackage_PopulateResourceFromAnnotation(t *te
 	if r.ko.Status.ACKResourceMetadata == nil {
 		r.ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
 	}
-	arn := ackv1alpha1.AWSResourceName(tmp)
+	arn := ackv1alpha1.AWSResourceName(resourceARN)
 	r.ko.Status.ACKResourceMetadata.ARN = &arn
 `
 	assert.Equal(
@@ -1850,16 +1849,17 @@ func TestSetResource_APIGWV2_ApiMapping_PopulateResourceFromAnnotation(t *testin
 	require.NotNil(crd)
 
 	expected := `
-	tmp, ok := fields["apiMappingID"]
+	f0, ok := fields["apiMappingID"]
 	if !ok {
 		return ackerrors.NewTerminalError(fmt.Errorf("required field missing: apiMappingID"))
 	}
-	r.ko.Status.APIMappingID = &tmp
-
-	f1, f1ok := fields["domainName"]
-	if f1ok {
-		r.ko.Spec.DomainName = aws.String(f1)
+	r.ko.Status.APIMappingID = &f0
+	f1, ok := fields["domainName"]
+	if !ok {
+		return ackerrors.NewTerminalError(fmt.Errorf("required field missing: domainName"))
 	}
+	r.ko.Spec.DomainName = &f1
+
 `
 	assert.Equal(
 		expected,
