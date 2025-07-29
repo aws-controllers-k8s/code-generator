@@ -38,21 +38,21 @@ func TestSyncedLambdaFunction(t *testing.T) {
 	}
 	stateCandidates := []string{"AVAILABLE", "ACTIVE"}
 	if !ackutil.InStrings(*r.ko.Status.State, stateCandidates) {
-		return false, nil
+		return false, ackrequeue.Needed(fmt.Errorf("requeing until Status.State is [AVAILABLE ACTIVE]"))
 	}
 	if r.ko.Status.LastUpdateStatus == nil {
 		return false, nil
 	}
 	lastUpdateStatusCandidates := []string{"AVAILABLE", "ACTIVE"}
 	if !ackutil.InStrings(*r.ko.Status.LastUpdateStatus, lastUpdateStatusCandidates) {
-		return false, nil
+		return false, ackrequeue.NeededAfter(fmt.Errorf("requeing until Status.LastUpdateStatus is [AVAILABLE ACTIVE]"), time.Duration(0)*time.Second)
 	}
 	if r.ko.Status.CodeSize == nil {
 		return false, nil
 	}
 	codeSizeCandidates := []int{1, 2}
 	if !ackutil.InStrings(*r.ko.Status.CodeSize, codeSizeCandidates) {
-		return false, nil
+		return false, ackrequeue.NeededAfter(fmt.Errorf("requeing until Status.CodeSize is [1 2]"), time.Duration(100)*time.Second)
 	}
 `
 	assert.Equal(
@@ -78,7 +78,7 @@ func TestSyncedDynamodbTable(t *testing.T) {
 	}
 	tableStatusCandidates := []string{"AVAILABLE", "ACTIVE"}
 	if !ackutil.InStrings(*r.ko.Status.TableStatus, tableStatusCandidates) {
-		return false, nil
+		return false, ackrequeue.Needed(fmt.Errorf("requeing until Status.TableStatus is [AVAILABLE ACTIVE]"))
 	}
 	if r.ko.Spec.ProvisionedThroughput == nil {
 		return false, nil
@@ -88,14 +88,14 @@ func TestSyncedDynamodbTable(t *testing.T) {
 	}
 	provisionedThroughputCandidates := []int{0, 10}
 	if !ackutil.InStrings(*r.ko.Spec.ProvisionedThroughput.ReadCapacityUnits, provisionedThroughputCandidates) {
-		return false, nil
+		return false, ackrequeue.Needed(fmt.Errorf("requeing until Spec.ProvisionedThroughput.ReadCapacityUnits is [0 10]"))
 	}
 	if r.ko.Status.ItemCount == nil {
 		return false, nil
 	}
 	itemCountCandidates := []int{0}
 	if !ackutil.InStrings(*r.ko.Status.ItemCount, itemCountCandidates) {
-		return false, nil
+		return false, ackrequeue.Needed(fmt.Errorf("requeing until Status.ItemCount is [0]"))
 	}
 `
 	assert.Equal(
