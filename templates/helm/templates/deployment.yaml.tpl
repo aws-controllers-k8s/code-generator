@@ -10,6 +10,9 @@ metadata:
     app.kubernetes.io/version: {{ "{{ .Chart.AppVersion | quote }}" }}
     k8s-app: {{ IncludeTemplate "app.name" }}
     helm.sh/chart: {{ IncludeTemplate "chart.name-version" }}
+{{ "{{- range $key, $value := .Values.deployment.labels }}" }}
+    {{ "{{ $key }}: {{ $value | quote }}" }}
+{{ "{{- end }}" }}
 spec:
   replicas: {{ "{{ .Values.deployment.replicas }}" }}
   selector:
