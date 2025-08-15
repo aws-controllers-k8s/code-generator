@@ -30,6 +30,27 @@ func (f *resourceManagerFactory) ResourceDescriptor() acktypes.AWSResourceDescri
 	return &resourceDescriptor{}
 }
 
+// GetCachedManager returns a manager object that can manage resources for a
+// supplied AWS account if it was already created and cached, or nil if not
+func (f *resourceManagerFactory) GetCachedManager(
+	id ackv1alpha1.AWSAccountID,
+	region ackv1alpha1.AWSRegion,
+	roleARN ackv1alpha1.AWSResourceName,
+) acktypes.AWSResourceManager {
+	// We use the account ID, region, and role ARN to uniquely identify a
+	// resource manager. This helps us to avoid creating multiple resource
+	// managers for the same account/region/roleARN combination.
+	rmId := fmt.Sprintf("%s/%s/%s", id, region, roleARN)
+	f.RLock()
+	rm, found := f.rmCache[rmId]
+	f.RUnlock()
+	if !found {
+		return nil
+	}
+
+	return rm
+}
+
 // ManagerFor returns a resource manager object that can manage resources for a
 // supplied AWS account
 func (f *resourceManagerFactory) ManagerFor(
@@ -40,24 +61,17 @@ func (f *resourceManagerFactory) ManagerFor(
 	rr acktypes.Reconciler,
 	id ackv1alpha1.AWSAccountID,
 	region ackv1alpha1.AWSRegion,
+	partition ackv1alpha1.AWSPartition,
 	roleARN ackv1alpha1.AWSResourceName,
 ) (acktypes.AWSResourceManager, error) {
-	// We use the account ID, region, and role ARN to uniquely identify a
-	// resource manager. This helps us to avoid creating multiple resource
-	// managers for the same account/region/roleARN combination.
-	rmId := fmt.Sprintf("%s/%s/%s", id, region, roleARN)
-	f.RLock()
-	rm, found := f.rmCache[rmId]
-	f.RUnlock()
-
-	if found {
-		return rm, nil
-	}
-
 	f.Lock()
 	defer f.Unlock()
 
-	rm, err := newResourceManager(cfg, clientcfg, log, metrics, rr, id, region)
+	// We use the account ID, region, partition, and role ARN to uniquely identify a
+	// resource manager. This helps us to avoid creating multiple resource
+	// managers for the same account/region/roleARN combination.
+	rmId := fmt.Sprintf("%s/%s/%s", id, region, roleARN)
+	rm, err := newResourceManager(cfg, clientcfg, log, metrics, rr, id, region, partition)
 	if err != nil {
 		return nil, err
 	}
