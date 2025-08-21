@@ -61,3 +61,30 @@ SEDREPLACERULES
 {{ "{{- end -}}" }}
 {{ "{{ join \",\" $list }}" }}
 {{ "{{- end -}}" }}
+
+{{ "{{/*" }}
+{{ "Kubernetes recommended labels for all resources" }}
+{{ "*/}}" }}
+{{ DefineTemplate "app.labels" }}
+app.kubernetes.io/name: {{ IncludeTemplate "app.name" }}
+app.kubernetes.io/instance: {{ "{{ .Release.Name }}" }}
+app.kubernetes.io/version: {{ "{{ .Chart.AppVersion | quote }}" }}
+app.kubernetes.io/component: {{ .ControllerName }}-controller
+app.kubernetes.io/part-of: {{ IncludeTemplate "app.name" }}
+app.kubernetes.io/managed-by: Helm
+helm.sh/chart: {{ IncludeTemplate "chart.name-version" }}
+k8s-app: {{ IncludeTemplate "app.name" }}
+{{ "{{- if .Values.commonLabels }}" }}
+{{ "{{- range $key, $value := .Values.commonLabels }}" }}
+{{ "{{ $key }}: {{ $value | quote }}" }}
+{{ "{{- end }}" }}
+{{ "{{- end }}" }}
+{{ "{{- end -}}" }}
+
+{{ "{{/*" }}
+{{ "Selector labels for matching pods" }}
+{{ "*/}}" }}
+{{ DefineTemplate "app.selectorLabels" }}
+app.kubernetes.io/name: {{ IncludeTemplate "app.name" }}
+app.kubernetes.io/instance: {{ "{{ .Release.Name }}" }}
+{{ "{{- end -}}" }}
