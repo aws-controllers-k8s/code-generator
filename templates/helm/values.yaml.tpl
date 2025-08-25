@@ -11,6 +11,9 @@ image:
 nameOverride: ""
 fullnameOverride: ""
 
+# Additional labels to add to all resources
+commonLabels: {}
+
 deployment:
   annotations: {}
   labels: {}
