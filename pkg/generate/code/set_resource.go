@@ -843,10 +843,14 @@ func identifierNameOrIDGuardConstructor(
 // the required field for a read, or returning an error here
 // and returns a `MissingNameIdentifier` error:
 //
-//	if fields[${requiredField}] == "" {
-//	 return ackerrors.MissingNameIdentifier
+//  f0, ok := fields[${requiredField}]
+//	if !ok {
+//	 return ackerrors.NewTerminalError(fmt.Errorf("required field missing: ${requiredField}"))
 //	}
 func requiredFieldGuardContructor(
+	// requiredFieldVarName is the variable where the requiredField value
+	// will be stored
+	requiredFieldVarName string,
 	// String representing the fields map that contains the required
 	// fields for adoption
 	sourceVarName string,
@@ -856,7 +860,7 @@ func requiredFieldGuardContructor(
 	indentLevel int,
 ) string {
 	indent := strings.Repeat("\t", indentLevel)
-	out := fmt.Sprintf("%stmp, ok := %s[\"%s\"]\n", indent, sourceVarName, requiredField)
+	out := fmt.Sprintf("%s%s, ok := %s[\"%s\"]\n", indent, requiredFieldVarName, sourceVarName, requiredField)
 	out += fmt.Sprintf("%sif !ok {\n", indent)
 	out += fmt.Sprintf("%s\treturn ackerrors.NewTerminalError(fmt.Errorf(\"required field missing: %s\"))\n", indent, requiredField)
 	out += fmt.Sprintf("%s}\n", indent)
@@ -1258,11 +1262,11 @@ func SetResourceIdentifiers(
 //
 // ```
 //
-//	tmp, ok := field["brokerID"]
+//	primaryKey, ok := field["brokerID"]
 //	if  !ok {
-//		return ackerrors.MissingNameIdentifier
+//		return ackerrors.NewTerminalError(fmt.Errorf("required field missing: brokerID"))
 //	}
-//	r.ko.Status.BrokerID = &tmp
+//	r.ko.Status.BrokerID = &primaryKey
 //
 // ```
 //
@@ -1270,18 +1274,18 @@ func SetResourceIdentifiers(
 //
 // ```
 //
-//	tmp, ok := field["resourceID"]
-//	if  !ok {
-//		return ackerrors.MissingNameIdentifier
-//	}
+//		primaryKey, ok := field["resourceID"]
+//		if  !ok {
+//			return ackerrors.NewTerminalError(fmt.Errorf("required field missing: resourceID"))
+//		}
 //
-// r.ko.Spec.ResourceID = &tmp
+//	 r.ko.Spec.ResourceID = &primaryKey
 //
-// f0, f0ok := fields["scalableDimension"]
-//
-//	if f0ok {
-//		  r.ko.Spec.ScalableDimension = &f0
-//	}
+//	 f0, ok := fields["scalableDimension"]
+//		if !ok {
+//	    return ackerrors.NewTerminalError(fmt.Errorf("required field missing: scalableDimension"))
+//		}
+//	 r.ko.Spec.ScalableDimension = &f0
 //
 // f1, f1ok := fields["serviceNamespace"]
 //
@@ -1295,17 +1299,17 @@ func SetResourceIdentifiers(
 // ```
 //
 //		tmpArn, ok := field["arn"]
-//	 if !ok {
-//			return ackerrors.MissingNameIdentifier
+//	    if !ok {
+//			return ackerrors.NewTerminalError(fmt.Errorf("required field missing: arn"))
 //		}
 //		if r.ko.Status.ACKResourceMetadata == nil {
 //			r.ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
 //		}
 //		arn := ackv1alpha1.AWSResourceName(tmp)
 //
-//	 r.ko.Status.ACKResourceMetadata.ARN = &arn
+//	    r.ko.Status.ACKResourceMetadata.ARN = &arn
 //
-//	 f0, f0ok := fields["modelPackageName"]
+//	    f0, f0ok := fields["modelPackageName"]
 //
 //		if f0ok {
 //			r.ko.Spec.ModelPackageName = &f0
@@ -1355,10 +1359,10 @@ func PopulateResourceFromAnnotation(
 	out := "\n"
 	// Check if the CRD defines the primary keys
 	primaryKeyConditionalOut := "\n"
-	primaryKeyConditionalOut += requiredFieldGuardContructor(sourceVarName, "arn", indentLevel)
+	primaryKeyConditionalOut += requiredFieldGuardContructor("resourceARN", sourceVarName, "arn", indentLevel)
 	arnOut += ackResourceMetadataGuardConstructor(fmt.Sprintf("%s.Status", targetVarName), indentLevel)
 	arnOut += fmt.Sprintf(
-		"%sarn := ackv1alpha1.AWSResourceName(tmp)\n",
+		"%sarn := ackv1alpha1.AWSResourceName(resourceARN)\n",
 		indent,
 	)
 	arnOut += fmt.Sprintf(
@@ -1377,9 +1381,10 @@ func PopulateResourceFromAnnotation(
 	isPrimarySet := primaryField != nil
 	if isPrimarySet {
 		memberPath, _ := findFieldInCR(cfg, r, primaryField.Names.Original)
-		primaryKeyOut += requiredFieldGuardContructor(sourceVarName, primaryField.Names.CamelLower, indentLevel)
+		primaryKeyOut += requiredFieldGuardContructor("primaryKey", sourceVarName, primaryField.Names.CamelLower, indentLevel)
 		targetVarPath := fmt.Sprintf("%s%s", targetVarName, memberPath)
 		primaryKeyOut += setResourceIdentifierPrimaryIdentifierAnn(cfg, r,
+			"&primaryKey",
 			primaryField,
 			targetVarPath,
 			sourceVarName,
@@ -1451,18 +1456,19 @@ func PopulateResourceFromAnnotation(
 		switch targetField.ShapeRef.Shape.Type {
 		case "list", "structure", "map":
 			panic("primary identifier '" + targetField.Path + "' must be a scalar type since NameOrID is a string")
-		default:
-			break
 		}
 
 		targetVarPath := fmt.Sprintf("%s%s", targetVarName, memberPath)
-		if isPrimaryIdentifier {
-			primaryKeyOut += requiredFieldGuardContructor(sourceVarName, targetField.Names.CamelLower, indentLevel)
+		if inputShape.IsRequired(memberName) || isPrimaryIdentifier {
+			requiredFieldVarName := fmt.Sprintf("f%d", memberIndex)
+			primaryKeyOut += requiredFieldGuardContructor(requiredFieldVarName, sourceVarName, targetField.Names.CamelLower, indentLevel)
 			primaryKeyOut += setResourceIdentifierPrimaryIdentifierAnn(cfg, r,
+				fmt.Sprintf("&%s", requiredFieldVarName),
 				targetField,
 				targetVarPath,
 				sourceVarName,
-				indentLevel)
+				indentLevel,
+			)
 		} else {
 			additionalKeyOut += setResourceIdentifierAdditionalKeyAnn(
 				cfg, r,
@@ -1471,7 +1477,8 @@ func PopulateResourceFromAnnotation(
 				targetVarPath,
 				sourceVarName,
 				names.New(fieldName).CamelLower,
-				indentLevel)
+				indentLevel,
+			)
 		}
 	}
 
@@ -1539,6 +1546,8 @@ func setResourceIdentifierPrimaryIdentifier(
 func setResourceIdentifierPrimaryIdentifierAnn(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,
+	// The variable used for required key
+	requiredFieldVarName string,
 	// The field that will be set on the target variable
 	targetField *model.Field,
 	// The variable name that we want to set a value to
@@ -1548,12 +1557,11 @@ func setResourceIdentifierPrimaryIdentifierAnn(
 	// Number of levels of indentation to use
 	indentLevel int,
 ) string {
-	adaptedMemberPath := fmt.Sprintf("&tmp")
 	qualifiedTargetVar := fmt.Sprintf("%s.%s", targetVarName, targetField.Path)
 
 	return setResourceForScalar(
 		qualifiedTargetVar,
-		adaptedMemberPath,
+		requiredFieldVarName,
 		targetField.ShapeRef,
 		indentLevel,
 		false,
