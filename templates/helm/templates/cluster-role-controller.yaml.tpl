@@ -9,12 +9,7 @@ kind: ClusterRole
 metadata:
   name: {{ IncludeTemplate "app.fullname" }}
   labels:
-    app.kubernetes.io/name: {{ IncludeTemplate "app.name" }}
-    app.kubernetes.io/instance: {{ "{{ .Release.Name }}" }}
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/version: {{ "{{ .Chart.AppVersion | quote }}" }}
-    k8s-app: {{ IncludeTemplate "app.name" }}
-    helm.sh/chart: {{ IncludeTemplate "chart.name-version" }}
+    {{ IncludeTemplate "app.labels" | nindent 4 }}
   {{ "{{- range $key, $value := $labels }}" }}
     {{ "{{ $key }}: {{ $value | quote }}" }}
   {{ "{{- end }}" }}
@@ -30,12 +25,7 @@ metadata:
   name: {{ "{{ $fullname }}" }}-{{ "{{ . }}" }}
   namespace: {{ "{{ . }}" }}
   labels:
-    app.kubernetes.io/name: {{ "{{ $fullname }}" }}
-    app.kubernetes.io/instance: {{ "{{ $.Release.Name }}" }}
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/version: {{ "{{ $appVersion }}" }}
-    k8s-app: {{ "{{ $fullname }}" }}
-    helm.sh/chart: {{ "{{ $chartVersion }}" }}
+    {{ IncludeTemplate "app.labels" | nindent 4 }}
   {{ "{{- range $key, $value := $labels }}" }}
     {{ "{{ $key }}: {{ $value | quote }}" }}
   {{ "{{- end }}" }}

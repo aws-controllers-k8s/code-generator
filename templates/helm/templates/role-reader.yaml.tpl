@@ -6,12 +6,7 @@ metadata:
   name: {{ IncludeTemplate "app.fullname" }}-reader
   namespace: {{ "{{ .Release.Namespace }}" }}
   labels:
-    app.kubernetes.io/name: {{ IncludeTemplate "app.name" }}
-    app.kubernetes.io/instance: {{ "{{ .Release.Name }}" }}
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/version: {{ "{{ .Chart.AppVersion | quote }}" }}
-    k8s-app: {{ IncludeTemplate "app.name" }}
-    helm.sh/chart: {{ IncludeTemplate "chart.name-version" }}
+    {{ IncludeTemplate "app.labels" | nindent 4 }}
 rules:
 - apiGroups:
   - {{ .APIGroup }}
