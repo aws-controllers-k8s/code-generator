@@ -111,6 +111,10 @@ if [[ ! -d $SERVICE_CONTROLLER_SOURCE_PATH ]]; then
     exit 1
 fi
 
+pushd "$SERVICE_CONTROLLER_SOURCE_PATH" 1>/dev/null
+    RELEASE_VERSION=${RELEASE_VERSION:-$(git describe --tags --abbrev=0 2>/dev/null || echo $NON_RELEASE_VERSION)}
+popd 1>/dev/null
+
 BOILERPLATE_TXT_PATH="$ROOT_DIR/templates/boilerplate.txt"
 DEFAULT_TEMPLATE_DIRS="$ROOT_DIR/templates"
 # If the service controller source repository has a templates/ directory, add
@@ -165,7 +169,7 @@ if [ -z "$ACK_DOCUMENTATION_CONFIG_PATH" ]; then
     fi
 fi
 
-ag_args=("$SERVICE" -o "$SERVICE_CONTROLLER_SOURCE_PATH" --template-dirs "$TEMPLATE_DIRS")
+ag_args=("$SERVICE" "$RELEASE_VERSION" -o "$SERVICE_CONTROLLER_SOURCE_PATH" --template-dirs "$TEMPLATE_DIRS")
 if [ -n "$ACK_GENERATE_CACHE_DIR" ]; then
     ag_args=("${ag_args[@]}" --cache-dir "$ACK_GENERATE_CACHE_DIR")
 fi
