@@ -235,6 +235,18 @@ func SetResource(
 			continue
 		}
 
+		onlySetChangedFieldsOnUpdate := op == r.Ops.Update && r.OnlySetChangedFieldsOnUpdate()
+		if onlySetChangedFieldsOnUpdate && inSpec {
+			fieldJSONPath := fmt.Sprintf("%s.%s", cfg.PrefixConfig.SpecField[1:], f.Names.Camel)
+			out += fmt.Sprintf(
+				"%sif delta.DifferentAt(%q) {\n", indent, fieldJSONPath,
+			)
+
+			// increase indentation level
+			indentLevel++
+			indent = "\t" + indent
+		}
+
 		sourceMemberShapeRef := outputShape.MemberRefs[memberName]
 		if sourceMemberShapeRef.Shape == nil {
 			// We may have some instructions to specially handle this field by
@@ -412,6 +424,16 @@ func SetResource(
 			)
 		} else {
 			indentLevel += 1
+		}
+
+		if onlySetChangedFieldsOnUpdate && inSpec {
+			// decrease indentation level
+			indentLevel--
+			indent = indent[1:]
+
+			out += fmt.Sprintf(
+				"%s}\n", indent,
+			)
 		}
 	}
 	return out

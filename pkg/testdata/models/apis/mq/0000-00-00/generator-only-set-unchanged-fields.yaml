@@ -1,0 +1,16 @@
+ignore:
+  resources:
+    - Configuration
+    - User
+  field_paths:
+    - CreateBrokerInput.DataReplicationMode
+    - CreateBrokerInput.DataReplicationPrimaryBrokerArn
+    - User.ReplicationUser
+resources:
+  Broker:
+    fields:
+      Users.Password:
+        is_secret: true
+    update_operation:
+      omit_unchanged_fields: true
+      only_set_unchanged_fields: true

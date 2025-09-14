@@ -339,6 +339,12 @@ type UpdateOperationConfig struct {
 	// will leverage `delta.DifferentAt` to check whether a field have changed or not
 	// before including it in the update request.
 	OmitUnchangedFields bool `json:"omit_unchanged_fields"`
+	// OnlySetChangedField instructs the code generator on how to generate logic for setting
+	// the value of Spec fields after a successful Update operation in the `sdkUpdate` function.
+	// If the boolean is true, the code generator uses `delta.DifferentAt` to check if a
+	// field had changed or not before setting it's value to that returned by the Update AWS API's
+	// response. Defaults to false.
+	OnlySetChangedField bool `json:"only_set_unchanged_fields"`
 }
 
 // ReadOperationsConfig contains instructions for the code generator to handle
