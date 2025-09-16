@@ -145,7 +145,7 @@ spec:
           value: {{ IncludeTemplate "feature-gates" }}
 {{ "{{- end }}" }}
         - name: ENABLE_CARM
-          value: {{ "{{ .Values.enableCARM }}" }}
+          value: {{ "{{ .Values.enableCARM | toString }}" }}
         {{ "{{- if .Values.aws.credentials.secretName }}" }}
         - name: AWS_SHARED_CREDENTIALS_FILE
           value: {{ IncludeTemplate "aws.credentials.path" }}
