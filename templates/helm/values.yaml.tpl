@@ -169,6 +169,9 @@ leaderElection:
   # pod.
   namespace: ""
 
+# Enable Cross Account Resource Management (default = true). Set this to false to disable cross account resource management.
+enableCARM: true
+
 # Configuration for feature gates.  These are optional controller features that
 # can be individually enabled ("true") or disabled ("false") by adding key/value
 # pairs below.
