@@ -91,10 +91,8 @@ spec:
         - --feature-gates
         - "$(FEATURE_GATES)"
 {{ "{{- end }}" }}
-{{ "{{- if and (hasKey .Values "enableCARM") (not .Values.enableCARM) }}"}}
         - --enable-carm
         - "$(ENABLE_CARM)"
-{{ "{{- end }}" }}
         image: {{ "{{ .Values.image.repository }}:{{ .Values.image.tag }}" }}
         imagePullPolicy: {{ "{{ .Values.image.pullPolicy }}" }}
         name: controller
@@ -146,10 +144,8 @@ spec:
         - name: FEATURE_GATES
           value: {{ IncludeTemplate "feature-gates" }}
 {{ "{{- end }}" }}
-{{ "{{- if and (hasKey .Values "enableCARM") (not .Values.enableCARM) }}"}}
         - name: ENABLE_CARM
-        - value: "false"
-{{ "{{- end }}" }}
+          value: {{ "{{ .Values.enableCARM }}" }}
         {{ "{{- if .Values.aws.credentials.secretName }}" }}
         - name: AWS_SHARED_CREDENTIALS_FILE
           value: {{ IncludeTemplate "aws.credentials.path" }}
