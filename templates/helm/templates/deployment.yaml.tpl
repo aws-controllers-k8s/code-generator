@@ -91,6 +91,7 @@ spec:
         - --feature-gates
         - "$(FEATURE_GATES)"
 {{ "{{- end }}" }}
+        - {{ "--enable-carm={{ .Values.enableCARM }}" }}
         image: {{ "{{ .Values.image.repository }}:{{ .Values.image.tag }}" }}
         imagePullPolicy: {{ "{{ .Values.image.pullPolicy }}" }}
         name: controller
