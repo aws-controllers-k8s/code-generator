@@ -1812,6 +1812,34 @@ func TestSetResource_EKS_Cluster_PopulateResourceFromAnnotation(t *testing.T) {
 	)
 }
 
+func TestSetResource_OpensearchServerless_SecurityPolicy_PopulateResourceFromAnnotation(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "opensearchserverless")
+
+	crd := testutil.GetCRDByName(t, g, "SecurityPolicy")
+	require.NotNil(crd)
+
+	expected := `
+	f0, ok := fields["name"]
+	if !ok {
+		return ackerrors.NewTerminalError(fmt.Errorf("required field missing: name"))
+	}
+	r.ko.Spec.Name = &f0
+	f1, ok := fields["type_"]
+	if !ok {
+		return ackerrors.NewTerminalError(fmt.Errorf("required field missing: type_"))
+	}
+	r.ko.Spec.Type = &f1
+
+`
+	assert.Equal(
+		expected,
+		code.PopulateResourceFromAnnotation(crd.Config(), crd, "fields", "r.ko", 1),
+	)
+}
+
 func TestSetResource_SageMaker_ModelPackage_PopulateResourceFromAnnotation(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
