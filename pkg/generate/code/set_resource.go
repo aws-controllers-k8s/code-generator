@@ -1383,11 +1383,10 @@ func PopulateResourceFromAnnotation(
 		memberPath, _ := findFieldInCR(cfg, r, primaryField.Names.Original)
 		primaryKeyOut += requiredFieldGuardContructor("primaryKey", sourceVarName, primaryField.Names.CamelLower, indentLevel)
 		targetVarPath := fmt.Sprintf("%s%s", targetVarName, memberPath)
-		primaryKeyOut += setResourceIdentifierPrimaryIdentifierAnn(cfg, r,
+		primaryKeyOut += setResourceIdentifierPrimaryIdentifierAnn(
 			"&primaryKey",
 			primaryField,
 			targetVarPath,
-			sourceVarName,
 			indentLevel,
 		)
 	} else {
@@ -1458,15 +1457,14 @@ func PopulateResourceFromAnnotation(
 			panic("primary identifier '" + targetField.Path + "' must be a scalar type since NameOrID is a string")
 		}
 
-		targetVarPath := fmt.Sprintf("%s%s", targetVarName, memberPath)
+		sourceVarPath := fmt.Sprintf("%s%s", targetVarName, memberPath)
 		if inputShape.IsRequired(memberName) || isPrimaryIdentifier {
 			requiredFieldVarName := fmt.Sprintf("f%d", memberIndex)
 			primaryKeyOut += requiredFieldGuardContructor(requiredFieldVarName, sourceVarName, targetField.Names.CamelLower, indentLevel)
-			primaryKeyOut += setResourceIdentifierPrimaryIdentifierAnn(cfg, r,
+			primaryKeyOut += setResourceIdentifierPrimaryIdentifierAnn(
 				fmt.Sprintf("&%s", requiredFieldVarName),
 				targetField,
-				targetVarPath,
-				sourceVarName,
+				sourceVarPath,
 				indentLevel,
 			)
 		} else {
@@ -1474,7 +1472,7 @@ func PopulateResourceFromAnnotation(
 				cfg, r,
 				memberIndex,
 				targetField,
-				targetVarPath,
+				sourceVarPath,
 				sourceVarName,
 				names.New(fieldName).CamelLower,
 				indentLevel,
@@ -1544,29 +1542,18 @@ func setResourceIdentifierPrimaryIdentifier(
 //
 // r.ko.Status.BrokerID = &identifier.NameOrID
 func setResourceIdentifierPrimaryIdentifierAnn(
-	cfg *ackgenconfig.Config,
-	r *model.CRD,
 	// The variable used for required key
 	requiredFieldVarName string,
 	// The field that will be set on the target variable
 	targetField *model.Field,
 	// The variable name that we want to set a value to
 	targetVarName string,
-	// The struct or struct field that we access our source value from
-	sourceVarName string,
 	// Number of levels of indentation to use
 	indentLevel int,
 ) string {
 	qualifiedTargetVar := fmt.Sprintf("%s.%s", targetVarName, targetField.Path)
-
-	return setResourceForScalar(
-		qualifiedTargetVar,
-		requiredFieldVarName,
-		targetField.ShapeRef,
-		indentLevel,
-		false,
-		false,
-	)
+	indent := strings.Repeat("\t", indentLevel)
+	return fmt.Sprintf("%s%s = %s\n", indent, qualifiedTargetVar, requiredFieldVarName)
 }
 
 // setResourceIdentifierAdditionalKey returns a string of Go code that sets a
