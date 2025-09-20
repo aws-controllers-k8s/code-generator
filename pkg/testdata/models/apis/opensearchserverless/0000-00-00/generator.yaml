@@ -1,0 +1,56 @@
+ignore:
+  resource_names:
+      - AccessPolicy
+      # - Collection
+      - LifecyclePolicy
+      - SecurityConfig
+      # - SecurityPolicy
+      - VpcEndpoint
+  field_paths:
+      - CreateSecurityPolicyOutput.SecurityPolicyDetail.Policy
+      - CreateSecurityPolicyOutput.SecurityPolicyDetail.ClientToken
+      - CreateSecurityPolicyInput.ClientToken
+      - CreateCollectionInput.ClientToken
+operations:
+  CreateCollection:
+    output_wrapper_field_path: CreateCollectionDetail
+  BatchGetCollection:
+    operation_type:
+    - List
+    output_wrapper_field_path: CollectionDetails
+    resource_name: Collection
+resources:
+  SecurityPolicy:
+  # Tags are not supported for SecurityPolicy 
+  # https://docs.aws.amazon.com/opensearch-service/latest/developerguide/tag-collection.html
+    tags:
+      ignore: true
+    hooks:
+      delta_pre_compare:
+        code: customPreCompare(delta, a, b)
+      sdk_read_one_post_set_output:
+        template_path: hooks/security_policy/sdk_read_one_post_set_output.go.tpl
+    fields:
+      Type:
+        go_tag: json:"type"
+        is_immutable: true
+      Policy:
+        compare:
+          is_ignored: true
+      Name:
+        is_immutable: true
+  Collection:
+    is_arn_primary_key: true
+    fields:
+      Type:
+        is_immutable: true
+        go_tag: json:"type,omitempty"
+      Name:
+        is_immutable: true
+      StandbyReplicas:
+        is_immutable: true
+    hooks:
+      sdk_update_pre_build_request:
+        template_path: hooks/collection/sdk_update_pre_build_request.go.tpl
+      sdk_read_many_post_set_output:
+        template_path: hooks/collection/sdk_read_many_post_set_output.go.tpl
