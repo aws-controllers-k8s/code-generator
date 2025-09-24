@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-export CONTROLLER_TOOLS_VERSION="v0.16.2"
+export CONTROLLER_TOOLS_VERSION="v0.19.0"
 export HELM_VERSION="v3.7"
 
 # setting the -x option if debugging is true
