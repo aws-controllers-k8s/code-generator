@@ -360,7 +360,7 @@ func (r *CRD) OnlySetChangedFieldsOnUpdate() bool {
 	rConfig, found := r.Config().Resources[r.Names.Original]
 	if found {
 		if rConfig.UpdateOperation != nil {
-			return rConfig.UpdateOperation.OnlySetChangedField
+			return rConfig.UpdateOperation.OnlySetChangedFields
 		}
 	}
 	return false
