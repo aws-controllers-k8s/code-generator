@@ -299,7 +299,14 @@ func (r *CRD) UnpackAttributes() {
 		fieldNames := names.New(fieldName)
 		fPath := fieldNames.Camel
 
-		f := NewField(r, fPath, fieldNames, nil, fieldConfig)
+		// Reuse existing ShapeRef if field was already processed from AWS SDK model
+		// This preserves documentation that would otherwise be lost with nil ShapeRef
+		var shapeRefToUse *awssdkmodel.ShapeRef = nil
+		if existingField, exists := r.Fields[fPath]; exists && existingField.ShapeRef != nil {
+			shapeRefToUse = existingField.ShapeRef
+		}
+
+		f := NewField(r, fPath, fieldNames, shapeRefToUse, fieldConfig)
 		if !fieldConfig.IsReadOnly {
 			r.SpecFields[fieldName] = f
 		} else {
