@@ -14,6 +14,7 @@
 package code_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -5048,5 +5049,152 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 	assert.Equal(
 		expected,
 		code.SetResource(crd.Config(), crd, op, "resp", "ko", 1),
+	)
+}
+
+func TestSetResource_MQ_OnlySetUnchangedFields_Update(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "mq", &testutil.TestingModelOptions{
+		GeneratorConfigFile: "generator-only-set-unchanged-fields.yaml",
+	})
+	op := model.OpTypeUpdate
+
+	crd := testutil.GetCRDByName(t, g, "Broker")
+	require.NotNil(crd)
+
+	expected := `
+	if delta.DifferentAt("Spec.AuthenticationStrategy") {
+		if resp.AuthenticationStrategy != "" {
+			ko.Spec.AuthenticationStrategy = aws.String(string(resp.AuthenticationStrategy))
+		} else {
+				ko.Spec.AuthenticationStrategy = nil
+		}
+	}
+	if delta.DifferentAt("Spec.AutoMinorVersionUpgrade") {
+		if resp.AutoMinorVersionUpgrade != nil {
+			ko.Spec.AutoMinorVersionUpgrade = resp.AutoMinorVersionUpgrade
+		} else {
+				ko.Spec.AutoMinorVersionUpgrade = nil
+		}
+	}
+	if resp.BrokerId != nil {
+		ko.Status.BrokerID = resp.BrokerId
+	} else {
+		ko.Status.BrokerID = nil
+	}
+	if delta.DifferentAt("Spec.Configuration") {
+		if resp.Configuration != nil {
+			f3 := &svcapitypes.ConfigurationID{}
+			if resp.Configuration.Id != nil {
+				f3.ID = resp.Configuration.Id
+			}
+			if resp.Configuration.Revision != nil {
+				revisionCopy := int64(*resp.Configuration.Revision)
+				f3.Revision = &revisionCopy
+			}
+			ko.Spec.Configuration = f3
+		} else {
+				ko.Spec.Configuration = nil
+		}
+	}
+	if delta.DifferentAt("Spec.EngineVersion") {
+		if resp.EngineVersion != nil {
+			ko.Spec.EngineVersion = resp.EngineVersion
+		} else {
+				ko.Spec.EngineVersion = nil
+		}
+	}
+	if delta.DifferentAt("Spec.HostInstanceType") {
+		if resp.HostInstanceType != nil {
+			ko.Spec.HostInstanceType = resp.HostInstanceType
+		} else {
+				ko.Spec.HostInstanceType = nil
+		}
+	}
+	if delta.DifferentAt("Spec.LDAPServerMetadata") {
+		if resp.LdapServerMetadata != nil {
+			f8 := &svcapitypes.LDAPServerMetadataInput{}
+			if resp.LdapServerMetadata.Hosts != nil {
+				f8.Hosts = aws.StringSlice(resp.LdapServerMetadata.Hosts)
+			}
+			if resp.LdapServerMetadata.RoleBase != nil {
+				f8.RoleBase = resp.LdapServerMetadata.RoleBase
+			}
+			if resp.LdapServerMetadata.RoleName != nil {
+				f8.RoleName = resp.LdapServerMetadata.RoleName
+			}
+			if resp.LdapServerMetadata.RoleSearchMatching != nil {
+				f8.RoleSearchMatching = resp.LdapServerMetadata.RoleSearchMatching
+			}
+			if resp.LdapServerMetadata.RoleSearchSubtree != nil {
+				f8.RoleSearchSubtree = resp.LdapServerMetadata.RoleSearchSubtree
+			}
+			if resp.LdapServerMetadata.ServiceAccountUsername != nil {
+				f8.ServiceAccountUsername = resp.LdapServerMetadata.ServiceAccountUsername
+			}
+			if resp.LdapServerMetadata.UserBase != nil {
+				f8.UserBase = resp.LdapServerMetadata.UserBase
+			}
+			if resp.LdapServerMetadata.UserRoleName != nil {
+				f8.UserRoleName = resp.LdapServerMetadata.UserRoleName
+			}
+			if resp.LdapServerMetadata.UserSearchMatching != nil {
+				f8.UserSearchMatching = resp.LdapServerMetadata.UserSearchMatching
+			}
+			if resp.LdapServerMetadata.UserSearchSubtree != nil {
+				f8.UserSearchSubtree = resp.LdapServerMetadata.UserSearchSubtree
+			}
+			ko.Spec.LDAPServerMetadata = f8
+		} else {
+				ko.Spec.LDAPServerMetadata = nil
+		}
+	}
+	if delta.DifferentAt("Spec.Logs") {
+		if resp.Logs != nil {
+			f9 := &svcapitypes.Logs{}
+			if resp.Logs.Audit != nil {
+				f9.Audit = resp.Logs.Audit
+			}
+			if resp.Logs.General != nil {
+				f9.General = resp.Logs.General
+			}
+			ko.Spec.Logs = f9
+		} else {
+				ko.Spec.Logs = nil
+		}
+	}
+	if delta.DifferentAt("Spec.MaintenanceWindowStartTime") {
+		if resp.MaintenanceWindowStartTime != nil {
+			f10 := &svcapitypes.WeeklyStartTime{}
+			if resp.MaintenanceWindowStartTime.DayOfWeek != "" {
+				f10.DayOfWeek = aws.String(string(resp.MaintenanceWindowStartTime.DayOfWeek))
+			}
+			if resp.MaintenanceWindowStartTime.TimeOfDay != nil {
+				f10.TimeOfDay = resp.MaintenanceWindowStartTime.TimeOfDay
+			}
+			if resp.MaintenanceWindowStartTime.TimeZone != nil {
+				f10.TimeZone = resp.MaintenanceWindowStartTime.TimeZone
+			}
+			ko.Spec.MaintenanceWindowStartTime = f10
+		} else {
+				ko.Spec.MaintenanceWindowStartTime = nil
+		}
+	}
+	if delta.DifferentAt("Spec.SecurityGroups") {
+		if resp.SecurityGroups != nil {
+			ko.Spec.SecurityGroups = aws.StringSlice(resp.SecurityGroups)
+		} else {
+				ko.Spec.SecurityGroups = nil
+		}
+	}
+`
+	actual := code.SetResource(crd.Config(), crd, op, "resp", "ko", 1)
+	fmt.Print(actual)
+
+	assert.Equal(
+		expected,
+		actual,
 	)
 }

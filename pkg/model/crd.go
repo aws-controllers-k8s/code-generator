@@ -358,6 +358,21 @@ func (r *CRD) OmitUnchangedFieldsOnUpdate() bool {
 	return false
 }
 
+// OnlySetChangedFieldsOnUpdate returns whether the controller needs to ensure that
+// only values included in the delta are updated based on the Update operation's response.
+func (r *CRD) OnlySetChangedFieldsOnUpdate() bool {
+	if r.Config() == nil {
+		return false
+	}
+	rConfig, found := r.Config().Resources[r.Names.Original]
+	if found {
+		if rConfig.UpdateOperation != nil {
+			return rConfig.UpdateOperation.OnlySetChangedFields
+		}
+	}
+	return false
+}
+
 // IsARNPrimaryKey returns true if the CRD uses its ARN as its primary key in
 // ReadOne calls.
 func (r *CRD) IsARNPrimaryKey() bool {
