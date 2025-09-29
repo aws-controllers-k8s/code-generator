@@ -14,7 +14,6 @@
 package code_test
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -4482,7 +4481,6 @@ func TestSetSDK_Lambda_Function_EnvironmentVariable_MapOfSecrets_Create(t *testi
 	}
 `
 	actual := code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1)
-	fmt.Print(actual)
 
 	assert.Equal(expected, actual)
 }
@@ -4648,6 +4646,227 @@ func TestSetSDK_Lambda_Function_EnvironmentVariable_MapOfSecrets_Update(t *testi
 	}
 `
 
+	actual := code.SetSDK(crd.Config(), crd, model.OpTypeUpdate, "r.ko", "res", 1)
+
+	assert.Equal(expected, actual)
+}
+
+func TestSetSDK_MQ_Broker_Configuration_Nested_Set_To(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	firehoseModel := testutil.NewModelForServiceWithOptions(t, "firehose", &testutil.TestingModelOptions{
+		GeneratorConfigFile: "generator-set-for-nested-field.yaml",
+	})
+
+	crd := testutil.GetCRDByName(t, firehoseModel, "DeliveryStream")
+	require.NotNil(crd)
+
+	expected := `
+	if r.ko.Spec.DeliveryStreamName != nil {
+		res.DeliveryStreamName = r.ko.Spec.DeliveryStreamName
+	}
+	if r.ko.Spec.HTTPEndpointDestinationConfiguration != nil {
+		f7 := &svcsdktypes.HttpEndpointDestinationUpdate{}
+		if r.ko.Spec.HTTPEndpointDestinationConfiguration.BufferingHints != nil {
+			f7f0 := &svcsdktypes.HttpEndpointBufferingHints{}
+			if r.ko.Spec.HTTPEndpointDestinationConfiguration.BufferingHints.IntervalInSeconds != nil {
+				intervalInSecondsCopy0 := *r.ko.Spec.HTTPEndpointDestinationConfiguration.BufferingHints.IntervalInSeconds
+				if intervalInSecondsCopy0 > math.MaxInt32 || intervalInSecondsCopy0 < math.MinInt32 {
+					return nil, fmt.Errorf("error: field IntervalInSeconds is of type int32")
+				}
+				intervalInSecondsCopy := int32(intervalInSecondsCopy0)
+				f7f0.IntervalInSeconds = &intervalInSecondsCopy
+			}
+			if r.ko.Spec.HTTPEndpointDestinationConfiguration.BufferingHints.SizeInMBs != nil {
+				sizeInMBsCopy0 := *r.ko.Spec.HTTPEndpointDestinationConfiguration.BufferingHints.SizeInMBs
+				if sizeInMBsCopy0 > math.MaxInt32 || sizeInMBsCopy0 < math.MinInt32 {
+					return nil, fmt.Errorf("error: field SizeInMBs is of type int32")
+				}
+				sizeInMBsCopy := int32(sizeInMBsCopy0)
+				f7f0.SizeInMBs = &sizeInMBsCopy
+			}
+			f7.BufferingHints = f7f0
+		}
+		if r.ko.Spec.HTTPEndpointDestinationConfiguration.CloudWatchLoggingOptions != nil {
+			f7f1 := &svcsdktypes.CloudWatchLoggingOptions{}
+			if r.ko.Spec.HTTPEndpointDestinationConfiguration.CloudWatchLoggingOptions.Enabled != nil {
+				f7f1.Enabled = r.ko.Spec.HTTPEndpointDestinationConfiguration.CloudWatchLoggingOptions.Enabled
+			}
+			if r.ko.Spec.HTTPEndpointDestinationConfiguration.CloudWatchLoggingOptions.LogGroupName != nil {
+				f7f1.LogGroupName = r.ko.Spec.HTTPEndpointDestinationConfiguration.CloudWatchLoggingOptions.LogGroupName
+			}
+			if r.ko.Spec.HTTPEndpointDestinationConfiguration.CloudWatchLoggingOptions.LogStreamName != nil {
+				f7f1.LogStreamName = r.ko.Spec.HTTPEndpointDestinationConfiguration.CloudWatchLoggingOptions.LogStreamName
+			}
+			f7.CloudWatchLoggingOptions = f7f1
+		}
+		if r.ko.Spec.HTTPEndpointDestinationConfiguration.EndpointConfiguration != nil {
+			f7f2 := &svcsdktypes.HttpEndpointConfiguration{}
+			if r.ko.Spec.HTTPEndpointDestinationConfiguration.EndpointConfiguration.AccessKey != nil {
+				f7f2.AccessKey = r.ko.Spec.HTTPEndpointDestinationConfiguration.EndpointConfiguration.AccessKey
+			}
+			if r.ko.Spec.HTTPEndpointDestinationConfiguration.EndpointConfiguration.Name != nil {
+				f7f2.Name = r.ko.Spec.HTTPEndpointDestinationConfiguration.EndpointConfiguration.Name
+			}
+			if r.ko.Spec.HTTPEndpointDestinationConfiguration.EndpointConfiguration.URL != nil {
+				f7f2.Url = r.ko.Spec.HTTPEndpointDestinationConfiguration.EndpointConfiguration.URL
+			}
+			f7.EndpointConfiguration = f7f2
+		}
+		if r.ko.Spec.HTTPEndpointDestinationConfiguration.ProcessingConfiguration != nil {
+			f7f3 := &svcsdktypes.ProcessingConfiguration{}
+			if r.ko.Spec.HTTPEndpointDestinationConfiguration.ProcessingConfiguration.Enabled != nil {
+				f7f3.Enabled = r.ko.Spec.HTTPEndpointDestinationConfiguration.ProcessingConfiguration.Enabled
+			}
+			if r.ko.Spec.HTTPEndpointDestinationConfiguration.ProcessingConfiguration.Processors != nil {
+				f7f3f1 := []svcsdktypes.Processor{}
+				for _, f7f3f1iter := range r.ko.Spec.HTTPEndpointDestinationConfiguration.ProcessingConfiguration.Processors {
+					f7f3f1elem := &svcsdktypes.Processor{}
+					if f7f3f1iter.Parameters != nil {
+						f7f3f1elemf0 := []svcsdktypes.ProcessorParameter{}
+						for _, f7f3f1elemf0iter := range f7f3f1iter.Parameters {
+							f7f3f1elemf0elem := &svcsdktypes.ProcessorParameter{}
+							if f7f3f1elemf0iter.ParameterName != nil {
+								f7f3f1elemf0elem.ParameterName = svcsdktypes.ProcessorParameterName(*f7f3f1elemf0iter.ParameterName)
+							}
+							if f7f3f1elemf0iter.ParameterValue != nil {
+								f7f3f1elemf0elem.ParameterValue = f7f3f1elemf0iter.ParameterValue
+							}
+							f7f3f1elemf0 = append(f7f3f1elemf0, *f7f3f1elemf0elem)
+						}
+						f7f3f1elem.Parameters = f7f3f1elemf0
+					}
+					if f7f3f1iter.Type != nil {
+						f7f3f1elem.Type = svcsdktypes.ProcessorType(*f7f3f1iter.Type)
+					}
+					f7f3f1 = append(f7f3f1, *f7f3f1elem)
+				}
+				f7f3.Processors = f7f3f1
+			}
+			f7.ProcessingConfiguration = f7f3
+		}
+		if r.ko.Spec.HTTPEndpointDestinationConfiguration.RequestConfiguration != nil {
+			f7f4 := &svcsdktypes.HttpEndpointRequestConfiguration{}
+			if r.ko.Spec.HTTPEndpointDestinationConfiguration.RequestConfiguration.CommonAttributes != nil {
+				f7f4f0 := []svcsdktypes.HttpEndpointCommonAttribute{}
+				for _, f7f4f0iter := range r.ko.Spec.HTTPEndpointDestinationConfiguration.RequestConfiguration.CommonAttributes {
+					f7f4f0elem := &svcsdktypes.HttpEndpointCommonAttribute{}
+					if f7f4f0iter.AttributeName != nil {
+						f7f4f0elem.AttributeName = f7f4f0iter.AttributeName
+					}
+					if f7f4f0iter.AttributeValue != nil {
+						f7f4f0elem.AttributeValue = f7f4f0iter.AttributeValue
+					}
+					f7f4f0 = append(f7f4f0, *f7f4f0elem)
+				}
+				f7f4.CommonAttributes = f7f4f0
+			}
+			if r.ko.Spec.HTTPEndpointDestinationConfiguration.RequestConfiguration.ContentEncoding != nil {
+				f7f4.ContentEncoding = svcsdktypes.ContentEncoding(*r.ko.Spec.HTTPEndpointDestinationConfiguration.RequestConfiguration.ContentEncoding)
+			}
+			f7.RequestConfiguration = f7f4
+		}
+		if r.ko.Spec.HTTPEndpointDestinationConfiguration.RetryOptions != nil {
+			f7f5 := &svcsdktypes.HttpEndpointRetryOptions{}
+			if r.ko.Spec.HTTPEndpointDestinationConfiguration.RetryOptions.DurationInSeconds != nil {
+				durationInSecondsCopy0 := *r.ko.Spec.HTTPEndpointDestinationConfiguration.RetryOptions.DurationInSeconds
+				if durationInSecondsCopy0 > math.MaxInt32 || durationInSecondsCopy0 < math.MinInt32 {
+					return nil, fmt.Errorf("error: field DurationInSeconds is of type int32")
+				}
+				durationInSecondsCopy := int32(durationInSecondsCopy0)
+				f7f5.DurationInSeconds = &durationInSecondsCopy
+			}
+			f7.RetryOptions = f7f5
+		}
+		if r.ko.Spec.HTTPEndpointDestinationConfiguration.RoleARN != nil {
+			f7.RoleARN = r.ko.Spec.HTTPEndpointDestinationConfiguration.RoleARN
+		}
+		if r.ko.Spec.HTTPEndpointDestinationConfiguration.S3BackupMode != nil {
+			f7.S3BackupMode = svcsdktypes.HttpEndpointS3BackupMode(*r.ko.Spec.HTTPEndpointDestinationConfiguration.S3BackupMode)
+		}
+		if r.ko.Spec.HTTPEndpointDestinationConfiguration.S3Configuration != nil {
+			f7f8 := &svcsdktypes.S3DestinationUpdate{}
+			if r.ko.Spec.HTTPEndpointDestinationConfiguration.S3Configuration.BucketARN != nil {
+				f7f8.BucketARN = r.ko.Spec.HTTPEndpointDestinationConfiguration.S3Configuration.BucketARN
+			}
+			if r.ko.Spec.HTTPEndpointDestinationConfiguration.S3Configuration.BufferingHints != nil {
+				f7f8f1 := &svcsdktypes.BufferingHints{}
+				if r.ko.Spec.HTTPEndpointDestinationConfiguration.S3Configuration.BufferingHints.IntervalInSeconds != nil {
+					intervalInSecondsCopy0 := *r.ko.Spec.HTTPEndpointDestinationConfiguration.S3Configuration.BufferingHints.IntervalInSeconds
+					if intervalInSecondsCopy0 > math.MaxInt32 || intervalInSecondsCopy0 < math.MinInt32 {
+						return nil, fmt.Errorf("error: field IntervalInSeconds is of type int32")
+					}
+					intervalInSecondsCopy := int32(intervalInSecondsCopy0)
+					f7f8f1.IntervalInSeconds = &intervalInSecondsCopy
+				}
+				if r.ko.Spec.HTTPEndpointDestinationConfiguration.S3Configuration.BufferingHints.SizeInMBs != nil {
+					sizeInMBsCopy0 := *r.ko.Spec.HTTPEndpointDestinationConfiguration.S3Configuration.BufferingHints.SizeInMBs
+					if sizeInMBsCopy0 > math.MaxInt32 || sizeInMBsCopy0 < math.MinInt32 {
+						return nil, fmt.Errorf("error: field SizeInMBs is of type int32")
+					}
+					sizeInMBsCopy := int32(sizeInMBsCopy0)
+					f7f8f1.SizeInMBs = &sizeInMBsCopy
+				}
+				f7f8.BufferingHints = f7f8f1
+			}
+			if r.ko.Spec.HTTPEndpointDestinationConfiguration.S3Configuration.CloudWatchLoggingOptions != nil {
+				f7f8f2 := &svcsdktypes.CloudWatchLoggingOptions{}
+				if r.ko.Spec.HTTPEndpointDestinationConfiguration.S3Configuration.CloudWatchLoggingOptions.Enabled != nil {
+					f7f8f2.Enabled = r.ko.Spec.HTTPEndpointDestinationConfiguration.S3Configuration.CloudWatchLoggingOptions.Enabled
+				}
+				if r.ko.Spec.HTTPEndpointDestinationConfiguration.S3Configuration.CloudWatchLoggingOptions.LogGroupName != nil {
+					f7f8f2.LogGroupName = r.ko.Spec.HTTPEndpointDestinationConfiguration.S3Configuration.CloudWatchLoggingOptions.LogGroupName
+				}
+				if r.ko.Spec.HTTPEndpointDestinationConfiguration.S3Configuration.CloudWatchLoggingOptions.LogStreamName != nil {
+					f7f8f2.LogStreamName = r.ko.Spec.HTTPEndpointDestinationConfiguration.S3Configuration.CloudWatchLoggingOptions.LogStreamName
+				}
+				f7f8.CloudWatchLoggingOptions = f7f8f2
+			}
+			if r.ko.Spec.HTTPEndpointDestinationConfiguration.S3Configuration.CompressionFormat != nil {
+				f7f8.CompressionFormat = svcsdktypes.CompressionFormat(*r.ko.Spec.HTTPEndpointDestinationConfiguration.S3Configuration.CompressionFormat)
+			}
+			if r.ko.Spec.HTTPEndpointDestinationConfiguration.S3Configuration.EncryptionConfiguration != nil {
+				f7f8f4 := &svcsdktypes.EncryptionConfiguration{}
+				if r.ko.Spec.HTTPEndpointDestinationConfiguration.S3Configuration.EncryptionConfiguration.KMSEncryptionConfig != nil {
+					f7f8f4f0 := &svcsdktypes.KMSEncryptionConfig{}
+					if r.ko.Spec.HTTPEndpointDestinationConfiguration.S3Configuration.EncryptionConfiguration.KMSEncryptionConfig.AWSKMSKeyARN != nil {
+						f7f8f4f0.AWSKMSKeyARN = r.ko.Spec.HTTPEndpointDestinationConfiguration.S3Configuration.EncryptionConfiguration.KMSEncryptionConfig.AWSKMSKeyARN
+					}
+					f7f8f4.KMSEncryptionConfig = f7f8f4f0
+				}
+				if r.ko.Spec.HTTPEndpointDestinationConfiguration.S3Configuration.EncryptionConfiguration.NoEncryptionConfig != nil {
+					f7f8f4.NoEncryptionConfig = svcsdktypes.NoEncryptionConfig(*r.ko.Spec.HTTPEndpointDestinationConfiguration.S3Configuration.EncryptionConfiguration.NoEncryptionConfig)
+				}
+				f7f8.EncryptionConfiguration = f7f8f4
+			}
+			if r.ko.Spec.HTTPEndpointDestinationConfiguration.S3Configuration.ErrorOutputPrefix != nil {
+				f7f8.ErrorOutputPrefix = r.ko.Spec.HTTPEndpointDestinationConfiguration.S3Configuration.ErrorOutputPrefix
+			}
+			if r.ko.Spec.HTTPEndpointDestinationConfiguration.S3Configuration.Prefix != nil {
+				f7f8.Prefix = r.ko.Spec.HTTPEndpointDestinationConfiguration.S3Configuration.Prefix
+			}
+			if r.ko.Spec.HTTPEndpointDestinationConfiguration.S3Configuration.RoleARN != nil {
+				f7f8.RoleARN = r.ko.Spec.HTTPEndpointDestinationConfiguration.S3Configuration.RoleARN
+			}
+			f7.S3Update = f7f8
+		}
+		if r.ko.Spec.HTTPEndpointDestinationConfiguration.SecretsManagerConfiguration != nil {
+			f7f9 := &svcsdktypes.SecretsManagerConfiguration{}
+			if r.ko.Spec.HTTPEndpointDestinationConfiguration.SecretsManagerConfiguration.Enabled != nil {
+				f7f9.Enabled = r.ko.Spec.HTTPEndpointDestinationConfiguration.SecretsManagerConfiguration.Enabled
+			}
+			if r.ko.Spec.HTTPEndpointDestinationConfiguration.SecretsManagerConfiguration.RoleARN != nil {
+				f7f9.RoleARN = r.ko.Spec.HTTPEndpointDestinationConfiguration.SecretsManagerConfiguration.RoleARN
+			}
+			if r.ko.Spec.HTTPEndpointDestinationConfiguration.SecretsManagerConfiguration.SecretARN != nil {
+				f7f9.SecretARN = r.ko.Spec.HTTPEndpointDestinationConfiguration.SecretsManagerConfiguration.SecretARN
+			}
+			f7.SecretsManagerConfiguration = f7f9
+		}
+		res.HttpEndpointDestinationUpdate = f7
+	}
+`
 	actual := code.SetSDK(crd.Config(), crd, model.OpTypeUpdate, "r.ko", "res", 1)
 
 	assert.Equal(expected, actual)

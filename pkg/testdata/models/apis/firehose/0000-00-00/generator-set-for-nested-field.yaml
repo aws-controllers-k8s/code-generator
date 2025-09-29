@@ -1,0 +1,45 @@
+model_name: firehose
+ignore:
+  resource_names:
+     # - DeliveryStream
+  field_paths:
+    - CreateDeliveryStreamInput.AmazonOpenSearchServerlessDestinationConfiguration
+    - CreateDeliveryStreamInput.AmazonopensearchserviceDestinationConfiguration
+    - CreateDeliveryStreamInput.DatabaseSourceConfiguration
+    - CreateDeliveryStreamInput.DirectPutSourceConfiguration
+    - CreateDeliveryStreamInput.ElasticsearchDestinationConfiguration
+    - CreateDeliveryStreamInput.ExtendedS3DestinationConfiguration
+    #- CreateDeliveryStreamInput.HttpEndpointDestinationConfiguration
+    - CreateDeliveryStreamInput.IcebergDestinationConfiguration
+    - CreateDeliveryStreamInput.KinesisStreamSourceConfiguration
+    - CreateDeliveryStreamInput.MSKSourceConfiguration
+    - CreateDeliveryStreamInput.RedshiftDestinationConfiguration
+    - CreateDeliveryStreamInput.SnowflakeDestinationConfiguration
+    - CreateDeliveryStreamInput.SplunkDestinationConfiguration
+    - CreateDeliveryStreamInput.S3DestinationConfiguration
+
+
+operations:
+  UpdateDestination:
+    resource_name: DeliveryStream
+    operation_type: 
+      - Update
+
+resources:
+  DeliveryStream:
+    renames:
+      operations:
+        UpdateDestination:
+          input_fields:
+            HttpEndpointDestinationUpdate: HttpEndpointDestinationConfiguration
+            HttpEndpointDestinationConfiguration.S3Update: S3Configuration
+            S3Update: S3Configuration
+
+    fields:
+      HTTPEndpointDestinationConfiguration.S3Configuration:
+        set:
+          - method: Update
+            to: S3Update
+        
+
+
