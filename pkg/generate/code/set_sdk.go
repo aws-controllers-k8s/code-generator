@@ -1167,9 +1167,9 @@ func SetSDKForStruct(
 			}
 		}
 
-		fallBackName := r.GetMatchingInputShapeFieldName(op, targetFieldName)
-		if fallBackName == memberName {
-			// TODO: implement @AmineHilaly
+		fallBackName := r.GetMatchingInputShapeFieldName(op, memberName)
+		if fallBackName != "" {
+			sourceAdaptedVarName = sourceVarName + "." + fallBackName
 		}
 		if memberShape.RealType == "union" {
 			memberShapeRef.Shape.Type = "union"

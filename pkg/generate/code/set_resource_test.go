@@ -14,7 +14,6 @@
 package code_test
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -5191,7 +5190,6 @@ func TestSetResource_MQ_OnlySetUnchangedFields_Update(t *testing.T) {
 	}
 `
 	actual := code.SetResource(crd.Config(), crd, op, "resp", "ko", 1)
-	fmt.Print(actual)
 
 	assert.Equal(
 		expected,
