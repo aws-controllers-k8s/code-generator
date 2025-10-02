@@ -46,6 +46,7 @@ var (
 func APIs(
 	m *ackmodel.Model,
 	templateBasePaths []string,
+	releaseVersion string,
 ) (*templateset.TemplateSet, error) {
 	enumDefs, err := m.GetEnumDefs()
 	if err != nil {
@@ -86,6 +87,7 @@ func APIs(
 			metaVars,
 			m.SDKAPI,
 			crd,
+			releaseVersion,
 		}
 		if err = ts.Add(crdFileName, "apis/crd.go.tpl", crdVars); err != nil {
 			return nil, err
@@ -106,6 +108,7 @@ type templateAPIVars struct {
 // code for a single top-level resource's API definition
 type templateCRDVars struct {
 	templateset.MetaVars
-	SDKAPI *ackmodel.SDKAPI
-	CRD    *ackmodel.CRD
+	SDKAPI         *ackmodel.SDKAPI
+	CRD            *ackmodel.CRD
+	ReleaseVersion string
 }
