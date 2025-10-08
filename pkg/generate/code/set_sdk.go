@@ -1786,7 +1786,7 @@ func setSDKForUnion(
 					cfg, r,
 					indexedVarName,
 					memberShape,
-					indentLevel+2,
+					indentLevel+1,
 				)
 				out += setSDKForContainer(
 					cfg, r,
@@ -1797,12 +1797,16 @@ func setSDKForUnion(
 					memberShapeRef,
 					false,
 					op,
-					indentLevel+2,
+					indentLevel+1,
 				)
-				out += fmt.Sprintf("%s%s.Value = *%s\n", indent, elemVarName, indexedVarName)
+				out += fmt.Sprintf("%s\t%s.Value = *%s\n", indent, elemVarName, indexedVarName)
+				out += fmt.Sprintf("%s\t%s = %s\n", indent, targetVarName, elemVarName)
+				out += fmt.Sprintf("%s\tisInterfaceSet = true\n", indent)
 			}
 		default:
-			out += fmt.Sprintf("%s%s.Value = *%s\n", indent, elemVarName, sourceAdaptedVarName)
+			out += fmt.Sprintf("%s\t%s.Value = *%s\n", indent, elemVarName, sourceAdaptedVarName)
+			out += fmt.Sprintf("%s\t%s = %s\n", indent, targetVarName, elemVarName)
+			out += fmt.Sprintf("%s\tisInterfaceSet = true\n", indent)
 		}
 		if memberShape.RealType == "union" {
 			memberShapeRef.Shape.Type = "structure"

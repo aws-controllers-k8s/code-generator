@@ -4871,3 +4871,66 @@ func TestSetSDK_MQ_Broker_Configuration_Nested_Set_To(t *testing.T) {
 
 	assert.Equal(expected, actual)
 }
+
+func TestEMRContainers_VirtualCluster_WithUnion(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	emrModel := testutil.NewModelForServiceWithOptions(t, "emrcontainers", &testutil.TestingModelOptions{
+		GeneratorConfigFile: "generator-with-union.yaml",
+	})
+
+	crd := testutil.GetCRDByName(t, emrModel, "VirtualCluster")
+	require.NotNil(crd)
+	assert.NotNil(crd.Ops.Create)
+
+	expected := `
+	if r.ko.Spec.ClientToken != nil {
+		res.ClientToken = r.ko.Spec.ClientToken
+	}
+	if r.ko.Spec.ContainerProvider != nil {
+		f1 := &svcsdktypes.ContainerProvider{}
+		if r.ko.Spec.ContainerProvider.ID != nil {
+			f1.Id = r.ko.Spec.ContainerProvider.ID
+		}
+		if r.ko.Spec.ContainerProvider.Info != nil {
+			var f1f1 svcsdktypes.ContainerInfo
+			isInterfaceSet := false
+			if r.ko.Spec.ContainerProvider.Info.EKSInfo != nil {
+				if isInterfaceSet {
+					return nil, ackerr.NewTerminalError(fmt.Errorf("can only set one of the members for EksInfo"))
+				}
+				f1f1f0Parent := &svcsdktypes.ContainerInfoMemberEksInfo{}
+				f1f1f0 := &svcsdktypes.EksInfo{}
+				if r.ko.Spec.ContainerProvider.Info.EKSInfo.Namespace != nil {
+					f1f1f0.Namespace = r.ko.Spec.ContainerProvider.Info.EKSInfo.Namespace
+				}
+				f1f1f0Parent.Value = *f1f1f0
+				f1f1 = f1f1f0Parent
+				isInterfaceSet = true
+			}
+			f1.Info = f1f1
+		}
+		if r.ko.Spec.ContainerProvider.Type != nil {
+			f1.Type = svcsdktypes.ContainerProviderType(*r.ko.Spec.ContainerProvider.Type)
+		}
+		res.ContainerProvider = f1
+	}
+	if r.ko.Spec.Name != nil {
+		res.Name = r.ko.Spec.Name
+	}
+	if r.ko.Spec.SecurityConfigurationID != nil {
+		res.SecurityConfigurationId = r.ko.Spec.SecurityConfigurationID
+	}
+	if r.ko.Spec.Tags != nil {
+		res.Tags = aws.ToStringMap(r.ko.Spec.Tags)
+	}
+`
+
+	actual := code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1)
+
+	assert.Equal(
+		expected,
+		actual,
+	)
+}
