@@ -1,0 +1,15 @@
+ignore:
+  field_paths: null
+  operations: null
+  resource_names:
+    # - VirtualCluster
+    - JobRun
+    - ManagedEndpoint
+    - JobTemplate
+    - SecurityConfiguration
+sdk_names:
+  model_name: emr-containers
+operations:
+  DescribeVirtualCluster:
+    output_wrapper_field_path: VirtualCluster
+prefix_config: {}

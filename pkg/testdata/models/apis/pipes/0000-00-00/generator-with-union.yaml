@@ -1,0 +1,30 @@
+ignore:
+  resource_names:
+      # - Pipe
+  field_paths:
+  - CreatePipeInput.KmsKeyIdentifier
+  - CreatePipeInput.LogConfiguration
+  - PipeTargetParameters.TimestreamParameters
+sdk_names:
+  client_struct: Pipes
+  client_interface: PipesAPI
+resources:
+  Pipe:
+    fields:
+      DesiredState:
+        compare:
+          is_ignored: true
+      SourceParameters:
+        compare:
+          is_ignored: true
+      TargetParameters:
+        compare:
+          is_ignored: true
+      EnrichmentParameters:
+        compare:
+          is_ignored: true
+      StateReason:
+        is_read_only: true
+        from:
+          operation: DescribePipe
+          path: StateReason
