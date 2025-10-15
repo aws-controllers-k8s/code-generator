@@ -1272,6 +1272,10 @@ func setSDKForSlice(
 	out := ""
 	indent := strings.Repeat("\t", indentLevel)
 	targetShape := targetShapeRef.Shape
+	if targetShape.MemberRef.Shape.Type == "string" && !targetShape.MemberRef.Shape.IsEnum() && !r.IsSecretField(sourceFieldPath) {
+		out += fmt.Sprintf("%s%s = aws.ToStringSlice(%s)\n", indent, targetVarName, sourceVarName)
+		return out
+	}
 
 	iterVarName := fmt.Sprintf("%siter", targetVarName)
 	elemVarName := fmt.Sprintf("%selem", targetVarName)
@@ -1776,11 +1780,11 @@ func setSDKForUnion(
 
 		switch memberShape.Type {
 		case "list", "structure", "map", "union":
-			adaption := setSDKAdaptiveResourceCollection(memberShape, targetVarName, memberName, sourceAdaptedVarName, indent, r.IsSecretField(memberFieldPath))
+			/* adaption := setSDKAdaptiveResourceCollection(memberShape, targetVarName, memberName, sourceAdaptedVarName, indent, r.IsSecretField(memberFieldPath))
 			out += adaption
 			if adaption != "" {
 				break
-			}
+			} */
 			{
 				out += varEmptyConstructorSDKType(
 					cfg, r,
@@ -1799,7 +1803,11 @@ func setSDKForUnion(
 					op,
 					indentLevel+1,
 				)
-				out += fmt.Sprintf("%s\t%s.Value = *%s\n", indent, elemVarName, indexedVarName)
+				if memberShape.Type == "list" {
+					out += fmt.Sprintf("%s\t%s.Value = %s\n", indent, elemVarName, indexedVarName)
+				} else {
+					out += fmt.Sprintf("%s\t%s.Value = *%s\n", indent, elemVarName, indexedVarName)
+				}
 				out += fmt.Sprintf("%s\t%s = %s\n", indent, targetVarName, elemVarName)
 				out += fmt.Sprintf("%s\tisInterfaceSet = true\n", indent)
 			}
