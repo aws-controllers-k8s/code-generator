@@ -123,7 +123,7 @@ func SetResource(
 	if op == r.Ops.ReadMany {
 		return setResourceReadMany(
 			cfg, r,
-			op, sourceVarName, targetVarName, indentLevel,
+			opType, op, sourceVarName, targetVarName, indentLevel,
 		)
 	} else if wrapperFieldPath != nil {
 		// fieldpath api requires fully-qualified path
@@ -133,7 +133,7 @@ func SetResource(
 			if sref.Shape.Type == "list" {
 				return setResourceReadMany(
 					cfg, r,
-					op, sourceVarName, targetVarName, indentLevel,
+					opType, op, sourceVarName, targetVarName, indentLevel,
 				)
 			}
 		}
@@ -509,6 +509,8 @@ func ListMemberNameInReadManyOutput(
 func setResourceReadMany(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,
+	// the operation type
+	opType model.OpType,
 	// The ReadMany operation descriptor
 	op *awssdkmodel.Operation,
 	// String representing the name of the variable that we will grab the
@@ -660,7 +662,7 @@ func setResourceReadMany(
 
 		// We may have some special instructions for how to handle setting the
 		// field value...
-		setCfg := f.GetSetterConfig(model.OpTypeList)
+		setCfg := f.GetSetterConfig(opType)
 
 		if setCfg != nil && setCfg.IgnoreResourceSetter() {
 			continue
