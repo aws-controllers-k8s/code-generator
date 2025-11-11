@@ -184,3 +184,5 @@ featureGates:
   ReadOnlyResources: true
   # Enable ResourceAdoption feature/annotation. 
   ResourceAdoption: true
+  # Enable IAMRoleSelector, a multirole feature, replacing CARM. See https://github.com/aws-controllers-k8s/community/pull/2628
+  IAMRoleSelector: false
