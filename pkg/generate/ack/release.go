@@ -25,6 +25,7 @@ import (
 
 var (
 	releaseTemplatePaths = []string{
+		".github/workflows/postsubmit.yaml.tpl",
 		"config/controller/kustomization.yaml.tpl",
 		"helm/templates/cluster-role-binding.yaml.tpl",
 		"helm/templates/cluster-role-controller.yaml.tpl",
