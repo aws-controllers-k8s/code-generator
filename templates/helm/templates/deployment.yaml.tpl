@@ -117,7 +117,7 @@ spec:
         - name: AWS_ENDPOINT_URL
           value: {{ "{{ .Values.aws.endpoint_url | quote }}" }}
         - name: AWS_IDENTITY_ENDPOINT_URL
-          value: {{ .Values.aws.identity_endpoint_url | quote }}
+          value: {{ "{{ .Values.aws.identity_endpoint_url | quote }}" }}
         - name: ACK_WATCH_NAMESPACE
           value: {{ IncludeTemplate "watch-namespace" }}
         - name: ACK_WATCH_SELECTORS
