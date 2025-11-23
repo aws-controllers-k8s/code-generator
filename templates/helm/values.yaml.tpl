@@ -124,7 +124,7 @@ resourceTags:
   - services.k8s.aws/controller-version=%CONTROLLER_SERVICE%-%CONTROLLER_VERSION%
   - services.k8s.aws/namespace=%K8S_NAMESPACE%
   - app.kubernetes.io/managed-by=%MANAGED_BY%
-  - kro.run/version=%KRO_VERSION%
+  - kro.run/kro-version=%KRO_VERSION%
 
 # Set to "retain" to keep all AWS resources intact even after the K8s resources
 # have been deleted. By default, the ACK controller will delete the AWS resource
