@@ -11,7 +11,6 @@ import(
 var (
 	_ = svcapitypes.{{ .CRD.Kind }}{}
 	_ = acktags.NewTags()
-    ACKSystemTags = []string{"services.k8s.aws/namespace", "services.k8s.aws/controller-version"}
 )
 
 {{- if $hookCode := Hook .CRD "convert_tags" }}
@@ -59,13 +58,14 @@ func fromACKTags(tags acktags.Tags, keyOrder []string) {{ $tagFieldGoType }} {
 {{ end }}
 
 // ignoreSystemTags ignores tags that have keys that start with "aws:"
-// and ACKSystemTags, to avoid patching them to the resourceSpec.
+// and systemTags defined on startup via the --resource-tags flag,
+// to avoid patching them to the resourceSpec.
 // Eg. resources created with cloudformation have tags that cannot be
 // removed by an ACK controller
-func ignoreSystemTags(tags acktags.Tags) {
+func ignoreSystemTags(tags acktags.Tags, systemTags []string) {
 	for k := range tags {
 		if strings.HasPrefix(k, "aws:") ||
-			slices.Contains(ACKSystemTags, k) {
+			slices.Contains(systemTags, k) {
 			delete(tags, k)
 		}
 	}
