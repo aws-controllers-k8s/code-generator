@@ -219,6 +219,7 @@ func Controller(
 	templateBasePaths []string,
 	// serviceAccountName is the name of the ServiceAccount used in the Helm chart
 	serviceAccountName string,
+	releaseVersion string,
 ) (*templateset.TemplateSet, error) {
 	crds, err := m.GetCRDs()
 	if err != nil {
@@ -234,6 +235,7 @@ func Controller(
 			metaVars,
 			m.SDKAPI,
 			r,
+			releaseVersion,
 		}
 		code, err := ResourceHookCode(templateBasePaths, r, hookID, crdVars, controllerFuncMap)
 		if err != nil {
@@ -274,6 +276,7 @@ func Controller(
 				metaVars,
 				m.SDKAPI,
 				crd,
+				releaseVersion,
 			}
 			if err = ts.Add(outPath, tplPath, crdVars); err != nil {
 				return nil, err
