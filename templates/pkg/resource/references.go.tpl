@@ -67,6 +67,7 @@ func (rm *resourceManager) ResolveReferences(
 	apiReader client.Reader,
 	res acktypes.AWSResource,
 ) (acktypes.AWSResource, bool, error) {
+	res = res.DeepCopy()
 {{ if not .CRD.HasReferenceFields -}}
 	return res, false, nil
 {{ else -}}
