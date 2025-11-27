@@ -4,7 +4,7 @@ go 1.24.0
 
 require (
 	github.com/aws-controllers-k8s/pkg v0.0.19
-	github.com/aws-controllers-k8s/runtime v0.54.1
+	github.com/aws-controllers-k8s/runtime v0.55.0
 	github.com/aws/aws-sdk-go v1.49.0
 	github.com/aws/aws-sdk-go-v2 v1.32.7
 	github.com/dlclark/regexp2 v1.10.0 // indirect
@@ -121,3 +121,5 @@ require (
 	github.com/google/btree v1.1.3 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 )
+
+replace github.com/aws-controllers-k8s/runtime => github.com/michaelhtm/ack-runtime v0.49.1-0.20251127011808-b25caa932116
