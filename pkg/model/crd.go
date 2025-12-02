@@ -599,12 +599,6 @@ func (r *CRD) PrintAgeColumn() bool {
 	return r.cfg.ResourceDisplaysAgeColumn(r.Names.Camel)
 }
 
-// PrintSyncedColumn returns whether the code generator should append 'Sync'
-// kubebuilder:printcolumn comment marker
-func (r *CRD) PrintSyncedColumn() bool {
-	return r.cfg.ResourceDisplaysSyncedColumn(r.Names.Camel)
-}
-
 func (r *CRD) addAdditionalPrinterColumns(additionalColumns []*ackgenconfig.AdditionalColumnConfig) {
 	for _, additionalColumn := range additionalColumns {
 		printerColumn := &PrinterColumn{}
