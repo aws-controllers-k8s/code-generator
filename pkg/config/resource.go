@@ -395,6 +395,7 @@ type PrintConfig struct {
 	// resource in `kubectl get` response.
 	//
 	// Default value is true.
+	// Deprecated: We now print Ready condition by default
 	AddSyncedColumn *bool `json:"add_synced_column"`
 	// OrderBy is the field used to sort the list of PrinterColumn options.
 	OrderBy string `json:"order_by"`
@@ -481,23 +482,6 @@ func (c *Config) ResourceDisplaysAgeColumn(resourceName string) bool {
 	}
 	if rConfig.Print != nil {
 		return rConfig.Print.AddAgeColumn
-	}
-	return false
-}
-
-// ResourceDisplaysSyncedColumn returns true if the resource is
-// configured to display the synced status.
-func (c *Config) ResourceDisplaysSyncedColumn(resourceName string) bool {
-	if c == nil {
-		return false
-	}
-	rConfig, ok := c.Resources[resourceName]
-	if !ok {
-		return false
-	}
-	if rConfig.Print != nil {
-		// default value should be true.
-		return rConfig.Print.AddSyncedColumn == nil || *rConfig.Print.AddSyncedColumn
 	}
 	return false
 }
