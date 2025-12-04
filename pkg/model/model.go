@@ -541,6 +541,9 @@ func (m *Model) processNestedFieldTypeDefs(
 			if field.FieldConfig.GoTag != nil {
 				setTypeDefAttributeGoTag(crd, fieldPath, field, tdefs)
 			}
+			if field.IsImmutable() {
+				setTypeDefAttributeImmutable(crd, fieldPath, tdefs)
+			}
 		}
 	}
 }
@@ -671,6 +674,15 @@ func setTypeDefAttributeGoTag(crd *CRD, fieldPath string, f *Field, tdefs []*Typ
 	_, fieldAttr := getAttributeFromPath(crd, fieldPath, tdefs)
 	if fieldAttr != nil {
 		fieldAttr.GoTag = f.GetGoTag()
+	}
+}
+
+// setTypeDefAttributeImmutable sets the IsImmutable flag for the corresponding
+// attribute represented by fieldPath of nested field.
+func setTypeDefAttributeImmutable(crd *CRD, fieldPath string, tdefs []*TypeDef) {
+	_, fieldAttr := getAttributeFromPath(crd, fieldPath, tdefs)
+	if fieldAttr != nil {
+		fieldAttr.IsImmutable = true
 	}
 }
 
