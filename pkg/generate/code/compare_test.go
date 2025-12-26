@@ -97,7 +97,7 @@ func TestCompareResource_S3_Bucket(t *testing.T) {
 			if len(a.ko.Spec.Logging.LoggingEnabled.TargetGrants) != len(b.ko.Spec.Logging.LoggingEnabled.TargetGrants) {
 				delta.Add("Spec.Logging.LoggingEnabled.TargetGrants", a.ko.Spec.Logging.LoggingEnabled.TargetGrants, b.ko.Spec.Logging.LoggingEnabled.TargetGrants)
 			} else if len(a.ko.Spec.Logging.LoggingEnabled.TargetGrants) > 0 {
-				if !reflect.DeepEqual(a.ko.Spec.Logging.LoggingEnabled.TargetGrants, b.ko.Spec.Logging.LoggingEnabled.TargetGrants) {
+				if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.Logging.LoggingEnabled.TargetGrants, b.ko.Spec.Logging.LoggingEnabled.TargetGrants) {
 					delta.Add("Spec.Logging.LoggingEnabled.TargetGrants", a.ko.Spec.Logging.LoggingEnabled.TargetGrants, b.ko.Spec.Logging.LoggingEnabled.TargetGrants)
 				}
 			}
@@ -274,7 +274,7 @@ func TestCompareResource_Lambda_Function(t *testing.T) {
 	if len(a.ko.Spec.FileSystemConfigs) != len(b.ko.Spec.FileSystemConfigs) {
 		delta.Add("Spec.FileSystemConfigs", a.ko.Spec.FileSystemConfigs, b.ko.Spec.FileSystemConfigs)
 	} else if len(a.ko.Spec.FileSystemConfigs) > 0 {
-		if !reflect.DeepEqual(a.ko.Spec.FileSystemConfigs, b.ko.Spec.FileSystemConfigs) {
+		if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.FileSystemConfigs, b.ko.Spec.FileSystemConfigs) {
 			delta.Add("Spec.FileSystemConfigs", a.ko.Spec.FileSystemConfigs, b.ko.Spec.FileSystemConfigs)
 		}
 	}
@@ -485,7 +485,7 @@ func TestCompareResource_APIGatewayv2_Route(t *testing.T) {
 	if len(a.ko.Spec.RequestParameters) != len(b.ko.Spec.RequestParameters) {
 		delta.Add("Spec.RequestParameters", a.ko.Spec.RequestParameters, b.ko.Spec.RequestParameters)
 	} else if len(a.ko.Spec.RequestParameters) > 0 {
-		if !reflect.DeepEqual(a.ko.Spec.RequestParameters, b.ko.Spec.RequestParameters) {
+		if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.RequestParameters, b.ko.Spec.RequestParameters) {
 			delta.Add("Spec.RequestParameters", a.ko.Spec.RequestParameters, b.ko.Spec.RequestParameters)
 		}
 	}

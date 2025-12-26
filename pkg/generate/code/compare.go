@@ -140,11 +140,11 @@ func CompareResource(
 			cfg.PrefixConfig.SpecField+"."+specField.Names.Camel, ".",
 		)
 
-		// Use reflect.DeepEqual for comparing Reference fields because
+		// Use equality.Semantic.Equalities.DeepEqual for comparing Reference fields because
 		// some of reference fields are list of pointer to structs and
 		// DeepEqual is easy way to compare them
 		if specField.IsReference() {
-			out += fmt.Sprintf("%sif !reflect.DeepEqual(%s, %s) {\n",
+			out += fmt.Sprintf("%sif !equality.Semantic.Equalities.DeepEqual(%s, %s) {\n",
 				indent, firstResAdaptedVarName, secondResAdaptedVarName)
 			out += fmt.Sprintf("%s\t%s.Add(\"%s\", %s, %s)\n", indent,
 				deltaVarName, fieldPath, firstResAdaptedVarName,
@@ -425,7 +425,7 @@ func compareMap(
 		// building up the fieldPath appropriately and calling into a
 		// struct-specific comparator function...
 		out += fmt.Sprintf(
-			"%sif !reflect.DeepEqual(%s, %s) {\n",
+			"%sif !equality.Semantic.Equalities.DeepEqual(%s, %s) {\n",
 			indent, firstResVarName, secondResVarName,
 		)
 	}
@@ -497,7 +497,7 @@ func compareSlice(
 		// comparator function...the tricky part of this is figuring out how to
 		// sort the slice of structs...
 		out += fmt.Sprintf(
-			"%sif !reflect.DeepEqual(%s, %s) {\n",
+			"%sif !equality.Semantic.Equalities.DeepEqual(%s, %s) {\n",
 			indent, firstResVarName, secondResVarName,
 		)
 	default:
