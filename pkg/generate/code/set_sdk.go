@@ -322,7 +322,7 @@ func SetSDK(
 		// }
 
 		omitUnchangedFieldsOnUpdate := op == r.Ops.Update && r.OmitUnchangedFieldsOnUpdate()
-		if omitUnchangedFieldsOnUpdate && inSpec {
+		if omitUnchangedFieldsOnUpdate && inSpec && !inputShape.IsRequired(memberName) {
 			fieldJSONPath := fmt.Sprintf("%s.%s", cfg.PrefixConfig.SpecField[1:], f.Names.Camel)
 			out += fmt.Sprintf(
 				"%sif delta.DifferentAt(%q) {\n", indent, fieldJSONPath,
@@ -408,7 +408,7 @@ func SetSDK(
 			"%s}\n", indent,
 		)
 
-		if omitUnchangedFieldsOnUpdate && inSpec {
+		if omitUnchangedFieldsOnUpdate && inSpec && !inputShape.IsRequired(memberName) {
 			// decrease indentation level
 			indentLevel--
 			indent = indent[1:]
