@@ -21,10 +21,11 @@ import (
 )
 
 type Attr struct {
-	Names  names.Names
-	GoType string
-	Shape  *awssdkmodel.Shape
-	GoTag  string
+	Names       names.Names
+	GoType      string
+	Shape       *awssdkmodel.Shape
+	GoTag       string
+	IsImmutable bool
 }
 
 func NewAttr(
