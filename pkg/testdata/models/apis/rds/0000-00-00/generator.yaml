@@ -205,6 +205,8 @@ resources:
           path: Parameters
         is_read_only: true
   DBInstance:
+    update_operation:
+      omit_unchanged_fields: true
     fields:
       AvailabilityZone:
         late_initialize: {}
