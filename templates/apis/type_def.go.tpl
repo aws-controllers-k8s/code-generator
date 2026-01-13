@@ -7,6 +7,9 @@ type {{ .Names.Camel }} struct {
 	{{- if $attr.Shape.Documentation }}
 	{{ $attr.Shape.Documentation }}
 	{{- end }}
+	{{- if $attr.IsImmutable }}
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
+	{{- end }}
 	{{ $attr.Names.Camel }} {{ $attr.GoType }} {{ $attr.GetGoTag }}
 {{- end }}
 }
