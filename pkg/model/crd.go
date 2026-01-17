@@ -467,6 +467,14 @@ func (r *CRD) GetOutputWrapperFieldPath(
 	return r.cfg.GetOutputWrapperFieldPath(op)
 }
 
+// GetInputWrapperFieldPath returns the JSON-Path of the input wrapper field
+// as *string for a given operation.
+func (r *CRD) GetInputWrapperFieldPath(
+	op *awssdkmodel.Operation,
+) *string {
+	return r.cfg.GetInputWrapperFieldPath(op)
+}
+
 // GetOutputShape returns the Output shape for a given operation and applies
 // wrapper field path overrides.
 func (r *CRD) GetOutputShape(
@@ -484,7 +492,7 @@ func (r *CRD) GetOutputShape(
 	// Check for wrapper field path overrides
 	wrapperFieldPath := r.GetOutputWrapperFieldPath(op)
 	if wrapperFieldPath != nil {
-		wrapperOutputShape, err := r.getWrapperOutputShape(outputShape,
+		wrapperOutputShape, err := r.getWrapperShape(outputShape,
 			*wrapperFieldPath)
 		if err != nil {
 			msg := fmt.Sprintf("Unable to unwrap the output shape: %s "+
@@ -497,11 +505,42 @@ func (r *CRD) GetOutputShape(
 	return outputShape, nil
 }
 
-// getWrapperOutputShape returns the shape of the last element of a given field
-// Path. It unwraps the output shape and verifies that every element of the
-// field path exists in their corresponding parent shape and that they are
-// structures.
-func (r *CRD) getWrapperOutputShape(
+// GetInputShape returns the Input shape for a given operation and applies
+// wrapper field path overrides. When input_wrapper_field_path is configured,
+// this returns the inner wrapper shape instead of the outer input shape.
+func (r *CRD) GetInputShape(
+	op *awssdkmodel.Operation,
+) (*awssdkmodel.Shape, error) {
+	if op == nil {
+		return nil, errors.New("no input shape for nil operation")
+	}
+
+	inputShape := op.InputRef.Shape
+	if inputShape == nil {
+		return nil, errors.New("input shape not found")
+	}
+
+	// Check for wrapper field path overrides
+	wrapperFieldPath := r.GetInputWrapperFieldPath(op)
+	if wrapperFieldPath != nil {
+		wrapperInputShape, err := r.getWrapperShape(inputShape,
+			*wrapperFieldPath)
+		if err != nil {
+			msg := fmt.Sprintf("Unable to unwrap the input shape: %s "+
+				"with field path override: %s. error: %v",
+				inputShape.OrigShapeName, *wrapperFieldPath, err)
+			panic(msg)
+		}
+		inputShape = wrapperInputShape
+	}
+	return inputShape, nil
+}
+
+// getWrapperShape returns the shape of the last element of a given field path.
+// It unwraps the shape and verifies that every element of the field path exists
+// in their corresponding parent shape and that they are structures (or lists
+// of structures).
+func (r *CRD) getWrapperShape(
 	shape *awssdkmodel.Shape,
 	fieldPath string,
 ) (*awssdkmodel.Shape, error) {
@@ -524,11 +563,11 @@ func (r *CRD) getWrapperOutputShape(
 	}
 	if memberRef.Shape.Type != "structure" {
 		return nil, fmt.Errorf(
-			"output wrapper overrides can only contain fields of type"+
-				" 'structure'. Found wrapper override field %s of type '%s'",
+			"wrapper overrides can only contain fields of type"+
+				" 'structure' or 'list'. Found wrapper override field %s of type '%s'",
 			wrapperField, memberRef.Shape.Type)
 	}
-	return r.getWrapperOutputShape(memberRef.Shape, fp.String())
+	return r.getWrapperShape(memberRef.Shape, fp.String())
 }
 
 // GetCustomImplementation returns custom implementation method name for the
