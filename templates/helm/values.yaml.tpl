@@ -173,6 +173,10 @@ leaderElection:
   # will attempt to use the namespace of the service account mounted to the Controller
   # pod.
   namespace: ""
+  # Enable controller warmup to start controller sources (watches/informers) before
+  # leader election is won. This pre-populates caches and improves leader failover time.
+  # Requires leader election to be enabled.
+  enableControllerWarmup: false
 
 # Enable Cross Account Resource Management (default = true). Set this to false to disable cross account resource management.
 enableCARM: true
