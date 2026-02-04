@@ -14,6 +14,7 @@
 package code_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -5190,6 +5191,264 @@ func TestSetResource_MQ_OnlySetUnchangedFields_Update(t *testing.T) {
 	}
 `
 	actual := code.SetResource(crd.Config(), crd, op, "resp", "ko", 1)
+
+	assert.Equal(
+		expected,
+		actual,
+	)
+}
+
+func TestSetResource_ELBv2_IgnoreSetFrom(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "elastic-load-balancing-v2", &testutil.TestingModelOptions{
+		GeneratorConfigFile: "generator-ignore-set-in-create.yaml",
+	})
+	op := model.OpTypeCreate
+
+	crd := testutil.GetCRDByName(t, g, "Rule")
+	require.NotNil(crd)
+
+	expected := `
+	found := false
+	for _, elem := range resp.Rules {
+		if elem.Actions != nil {
+			f0 := []*svcapitypes.Action{}
+			for _, f0iter := range elem.Actions {
+				f0elem := &svcapitypes.Action{}
+				if f0iter.AuthenticateCognitoConfig != nil {
+					f0elemf0 := &svcapitypes.AuthenticateCognitoActionConfig{}
+					if f0iter.AuthenticateCognitoConfig.AuthenticationRequestExtraParams != nil {
+						f0elemf0.AuthenticationRequestExtraParams = aws.StringMap(f0iter.AuthenticateCognitoConfig.AuthenticationRequestExtraParams)
+					}
+					if f0iter.AuthenticateCognitoConfig.OnUnauthenticatedRequest != "" {
+						f0elemf0.OnUnauthenticatedRequest = aws.String(string(f0iter.AuthenticateCognitoConfig.OnUnauthenticatedRequest))
+					}
+					if f0iter.AuthenticateCognitoConfig.Scope != nil {
+						f0elemf0.Scope = f0iter.AuthenticateCognitoConfig.Scope
+					}
+					if f0iter.AuthenticateCognitoConfig.SessionCookieName != nil {
+						f0elemf0.SessionCookieName = f0iter.AuthenticateCognitoConfig.SessionCookieName
+					}
+					if f0iter.AuthenticateCognitoConfig.SessionTimeout != nil {
+						f0elemf0.SessionTimeout = f0iter.AuthenticateCognitoConfig.SessionTimeout
+					}
+					if f0iter.AuthenticateCognitoConfig.UserPoolArn != nil {
+						f0elemf0.UserPoolARN = f0iter.AuthenticateCognitoConfig.UserPoolArn
+					}
+					if f0iter.AuthenticateCognitoConfig.UserPoolClientId != nil {
+						f0elemf0.UserPoolClientID = f0iter.AuthenticateCognitoConfig.UserPoolClientId
+					}
+					if f0iter.AuthenticateCognitoConfig.UserPoolDomain != nil {
+						f0elemf0.UserPoolDomain = f0iter.AuthenticateCognitoConfig.UserPoolDomain
+					}
+					f0elem.AuthenticateCognitoConfig = f0elemf0
+				}
+				if f0iter.AuthenticateOidcConfig != nil {
+					f0elemf1 := &svcapitypes.AuthenticateOIDCActionConfig{}
+					if f0iter.AuthenticateOidcConfig.AuthenticationRequestExtraParams != nil {
+						f0elemf1.AuthenticationRequestExtraParams = aws.StringMap(f0iter.AuthenticateOidcConfig.AuthenticationRequestExtraParams)
+					}
+					if f0iter.AuthenticateOidcConfig.AuthorizationEndpoint != nil {
+						f0elemf1.AuthorizationEndpoint = f0iter.AuthenticateOidcConfig.AuthorizationEndpoint
+					}
+					if f0iter.AuthenticateOidcConfig.ClientId != nil {
+						f0elemf1.ClientID = f0iter.AuthenticateOidcConfig.ClientId
+					}
+					if f0iter.AuthenticateOidcConfig.ClientSecret != nil {
+						f0elemf1.ClientSecret = f0iter.AuthenticateOidcConfig.ClientSecret
+					}
+					if f0iter.AuthenticateOidcConfig.Issuer != nil {
+						f0elemf1.Issuer = f0iter.AuthenticateOidcConfig.Issuer
+					}
+					if f0iter.AuthenticateOidcConfig.OnUnauthenticatedRequest != "" {
+						f0elemf1.OnUnauthenticatedRequest = aws.String(string(f0iter.AuthenticateOidcConfig.OnUnauthenticatedRequest))
+					}
+					if f0iter.AuthenticateOidcConfig.Scope != nil {
+						f0elemf1.Scope = f0iter.AuthenticateOidcConfig.Scope
+					}
+					if f0iter.AuthenticateOidcConfig.SessionCookieName != nil {
+						f0elemf1.SessionCookieName = f0iter.AuthenticateOidcConfig.SessionCookieName
+					}
+					if f0iter.AuthenticateOidcConfig.SessionTimeout != nil {
+						f0elemf1.SessionTimeout = f0iter.AuthenticateOidcConfig.SessionTimeout
+					}
+					if f0iter.AuthenticateOidcConfig.TokenEndpoint != nil {
+						f0elemf1.TokenEndpoint = f0iter.AuthenticateOidcConfig.TokenEndpoint
+					}
+					if f0iter.AuthenticateOidcConfig.UseExistingClientSecret != nil {
+						f0elemf1.UseExistingClientSecret = f0iter.AuthenticateOidcConfig.UseExistingClientSecret
+					}
+					if f0iter.AuthenticateOidcConfig.UserInfoEndpoint != nil {
+						f0elemf1.UserInfoEndpoint = f0iter.AuthenticateOidcConfig.UserInfoEndpoint
+					}
+					f0elem.AuthenticateOIDCConfig = f0elemf1
+				}
+				if f0iter.FixedResponseConfig != nil {
+					f0elemf2 := &svcapitypes.FixedResponseActionConfig{}
+					if f0iter.FixedResponseConfig.ContentType != nil {
+						f0elemf2.ContentType = f0iter.FixedResponseConfig.ContentType
+					}
+					if f0iter.FixedResponseConfig.MessageBody != nil {
+						f0elemf2.MessageBody = f0iter.FixedResponseConfig.MessageBody
+					}
+					if f0iter.FixedResponseConfig.StatusCode != nil {
+						f0elemf2.StatusCode = f0iter.FixedResponseConfig.StatusCode
+					}
+					f0elem.FixedResponseConfig = f0elemf2
+				}
+				if f0iter.ForwardConfig != nil {
+					f0elemf3 := &svcapitypes.ForwardActionConfig{}
+					if f0iter.ForwardConfig.TargetGroupStickinessConfig != nil {
+						f0elemf3f0 := &svcapitypes.TargetGroupStickinessConfig{}
+						if f0iter.ForwardConfig.TargetGroupStickinessConfig.DurationSeconds != nil {
+							durationSecondsCopy := int64(*f0iter.ForwardConfig.TargetGroupStickinessConfig.DurationSeconds)
+							f0elemf3f0.DurationSeconds = &durationSecondsCopy
+						}
+						if f0iter.ForwardConfig.TargetGroupStickinessConfig.Enabled != nil {
+							f0elemf3f0.Enabled = f0iter.ForwardConfig.TargetGroupStickinessConfig.Enabled
+						}
+						f0elemf3.TargetGroupStickinessConfig = f0elemf3f0
+					}
+					if f0iter.ForwardConfig.TargetGroups != nil {
+						f0elemf3f1 := []*svcapitypes.TargetGroupTuple{}
+						for _, f0elemf3f1iter := range f0iter.ForwardConfig.TargetGroups {
+							f0elemf3f1elem := &svcapitypes.TargetGroupTuple{}
+							if f0elemf3f1iter.TargetGroupArn != nil {
+								f0elemf3f1elem.TargetGroupARN = f0elemf3f1iter.TargetGroupArn
+							}
+							if f0elemf3f1iter.Weight != nil {
+								weightCopy := int64(*f0elemf3f1iter.Weight)
+								f0elemf3f1elem.Weight = &weightCopy
+							}
+							f0elemf3f1 = append(f0elemf3f1, f0elemf3f1elem)
+						}
+						f0elemf3.TargetGroups = f0elemf3f1
+					}
+					f0elem.ForwardConfig = f0elemf3
+				}
+				if f0iter.Order != nil {
+					orderCopy := int64(*f0iter.Order)
+					f0elem.Order = &orderCopy
+				}
+				if f0iter.RedirectConfig != nil {
+					f0elemf5 := &svcapitypes.RedirectActionConfig{}
+					if f0iter.RedirectConfig.Host != nil {
+						f0elemf5.Host = f0iter.RedirectConfig.Host
+					}
+					if f0iter.RedirectConfig.Path != nil {
+						f0elemf5.Path = f0iter.RedirectConfig.Path
+					}
+					if f0iter.RedirectConfig.Port != nil {
+						f0elemf5.Port = f0iter.RedirectConfig.Port
+					}
+					if f0iter.RedirectConfig.Protocol != nil {
+						f0elemf5.Protocol = f0iter.RedirectConfig.Protocol
+					}
+					if f0iter.RedirectConfig.Query != nil {
+						f0elemf5.Query = f0iter.RedirectConfig.Query
+					}
+					if f0iter.RedirectConfig.StatusCode != "" {
+						f0elemf5.StatusCode = aws.String(string(f0iter.RedirectConfig.StatusCode))
+					}
+					f0elem.RedirectConfig = f0elemf5
+				}
+				if f0iter.TargetGroupArn != nil {
+					f0elem.TargetGroupARN = f0iter.TargetGroupArn
+				}
+				if f0iter.Type != "" {
+					f0elem.Type = aws.String(string(f0iter.Type))
+				}
+				f0 = append(f0, f0elem)
+			}
+			ko.Spec.Actions = f0
+		} else {
+			ko.Spec.Actions = nil
+		}
+		if elem.Conditions != nil {
+			f1 := []*svcapitypes.RuleCondition{}
+			for _, f1iter := range elem.Conditions {
+				f1elem := &svcapitypes.RuleCondition{}
+				if f1iter.Field != nil {
+					f1elem.Field = f1iter.Field
+				}
+				if f1iter.HttpHeaderConfig != nil {
+					f1elemf2 := &svcapitypes.HTTPHeaderConditionConfig{}
+					if f1iter.HttpHeaderConfig.HttpHeaderName != nil {
+						f1elemf2.HTTPHeaderName = f1iter.HttpHeaderConfig.HttpHeaderName
+					}
+					if f1iter.HttpHeaderConfig.Values != nil {
+						f1elemf2.Values = aws.StringSlice(f1iter.HttpHeaderConfig.Values)
+					}
+					f1elem.HTTPHeaderConfig = f1elemf2
+				}
+				if f1iter.HttpRequestMethodConfig != nil {
+					f1elemf3 := &svcapitypes.HTTPRequestMethodConditionConfig{}
+					if f1iter.HttpRequestMethodConfig.Values != nil {
+						f1elemf3.Values = aws.StringSlice(f1iter.HttpRequestMethodConfig.Values)
+					}
+					f1elem.HTTPRequestMethodConfig = f1elemf3
+				}
+				if f1iter.PathPatternConfig != nil {
+					f1elemf4 := &svcapitypes.PathPatternConditionConfig{}
+					if f1iter.PathPatternConfig.Values != nil {
+						f1elemf4.Values = aws.StringSlice(f1iter.PathPatternConfig.Values)
+					}
+					f1elem.PathPatternConfig = f1elemf4
+				}
+				if f1iter.QueryStringConfig != nil {
+					f1elemf5 := &svcapitypes.QueryStringConditionConfig{}
+					if f1iter.QueryStringConfig.Values != nil {
+						f1elemf5f0 := []*svcapitypes.QueryStringKeyValuePair{}
+						for _, f1elemf5f0iter := range f1iter.QueryStringConfig.Values {
+							f1elemf5f0elem := &svcapitypes.QueryStringKeyValuePair{}
+							if f1elemf5f0iter.Key != nil {
+								f1elemf5f0elem.Key = f1elemf5f0iter.Key
+							}
+							if f1elemf5f0iter.Value != nil {
+								f1elemf5f0elem.Value = f1elemf5f0iter.Value
+							}
+							f1elemf5f0 = append(f1elemf5f0, f1elemf5f0elem)
+						}
+						f1elemf5.Values = f1elemf5f0
+					}
+					f1elem.QueryStringConfig = f1elemf5
+				}
+				if f1iter.SourceIpConfig != nil {
+					f1elemf6 := &svcapitypes.SourceIPConditionConfig{}
+					if f1iter.SourceIpConfig.Values != nil {
+						f1elemf6.Values = aws.StringSlice(f1iter.SourceIpConfig.Values)
+					}
+					f1elem.SourceIPConfig = f1elemf6
+				}
+				f1 = append(f1, f1elem)
+			}
+			ko.Spec.Conditions = f1
+		} else {
+			ko.Spec.Conditions = nil
+		}
+		if elem.IsDefault != nil {
+			ko.Status.IsDefault = elem.IsDefault
+		} else {
+			ko.Status.IsDefault = nil
+		}
+		if elem.RuleArn != nil {
+			if ko.Status.ACKResourceMetadata == nil {
+				ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
+			}
+			tmpARN := ackv1alpha1.AWSResourceName(*elem.RuleArn)
+			ko.Status.ACKResourceMetadata.ARN = &tmpARN
+		}
+		found = true
+		break
+	}
+	if !found {
+		return nil, ackerr.NotFound
+	}
+`
+	actual := code.SetResource(crd.Config(), crd, op, "resp", "ko", 1)
+	fmt.Print(actual)
 
 	assert.Equal(
 		expected,
