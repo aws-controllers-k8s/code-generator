@@ -720,7 +720,7 @@ func setResourceReadMany(
 					sourceMemberShapeRef,
 					f.Names.Camel,
 					false,
-					model.OpTypeList,
+					opType,
 					flIndentLvl+1,
 				)
 				out += setResourceForScalar(
@@ -867,10 +867,10 @@ func identifierNameOrIDGuardConstructor(
 // the required field for a read, or returning an error here
 // and returns a `MissingNameIdentifier` error:
 //
-//  f0, ok := fields[${requiredField}]
-//	if !ok {
-//	 return ackerrors.NewTerminalError(fmt.Errorf("required field missing: ${requiredField}"))
-//	}
+//	 f0, ok := fields[${requiredField}]
+//		if !ok {
+//		 return ackerrors.NewTerminalError(fmt.Errorf("required field missing: ${requiredField}"))
+//		}
 func requiredFieldGuardContructor(
 	// requiredFieldVarName is the variable where the requiredField value
 	// will be stored

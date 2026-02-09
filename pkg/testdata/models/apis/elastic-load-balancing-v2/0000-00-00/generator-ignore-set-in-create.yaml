@@ -1,0 +1,52 @@
+ignore:
+  resource_names:
+  - Listener
+  - LoadBalancer
+  # Rule
+  - TargetGroup
+  - TrustStore
+  field_paths:
+  - DescribeLoadBalancersOutput.NextMarker
+  - MutualAuthenticationAttributes.AdvertiseTrustStoreCaNames
+  - MutualAuthenticationAttributes.TrustStoreAssociationStatus
+  - AvailabilityZone.SourceNatIpv6Prefixes
+  #- LoadBalancer.EnablePrefixForIpv6SourceNat
+  #- CreateLoadBalancerInput.EnablePrefixForIpv6SourceNat
+  - SubnetMapping.SourceNatIpv6Prefix
+sdk_names:
+  model_name: elastic-load-balancing-v2
+  package_name: elasticloadbalancingv2
+operations:
+  DescribeRules:
+    operation_type:
+    - ReadMany
+    resource_name: Rule
+    output_wrapper_field_path: Rules
+    custom_check_required_fields_missing_method: customCheckRequiredFieldsMissingMethod
+  CreateRule:
+    operation_type:
+    - Create
+    resource_name: Rule
+    output_wrapper_field_path: Rules
+  ModifyRule:
+    operation_type:
+    - Update
+    resource_name: Rule
+    output_wrapper_field_path: Rules
+resources:
+  Rule:
+    is_arn_primary_key: true
+    fields:
+      Priority:
+        set:
+        - ignore: true
+      Conditions.Values:
+        set:
+          - method: Create
+            ignore: from
+      Conditions.HostHeaderConfig:
+        set:
+          - method: Create
+            ignore: from
+    tags:
+      ignore: true
