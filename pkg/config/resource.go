@@ -152,6 +152,8 @@ type SyncedCondition struct {
 	Path *string `json:"path"`
 	// In contains a list of possible values `Path` should be equal to.
 	In []string `json:"in"`
+	// RequeueError custom SyncPeriod in seconds
+	RequeueTime *int `json:"requeueTime,omitempty`
 }
 
 // HooksConfig instructs the code generator how to inject custom callback hooks
