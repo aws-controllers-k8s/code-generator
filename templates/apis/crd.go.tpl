@@ -60,9 +60,7 @@ type {{ .CRD.Kind }}Status struct {
 {{- range $column := .CRD.AdditionalPrinterColumns }}
 // +kubebuilder:printcolumn:name="{{$column.Name}}",type={{$column.Type}},priority={{$column.Priority}},JSONPath=`{{$column.JSONPath}}`
 {{- end }}
-{{- if .CRD.PrintSyncedColumn }}
-// +kubebuilder:printcolumn:name="Synced",type="string",priority=0,JSONPath=".status.conditions[?(@.type==\"ACK.ResourceSynced\")].status"
-{{- end }}
+// +kubebuilder:printcolumn:name="Ready",type="string",priority=0,JSONPath=".status.conditions[?(@.type==\"Ready\")].status"
 {{- if .CRD.PrintAgeColumn }}
 // +kubebuilder:printcolumn:name="Age",type="date",priority=0,JSONPath=".metadata.creationTimestamp"
 {{- end }}
