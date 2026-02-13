@@ -57,6 +57,7 @@ type {{ .CRD.Kind }}Status struct {
 // {{ .CRD.Kind }} is the Schema for the {{ .CRD.Plural }} API
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:metadata:annotations="controller-version={{ .ReleaseVersion }}"
 {{- range $column := .CRD.AdditionalPrinterColumns }}
 // +kubebuilder:printcolumn:name="{{$column.Name}}",type={{$column.Type}},priority={{$column.Priority}},JSONPath=`{{$column.JSONPath}}`
 {{- end }}
