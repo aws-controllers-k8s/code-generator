@@ -6134,3 +6134,332 @@ func TestPipes_Pipe_WithUnion(t *testing.T) {
 		actual,
 	)
 }
+
+func TestSetSDK_Backup_BackupPlan_Create(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "backup")
+
+	crd := testutil.GetCRDByName(t, g, "BackupPlan")
+	require.NotNil(crd)
+
+	// Verify input_wrapper_field_path is configured
+	createInputWrapper := crd.GetInputWrapperFieldPath(crd.Ops.Create)
+	require.NotNil(createInputWrapper)
+	assert.Equal("BackupPlan", *createInputWrapper)
+
+	// The input_wrapper_field_path feature flattens the nested BackupPlanInput
+	// structure into the CRD Spec. The generated code creates a wrapper struct
+	// (fw) and populates it with fields from r.ko.Spec, then assigns it to
+	// res.BackupPlan. Non-wrapper fields (Tags, CreatorRequestId) are excluded.
+	expected := `
+	fw := &svcsdktypes.BackupPlanInput{}
+	if r.ko.Spec.AdvancedBackupSettings != nil {
+		f0 := []svcsdktypes.AdvancedBackupSetting{}
+		for _, f0iter := range r.ko.Spec.AdvancedBackupSettings {
+			f0elem := &svcsdktypes.AdvancedBackupSetting{}
+			if f0iter.BackupOptions != nil {
+				f0elem.BackupOptions = aws.ToStringMap(f0iter.BackupOptions)
+			}
+			if f0iter.ResourceType != nil {
+				f0elem.ResourceType = f0iter.ResourceType
+			}
+			f0 = append(f0, *f0elem)
+		}
+		fw.AdvancedBackupSettings = f0
+	}
+	if r.ko.Spec.Name != nil {
+		fw.BackupPlanName = r.ko.Spec.Name
+	}
+	if r.ko.Spec.Rules != nil {
+		f2 := []svcsdktypes.BackupRuleInput{}
+		for _, f2iter := range r.ko.Spec.Rules {
+			f2elem := &svcsdktypes.BackupRuleInput{}
+			if f2iter.CompletionWindowMinutes != nil {
+				f2elem.CompletionWindowMinutes = f2iter.CompletionWindowMinutes
+			}
+			if f2iter.CopyActions != nil {
+				f2elemf1 := []svcsdktypes.CopyAction{}
+				for _, f2elemf1iter := range f2iter.CopyActions {
+					f2elemf1elem := &svcsdktypes.CopyAction{}
+					if f2elemf1iter.DestinationBackupVaultARN != nil {
+						f2elemf1elem.DestinationBackupVaultArn = f2elemf1iter.DestinationBackupVaultARN
+					}
+					if f2elemf1iter.Lifecycle != nil {
+						f2elemf1elemf1 := &svcsdktypes.Lifecycle{}
+						if f2elemf1iter.Lifecycle.DeleteAfterDays != nil {
+							f2elemf1elemf1.DeleteAfterDays = f2elemf1iter.Lifecycle.DeleteAfterDays
+						}
+						if f2elemf1iter.Lifecycle.DeleteAfterEvent != nil {
+							f2elemf1elemf1.DeleteAfterEvent = svcsdktypes.LifecycleDeleteAfterEvent(*f2elemf1iter.Lifecycle.DeleteAfterEvent)
+						}
+						if f2elemf1iter.Lifecycle.MoveToColdStorageAfterDays != nil {
+							f2elemf1elemf1.MoveToColdStorageAfterDays = f2elemf1iter.Lifecycle.MoveToColdStorageAfterDays
+						}
+						if f2elemf1iter.Lifecycle.OptInToArchiveForSupportedResources != nil {
+							f2elemf1elemf1.OptInToArchiveForSupportedResources = f2elemf1iter.Lifecycle.OptInToArchiveForSupportedResources
+						}
+						f2elemf1elem.Lifecycle = f2elemf1elemf1
+					}
+					f2elemf1 = append(f2elemf1, *f2elemf1elem)
+				}
+				f2elem.CopyActions = f2elemf1
+			}
+			if f2iter.EnableContinuousBackup != nil {
+				f2elem.EnableContinuousBackup = f2iter.EnableContinuousBackup
+			}
+			if f2iter.IndexActions != nil {
+				f2elemf3 := []svcsdktypes.IndexAction{}
+				for _, f2elemf3iter := range f2iter.IndexActions {
+					f2elemf3elem := &svcsdktypes.IndexAction{}
+					if f2elemf3iter.ResourceTypes != nil {
+						f2elemf3elem.ResourceTypes = aws.ToStringSlice(f2elemf3iter.ResourceTypes)
+					}
+					f2elemf3 = append(f2elemf3, *f2elemf3elem)
+				}
+				f2elem.IndexActions = f2elemf3
+			}
+			if f2iter.Lifecycle != nil {
+				f2elemf4 := &svcsdktypes.Lifecycle{}
+				if f2iter.Lifecycle.DeleteAfterDays != nil {
+					f2elemf4.DeleteAfterDays = f2iter.Lifecycle.DeleteAfterDays
+				}
+				if f2iter.Lifecycle.DeleteAfterEvent != nil {
+					f2elemf4.DeleteAfterEvent = svcsdktypes.LifecycleDeleteAfterEvent(*f2iter.Lifecycle.DeleteAfterEvent)
+				}
+				if f2iter.Lifecycle.MoveToColdStorageAfterDays != nil {
+					f2elemf4.MoveToColdStorageAfterDays = f2iter.Lifecycle.MoveToColdStorageAfterDays
+				}
+				if f2iter.Lifecycle.OptInToArchiveForSupportedResources != nil {
+					f2elemf4.OptInToArchiveForSupportedResources = f2iter.Lifecycle.OptInToArchiveForSupportedResources
+				}
+				f2elem.Lifecycle = f2elemf4
+			}
+			if f2iter.RecoveryPointTags != nil {
+				f2elem.RecoveryPointTags = aws.ToStringMap(f2iter.RecoveryPointTags)
+			}
+			if f2iter.RuleName != nil {
+				f2elem.RuleName = f2iter.RuleName
+			}
+			if f2iter.ScanActions != nil {
+				f2elemf7 := []svcsdktypes.ScanAction{}
+				for _, f2elemf7iter := range f2iter.ScanActions {
+					f2elemf7elem := &svcsdktypes.ScanAction{}
+					if f2elemf7iter.MalwareScanner != nil {
+						f2elemf7elem.MalwareScanner = svcsdktypes.MalwareScanner(*f2elemf7iter.MalwareScanner)
+					}
+					if f2elemf7iter.ScanMode != nil {
+						f2elemf7elem.ScanMode = svcsdktypes.ScanMode(*f2elemf7iter.ScanMode)
+					}
+					f2elemf7 = append(f2elemf7, *f2elemf7elem)
+				}
+				f2elem.ScanActions = f2elemf7
+			}
+			if f2iter.ScheduleExpression != nil {
+				f2elem.ScheduleExpression = f2iter.ScheduleExpression
+			}
+			if f2iter.ScheduleExpressionTimezone != nil {
+				f2elem.ScheduleExpressionTimezone = f2iter.ScheduleExpressionTimezone
+			}
+			if f2iter.StartWindowMinutes != nil {
+				f2elem.StartWindowMinutes = f2iter.StartWindowMinutes
+			}
+			if f2iter.TargetBackupVaultName != nil {
+				f2elem.TargetBackupVaultName = f2iter.TargetBackupVaultName
+			}
+			if f2iter.TargetLogicallyAirGappedBackupVaultARN != nil {
+				f2elem.TargetLogicallyAirGappedBackupVaultArn = f2iter.TargetLogicallyAirGappedBackupVaultARN
+			}
+			f2 = append(f2, *f2elem)
+		}
+		fw.Rules = f2
+	}
+	if r.ko.Spec.ScanSettings != nil {
+		f3 := []svcsdktypes.ScanSetting{}
+		for _, f3iter := range r.ko.Spec.ScanSettings {
+			f3elem := &svcsdktypes.ScanSetting{}
+			if f3iter.MalwareScanner != nil {
+				f3elem.MalwareScanner = svcsdktypes.MalwareScanner(*f3iter.MalwareScanner)
+			}
+			if f3iter.ResourceTypes != nil {
+				f3elem.ResourceTypes = aws.ToStringSlice(f3iter.ResourceTypes)
+			}
+			if f3iter.ScannerRoleARN != nil {
+				f3elem.ScannerRoleArn = f3iter.ScannerRoleARN
+			}
+			f3 = append(f3, *f3elem)
+		}
+		fw.ScanSettings = f3
+	}
+	res.BackupPlan = fw
+`
+	assert.Equal(
+		expected,
+		code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1),
+	)
+}
+
+func TestSetSDK_Backup_BackupPlan_Update(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "backup")
+
+	crd := testutil.GetCRDByName(t, g, "BackupPlan")
+	require.NotNil(crd)
+
+	// Verify input_wrapper_field_path is configured for Update
+	updateInputWrapper := crd.GetInputWrapperFieldPath(crd.Ops.Update)
+	require.NotNil(updateInputWrapper)
+	assert.Equal("BackupPlan", *updateInputWrapper)
+
+	// Update operation also uses input_wrapper_field_path. The generated code
+	// is identical to Create since both operations wrap the same BackupPlanInput
+	// structure. Non-wrapper fields (BackupPlanId) are excluded from the CRD Spec.
+	expected := `
+	fw := &svcsdktypes.BackupPlanInput{}
+	if r.ko.Spec.AdvancedBackupSettings != nil {
+		f0 := []svcsdktypes.AdvancedBackupSetting{}
+		for _, f0iter := range r.ko.Spec.AdvancedBackupSettings {
+			f0elem := &svcsdktypes.AdvancedBackupSetting{}
+			if f0iter.BackupOptions != nil {
+				f0elem.BackupOptions = aws.ToStringMap(f0iter.BackupOptions)
+			}
+			if f0iter.ResourceType != nil {
+				f0elem.ResourceType = f0iter.ResourceType
+			}
+			f0 = append(f0, *f0elem)
+		}
+		fw.AdvancedBackupSettings = f0
+	}
+	if r.ko.Spec.Name != nil {
+		fw.BackupPlanName = r.ko.Spec.Name
+	}
+	if r.ko.Spec.Rules != nil {
+		f2 := []svcsdktypes.BackupRuleInput{}
+		for _, f2iter := range r.ko.Spec.Rules {
+			f2elem := &svcsdktypes.BackupRuleInput{}
+			if f2iter.CompletionWindowMinutes != nil {
+				f2elem.CompletionWindowMinutes = f2iter.CompletionWindowMinutes
+			}
+			if f2iter.CopyActions != nil {
+				f2elemf1 := []svcsdktypes.CopyAction{}
+				for _, f2elemf1iter := range f2iter.CopyActions {
+					f2elemf1elem := &svcsdktypes.CopyAction{}
+					if f2elemf1iter.DestinationBackupVaultARN != nil {
+						f2elemf1elem.DestinationBackupVaultArn = f2elemf1iter.DestinationBackupVaultARN
+					}
+					if f2elemf1iter.Lifecycle != nil {
+						f2elemf1elemf1 := &svcsdktypes.Lifecycle{}
+						if f2elemf1iter.Lifecycle.DeleteAfterDays != nil {
+							f2elemf1elemf1.DeleteAfterDays = f2elemf1iter.Lifecycle.DeleteAfterDays
+						}
+						if f2elemf1iter.Lifecycle.DeleteAfterEvent != nil {
+							f2elemf1elemf1.DeleteAfterEvent = svcsdktypes.LifecycleDeleteAfterEvent(*f2elemf1iter.Lifecycle.DeleteAfterEvent)
+						}
+						if f2elemf1iter.Lifecycle.MoveToColdStorageAfterDays != nil {
+							f2elemf1elemf1.MoveToColdStorageAfterDays = f2elemf1iter.Lifecycle.MoveToColdStorageAfterDays
+						}
+						if f2elemf1iter.Lifecycle.OptInToArchiveForSupportedResources != nil {
+							f2elemf1elemf1.OptInToArchiveForSupportedResources = f2elemf1iter.Lifecycle.OptInToArchiveForSupportedResources
+						}
+						f2elemf1elem.Lifecycle = f2elemf1elemf1
+					}
+					f2elemf1 = append(f2elemf1, *f2elemf1elem)
+				}
+				f2elem.CopyActions = f2elemf1
+			}
+			if f2iter.EnableContinuousBackup != nil {
+				f2elem.EnableContinuousBackup = f2iter.EnableContinuousBackup
+			}
+			if f2iter.IndexActions != nil {
+				f2elemf3 := []svcsdktypes.IndexAction{}
+				for _, f2elemf3iter := range f2iter.IndexActions {
+					f2elemf3elem := &svcsdktypes.IndexAction{}
+					if f2elemf3iter.ResourceTypes != nil {
+						f2elemf3elem.ResourceTypes = aws.ToStringSlice(f2elemf3iter.ResourceTypes)
+					}
+					f2elemf3 = append(f2elemf3, *f2elemf3elem)
+				}
+				f2elem.IndexActions = f2elemf3
+			}
+			if f2iter.Lifecycle != nil {
+				f2elemf4 := &svcsdktypes.Lifecycle{}
+				if f2iter.Lifecycle.DeleteAfterDays != nil {
+					f2elemf4.DeleteAfterDays = f2iter.Lifecycle.DeleteAfterDays
+				}
+				if f2iter.Lifecycle.DeleteAfterEvent != nil {
+					f2elemf4.DeleteAfterEvent = svcsdktypes.LifecycleDeleteAfterEvent(*f2iter.Lifecycle.DeleteAfterEvent)
+				}
+				if f2iter.Lifecycle.MoveToColdStorageAfterDays != nil {
+					f2elemf4.MoveToColdStorageAfterDays = f2iter.Lifecycle.MoveToColdStorageAfterDays
+				}
+				if f2iter.Lifecycle.OptInToArchiveForSupportedResources != nil {
+					f2elemf4.OptInToArchiveForSupportedResources = f2iter.Lifecycle.OptInToArchiveForSupportedResources
+				}
+				f2elem.Lifecycle = f2elemf4
+			}
+			if f2iter.RecoveryPointTags != nil {
+				f2elem.RecoveryPointTags = aws.ToStringMap(f2iter.RecoveryPointTags)
+			}
+			if f2iter.RuleName != nil {
+				f2elem.RuleName = f2iter.RuleName
+			}
+			if f2iter.ScanActions != nil {
+				f2elemf7 := []svcsdktypes.ScanAction{}
+				for _, f2elemf7iter := range f2iter.ScanActions {
+					f2elemf7elem := &svcsdktypes.ScanAction{}
+					if f2elemf7iter.MalwareScanner != nil {
+						f2elemf7elem.MalwareScanner = svcsdktypes.MalwareScanner(*f2elemf7iter.MalwareScanner)
+					}
+					if f2elemf7iter.ScanMode != nil {
+						f2elemf7elem.ScanMode = svcsdktypes.ScanMode(*f2elemf7iter.ScanMode)
+					}
+					f2elemf7 = append(f2elemf7, *f2elemf7elem)
+				}
+				f2elem.ScanActions = f2elemf7
+			}
+			if f2iter.ScheduleExpression != nil {
+				f2elem.ScheduleExpression = f2iter.ScheduleExpression
+			}
+			if f2iter.ScheduleExpressionTimezone != nil {
+				f2elem.ScheduleExpressionTimezone = f2iter.ScheduleExpressionTimezone
+			}
+			if f2iter.StartWindowMinutes != nil {
+				f2elem.StartWindowMinutes = f2iter.StartWindowMinutes
+			}
+			if f2iter.TargetBackupVaultName != nil {
+				f2elem.TargetBackupVaultName = f2iter.TargetBackupVaultName
+			}
+			if f2iter.TargetLogicallyAirGappedBackupVaultARN != nil {
+				f2elem.TargetLogicallyAirGappedBackupVaultArn = f2iter.TargetLogicallyAirGappedBackupVaultARN
+			}
+			f2 = append(f2, *f2elem)
+		}
+		fw.Rules = f2
+	}
+	if r.ko.Spec.ScanSettings != nil {
+		f3 := []svcsdktypes.ScanSetting{}
+		for _, f3iter := range r.ko.Spec.ScanSettings {
+			f3elem := &svcsdktypes.ScanSetting{}
+			if f3iter.MalwareScanner != nil {
+				f3elem.MalwareScanner = svcsdktypes.MalwareScanner(*f3iter.MalwareScanner)
+			}
+			if f3iter.ResourceTypes != nil {
+				f3elem.ResourceTypes = aws.ToStringSlice(f3iter.ResourceTypes)
+			}
+			if f3iter.ScannerRoleARN != nil {
+				f3elem.ScannerRoleArn = f3iter.ScannerRoleARN
+			}
+			f3 = append(f3, *f3elem)
+		}
+		fw.ScanSettings = f3
+	}
+	res.BackupPlan = fw
+`
+	assert.Equal(
+		expected,
+		code.SetSDK(crd.Config(), crd, model.OpTypeUpdate, "r.ko", "res", 1),
+	)
+}

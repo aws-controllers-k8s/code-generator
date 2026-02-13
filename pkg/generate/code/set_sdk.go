@@ -112,13 +112,53 @@ func SetSDK(
 	if op == nil {
 		return ""
 	}
-	inputShape := op.InputRef.Shape
-	if inputShape == nil {
+	if op.InputRef.Shape == nil {
 		return ""
 	}
 
 	out := "\n"
 	indent := strings.Repeat("\t", indentLevel)
+
+	// Check if there's an input wrapper field path configured. If so, we need
+	// to create a wrapper struct and populate its fields from the CRD spec,
+	// then assign the wrapper to the input shape's wrapper field.
+	//
+	// For example, AWS Backup's CreateBackupPlan API has a `BackupPlan` field
+	// that wraps the actual plan fields (BackupPlanName, Rules, etc.). With
+	// input_wrapper_field_path: BackupPlan, we generate code like:
+	//
+	//   fw := &svcsdktypes.BackupPlanInput{}
+	//   fw.BackupPlanName = r.ko.Spec.BackupPlanName
+	//   fw.Rules = r.ko.Spec.Rules
+	//   res.BackupPlan = fw
+	//
+	// Instead of requiring users to nest fields under spec.backupPlan.
+	inputWrapperFieldPath := r.GetInputWrapperFieldPath(op)
+	originalTargetVarName := targetVarName
+
+	// inputShape is the shape we iterate over to set fields. When
+	// input_wrapper_field_path is configured, GetInputShape() returns the
+	// unwrapped inner shape (e.g., BackupPlanInput instead of CreateBackupPlanInput).
+	// Otherwise, it returns the original input shape.
+	inputShape, err := r.GetInputShape(op)
+	if err != nil {
+		return ""
+	}
+
+	// If we have an input wrapper, create the wrapper variable and adjust targetVarName
+	if inputWrapperFieldPath != nil {
+		// Create the wrapper struct variable (e.g., fw := &svcsdktypes.BackupPlanInput{})
+		// Note: inputShape is already the unwrapped wrapper shape from GetInputShape()
+		wrapperVarName := "fw"
+		out += varEmptyConstructorSDKType(
+			cfg, r,
+			wrapperVarName,
+			inputShape,
+			indentLevel,
+		)
+		// Use the wrapper variable as the target for the main loop
+		targetVarName = wrapperVarName
+	}
 
 	// Some input shapes for APIs that use GetAttributes API calls don't have
 	// an Attributes member (example: all the Delete shapes...)
@@ -418,6 +458,12 @@ func SetSDK(
 			)
 		}
 	}
+
+	// If we have an input wrapper, assign the wrapper variable to the original target
+	if inputWrapperFieldPath != nil {
+		out += fmt.Sprintf("%s%s.%s = %s\n", indent, originalTargetVarName, *inputWrapperFieldPath, targetVarName)
+	}
+
 	return out
 }
 
@@ -1456,6 +1502,13 @@ func varEmptyConstructorSDKType(
 		goType = "int32"
 	}
 	goType = model.ReplacePkgName(goType, r.SDKAPIPackageName(), "svcsdktypes", false)
+	// For SDK types, we need to use the original shape name (before stutter
+	// removal) since the AWS SDK uses the original names. The stutter removal
+	// renames are only for CRD types.
+	if shape.Type == "structure" && shape.OriginalShapeName != "" {
+		// Replace the renamed shape name with the original SDK shape name
+		goType = "svcsdktypes." + shape.OriginalShapeName
+	}
 	switch shape.Type {
 	case "structure":
 		// f0 := &svcsdk.BookData{}
@@ -1470,9 +1523,21 @@ func varEmptyConstructorSDKType(
 			goType = "[]int32"
 		}
 		if shape.MemberRef.Shape.IsEnum() {
-			goType = "[]svcsdktypes." + shape.MemberRef.ShapeName
+			// Use original shape name for SDK types if available
+			memberShapeName := shape.MemberRef.ShapeName
+			if shape.MemberRef.Shape.OriginalShapeName != "" {
+				memberShapeName = shape.MemberRef.Shape.OriginalShapeName
+			}
+			goType = "[]svcsdktypes." + memberShapeName
 		} else if shape.MemberRef.Shape.Type == "string" {
 			goType = "[]string"
+		} else if shape.MemberRef.Shape.Type == "structure" {
+			// Use original shape name for SDK struct types if available
+			memberShapeName := shape.MemberRef.ShapeName
+			if shape.MemberRef.Shape.OriginalShapeName != "" {
+				memberShapeName = shape.MemberRef.Shape.OriginalShapeName
+			}
+			goType = "[]svcsdktypes." + memberShapeName
 		}
 		out += fmt.Sprintf("%s%s := %s{}\n", indent, varName, goType)
 	case "map":

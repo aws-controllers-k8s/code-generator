@@ -38,6 +38,10 @@ type OperationConfig struct {
 	// OutputWrapperFieldPath provides the JSON-Path like to the struct field containing
 	// information that will be merged into a `resource` object.
 	OutputWrapperFieldPath string `json:"output_wrapper_field_path,omitempty"`
+	// InputWrapperFieldPath provides the JSON-Path like to the struct field in the
+	// Input shape that should contain the CRD's Spec fields. This is used when an
+	// API's Input shape has a nested structure that wraps the actual resource fields.
+	InputWrapperFieldPath string `json:"input_wrapper_field_path,omitempty"`
 	// Override for resource name in case of heuristic failure
 	// An example of this is correcting stutter when the resource logic doesn't properly determine the resource name
 	ResourceName StringArray `json:"resource_name"`
@@ -97,6 +101,28 @@ func (c *Config) GetOutputWrapperFieldPath(
 		return nil
 	}
 	return &opConfig.OutputWrapperFieldPath
+}
+
+// GetInputWrapperFieldPath returns the JSON-Path of the input wrapper field
+// as *string for a given operation, if specified in generator config.
+func (c *Config) GetInputWrapperFieldPath(
+	op *awssdkmodel.Operation,
+) *string {
+	if op == nil {
+		return nil
+	}
+	if c == nil {
+		return nil
+	}
+	opConfig, found := c.Operations[op.ExportedName]
+	if !found {
+		return nil
+	}
+
+	if opConfig.InputWrapperFieldPath == "" {
+		return nil
+	}
+	return &opConfig.InputWrapperFieldPath
 }
 
 // GetSetOutputCustomMethodName returns custom set output operation as *string for

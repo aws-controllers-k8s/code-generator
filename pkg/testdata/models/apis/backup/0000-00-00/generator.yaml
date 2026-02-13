@@ -1,0 +1,40 @@
+# Test generator.yaml for AWS Backup service
+# Used to test input_wrapper_field_path feature
+ignore:
+  resource_names:
+    - BackupSelection
+    - BackupVault
+    - Framework
+    - LegalHold
+    - LogicallyAirGappedBackupVault
+    - ReportPlan
+    - RestoreAccessBackupVault
+    - RestoreTestingPlan
+    - RestoreTestingSelection
+    - TieringConfiguration
+
+operations:
+  CreateBackupPlan:
+    input_wrapper_field_path: BackupPlan
+  UpdateBackupPlan:
+    input_wrapper_field_path: BackupPlan
+  GetBackupPlan:
+    output_wrapper_field_path: BackupPlan
+
+resources:
+  BackupPlan:
+    fields:
+      BackupPlanID:
+        is_primary_key: true
+    renames:
+      operations:
+        CreateBackupPlan:
+          input_fields:
+            BackupPlanName: Name
+            BackupPlanTags: Tags
+        UpdateBackupPlan:
+          input_fields:
+            BackupPlanName: Name
+        GetBackupPlan:
+          output_fields:
+            BackupPlanName: Name

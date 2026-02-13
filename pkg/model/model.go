@@ -134,10 +134,57 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 		if inputShape == nil {
 			return nil, ErrNilShapePointer
 		}
+
+		// Check if there's an input wrapper field path configured. If so, we
+		// flatten the wrapper's fields into the Spec instead of creating a
+		// nested structure.
+		//
+		// NOTE(input_wrapper_field_path): We intentionally don't reuse
+		// CRD.GetInputShape() here because this code runs during CRD construction
+		// before the CRD is fully initialized. GetInputShape is designed for use
+		// after CRD construction (e.g., in code generation). The logic is similar
+		// but operates at different lifecycle stages.
+		inputWrapperFieldPath := m.cfg.GetInputWrapperFieldPath(createOp)
+
 		for memberName, memberShapeRef := range inputShape.MemberRefs {
 			if memberShapeRef.Shape == nil {
 				return nil, ErrNilShapePointer
 			}
+
+			// If this is the wrapper field and we have input_wrapper_field_path
+			// configured, add the wrapper's member fields instead of the wrapper
+			if inputWrapperFieldPath != nil && memberName == *inputWrapperFieldPath {
+				wrapperShape := memberShapeRef.Shape
+				// NOTE(input_wrapper_field_path): Currently only structure wrappers
+				// are supported. If needed, support for nested paths (e.g., a.b.c
+				// where b is a list) could be added in a future PR by extending
+				// this logic to handle list/map types similar to getWrapperShape
+				// in crd.go.
+				if wrapperShape.Type == "structure" {
+					for wrapperMemberName, wrapperMemberShapeRef := range wrapperShape.MemberRefs {
+						if wrapperMemberShapeRef.Shape == nil {
+							return nil, ErrNilShapePointer
+						}
+						// Handles field renames, if applicable
+						fieldName := m.cfg.GetResourceFieldName(
+							crd.Names.Original,
+							createOp.Name,
+							wrapperMemberName,
+						)
+						wrapperMemberNames := names.New(fieldName)
+						crd.AddSpecField(wrapperMemberNames, wrapperMemberShapeRef)
+					}
+				}
+				continue
+			}
+
+			// When input_wrapper_field_path is configured, skip fields that are
+			// not part of the wrapper. This is consistent with output_wrapper_field_path
+			// behavior - only the wrapper's fields are flattened into the CRD.
+			if inputWrapperFieldPath != nil {
+				continue
+			}
+
 			// Handles field renames, if applicable
 			fieldName := m.cfg.GetResourceFieldName(
 				crd.Names.Original,
