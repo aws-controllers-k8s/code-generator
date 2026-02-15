@@ -9,7 +9,8 @@ ignore:
   # - JobRun
   - ManagedEndpoint
   shape_names: null
-model_name: emr-containers
+sdk_names:
+  model_name: emr-containers
 operations:
   StartJobRun:
     operation_type: Create

@@ -49,8 +49,6 @@ resources:
         is_immutable: true
       ID:
         is_primary_key: true
-        documentation: "ID represents the ChangeID that is returned after a successful 
-        ChangeResourceRecordSet request"
       MultiValueAnswer:
         from:
           operation: ListResourceRecordSets
