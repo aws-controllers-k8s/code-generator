@@ -113,6 +113,19 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 	getAttributesOps := (*opMap)[OpTypeGetAttributes]
 	setAttributesOps := (*opMap)[OpTypeSetAttributes]
 
+	// Validate generator config against SDK before building CRDs
+	sdkOps := make(map[string]struct{}, len(m.SDKAPI.API.Operations))
+	for opName := range m.SDKAPI.API.Operations {
+		sdkOps[opName] = struct{}{}
+	}
+	if validationErrs := ackgenconfig.ValidateConfig(m.cfg, sdkOps); len(validationErrs) > 0 {
+		msgs := make([]string, len(validationErrs))
+		for i, e := range validationErrs {
+			msgs[i] = e.Error()
+		}
+		return nil, fmt.Errorf("generator.yaml validation failed:\n  %s", strings.Join(msgs, "\n  "))
+	}
+
 	for crdName, createOp := range createOps {
 		if m.cfg.ResourceIsIgnored(crdName) {
 			continue
@@ -430,8 +443,72 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 	if err := m.processFields(crds); err != nil {
 		return nil, err
 	}
+
+	// Validate that field configs reference actual CRD fields. Field configs
+	// without From/CustomField/Type are modifiers (is_secret, references,
+	// compare, set, etc.) that must match an existing field.
+	var fieldErrs []string
+	for _, crd := range crds {
+		fieldConfigs := m.cfg.GetFieldConfigs(crd.Names.Original)
+		for fieldName, fc := range fieldConfigs {
+			if fc.From != nil || fc.CustomField != nil || fc.Type != nil {
+				continue
+			}
+			// These fields are metadata markers or configs that reference
+			// fields by alias names, not actual CRD field names.
+			if fc.IsARN || fc.IsOwnerAccountID || fc.IsPrimaryKey {
+				continue
+			}
+			// LateInitialize configs can reference fields by alias
+			// names that are resolved separately.
+			if fc.LateInitialize != nil {
+				continue
+			}
+			// Primary ARN fields (e.g. TopicArn for Topic) are stored in
+			// ACKResourceMetadata and skipped by UnpackAttributes.
+			if crd.IsPrimaryARNField(fieldName) {
+				continue
+			}
+			// For nested paths (e.g. "Spec.Foo.Bar"), validate the
+			// top-level field name.
+			checkName := ackfp.FromString(fieldName).Front()
+			if !crdHasField(crd, checkName) {
+				fieldErrs = append(fieldErrs, fmt.Sprintf(
+					"resources.%s.fields.%s: field not found in CRD (no matching SDK shape member). "+
+						"If this is a custom field, add 'from', 'custom_field', or 'type'",
+					crd.Names.Original, fieldName,
+				))
+			}
+		}
+	}
+	if len(fieldErrs) > 0 {
+		return nil, fmt.Errorf("generator.yaml validation failed:\n  %s", strings.Join(fieldErrs, "\n  "))
+	}
+
 	m.crds = crds
 	return crds, nil
+}
+
+// crdHasField returns true if the CRD has a field matching the given name
+// (case-insensitive) in SpecFields, StatusFields, or Fields.
+func crdHasField(crd *CRD, fieldName string) bool {
+	lower := strings.ToLower(fieldName)
+	for k := range crd.SpecFields {
+		if strings.ToLower(k) == lower {
+			return true
+		}
+	}
+	for k := range crd.StatusFields {
+		if strings.ToLower(k) == lower {
+			return true
+		}
+	}
+	for k := range crd.Fields {
+		if strings.ToLower(k) == lower {
+			return true
+		}
+	}
+	return false
 }
 
 // RemoveIgnoredOperations updates Ops argument by setting those
