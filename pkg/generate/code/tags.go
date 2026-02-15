@@ -40,17 +40,17 @@ import (
 //	 	tag := svcapitypes.Tag{Key: &k, Value: &v}
 //	 	result = append(result, &tag)
 //	 }
-func GoCodeConvertToACKTags(r *model.CRD, sourceVarName string, targetVarName string, keyOrderVarName string, indentLevel int) string {
+func GoCodeConvertToACKTags(r *model.CRD, sourceVarName string, targetVarName string, keyOrderVarName string, indentLevel int) (string, error) {
 
 	out := "\n"
 	indent := strings.Repeat("\t", indentLevel)
 	tagField, err := r.GetTagField()
 	if err != nil {
-		panic("error: resource does not have tags. ignore in generator.yaml")
+		return "", fmt.Errorf("resource %q: does not have tags — ignore in generator.yaml: %w", r.Names.Original, err)
 	}
 
 	if tagField == nil {
-		return ""
+		return "", nil
 	}
 
 	tagFieldShapeType := tagField.ShapeRef.Shape.Type
@@ -83,11 +83,10 @@ func GoCodeConvertToACKTags(r *model.CRD, sourceVarName string, targetVarName st
 		out += fmt.Sprintf("%s\t}\n", indent)
 		out += fmt.Sprintf("%s}\n", indent)
 	default:
-		msg := "error: tag type can only be a list or a map"
-		panic(msg)
+		return "", fmt.Errorf("resource %q: tag type can only be a list or a map, got %q", r.Names.Original, tagFieldShapeType)
 	}
 
-	return out
+	return out, nil
 }
 
 // GoCodeFromACKTags returns Go code that converts ACKTags
@@ -112,13 +111,13 @@ func GoCodeConvertToACKTags(r *model.CRD, sourceVarName string, targetVarName st
 //	 	tag := svcapitypes.Tag{Key: &k, Value: &v}
 //	 	result = append(result, &tag)
 //	 }
-func GoCodeFromACKTags(r *model.CRD, tagsSourceVarName string, orderVarName string, targetVarName string, indentLevel int) string {
+func GoCodeFromACKTags(r *model.CRD, tagsSourceVarName string, orderVarName string, targetVarName string, indentLevel int) (string, error) {
 	out := "\n"
 	indent := strings.Repeat("\t", indentLevel)
 	tagField, _ := r.GetTagField()
 
 	if tagField == nil {
-		return ""
+		return "", nil
 	}
 
 	tagFieldShapeType := tagField.ShapeRef.Shape.Type
@@ -139,8 +138,7 @@ func GoCodeFromACKTags(r *model.CRD, tagsSourceVarName string, orderVarName stri
 	case "map":
 		out += fmt.Sprintf("%s_ = %s\n", indent, orderVarName)
 	default:
-		msg := "error: tag type can only be a list of a map"
-		panic(msg)
+		return "", fmt.Errorf("resource %q: tag type can only be a list or a map, got %q", r.Names.Original, tagFieldShapeType)
 	}
 
 	out += fmt.Sprintf("%sfor k, v := range %s {\n", indent, tagsSourceVarName)
@@ -153,5 +151,5 @@ func GoCodeFromACKTags(r *model.CRD, tagsSourceVarName string, orderVarName stri
 	}
 	out += fmt.Sprintf("%s}\n", indent)
 
-	return out
+	return out, nil
 }

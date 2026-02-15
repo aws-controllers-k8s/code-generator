@@ -200,12 +200,17 @@ func shapeHasMember(shape *awssdkmodel.Shape, toFind string) bool {
 func (r *CRD) AddSpecField(
 	memberNames names.Names,
 	shapeRef *awssdkmodel.ShapeRef,
-) {
+) error {
 	fPath := memberNames.Camel
 	fConfig := r.cfg.GetFieldConfigByPath(r.Names.Original, fPath)
-	f := NewField(r, fPath, memberNames, shapeRef, fConfig)
+	f, err := NewField(r, fPath, memberNames, shapeRef, fConfig)
+	if err != nil {
+		return fmt.Errorf("resource %q, field %q: %w", r.Names.Original, fPath, err)
+	}
 	if fConfig != nil && fConfig.Print != nil {
-		r.addSpecPrintableColumn(f)
+		if err := r.addSpecPrintableColumn(f); err != nil {
+			return err
+		}
 	}
 	r.SpecFields[memberNames.Original] = f
 	r.Fields[fPath] = f
@@ -213,11 +218,15 @@ func (r *CRD) AddSpecField(
 	// If this field has a ReferencesConfig, Add the new
 	// Reference field inside Spec as well
 	if fConfig != nil && fConfig.References != nil {
-		referenceFieldNames := f.GetReferenceFieldName()
+		referenceFieldNames, err := f.GetReferenceFieldName()
+		if err != nil {
+			return fmt.Errorf("resource %q, field %q: %w", r.Names.Original, fPath, err)
+		}
 		rf := NewReferenceField(r, referenceFieldNames, shapeRef)
 		r.SpecFields[referenceFieldNames.Original] = rf
 		r.Fields[referenceFieldNames.Camel] = rf
 	}
+	return nil
 }
 
 // AddStatusField adds a new Field of a given name and shape into the Status
@@ -225,15 +234,21 @@ func (r *CRD) AddSpecField(
 func (r *CRD) AddStatusField(
 	memberNames names.Names,
 	shapeRef *awssdkmodel.ShapeRef,
-) {
+) error {
 	fPath := memberNames.Camel
 	fConfig := r.cfg.GetFieldConfigByPath(r.Names.Original, fPath)
-	f := NewField(r, fPath, memberNames, shapeRef, fConfig)
+	f, err := NewField(r, fPath, memberNames, shapeRef, fConfig)
+	if err != nil {
+		return fmt.Errorf("resource %q, field %q: %w", r.Names.Original, fPath, err)
+	}
 	if fConfig != nil && fConfig.Print != nil {
-		r.addStatusPrintableColumn(f)
+		if err := r.addStatusPrintableColumn(f); err != nil {
+			return err
+		}
 	}
 	r.StatusFields[memberNames.Original] = f
 	r.Fields[fPath] = f
+	return nil
 }
 
 // AddTypeImport adds an entry in the CRD's TypeImports map for an import line
@@ -283,9 +298,9 @@ func (r *CRD) SetAttributesSingleAttribute() bool {
 // UnpackAttributes grabs instructions about fields that are represented in the
 // AWS API as a `map[string]*string` but are actually real, schema'd fields and
 // adds Field definitions for those fields.
-func (r *CRD) UnpackAttributes() {
+func (r *CRD) UnpackAttributes() error {
 	if !r.cfg.ResourceContainsAttributesMap(r.Names.Original) {
-		return
+		return nil
 	}
 	fieldConfigs := r.cfg.GetFieldConfigs(r.Names.Original)
 	for fieldName, fieldConfig := range fieldConfigs {
@@ -306,7 +321,10 @@ func (r *CRD) UnpackAttributes() {
 			shapeRefToUse = existingField.ShapeRef
 		}
 
-		f := NewField(r, fPath, fieldNames, shapeRefToUse, fieldConfig)
+		f, err := NewField(r, fPath, fieldNames, shapeRefToUse, fieldConfig)
+		if err != nil {
+			return fmt.Errorf("resource %q, attribute field %q: %w", r.Names.Original, fieldName, err)
+		}
 		if !fieldConfig.IsReadOnly {
 			r.SpecFields[fieldName] = f
 		} else {
@@ -314,6 +332,7 @@ func (r *CRD) UnpackAttributes() {
 		}
 		r.Fields[fPath] = f
 	}
+	return nil
 }
 
 // IsPrimaryARNField returns true if the supplied field name is likely the resource's
@@ -450,13 +469,13 @@ func (r *CRD) SetOutputCustomMethodName(
 // shape, renamed to use the standardized svcsdk alias.
 func (r *CRD) GetOutputShapeGoType(
 	op *awssdkmodel.Operation,
-) string {
+) (string, error) {
 	if op == nil {
-		panic("called GetOutputShapeGoType on nil operation.")
+		return "", fmt.Errorf("resource %q: called GetOutputShapeGoType on nil operation", r.Names.Original)
 	}
 	orig := op.OutputRef.GoType()
 	// orig will contain "*<OutputShape>" with no package specifier
-	return "*svcsdk." + orig[1:]
+	return "*svcsdk." + orig[1:], nil
 }
 
 // GetOutputWrapperFieldPath returns the JSON-Path of the output wrapper field
@@ -495,10 +514,10 @@ func (r *CRD) GetOutputShape(
 		wrapperOutputShape, err := r.getWrapperShape(outputShape,
 			*wrapperFieldPath)
 		if err != nil {
-			msg := fmt.Sprintf("Unable to unwrap the output shape: %s "+
-				"with field path override: %s. error: %v",
-				outputShape.OrigShapeName, *wrapperFieldPath, err)
-			panic(msg)
+			return nil, fmt.Errorf(
+				"resource %q: unable to unwrap output shape %q with field path override %q: %w",
+				r.Names.Original, outputShape.OrigShapeName, *wrapperFieldPath, err,
+			)
 		}
 		outputShape = wrapperOutputShape
 	}
@@ -526,10 +545,10 @@ func (r *CRD) GetInputShape(
 		wrapperInputShape, err := r.getWrapperShape(inputShape,
 			*wrapperFieldPath)
 		if err != nil {
-			msg := fmt.Sprintf("Unable to unwrap the input shape: %s "+
-				"with field path override: %s. error: %v",
-				inputShape.OrigShapeName, *wrapperFieldPath, err)
-			panic(msg)
+			return nil, fmt.Errorf(
+				"resource %q: unable to unwrap input shape %q with field path override %q: %w",
+				r.Names.Original, inputShape.OrigShapeName, *wrapperFieldPath, err,
+			)
 		}
 		inputShape = wrapperInputShape
 	}
@@ -678,7 +697,7 @@ func (crd *CRD) checkSpecOrStatus(
 // that represents the path to the nested field. For example, if we want to
 // inject a field called "Password" into the "User" struct, the field path
 // would be "User.Password". The field path can be as deep as needed.
-func (crd *CRD) addCustomNestedFields(customNestedFields map[string]*ackgenconfig.FieldConfig) {
+func (crd *CRD) addCustomNestedFields(customNestedFields map[string]*ackgenconfig.FieldConfig) error {
 	//  We have collected all the nested fields in `customNestedFields` map and now we can process
 	//  and validate that they indeed are inject-able (i.e. the parent field is of type struct)
 	// and inject them into the Spec or Status struct.
@@ -690,8 +709,10 @@ func (crd *CRD) addCustomNestedFields(customNestedFields map[string]*ackgenconfi
 
 		f, ok := crd.checkSpecOrStatus(topLevelField)
 		if !ok {
-			msg := fmt.Sprintf("Expected top level field %s to be present in Spec or Status", topLevelField)
-			panic(msg)
+			return fmt.Errorf(
+				"resource %q, custom nested field %q: top-level field %q not found in Spec or Status",
+				crd.Names.Original, customNestedField, topLevelField,
+			)
 		}
 
 		shape := f.ShapeRef.Shape
@@ -705,8 +726,10 @@ func (crd *CRD) addCustomNestedFields(customNestedFields map[string]*ackgenconfi
 		}
 
 		if !isValidShapeType(shape) {
-			msg := fmt.Sprintf("Expected top level field %s to be of type structure, []structure or map[]structure, but found %s", topLevelField, shape.Type)
-			panic(msg)
+			return fmt.Errorf(
+				"resource %q, custom nested field %q: top-level field %q has type %q, expected structure, []structure or map[]structure",
+				crd.Names.Original, customNestedField, topLevelField, shape.Type,
+			)
 		}
 
 		// We will have to keep track of the previous field in the path
@@ -716,17 +739,20 @@ func (crd *CRD) addCustomNestedFields(customNestedFields map[string]*ackgenconfi
 		// loop over the all left fieldParts except the last one
 		for _, currentFieldName := range fieldParts[1 : len(fieldParts)-1] {
 			currentField, ok := parentField.MemberFields[currentFieldName]
-			shape := currentField.ShapeRef.Shape
-
 			// if the parentField doesn't contain the current field
 			if !ok {
-				msg := fmt.Sprintf("Cannot inject field, nested field %s doesn't exist", currentFieldName)
-				panic(msg)
+				return fmt.Errorf(
+					"resource %q, custom nested field %q: intermediate field %q does not exist",
+					crd.Names.Original, customNestedField, currentFieldName,
+				)
 			}
 
+			shape := currentField.ShapeRef.Shape
 			if !isValidShapeType(shape) {
-				msg := fmt.Sprintf("Expected nested field %s to be of type structure, []structure or map[]structure, but found %s", currentFieldName, shape.Type)
-				panic(msg)
+				return fmt.Errorf(
+					"resource %q, custom nested field %q: intermediate field %q has type %q, expected structure, []structure or map[]structure",
+					crd.Names.Original, customNestedField, currentFieldName, shape.Type,
+				)
 			}
 
 			parentField = currentField
@@ -738,16 +764,27 @@ func (crd *CRD) addCustomNestedFields(customNestedFields map[string]*ackgenconfi
 		// the last part is the field name
 		fieldName := fieldParts[len(fieldParts)-1]
 		typeOverride := customNestedFieldConfig.Type
-		shapeRef := crd.sdkAPI.GetShapeRefFromType(*typeOverride)
+		shapeRef, err := crd.sdkAPI.GetShapeRefFromType(*typeOverride)
+		if err != nil {
+			return fmt.Errorf("resource %q, custom nested field %q: %w", crd.Names.Original, customNestedField, err)
+		}
 
 		// Create a new field with the provided field name and shapeRef
-		newCustomNestedField := NewField(crd, fieldName, names.New(fieldName), shapeRef, customNestedFieldConfig)
+		newCustomNestedField, err := NewField(crd, fieldName, names.New(fieldName), shapeRef, customNestedFieldConfig)
+		if err != nil {
+			return fmt.Errorf("resource %q, custom nested field %q: %w", crd.Names.Original, customNestedField, err)
+		}
 
 		// Add the new field to the parentField
 		parentField.MemberFields[fieldName] = newCustomNestedField
 		// Add the new field to the parentField's shapeRef
-		parentField.ShapeRef.Shape.MemberRefs[fieldName] = crd.sdkAPI.GetShapeRefFromType(*customNestedFieldConfig.Type)
+		memberShapeRef, err := crd.sdkAPI.GetShapeRefFromType(*customNestedFieldConfig.Type)
+		if err != nil {
+			return fmt.Errorf("resource %q, custom nested field %q: %w", crd.Names.Original, customNestedField, err)
+		}
+		parentField.ShapeRef.Shape.MemberRefs[fieldName] = memberShapeRef
 	}
+	return nil
 }
 
 // ReconcileRequeuOnSuccessSeconds returns the duration after which to requeue
@@ -781,7 +818,10 @@ func (r *CRD) ListOpMatchFieldNames() []string {
 // GetAllRenames returns all the field renames observed in the generator config
 // for a given OpType.
 func (r *CRD) GetAllRenames(op OpType) map[string]string {
-	opMap := r.sdkAPI.GetOperationMap(r.cfg)
+	opMap, err := r.sdkAPI.GetOperationMap(r.cfg)
+	if err != nil {
+		panic(err)
+	}
 	operations := (*opMap)[op]
 	return r.cfg.GetAllRenames(r.Names.Original, operations)
 }

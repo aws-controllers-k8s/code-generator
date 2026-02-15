@@ -94,14 +94,14 @@ func CompareResource(
 	secondResVarName string,
 	// Number of levels of indentation to use
 	indentLevel int,
-) string {
+) (string, error) {
 	out := "\n"
 
 	resConfig := cfg.GetResourceConfig(r.Names.Camel)
 
 	tagField, err := r.GetTagField()
 	if err != nil {
-		panic(err)
+		return "", err
 	}
 
 	// We need a deterministic order to traverse our top-level fields...
@@ -165,7 +165,7 @@ func CompareResource(
 
 		// Use len, bytes.Equal and HasNilDifference to fast compare types, and
 		// try to avoid deep comparison as much as possible.
-		fastComparisonOutput, needToCloseBlock := fastCompareTypes(
+		fastComparisonOutput, needToCloseBlock, err := fastCompareTypes(
 			compareConfig,
 			memberShape,
 			deltaVarName,
@@ -174,6 +174,9 @@ func CompareResource(
 			secondResAdaptedVarName,
 			indentLevel,
 		)
+		if err != nil {
+			return "", err
+		}
 		out += fastComparisonOutput
 
 		switch memberShape.Type {
@@ -182,7 +185,7 @@ func CompareResource(
 		case "structure":
 			// Recurse through all the struct's fields and subfields, building
 			// nested conditionals and calls to `delta.Add()`...
-			out += CompareStruct(
+			structOut, err := CompareStruct(
 				cfg, r,
 				compareConfig,
 				memberShape,
@@ -192,9 +195,13 @@ func CompareResource(
 				fieldPath,
 				indentLevel+1,
 			)
+			if err != nil {
+				return "", err
+			}
+			out += structOut
 		case "list":
 			// Returns Go code that compares all the elements of the slice fields...
-			out += compareSlice(
+			sliceOut, err := compareSlice(
 				cfg, r,
 				compareConfig,
 				memberShape,
@@ -204,9 +211,13 @@ func CompareResource(
 				fieldPath,
 				indentLevel+1,
 			)
+			if err != nil {
+				return "", err
+			}
+			out += sliceOut
 		case "map":
 			// Returns Go code that compares all the elements of the map fields...
-			out += compareMap(
+			mapOut, err := compareMap(
 				cfg, r,
 				compareConfig,
 				memberShape,
@@ -216,11 +227,15 @@ func CompareResource(
 				fieldPath,
 				indentLevel+1,
 			)
+			if err != nil {
+				return "", err
+			}
+			out += mapOut
 		default:
 			//   if *a.ko.Spec.Name != *b.ko.Spec.Name) {
 			//     delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
 			//   }
-			out += compareScalar(
+			scalarOut, err := compareScalar(
 				compareConfig,
 				memberShape,
 				deltaVarName,
@@ -229,6 +244,10 @@ func CompareResource(
 				fieldPath,
 				indentLevel+1,
 			)
+			if err != nil {
+				return "", err
+			}
+			out += scalarOut
 		}
 		if needToCloseBlock {
 			// }
@@ -237,7 +256,7 @@ func CompareResource(
 			)
 		}
 	}
-	return out
+	return out, nil
 }
 
 // compareNil outputs Go code that compares two field values for nullability
@@ -272,7 +291,7 @@ func compareNil(
 	fieldPath string,
 	// Number of levels of indentation to use
 	indentLevel int,
-) string {
+) (string, error) {
 	out := ""
 	indent := strings.Repeat("\t", indentLevel)
 
@@ -285,7 +304,7 @@ func compareNil(
 			indent, firstResVarName, secondResVarName,
 		)
 	default:
-		panic("Unsupported shape type in generate.code.compareNil: " + shape.Type)
+		return "", fmt.Errorf("field %q: unsupported shape type in compareNil: %s", fieldPath, shape.Type)
 	}
 	//   delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
 	out += fmt.Sprintf(
@@ -297,7 +316,7 @@ func compareNil(
 		"%s}", indent,
 	)
 
-	return out
+	return out, nil
 }
 
 // compareScalar outputs Go code that compares two scalar values from two
@@ -332,7 +351,7 @@ func compareScalar(
 	fieldPath string,
 	// Number of levels of indentation to use
 	indentLevel int,
-) string {
+) (string, error) {
 	out := ""
 	indent := strings.Repeat("\t", indentLevel)
 
@@ -350,7 +369,7 @@ func compareScalar(
 			indent, firstResVarName, secondResVarName,
 		)
 	default:
-		panic("Unsupported shape type in generate.code.compareScalar: " + shape.Type)
+		return "", fmt.Errorf("field %q: unsupported shape type in compareScalar: %s", fieldPath, shape.Type)
 	}
 	//   delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
 	out += fmt.Sprintf(
@@ -362,7 +381,7 @@ func compareScalar(
 		"%s}\n", indent,
 	)
 
-	return out
+	return out, nil
 }
 
 // compareMap outputs Go code that compares two map values from two resource
@@ -399,14 +418,14 @@ func compareMap(
 	fieldPath string,
 	// Number of levels of indentation to use
 	indentLevel int,
-) string {
+) (string, error) {
 	out := ""
 	indent := strings.Repeat("\t", indentLevel)
 
 	keyType := shape.KeyRef.Shape.Type
 
 	if keyType != "string" {
-		panic("generate.code.compareMap cannot deal with non-string key types: " + keyType)
+		return "", fmt.Errorf("field %q: compareMap does not support non-string key type: %s", fieldPath, keyType)
 	}
 
 	valType := shape.ValueRef.Shape.Type
@@ -439,7 +458,7 @@ func compareMap(
 		"%s}\n", indent,
 	)
 
-	return out
+	return out, nil
 }
 
 // compareSlice outputs Go code that compares two slice values from two
@@ -476,7 +495,7 @@ func compareSlice(
 	fieldPath string,
 	// Number of levels of indentation to use
 	indentLevel int,
-) string {
+) (string, error) {
 	out := ""
 	indent := strings.Repeat("\t", indentLevel)
 
@@ -501,7 +520,7 @@ func compareSlice(
 			indent, firstResVarName, secondResVarName,
 		)
 	default:
-		panic("Unsupported shape type in generate.code.compareSlice: " + shape.Type)
+		return "", fmt.Errorf("field %q: unsupported element type in compareSlice: %s", fieldPath, elemType)
 	}
 	//   delta.Add("Spec.SecurityGroupIDs", a.ko.Spec.SecurityGroupIDs, b.ko.Spec.SecurityGroupIDs)
 	out += fmt.Sprintf(
@@ -513,7 +532,7 @@ func compareSlice(
 		"%s}\n", indent,
 	)
 
-	return out
+	return out, nil
 }
 
 // compareTags outputs Go code that compares two slices of tags from two
@@ -588,12 +607,12 @@ func CompareStruct(
 	fieldPath string,
 	// Number of levels of indentation to use
 	indentLevel int,
-) string {
+) (string, error) {
 	out := ""
 
 	tagField, err := r.GetTagField()
 	if err != nil {
-		panic(err)
+		return "", err
 	}
 
 	fieldConfigs := cfg.GetFieldConfigs(r.Names.Original)
@@ -637,7 +656,7 @@ func CompareStruct(
 			continue
 		}
 
-		fastComparisonOutput, needToCloseBlock := fastCompareTypes(
+		fastComparisonOutput, needToCloseBlock, err := fastCompareTypes(
 			compareConfig,
 			memberShape,
 			deltaVarName,
@@ -646,6 +665,9 @@ func CompareStruct(
 			secondResAdaptedVarName,
 			indentLevel,
 		)
+		if err != nil {
+			return "", err
+		}
 		out += fastComparisonOutput
 
 		switch memberShape.Type {
@@ -654,7 +676,7 @@ func CompareStruct(
 		case "structure":
 			// Recurse through all the struct's fields and subfields, building
 			// nested conditionals and calls to `delta.Add()`...
-			out += CompareStruct(
+			structOut, err := CompareStruct(
 				cfg, r,
 				compareConfig,
 				memberShape,
@@ -664,9 +686,13 @@ func CompareStruct(
 				memberFieldPath,
 				indentLevel+1,
 			)
+			if err != nil {
+				return "", err
+			}
+			out += structOut
 		case "list":
 			// Returns Go code that compares all the elements of the slice fields...
-			out += compareSlice(
+			sliceOut, err := compareSlice(
 				cfg, r,
 				compareConfig,
 				memberShape,
@@ -676,9 +702,13 @@ func CompareStruct(
 				memberFieldPath,
 				indentLevel+1,
 			)
+			if err != nil {
+				return "", err
+			}
+			out += sliceOut
 		case "map":
 			// Returns Go code that compares all the elements of the map fields...
-			out += compareMap(
+			mapOut, err := compareMap(
 				cfg, r,
 				compareConfig,
 				memberShape,
@@ -688,11 +718,15 @@ func CompareStruct(
 				memberFieldPath,
 				indentLevel+1,
 			)
+			if err != nil {
+				return "", err
+			}
+			out += mapOut
 		default:
 			//   if *a.ko.Spec.Name != *b.ko.Spec.Name {
 			//     delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
 			//   }
-			out += compareScalar(
+			scalarOut, err := compareScalar(
 				compareConfig,
 				memberShape,
 				deltaVarName,
@@ -701,6 +735,10 @@ func CompareStruct(
 				memberFieldPath,
 				indentLevel+1,
 			)
+			if err != nil {
+				return "", err
+			}
+			out += scalarOut
 		}
 		if needToCloseBlock {
 			// }
@@ -709,7 +747,7 @@ func CompareStruct(
 			)
 		}
 	}
-	return out
+	return out, nil
 }
 
 // fastCompareTypes outputs Go code that fast-compares two objects of the same
@@ -774,7 +812,7 @@ func fastCompareTypes(
 	secondResVarName string,
 	// Number of levels of indentation to use
 	indentLevel int,
-) (string, bool) {
+) (string, bool, error) {
 	out := ""
 	needToCloseBlock := false
 	indent := strings.Repeat("\t", indentLevel)
@@ -842,7 +880,7 @@ func fastCompareTypes(
 		// For any other type, we can use the HasNilDifference function to
 		// eliminate early on the case where one of the objects is nil and
 		// other is not.
-		out += compareNil(
+		nilOut, err := compareNil(
 			compareConfig,
 			memberShape,
 			deltaVarName,
@@ -851,6 +889,10 @@ func fastCompareTypes(
 			fieldPath,
 			indentLevel,
 		)
+		if err != nil {
+			return "", false, err
+		}
+		out += nilOut
 
 		// if ackcompare.HasNilDifference(a.ko.Spec.Name, b.ko.Spec.Name) {
 		//   delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
@@ -863,5 +905,5 @@ func fastCompareTypes(
 		// to increase the indentation level and ask the caller to close the block.
 		needToCloseBlock = true
 	}
-	return out, needToCloseBlock
+	return out, needToCloseBlock, nil
 }

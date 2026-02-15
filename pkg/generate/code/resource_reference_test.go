@@ -43,7 +43,9 @@ func Test_ReferenceFieldsValidation_SingleReference(t *testing.T) {
 		return ackerr.ResourceReferenceOrIDRequiredFor("APIID", "APIRef")
 	}
 `
-	assert.Equal(expected, code.ReferenceFieldsValidation(field, "ko", 1))
+	got, err := code.ReferenceFieldsValidation(field, "ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func Test_ReferenceFieldsValidation_WithOptional_SliceOfReferences(t *testing.T) {
@@ -66,7 +68,9 @@ func Test_ReferenceFieldsValidation_WithOptional_SliceOfReferences(t *testing.T)
 		return ackerr.ResourceReferenceAndIDNotSupportedFor("SecurityGroupIDs", "SecurityGroupRefs")
 	}
 `
-	assert.Equal(expected, code.ReferenceFieldsValidation(field, "ko", 1))
+	got, err := code.ReferenceFieldsValidation(field, "ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func Test_ReferenceFieldsValidation_WithRequired_SliceOfReferences(t *testing.T) {
@@ -92,7 +96,9 @@ func Test_ReferenceFieldsValidation_WithRequired_SliceOfReferences(t *testing.T)
 		return ackerr.ResourceReferenceOrIDRequiredFor("SubnetIDs", "SubnetRefs")
 	}
 `
-	assert.Equal(expected, code.ReferenceFieldsValidation(field, "ko", 1))
+	got, err := code.ReferenceFieldsValidation(field, "ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func Test_ReferenceFieldsValidation_NestedReference(t *testing.T) {
@@ -115,7 +121,9 @@ func Test_ReferenceFieldsValidation_NestedReference(t *testing.T) {
 		}
 	}
 `
-	assert.Equal(expected, code.ReferenceFieldsValidation(field, "ko", 1))
+	got, err := code.ReferenceFieldsValidation(field, "ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func Test_ResolveReferencesForField_SingleReference(t *testing.T) {
@@ -149,7 +157,9 @@ func Test_ResolveReferencesForField_SingleReference(t *testing.T) {
 `
 
 	field := crd.Fields["APIID"]
-	assert.Equal(expected, code.ResolveReferencesForField(field, "ko", 1))
+	got, err := code.ResolveReferencesForField(field, "ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func Test_ResolveReferencesForField_ReferencingARN(t *testing.T) {
@@ -183,7 +193,9 @@ func Test_ResolveReferencesForField_ReferencingARN(t *testing.T) {
 `
 
 	field := crd.Fields["PermissionsBoundary"]
-	assert.Equal(expected, code.ResolveReferencesForField(field, "ko", 1))
+	got, err := code.ResolveReferencesForField(field, "ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func Test_ResolveReferencesForField_SliceOfReferences(t *testing.T) {
@@ -222,7 +234,9 @@ func Test_ResolveReferencesForField_SliceOfReferences(t *testing.T) {
 `
 
 	field := crd.Fields["SecurityGroupIDs"]
-	assert.Equal(expected, code.ResolveReferencesForField(field, "ko", 1))
+	got, err := code.ResolveReferencesForField(field, "ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func Test_ResolveReferencesForField_NestedSingleReference(t *testing.T) {
@@ -258,7 +272,9 @@ func Test_ResolveReferencesForField_NestedSingleReference(t *testing.T) {
 `
 
 	field := crd.Fields["JWTConfiguration.Issuer"]
-	assert.Equal(expected, code.ResolveReferencesForField(field, "ko", 1))
+	got, err := code.ResolveReferencesForField(field, "ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func Test_ResolveReferencesForField_SingleReference_DeeplyNested(t *testing.T) {
@@ -298,7 +314,9 @@ func Test_ResolveReferencesForField_SingleReference_DeeplyNested(t *testing.T) {
 `
 
 	field := crd.Fields["Logging.LoggingEnabled.TargetBucket"]
-	assert.Equal(expected, code.ResolveReferencesForField(field, "ko", 1))
+	got, err := code.ResolveReferencesForField(field, "ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func Test_ResolveReferencesForField_SingleReference_WithinSlice(t *testing.T) {
@@ -336,7 +354,9 @@ func Test_ResolveReferencesForField_SingleReference_WithinSlice(t *testing.T) {
 `
 
 	field := crd.Fields["Routes.GatewayID"]
-	assert.Equal(expected, code.ResolveReferencesForField(field, "ko", 1))
+	got, err := code.ResolveReferencesForField(field, "ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func Test_ResolveReferencesForField_SingleReference_WithinMultipleSlices(t *testing.T) {
@@ -382,7 +402,9 @@ func Test_ResolveReferencesForField_SingleReference_WithinMultipleSlices(t *test
 `
 
 	field := crd.Fields["Notification.LambdaFunctionConfigurations.Filter.Key.FilterRules.Value"]
-	assert.Equal(expected, code.ResolveReferencesForField(field, "ko", 1))
+	got, err := code.ResolveReferencesForField(field, "ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func Test_ClearResolvedReferencesForField_SingleReference(t *testing.T) {
@@ -403,7 +425,9 @@ func Test_ClearResolvedReferencesForField_SingleReference(t *testing.T) {
 `
 
 	field := crd.Fields["APIID"]
-	assert.Equal(expected, code.ClearResolvedReferencesForField(field, "ko", 1))
+	got, err := code.ClearResolvedReferencesForField(field, "ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func Test_ClearResolvedReferencesForField_SliceOfReferences(t *testing.T) {
@@ -424,7 +448,9 @@ func Test_ClearResolvedReferencesForField_SliceOfReferences(t *testing.T) {
 `
 
 	field := crd.Fields["SecurityGroupIDs"]
-	assert.Equal(expected, code.ClearResolvedReferencesForField(field, "ko", 1))
+	got, err := code.ClearResolvedReferencesForField(field, "ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func Test_ClearResolvedReferencesForField_NestedSingleReference(t *testing.T) {
@@ -447,7 +473,9 @@ func Test_ClearResolvedReferencesForField_NestedSingleReference(t *testing.T) {
 `
 
 	field := crd.Fields["JWTConfiguration.Issuer"]
-	assert.Equal(expected, code.ClearResolvedReferencesForField(field, "ko", 1))
+	got, err := code.ClearResolvedReferencesForField(field, "ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func Test_ClearResolvedReferencesForField_SingleReference_DeeplyNested(t *testing.T) {
@@ -474,7 +502,9 @@ func Test_ClearResolvedReferencesForField_SingleReference_DeeplyNested(t *testin
 `
 
 	field := crd.Fields["Logging.LoggingEnabled.TargetBucket"]
-	assert.Equal(expected, code.ClearResolvedReferencesForField(field, "ko", 1))
+	got, err := code.ClearResolvedReferencesForField(field, "ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func Test_ClearResolvedReferencesForField_SingleReference_WithinSlice(t *testing.T) {
@@ -499,7 +529,9 @@ func Test_ClearResolvedReferencesForField_SingleReference_WithinSlice(t *testing
 `
 
 	field := crd.Fields["Routes.GatewayID"]
-	assert.Equal(expected, code.ClearResolvedReferencesForField(field, "ko", 1))
+	got, err := code.ClearResolvedReferencesForField(field, "ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func Test_ClearResolvedReferencesForField_SingleReference_WithinMultipleSlices(t *testing.T) {
@@ -532,5 +564,7 @@ func Test_ClearResolvedReferencesForField_SingleReference_WithinMultipleSlices(t
 `
 
 	field := crd.Fields["Notification.LambdaFunctionConfigurations.Filter.Key.FilterRules.Value"]
-	assert.Equal(expected, code.ClearResolvedReferencesForField(field, "ko", 1))
+	got, err := code.ClearResolvedReferencesForField(field, "ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }

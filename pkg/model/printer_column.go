@@ -63,38 +63,42 @@ func (pcs printerColumnSorter) Less(i, j int) bool {
 }
 
 // sortFunction returns a Go function used the sort the printer columns.
-func sortFunction(sortByField string) func(a, b *PrinterColumn) bool {
+func sortFunction(sortByField string) (func(a, b *PrinterColumn) bool, error) {
 	switch strings.ToLower(sortByField) {
 	case "name":
 		return func(a, b *PrinterColumn) bool {
 			return a.Name < b.Name
-		}
+		}, nil
 	case "type":
 		return func(a, b *PrinterColumn) bool {
 			return a.Type < b.Type
-		}
+		}, nil
 	case "jsonpath":
 		return func(a, b *PrinterColumn) bool {
 			return a.JSONPath < b.JSONPath
-		}
+		}, nil
 	case "index":
 		return func(a, b *PrinterColumn) bool {
 			return a.Index < b.Index
-		}
+		}, nil
 	default:
-		msg := fmt.Sprintf("unknown sort-by field: '%s'. must be one of 'Name',"+
-			" 'Type', 'JSONPath' and 'Index'", sortByField)
-		panic(msg)
+		return nil, fmt.Errorf(
+			"unknown sort-by field %q — must be one of Name, Type, JSONPath, Index",
+			sortByField,
+		)
 	}
 }
 
 // AdditionalPrinterColumns returns a sorted list of PrinterColumn structs for
 // the resource
-func (r *CRD) AdditionalPrinterColumns() []*PrinterColumn {
+func (r *CRD) AdditionalPrinterColumns() ([]*PrinterColumn, error) {
 	orderByFieldName := r.GetResourcePrintOrderByName()
-	sortFn := sortFunction(orderByFieldName)
+	sortFn, err := sortFunction(orderByFieldName)
+	if err != nil {
+		return nil, err
+	}
 	By(sortFn).Sort(r.additionalPrinterColumns)
-	return r.additionalPrinterColumns
+	return r.additionalPrinterColumns, nil
 }
 
 // addPrintableColumn adds an entry to the list of additional printer columns
@@ -102,7 +106,7 @@ func (r *CRD) AdditionalPrinterColumns() []*PrinterColumn {
 func (r *CRD) addPrintableColumn(
 	field *Field,
 	jsonPath string,
-) {
+) error {
 	fieldColumnType := field.GoTypeElem
 
 	// Printable columns must be primitives supported by the OpenAPI list of data
@@ -130,11 +134,10 @@ func (r *CRD) addPrintableColumn(
 	printColumnType, exists := acceptableColumnMaps[fieldColumnType]
 
 	if !exists {
-		msg := fmt.Sprintf(
-			"GENERATION FAILURE! Unable to generate a printer column for the field %s that has type %s.",
+		return fmt.Errorf(
+			"unable to generate printer column for field %s with unsupported type %s",
 			field.Names.Camel, fieldColumnType,
 		)
-		panic(msg)
 	}
 
 	name := field.Names.Camel
@@ -151,14 +154,15 @@ func (r *CRD) addPrintableColumn(
 		Index:    field.FieldConfig.Print.Index,
 	}
 	r.additionalPrinterColumns = append(r.additionalPrinterColumns, column)
+	return nil
 }
 
 // addSpecPrintableColumn adds an entry to the list of additional printer columns
 // using the path of the given spec field.
 func (r *CRD) addSpecPrintableColumn(
 	field *Field,
-) {
-	r.addPrintableColumn(
+) error {
+	return r.addPrintableColumn(
 		field,
 		//TODO(nithomso): Ideally we'd use `r.cfg.PrefixConfig.SpecField` but it uses uppercase
 		fmt.Sprintf("%s.%s", ".spec", field.Names.CamelLower),
@@ -169,8 +173,8 @@ func (r *CRD) addSpecPrintableColumn(
 // using the path of the given status field.
 func (r *CRD) addStatusPrintableColumn(
 	field *Field,
-) {
-	r.addPrintableColumn(
+) error {
+	return r.addPrintableColumn(
 		field,
 		//TODO(nithomso): Ideally we'd use `r.cfg.PrefixConfig.StatusField` but it uses uppercase
 		fmt.Sprintf("%s.%s", ".status", field.Names.CamelLower),

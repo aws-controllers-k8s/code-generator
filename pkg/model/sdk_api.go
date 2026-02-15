@@ -72,9 +72,9 @@ func (a *SDKAPI) GetPayloads() []string {
 
 // GetOperationMap returns a map, keyed by the operation type and operation
 // ID/name, of aws-sdk-go private/model/api.Operation struct pointers
-func (a *SDKAPI) GetOperationMap(cfg *ackgenconfig.Config) *OperationMap {
+func (a *SDKAPI) GetOperationMap(cfg *ackgenconfig.Config) (*OperationMap, error) {
 	if a.opMap != nil {
-		return a.opMap
+		return a.opMap, nil
 	}
 	// create an index of Operations by operation types and resource name
 	opMap := OperationMap{}
@@ -106,7 +106,7 @@ func (a *SDKAPI) GetOperationMap(cfg *ackgenconfig.Config) *OperationMap {
 		}
 		op, found := a.API.Operations[opID]
 		if !found {
-			panic("operation " + opID + " in generator.yaml 'operations:' object does not exist.")
+			return nil, fmt.Errorf("operation %s in generator.yaml 'operations:' object does not exist", opID)
 		}
 		for _, operationType := range opCfg.OperationType {
 			opType := OpTypeFromString(operationType)
@@ -121,14 +121,14 @@ func (a *SDKAPI) GetOperationMap(cfg *ackgenconfig.Config) *OperationMap {
 		}
 	}
 	a.opMap = &opMap
-	return &opMap
+	return &opMap, nil
 }
 
 // GetShapeRefFromType returns a ShapeRef given a string representing the Go
-// type. If no shape can be determined, returns nil.
+// type. If no shape can be determined, returns nil and a nil error.
 func (a *SDKAPI) GetShapeRefFromType(
 	typeOverride string,
-) *awssdkmodel.ShapeRef {
+) (*awssdkmodel.ShapeRef, error) {
 	elemType := typeOverride
 	isSlice := strings.HasPrefix(typeOverride, "[]")
 	// TODO(jaypipes): Only handling maps with string keys at the moment...
@@ -149,8 +149,7 @@ func (a *SDKAPI) GetShapeRefFromType(
 	case "string", "bool", "int", "int64", "float64", "time.Time", "bytes":
 		sdkType, found := GoTypeToSDKShapeType[elemType]
 		if !found {
-			msg := fmt.Sprintf("GetShapeRefFromType: unsupported element type %s", elemType)
-			panic(msg)
+			return nil, fmt.Errorf("unsupported element type %q in type override %q", elemType, typeOverride)
 		}
 		if isSlice {
 			return &awssdkmodel.ShapeRef{
@@ -162,7 +161,7 @@ func (a *SDKAPI) GetShapeRefFromType(
 						},
 					},
 				},
-			}
+			}, nil
 		} else if isMap {
 			return &awssdkmodel.ShapeRef{
 				Shape: &awssdkmodel.Shape{
@@ -178,16 +177,16 @@ func (a *SDKAPI) GetShapeRefFromType(
 						},
 					},
 				},
-			}
+			}, nil
 		} else {
 			return &awssdkmodel.ShapeRef{
 				Shape: &awssdkmodel.Shape{
 					Type: sdkType,
 				},
-			}
+			}, nil
 		}
 	}
-	return nil
+	return nil, nil
 }
 
 // GetCustomShapeRef finds a ShapeRef for a custom shape using either its member
@@ -252,7 +251,10 @@ func (a *SDKAPI) GetOutputShapeRef(
 // CRDNames returns a slice of names structs for all top-level resources in the
 // API
 func (a *SDKAPI) CRDNames(cfg *ackgenconfig.Config) []names.Names {
-	opMap := a.GetOperationMap(cfg)
+	opMap, err := a.GetOperationMap(cfg)
+	if err != nil {
+		panic(err)
+	}
 	createOps := (*opMap)[OpTypeCreate]
 	crdNames := []names.Names{}
 	for crdName := range createOps {

@@ -122,7 +122,8 @@ func TestCodeDeploy_Deployment(t *testing.T) {
 		"DeploymentGroup",
 		"Description",
 	}
-	gotPrinterCols := crd.AdditionalPrinterColumns()
+	gotPrinterCols, err := crd.AdditionalPrinterColumns()
+	require.NoError(err)
 	gotPrinterColNames := []string{}
 	for _, pc := range gotPrinterCols {
 		gotPrinterColNames = append(gotPrinterColNames, pc.Name)

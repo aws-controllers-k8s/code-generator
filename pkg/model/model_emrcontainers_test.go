@@ -28,5 +28,19 @@ func TestEMRContainers_JobRun(t *testing.T) {
 		GeneratorConfigFile: "generator-with-cycle.yaml",
 	})
 
-	assert.Panics(func() { g.GetCRDs() })
+	_, err := g.GetCRDs()
+	assert.Error(err)
+	assert.Contains(err.Error(), "cyclic type reference")
+}
+
+func TestEMRContainers_JobRun_GetTypeDefs(t *testing.T) {
+	assert := assert.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "emrcontainers", &testutil.TestingModelOptions{
+		GeneratorConfigFile: "generator-with-cycle.yaml",
+	})
+
+	_, err := g.GetTypeDefs()
+	assert.Error(err)
+	assert.Contains(err.Error(), "cyclic type reference")
 }

@@ -55,35 +55,51 @@ func ResourceIsSynced(
 	resVarName string,
 	// Number of levels of indentation to use
 	indentLevel int,
-) string {
+) (string, error) {
 	out := "\n"
 	resConfig := cfg.GetResourceConfig(r.Names.Original)
 	if resConfig == nil || resConfig.Synced == nil || len(resConfig.Synced.When) == 0 {
-		return out
+		return out, nil
 	}
 
 	for _, condCfg := range resConfig.Synced.When {
 		if condCfg.Path == nil || *condCfg.Path == "" {
-			panic("Received an empty sync condition path. 'SyncCondition.Path' must be provided.")
+			return "", fmt.Errorf(
+				"resource %q: received an empty sync condition path — 'SyncCondition.Path' must be provided",
+				r.Names.Original,
+			)
 		}
 		if len(condCfg.In) == 0 {
-			panic("'SyncCondition.In' must be provided.")
+			return "", fmt.Errorf(
+				"resource %q, path %q: 'SyncCondition.In' must be provided",
+				r.Names.Original, *condCfg.Path,
+			)
 		}
 		fp := fieldpath.FromString(*condCfg.Path)
 		field, err := getTopLevelField(r, *condCfg.Path)
 		if err != nil {
-			msg := fmt.Sprintf("cannot find top level field of path '%s': %v", *condCfg.Path, err)
-			panic(msg)
+			return "", fmt.Errorf(
+				"resource %q: cannot find top-level field for path %q: %w",
+				r.Names.Original, *condCfg.Path, err,
+			)
 		}
 		candidatesVarName := fmt.Sprintf("%sCandidates", field.Names.CamelLower)
 		if fp.Size() == 2 {
-			out += scalarFieldEqual(resVarName, candidatesVarName, field.ShapeRef.GoTypeElem(), condCfg)
+			s, err := scalarFieldEqual(resVarName, candidatesVarName, field.ShapeRef.GoTypeElem(), condCfg)
+			if err != nil {
+				return "", err
+			}
+			out += s
 		} else {
-			out += fieldPathSafeEqual(resVarName, candidatesVarName, field, condCfg)
+			s, err := fieldPathSafeEqual(resVarName, candidatesVarName, field, condCfg)
+			if err != nil {
+				return "", err
+			}
+			out += s
 		}
 	}
 
-	return out
+	return out, nil
 }
 
 func getTopLevelField(r *model.CRD, fieldPath string) (*model.Field, error) {
@@ -118,7 +134,7 @@ func scalarFieldEqual(
 	candidatesVarName string,
 	goType string,
 	condCfg ackgenconfig.SyncedCondition,
-) string {
+) (string, error) {
 	out := ""
 	fieldPath := fmt.Sprintf("%s.%s", resVarName, *condCfg.Path)
 	// if r.ko.Status.Status == nil
@@ -139,7 +155,10 @@ func scalarFieldEqual(
 		// []bool{false}
 		valuesSlice = fmt.Sprintf("[]bool{%s}", condCfg.In)
 	default:
-		panic("not supported type " + goType)
+		return "", fmt.Errorf(
+			"unsupported type %q in sync condition for path %q",
+			goType, *condCfg.Path,
+		)
 	}
 
 	// candidates1 := []string{"AVAILABLE", "ACTIVE"}
@@ -159,7 +178,7 @@ func scalarFieldEqual(
 	out += "\t\treturn false, nil\n"
 	// }
 	out += "\t}\n"
-	return out
+	return out, nil
 }
 
 // fieldPathSafeEqual returns go code that safely compares a resource field to value
@@ -168,7 +187,7 @@ func fieldPathSafeEqual(
 	candidatesVarName string,
 	field *model.Field,
 	condCfg ackgenconfig.SyncedCondition,
-) string {
+) (string, error) {
 	out := ""
 	rootPath := fmt.Sprintf("%s.%s", resVarName, strings.Split(*condCfg.Path, ".")[0])
 	knownShapesPath := strings.Join(strings.Split(*condCfg.Path, ".")[1:], ".")
@@ -191,8 +210,12 @@ func fieldPathSafeEqual(
 		// }
 		out += "\t}\n"
 	}
-	out += scalarFieldEqual(resVarName, candidatesVarName, shapes[len(shapes)-1].GoTypeElem(), condCfg)
-	return out
+	s, err := scalarFieldEqual(resVarName, candidatesVarName, shapes[len(shapes)-1].GoTypeElem(), condCfg)
+	if err != nil {
+		return "", err
+	}
+	out += s
+	return out, nil
 }
 
 func fieldPathContainsMapOrArray(fieldPath string, shapeRef *awssdkmodel.ShapeRef) bool {

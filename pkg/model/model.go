@@ -100,7 +100,10 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 	}
 	crds := []*CRD{}
 
-	opMap := m.SDKAPI.GetOperationMap(m.cfg)
+	opMap, err := m.SDKAPI.GetOperationMap(m.cfg)
+	if err != nil {
+		return nil, err
+	}
 
 	createOps := (*opMap)[OpTypeCreate]
 	readOneOps := (*opMap)[OpTypeGet]
@@ -172,7 +175,9 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 							wrapperMemberName,
 						)
 						wrapperMemberNames := names.New(fieldName)
-						crd.AddSpecField(wrapperMemberNames, wrapperMemberShapeRef)
+						if err := crd.AddSpecField(wrapperMemberNames, wrapperMemberShapeRef); err != nil {
+							return nil, err
+						}
 					}
 				}
 				continue
@@ -193,10 +198,14 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 			)
 			memberNames := names.New(fieldName)
 			if memberName == "Attributes" && m.cfg.ResourceContainsAttributesMap(crdName) {
-				crd.UnpackAttributes()
+				if err := crd.UnpackAttributes(); err != nil {
+					return nil, err
+				}
 				continue
 			}
-			crd.AddSpecField(memberNames, memberShapeRef)
+			if err := crd.AddSpecField(memberNames, memberShapeRef); err != nil {
+				return nil, err
+			}
 		}
 
 		// A list of fields that should be processed after gathering
@@ -230,12 +239,10 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 					)
 				}
 				if !found {
-					// This is a compile-time failure, just bomb out...
-					msg := fmt.Sprintf(
-						"unknown additional Spec field with Op: %s and Path: %s",
-						from.Operation, from.Path,
+					return nil, fmt.Errorf(
+						"resource %q: unknown Spec field source — operation %q path %q not found in input or output shapes",
+						crdName, from.Operation, from.Path,
 					)
-					panic(msg)
 				}
 			} else if fieldConfig.CustomField != nil {
 				customField := fieldConfig.CustomField
@@ -245,12 +252,10 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 					memberShapeRef = m.SDKAPI.GetCustomShapeRef(customField.MapOf)
 				}
 				if memberShapeRef == nil {
-					// This is a compile-time failure, just bomb out...
-					msg := fmt.Sprintf(
-						"unknown additional Spec field with custom field %+v",
-						customField,
+					return nil, fmt.Errorf(
+						"resource %q: unknown custom Spec field — custom field %+v has no matching shape",
+						crdName, customField,
 					)
-					panic(msg)
 				}
 			} else if fieldConfig.Type != nil {
 				// A nested field will always have a "." in the field path.
@@ -268,14 +273,20 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 				// SourceFieldConfig. Manually construct the field and its
 				// shape reference here.
 				typeOverride := *fieldConfig.Type
-				memberShapeRef = m.SDKAPI.GetShapeRefFromType(typeOverride)
+				var err error
+				memberShapeRef, err = m.SDKAPI.GetShapeRefFromType(typeOverride)
+				if err != nil {
+					return nil, fmt.Errorf("resource %q, field %q: %w", crdName, targetFieldName, err)
+				}
 			} else {
 				// Spec field is not well defined
 				continue
 			}
 
 			memberNames := names.New(targetFieldName)
-			crd.AddSpecField(memberNames, memberShapeRef)
+			if err := crd.AddSpecField(memberNames, memberShapeRef); err != nil {
+				return nil, err
+			}
 
 		}
 
@@ -323,7 +334,9 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 				// the Status.ACKResourceMetadata.ARN field
 				continue
 			}
-			crd.AddStatusField(memberNames, memberShapeRef)
+			if err := crd.AddStatusField(memberNames, memberShapeRef); err != nil {
+				return nil, err
+			}
 		}
 
 		// Now add the additional Status fields that are required from other
@@ -349,12 +362,10 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 					)
 				}
 				if !found {
-					// This is a compile-time failure, just bomb out...
-					msg := fmt.Sprintf(
-						"unknown additional Status field with Op: %s and Path: %s",
-						from.Operation, from.Path,
+					return nil, fmt.Errorf(
+						"resource %q: unknown Status field source — operation %q path %q not found in input or output shapes",
+						crdName, from.Operation, from.Path,
 					)
-					panic(msg)
 				}
 			} else if fieldConfig.CustomField != nil {
 				customField := fieldConfig.CustomField
@@ -364,12 +375,10 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 					memberShapeRef = m.SDKAPI.GetCustomShapeRef(customField.MapOf)
 				}
 				if memberShapeRef == nil {
-					// This is a compile-time failure, just bomb out...
-					msg := fmt.Sprintf(
-						"unknown additional Status field with custom field %+v",
-						customField,
+					return nil, fmt.Errorf(
+						"resource %q: unknown custom Status field — custom field %+v has no matching shape",
+						crdName, customField,
 					)
-					panic(msg)
 				}
 			} else if fieldConfig.Type != nil {
 				// A nested field will always have a "." in the field path.
@@ -387,21 +396,29 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 				// SourceFieldConfig. Manually construct the field and its
 				// shape reference here.
 				typeOverride := *fieldConfig.Type
-				memberShapeRef = m.SDKAPI.GetShapeRefFromType(typeOverride)
+				var err error
+				memberShapeRef, err = m.SDKAPI.GetShapeRefFromType(typeOverride)
+				if err != nil {
+					return nil, fmt.Errorf("resource %q, field %q: %w", crdName, targetFieldName, err)
+				}
 			} else {
 				// Status field is not well defined
 				continue
 			}
 
 			memberNames := names.New(targetFieldName)
-			crd.AddStatusField(memberNames, memberShapeRef)
+			if err := crd.AddStatusField(memberNames, memberShapeRef); err != nil {
+				return nil, err
+			}
 		}
 
 		// Now add the additional printer columns that have been defined explicitly
 		// in additional_columns
 		crd.addAdditionalPrinterColumns(m.cfg.GetAdditionalColumns(crdName))
 		// Process the custom nested fields
-		crd.addCustomNestedFields(customNestedFields)
+		if err := crd.addCustomNestedFields(customNestedFields); err != nil {
+			return nil, err
+		}
 		crds = append(crds, crd)
 	}
 	sort.Slice(crds, func(i, j int) bool {
@@ -410,7 +427,9 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 	// This is the place that we build out the CRD.Fields map with
 	// `pkg/model.Field` objects that represent the non-top-level Spec and
 	// Status fields.
-	m.processFields(crds)
+	if err := m.processFields(crds); err != nil {
+		return nil, err
+	}
 	m.crds = crds
 	return crds, nil
 }
@@ -492,7 +511,10 @@ func (m *Model) GetTypeDefs() ([]*TypeDef, error) {
 			if !m.IsShapeUsedInCRDs(memberShape.ShapeName) {
 				continue
 			}
-			gt := m.getShapeCleanGoType(memberShape)
+			gt, err := m.getShapeCleanGoType(memberShape)
+			if err != nil {
+				return nil, err
+			}
 			attrs[memberName] = NewAttr(memberNames, gt, memberShape)
 		}
 		if len(attrs) == 0 {
@@ -508,33 +530,46 @@ func (m *Model) GetTypeDefs() ([]*TypeDef, error) {
 	sort.Slice(tdefs, func(i, j int) bool {
 		return tdefs[i].Names.Camel < tdefs[j].Names.Camel
 	})
-	m.processNestedFieldTypeDefs(tdefs)
+	if err := m.processNestedFieldTypeDefs(tdefs); err != nil {
+		return nil, err
+	}
 	m.typeDefs = tdefs
 	m.typeRenames = trenames
 	return tdefs, nil
 }
 
 // getShapeCleanGoType returns a cleaned-up and Camel-cased GoType name for a given shape.
-func (m *Model) getShapeCleanGoType(shape *awssdkmodel.Shape) string {
+func (m *Model) getShapeCleanGoType(shape *awssdkmodel.Shape) (string, error) {
 	switch shape.Type {
 	case "map":
 		// If it's a map type we need to set the GoType to the cleaned-up
 		// Camel-cased name
-		return "map[string]" + m.getShapeCleanGoType(shape.ValueRef.Shape)
+		gt, err := m.getShapeCleanGoType(shape.ValueRef.Shape)
+		if err != nil {
+			return "", err
+		}
+		return "map[string]" + gt, nil
 	case "list", "array":
 		// If it's a list type, we need to set the GoType to the cleaned-up
 		// Camel-cased name
-		return "[]" + m.getShapeCleanGoType(shape.MemberRef.Shape)
+		gt, err := m.getShapeCleanGoType(shape.MemberRef.Shape)
+		if err != nil {
+			return "", err
+		}
+		return "[]" + gt, nil
 	case "timestamp":
 		// time.Time needs to be converted to apimachinery/metav1.Time
 		// otherwise there is no DeepCopy support
-		return "*metav1.Time"
+		return "*metav1.Time", nil
 	case "structure":
 		if len(shape.MemberRefs) == 0 {
 			if m.cfg.HasEmptyShape(shape.ShapeName) {
-				return "map[string]*string"
+				return "map[string]*string", nil
 			}
-			panic(fmt.Sprintf("structure %s has no fields, either configure it as a `empty_shape` or manually set the field type", shape.ShapeName))
+			return "", fmt.Errorf(
+				"structure %q has no fields — configure it as an empty_shape or manually set the field type in generator.yaml",
+				shape.ShapeName,
+			)
 		}
 		// There are shapes that are called things like DBProxyStatus that are
 		// fields in a DBProxy CRD... we need to ensure the type names don't
@@ -545,9 +580,9 @@ func (m *Model) getShapeCleanGoType(shape *awssdkmodel.Shape) string {
 		if m.SDKAPI.HasConflictingTypeName(goType, m.cfg) {
 			typeNames.Camel += ConflictingNameSuffix
 		}
-		return "*" + typeNames.Camel
+		return "*" + typeNames.Camel, nil
 	default:
-		return shape.GoType()
+		return shape.GoType(), nil
 	}
 }
 
@@ -556,8 +591,11 @@ func (m *Model) getShapeCleanGoType(shape *awssdkmodel.Shape) string {
 // FieldConfig.IsSecret.
 func (m *Model) processNestedFieldTypeDefs(
 	tdefs []*TypeDef,
-) {
-	crds, _ := m.GetCRDs()
+) error {
+	crds, err := m.GetCRDs()
+	if err != nil {
+		return err
+	}
 	for _, crd := range crds {
 		for fieldPath, field := range crd.Fields {
 			if !strings.Contains(fieldPath, ".") {
@@ -580,38 +618,40 @@ func (m *Model) processNestedFieldTypeDefs(
 				// path `Users..Password`, we'd want to find the TypeDef that
 				// was created for the `Users` field's element type (which is a
 				// struct)
-				replaceSecretAttrGoType(crd, field, tdefs)
+				if err := replaceSecretAttrGoType(crd, field, tdefs); err != nil {
+					return fmt.Errorf("resource %q, field %q: %w", crd.Names.Original, fieldPath, err)
+				}
 			}
 			if field.FieldConfig.References != nil {
-				updateTypeDefAttributeWithReference(crd, fieldPath, tdefs)
+				if err := updateTypeDefAttributeWithReference(crd, fieldPath, tdefs); err != nil {
+					return fmt.Errorf("resource %q, field %q: %w", crd.Names.Original, fieldPath, err)
+				}
 			}
 			if field.FieldConfig.GoTag != nil {
-				setTypeDefAttributeGoTag(crd, fieldPath, field, tdefs)
+				if err := setTypeDefAttributeGoTag(crd, fieldPath, field, tdefs); err != nil {
+					return fmt.Errorf("resource %q, field %q: %w", crd.Names.Original, fieldPath, err)
+				}
 			}
 			if field.IsImmutable() {
-				setTypeDefAttributeImmutable(crd, fieldPath, tdefs)
+				if err := setTypeDefAttributeImmutable(crd, fieldPath, tdefs); err != nil {
+					return fmt.Errorf("resource %q, field %q: %w", crd.Names.Original, fieldPath, err)
+				}
 			}
 		}
 	}
+	return nil
 }
 
 // getAttributeFromPath extracts the parent TypeDef and the target attribute for
 // the corresponding fieldPath of nested field. This function should only be
 // called for nested fieldPath. Non-nested fieldPath should be handled by higher
 // level functions.
-//
-// This function doesn't return an error "urgh" because a lot of the code
-// generation code is written in a way that panics are used to indicate
-// programmer error. This is one of those cases.
-//
-// NOTE(a-hilaly): Consider refactoring the code generation code to flow back
-// errors instead of panicking.
-func getAttributeFromPath(crd *CRD, fieldPath string, tdefs []*TypeDef) (parentTypeDef *TypeDef, target *Attr) {
+func getAttributeFromPath(crd *CRD, fieldPath string, tdefs []*TypeDef) (parentTypeDef *TypeDef, target *Attr, err error) {
 	fp := ackfp.FromString(fieldPath)
 	if fp.Size() < 2 {
 		// This function should only be called for nested fieldPath. Non-nested
 		// fieldPath should be handled by higher level functions.
-		return nil, nil
+		return nil, nil, nil
 	}
 	// First part of nested reference fieldPath is the name of top level Spec
 	// field. Ex: For 'ResourcesVpcConfig.SecurityGroupIds' fieldpath the
@@ -636,15 +676,16 @@ func getAttributeFromPath(crd *CRD, fieldPath string, tdefs []*TypeDef) (parentT
 		}
 	}
 	if !foundInSpec && !foundInStatus {
-		panic(fmt.Sprintf("Unable to find a spec or status field with name %s"+
-			" to add get attribute from %s", topLevelFieldName,
-			fieldPath))
+		return nil, nil, fmt.Errorf(
+			"unable to find a spec or status field with name %s for path %s",
+			topLevelFieldName, fieldPath,
+		)
 	}
 	if foundInSpec && foundInStatus {
-		panic(fmt.Sprintf(
-			"error getting attributes from %s: found a field with name %s in both spec and status",
-			fieldPath, topLevelFieldName,
-		))
+		return nil, nil, fmt.Errorf(
+			"field %s in path %s exists in both spec and status",
+			topLevelFieldName, fieldPath,
+		)
 	}
 
 	// Create a new fieldPath starting with ShapeName of Spec Field
@@ -675,14 +716,15 @@ func getAttributeFromPath(crd *CRD, fieldPath string, tdefs []*TypeDef) (parentT
 	parentFieldName := fsp.Back()
 	parentFieldShapeRef := fsp.ShapeRef(specFieldShapeRef)
 	if parentFieldShapeRef == nil {
-		panic(fmt.Sprintf("Unable to find a shape member with name %s"+
-			" to add a reference for %s", parentFieldName, fieldPath))
+		return nil, nil, fmt.Errorf(
+			"unable to find shape member %s for path %s",
+			parentFieldName, fieldPath,
+		)
 	}
 	parentFieldTypeDefName := parentFieldShapeRef.ShapeName
 
 	var parentFieldTypeDef *TypeDef
 	for _, td := range tdefs {
-
 		fallbackName := ""
 		switch parentFieldShapeRef.Shape.Type {
 		case "list":
@@ -701,50 +743,66 @@ func getAttributeFromPath(crd *CRD, fieldPath string, tdefs []*TypeDef) (parentT
 		}
 	}
 	if parentFieldTypeDef == nil {
-		panic(fmt.Sprintf("Unable to find a TypeDef with name %s"+
-			" inside service model to add reference for %s", parentFieldTypeDefName,
-			fieldPath))
+		return nil, nil, fmt.Errorf(
+			"unable to find TypeDef %s in service model for path %s",
+			parentFieldTypeDefName, fieldPath,
+		)
 	}
 
 	fieldAttr := parentFieldTypeDef.GetAttribute(fieldName)
 	if fieldAttr == nil {
-		panic(fmt.Sprintf("Unable to find a member with name %s"+
-			" inside %s TypeDef to create reference for %s",
-			fieldName, parentFieldTypeDefName, fieldPath))
+		return nil, nil, fmt.Errorf(
+			"unable to find member %s in TypeDef %s for path %s",
+			fieldName, parentFieldTypeDefName, fieldPath,
+		)
 	}
-	return parentFieldTypeDef, fieldAttr
+	return parentFieldTypeDef, fieldAttr, nil
 }
 
 // setTypeDefAttributeGoTag sets the GoTag for the corresponding attribute
 // represented by fieldPath of nested field.
-func setTypeDefAttributeGoTag(crd *CRD, fieldPath string, f *Field, tdefs []*TypeDef) {
-	_, fieldAttr := getAttributeFromPath(crd, fieldPath, tdefs)
+func setTypeDefAttributeGoTag(crd *CRD, fieldPath string, f *Field, tdefs []*TypeDef) error {
+	_, fieldAttr, err := getAttributeFromPath(crd, fieldPath, tdefs)
+	if err != nil {
+		return err
+	}
 	if fieldAttr != nil {
 		fieldAttr.GoTag = f.GetGoTag()
 	}
+	return nil
 }
 
 // setTypeDefAttributeImmutable sets the IsImmutable flag for the corresponding
 // attribute represented by fieldPath of nested field.
-func setTypeDefAttributeImmutable(crd *CRD, fieldPath string, tdefs []*TypeDef) {
-	_, fieldAttr := getAttributeFromPath(crd, fieldPath, tdefs)
+func setTypeDefAttributeImmutable(crd *CRD, fieldPath string, tdefs []*TypeDef) error {
+	_, fieldAttr, err := getAttributeFromPath(crd, fieldPath, tdefs)
+	if err != nil {
+		return err
+	}
 	if fieldAttr != nil {
 		fieldAttr.IsImmutable = true
 	}
+	return nil
 }
 
 // updateTypeDefAttributeWithReference adds a new AWSResourceReference attribute
 // for the corresponding attribute represented by fieldPath of nested field
-func updateTypeDefAttributeWithReference(crd *CRD, fieldPath string, tdefs []*TypeDef) {
-	parentFieldTypeDef, fieldAttr := getAttributeFromPath(crd, fieldPath, tdefs)
-	if fieldAttr != nil && parentFieldTypeDef != nil {
-		addReferenceAttribute(parentFieldTypeDef, fieldAttr)
+func updateTypeDefAttributeWithReference(crd *CRD, fieldPath string, tdefs []*TypeDef) error {
+	parentFieldTypeDef, fieldAttr, err := getAttributeFromPath(crd, fieldPath, tdefs)
+	if err != nil {
+		return err
 	}
+	if fieldAttr != nil && parentFieldTypeDef != nil {
+		if err := addReferenceAttribute(parentFieldTypeDef, fieldAttr); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // addReferenceAttribute creates a corresponding reference attribute for
 // "attr" attribute and adds it to "td" TypeDef
-func addReferenceAttribute(td *TypeDef, attr *Attr) {
+func addReferenceAttribute(td *TypeDef, attr *Attr) error {
 	// Create a custom "model.Field" to generate ReferenceFieldName and reuse
 	// the existing method for generating top-level reference fields
 	fieldShapeRef := awssdkmodel.ShapeRef{Shape: attr.Shape}
@@ -752,7 +810,10 @@ func addReferenceAttribute(td *TypeDef, attr *Attr) {
 		Names:    attr.Names,
 		ShapeRef: &fieldShapeRef,
 	}
-	refAttrName := field.GetReferenceFieldName()
+	refAttrName, err := field.GetReferenceFieldName()
+	if err != nil {
+		return err
+	}
 	refAttrShape := &awssdkmodel.Shape{
 		Documentation: "// Reference field for " + attr.Names.Camel,
 	}
@@ -763,6 +824,7 @@ func addReferenceAttribute(td *TypeDef, attr *Attr) {
 	refAttr := NewAttr(refAttrName, refAttrGoType, refAttrShape)
 	// Add reference attribute to the parent field typedef
 	td.Attrs[refAttrName.Original] = refAttr
+	return nil
 }
 
 // replaceSecretAttrGoType replaces a nested field Attr's GoType with
@@ -771,25 +833,22 @@ func replaceSecretAttrGoType(
 	crd *CRD,
 	field *Field,
 	tdefs []*TypeDef,
-) {
+) error {
 	fieldPath := ackfp.FromString(field.Path)
 	parentFieldPath := fieldPath.Copy()
 	parentFieldPath.Pop()
 	parentField, ok := crd.Fields[parentFieldPath.String()]
 	if !ok {
-		msg := fmt.Sprintf(
-			"Cannot find parent field at parent path %s for %s",
-			parentFieldPath,
-			fieldPath,
+		return fmt.Errorf(
+			"cannot find parent field at path %s for %s",
+			parentFieldPath, fieldPath,
 		)
-		panic(msg)
 	}
 	if parentField.ShapeRef == nil {
-		msg := fmt.Sprintf(
-			"parent field at parent path %s has a nil ShapeRef!",
+		return fmt.Errorf(
+			"parent field at path %s has a nil ShapeRef",
 			parentFieldPath,
 		)
-		panic(msg)
 	}
 	parentFieldShape := parentField.ShapeRef.Shape
 	parentFieldShapeName := parentField.ShapeRef.ShapeName
@@ -798,22 +857,18 @@ func replaceSecretAttrGoType(
 	// type, since that's the type def we need to modify.
 	if parentFieldShapeType == "list" {
 		if parentFieldShape.MemberRef.Shape.Type != "structure" {
-			msg := fmt.Sprintf(
-				"parent field at parent path %s is a list type with a non-structure element member shape %s!",
-				parentFieldPath,
-				parentFieldShape.MemberRef.Shape.Type,
+			return fmt.Errorf(
+				"parent field at path %s is a list with non-structure element type %s",
+				parentFieldPath, parentFieldShape.MemberRef.Shape.Type,
 			)
-			panic(msg)
 		}
 		parentFieldShapeName = parentField.ShapeRef.Shape.MemberRef.ShapeName
 	} else if parentFieldShapeType == "map" {
 		if parentFieldShape.ValueRef.Shape.Type != "structure" {
-			msg := fmt.Sprintf(
-				"parent field at parent path %s is a map type with a non-structure value member shape %s!",
-				parentFieldPath,
-				parentFieldShape.ValueRef.Shape.Type,
+			return fmt.Errorf(
+				"parent field at path %s is a map with non-structure value type %s",
+				parentFieldPath, parentFieldShape.ValueRef.Shape.Type,
 			)
-			panic(msg)
 		}
 		parentFieldShapeName = parentField.ShapeRef.Shape.ValueRef.ShapeName
 	}
@@ -824,27 +879,22 @@ func replaceSecretAttrGoType(
 		}
 	}
 	if parentTypeDef == nil {
-		msg := fmt.Sprintf(
-			"unable to find associated TypeDef for parent field "+
-				"at parent path %s!",
-			parentFieldPath,
+		return fmt.Errorf(
+			"unable to find TypeDef for parent field at path %s (shape %s)",
+			parentFieldPath, parentFieldShapeName,
 		)
-		panic(msg)
 	}
 	// Now we modify the parent type def's Attr that corresponds to
 	// the secret field...
 	attr, found := parentTypeDef.Attrs[field.Names.Camel]
 	if !found {
-		msg := fmt.Sprintf(
-			"unable to find attr %s in parent TypeDef %s "+
-				"at parent path %s!",
-			field.Names.Camel,
-			parentTypeDef.Names.Original,
-			parentFieldPath,
+		return fmt.Errorf(
+			"unable to find attr %s in TypeDef %s at path %s",
+			field.Names.Camel, parentTypeDef.Names.Original, parentFieldPath,
 		)
-		panic(msg)
 	}
 	attr.GoType = field.GoType
+	return nil
 }
 
 // processFields is responsible for walking all of the CRDs' Spec and
@@ -852,15 +902,20 @@ func replaceSecretAttrGoType(
 // nested fields along with that `Field`'s `Config` object that allows us to
 // determine if the TypeDef associated with that nested field should have its
 // data type overridden (e.g. for SecretKeyReferences)
-func (m *Model) processFields(crds []*CRD) {
+func (m *Model) processFields(crds []*CRD) error {
 	for _, crd := range crds {
 		for _, field := range crd.SpecFields {
-			m.processTopLevelField(crd, field)
+			if err := m.processTopLevelField(crd, field); err != nil {
+				return err
+			}
 		}
 		for _, field := range crd.StatusFields {
-			m.processTopLevelField(crd, field)
+			if err := m.processTopLevelField(crd, field); err != nil {
+				return err
+			}
 		}
 	}
+	return nil
 }
 
 // processTopLevelField processes any nested fields (non-scalar fields associated
@@ -868,27 +923,34 @@ func (m *Model) processFields(crds []*CRD) {
 func (m *Model) processTopLevelField(
 	crd *CRD,
 	field *Field,
-) {
+) error {
 	if field.ShapeRef == nil && !field.IsReference() && (field.FieldConfig == nil || !field.FieldConfig.IsAttribute) {
 		fmt.Printf(
 			"WARNING: Field %s:%s has nil ShapeRef and is not defined as an Attribute-based Field!\n",
 			crd.Names.Original,
 			field.Names.Original,
 		)
-		return
+		return nil
 	}
 	if field.ShapeRef != nil {
 		fieldShape := field.ShapeRef.Shape
 		fieldType := fieldShape.Type
 		switch fieldType {
 		case "structure":
-			m.processStructField(crd, field.Path+".", field)
+			if err := m.processStructField(crd, field.Path+".", field); err != nil {
+				return err
+			}
 		case "list":
-			m.processListField(crd, field.Path+".", field)
+			if err := m.processListField(crd, field.Path+".", field); err != nil {
+				return err
+			}
 		case "map":
-			m.processMapField(crd, field.Path+".", field)
+			if err := m.processMapField(crd, field.Path+".", field); err != nil {
+				return err
+			}
 		}
 	}
+	return nil
 }
 
 // processField adds a new Field definition for a field within the CR
@@ -898,22 +960,32 @@ func (m *Model) processField(
 	parentField *Field,
 	fieldName string,
 	fieldShapeRef *awssdkmodel.ShapeRef,
-) {
+) error {
 	fieldNames := names.New(fieldName)
 	fieldShape := fieldShapeRef.Shape
 	fieldShapeType := fieldShape.Type
 	fieldPath := parentFieldPath + fieldNames.Camel
 	fieldConfig := crd.Config().GetFieldConfigByPath(crd.Names.Original, fieldPath)
-	field := NewField(crd, fieldPath, fieldNames, fieldShapeRef, fieldConfig)
+	field, err := NewField(crd, fieldPath, fieldNames, fieldShapeRef, fieldConfig)
+	if err != nil {
+		return fmt.Errorf("resource %q, field %q: %w", crd.Names.Original, fieldPath, err)
+	}
 	switch fieldShapeType {
 	case "structure":
-		m.processStructField(crd, fieldPath+".", field)
+		if err := m.processStructField(crd, fieldPath+".", field); err != nil {
+			return err
+		}
 	case "list":
-		m.processListField(crd, fieldPath+".", field)
+		if err := m.processListField(crd, fieldPath+".", field); err != nil {
+			return err
+		}
 	case "map":
-		m.processMapField(crd, fieldPath+".", field)
+		if err := m.processMapField(crd, fieldPath+".", field); err != nil {
+			return err
+		}
 	}
 	crd.Fields[fieldPath] = field
+	return nil
 }
 
 // processStructField recurses through the members of a nested field that
@@ -922,11 +994,14 @@ func (m *Model) processStructField(
 	crd *CRD,
 	fieldPath string,
 	field *Field,
-) {
+) error {
 	fieldShape := field.ShapeRef.Shape
 	for memberName, memberRef := range fieldShape.MemberRefs {
-		m.processField(crd, fieldPath, field, memberName, memberRef)
+		if err := m.processField(crd, fieldPath, field, memberName, memberRef); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 // processListField recurses through the members of a nested field that
@@ -936,15 +1011,18 @@ func (m *Model) processListField(
 	crd *CRD,
 	fieldPath string,
 	field *Field,
-) {
+) error {
 	fieldShape := field.ShapeRef.Shape
 	elementFieldShape := fieldShape.MemberRef.Shape
 	if elementFieldShape.Type != "structure" {
-		return
+		return nil
 	}
 	for memberName, memberRef := range elementFieldShape.MemberRefs {
-		m.processField(crd, fieldPath, field, memberName, memberRef)
+		if err := m.processField(crd, fieldPath, field, memberName, memberRef); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 // processMapField recurses through the members of a nested field that
@@ -954,15 +1032,18 @@ func (m *Model) processMapField(
 	crd *CRD,
 	fieldPath string,
 	field *Field,
-) {
+) error {
 	fieldShape := field.ShapeRef.Shape
 	valueFieldShape := fieldShape.ValueRef.Shape
 	if valueFieldShape.Type != "structure" {
-		return
+		return nil
 	}
 	for memberName, memberRef := range valueFieldShape.MemberRefs {
-		m.processField(crd, fieldPath, field, memberName, memberRef)
+		if err := m.processField(crd, fieldPath, field, memberName, memberRef); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 // GetEnumDefs returns a slice of pointers to `EnumDef` structs which
@@ -995,9 +1076,9 @@ func (m *Model) GetEnumDefs() ([]*EnumDef, error) {
 
 // ApplyShapeIgnoreRules removes the ignored shapes and fields from the API object
 // so that they are not considered in any of the calculations of code generator.
-func (m *Model) ApplyShapeIgnoreRules() {
+func (m *Model) ApplyShapeIgnoreRules() error {
 	if m.cfg == nil || m.SDKAPI == nil {
-		return
+		return nil
 	}
 	for sdkShapeID, shape := range m.SDKAPI.API.Shapes {
 		for _, sn := range m.cfg.Ignore.ShapeNames {
@@ -1017,10 +1098,9 @@ func (m *Model) ApplyShapeIgnoreRules() {
 		fp := ackfp.FromString(fieldpath)
 		sn := fp.At(0)
 		if shape, found := m.SDKAPI.API.Shapes[sn]; !found {
-			msg := fmt.Sprintf(
-				"referred to unknown shape %s in config's Ignore.FieldPaths", sn,
+			return fmt.Errorf(
+				"ignore.field_paths refers to unknown shape %q — check generator.yaml", sn,
 			)
-			panic(msg)
 		} else {
 			// This is just some tomfoolery to make the Input and Output shapes
 			// into ShapeRefs because the SDKAPI.Shapes is a map of Shape
@@ -1038,6 +1118,7 @@ func (m *Model) ApplyShapeIgnoreRules() {
 			delete(parentShapeRef.Shape.MemberRefs, ignoreShape)
 		}
 	}
+	return nil
 }
 
 // GetConfig returns the configuration option used to define the current
@@ -1095,6 +1176,8 @@ func New(
 		cfg:                &cfg,
 		docCfg:             &docCfg,
 	}
-	m.ApplyShapeIgnoreRules()
+	if err := m.ApplyShapeIgnoreRules(); err != nil {
+		return nil, err
+	}
 	return m, nil
 }

@@ -150,7 +150,7 @@ func FindPrimaryIdentifierFieldNames(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,
 	op *awssdkmodel.Operation,
-) (crField string, shapeField string) {
+) (crField string, shapeField string, err error) {
 	shape := op.InputRef.Shape
 
 	if shapeField == "" {
@@ -165,10 +165,10 @@ func FindPrimaryIdentifierFieldNames(
 			case 1:
 				shapeField = identifiers[0]
 			default:
-				panic("Found multiple possible primary identifiers for " +
-					r.Names.Original + ". Set " +
-					"`is_primary_key` for the primary field in the " +
-					r.Names.Camel + " resource.")
+				return "", "", fmt.Errorf(
+					"resource %q: found multiple possible primary identifiers — set `is_primary_key` for the primary field",
+					r.Names.Original,
+				)
 			}
 		} else {
 			// For ReadMany, search for pluralized identifiers
@@ -177,20 +177,23 @@ func FindPrimaryIdentifierFieldNames(
 
 		// Require override if still can't find any identifiers
 		if shapeField == "" {
-			panic("Could not find primary identifier for " + r.Names.Original +
-				". Set `is_primary_key` for the primary field in the " +
-				r.Names.Camel + " resource.")
+			return "", "", fmt.Errorf(
+				"resource %q: could not find primary identifier — set `is_primary_key` for the primary field",
+				r.Names.Original,
+			)
 		}
 	}
 
 	if r.IsPrimaryARNField(shapeField) {
-		return "", PrimaryIdentifierARNOverride
+		return "", PrimaryIdentifierARNOverride, nil
 	}
 
 	if crField == "" {
 		if inSpec, inStat := r.HasMember(shapeField, op.ExportedName); !inSpec && !inStat {
-			panic("Could not find corresponding spec or status field " +
-				"for primary identifier " + shapeField)
+			return "", "", fmt.Errorf(
+				"resource %q: could not find corresponding spec or status field for primary identifier %q",
+				r.Names.Original, shapeField,
+			)
 		}
 		// Fetch field name from config to apply renames, if applicable
 		crField = cfg.GetResourceFieldName(
@@ -199,7 +202,7 @@ func FindPrimaryIdentifierFieldNames(
 			shapeField,
 		)
 	}
-	return crField, shapeField
+	return crField, shapeField, nil
 }
 
 // GetMemberIndex returns the index of memberName by iterating over

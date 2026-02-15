@@ -108,10 +108,9 @@ func TestSetResource_APIGWv2_Route_Create(t *testing.T) {
 		ko.Spec.Target = nil
 	}
 `
-	assert.Equal(
-		expected,
-		code.SetResource(crd.Config(), crd, model.OpTypeCreate, "resp", "ko", 1),
-	)
+	got, err := code.SetResource(crd.Config(), crd, model.OpTypeCreate, "resp", "ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestSetResource_APIGWv2_Route_ReadOne(t *testing.T) {
@@ -198,10 +197,23 @@ func TestSetResource_APIGWv2_Route_ReadOne(t *testing.T) {
 		ko.Spec.Target = nil
 	}
 `
-	assert.Equal(
-		expected,
-		code.SetResource(crd.Config(), crd, model.OpTypeGet, "resp", "ko", 1),
-	)
+	got, err := code.SetResource(crd.Config(), crd, model.OpTypeGet, "resp", "ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
+}
+
+func TestSetResourceGetAttributes_ResourceWithoutAttributesMap(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "s3")
+	crd := testutil.GetCRDByName(t, g, "Bucket")
+	require.NotNil(crd)
+
+	got, err := code.SetResourceGetAttributes(crd.Config(), crd, "resp", "ko", 1)
+	require.Error(err)
+	assert.Contains(err.Error(), "doesn't unpack attributes map")
+	assert.Equal("", got)
 }
 
 func TestSetResource_SageMaker_Domain_ReadOne(t *testing.T) {
@@ -592,10 +604,9 @@ func TestSetResource_SageMaker_Domain_ReadOne(t *testing.T) {
 		ko.Spec.VPCID = nil
 	}
 `
-	assert.Equal(
-		expected,
-		code.SetResource(crd.Config(), crd, model.OpTypeGet, "resp", "ko", 1),
-	)
+	got, err := code.SetResource(crd.Config(), crd, model.OpTypeGet, "resp", "ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestSetResource_DynamoDB_Backup_ReadOne(t *testing.T) {
@@ -646,10 +657,9 @@ func TestSetResource_DynamoDB_Backup_ReadOne(t *testing.T) {
 		ko.Status.BackupType = nil
 	}
 `
-	assert.Equal(
-		expected,
-		code.SetResource(crd.Config(), crd, model.OpTypeGet, "resp", "ko", 1),
-	)
+	got, err := code.SetResource(crd.Config(), crd, model.OpTypeGet, "resp", "ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestSetResource_CodeDeploy_Deployment_Create(t *testing.T) {
@@ -672,10 +682,9 @@ func TestSetResource_CodeDeploy_Deployment_Create(t *testing.T) {
 		ko.Status.DeploymentID = nil
 	}
 `
-	assert.Equal(
-		expected,
-		code.SetResource(crd.Config(), crd, model.OpTypeCreate, "resp", "ko", 1),
-	)
+	got, err := code.SetResource(crd.Config(), crd, model.OpTypeCreate, "resp", "ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestSetResource_DynamoDB_Table_ReadOne(t *testing.T) {
@@ -1008,10 +1017,9 @@ func TestSetResource_DynamoDB_Table_ReadOne(t *testing.T) {
 		ko.Status.TableStatus = nil
 	}
 `
-	assert.Equal(
-		expected,
-		code.SetResource(crd.Config(), crd, model.OpTypeGet, "resp", "ko", 1),
-	)
+	got, err := code.SetResource(crd.Config(), crd, model.OpTypeGet, "resp", "ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestSetResource_EC2_LaunchTemplate_Create(t *testing.T) {
@@ -1074,10 +1082,9 @@ func TestSetResource_EC2_LaunchTemplate_Create(t *testing.T) {
 		ko.Status.Tags = nil
 	}
 `
-	assert.Equal(
-		expected,
-		code.SetResource(crd.Config(), crd, model.OpTypeCreate, "resp", "ko", 1),
-	)
+	got, err := code.SetResource(crd.Config(), crd, model.OpTypeCreate, "resp", "ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestSetResource_ECR_Repository_Create(t *testing.T) {
@@ -1133,10 +1140,9 @@ func TestSetResource_ECR_Repository_Create(t *testing.T) {
 		ko.Status.RepositoryURI = nil
 	}
 `
-	assert.Equal(
-		expected,
-		code.SetResource(crd.Config(), crd, model.OpTypeCreate, "resp", "ko", 1),
-	)
+	got, err := code.SetResource(crd.Config(), crd, model.OpTypeCreate, "resp", "ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestSetResource_ECR_Repository_ReadMany(t *testing.T) {
@@ -1207,10 +1213,9 @@ func TestSetResource_ECR_Repository_ReadMany(t *testing.T) {
 		return nil, ackerr.NotFound
 	}
 `
-	assert.Equal(
-		expected,
-		code.SetResource(crd.Config(), crd, model.OpTypeList, "resp", "ko", 1),
-	)
+	got, err := code.SetResource(crd.Config(), crd, model.OpTypeList, "resp", "ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestSetResource_SNS_Topic_Create(t *testing.T) {
@@ -1237,10 +1242,9 @@ func TestSetResource_SNS_Topic_Create(t *testing.T) {
 		ko.Status.ACKResourceMetadata.ARN = &arn
 	}
 `
-	assert.Equal(
-		expected,
-		code.SetResource(crd.Config(), crd, model.OpTypeCreate, "resp", "ko", 1),
-	)
+	got, err := code.SetResource(crd.Config(), crd, model.OpTypeCreate, "resp", "ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestSetResource_SNS_Topic_GetAttributes(t *testing.T) {
@@ -1296,10 +1300,9 @@ func TestSetResource_SNS_Topic_GetAttributes(t *testing.T) {
 	tmpARN := ackv1alpha1.AWSResourceName(resp.Attributes["TopicArn"])
 	ko.Status.ACKResourceMetadata.ARN = &tmpARN
 `
-	assert.Equal(
-		expected,
-		code.SetResourceGetAttributes(crd.Config(), crd, "resp", "ko", 1),
-	)
+	got, err := code.SetResourceGetAttributes(crd.Config(), crd, "resp", "ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestSetResource_SQS_Queue_Create(t *testing.T) {
@@ -1320,10 +1323,9 @@ func TestSetResource_SQS_Queue_Create(t *testing.T) {
 		ko.Status.QueueURL = nil
 	}
 `
-	assert.Equal(
-		expected,
-		code.SetResource(crd.Config(), crd, model.OpTypeCreate, "resp", "ko", 1),
-	)
+	got, err := code.SetResource(crd.Config(), crd, model.OpTypeCreate, "resp", "ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestSetResource_SQS_Queue_GetAttributes(t *testing.T) {
@@ -1419,10 +1421,9 @@ func TestSetResource_SQS_Queue_GetAttributes(t *testing.T) {
 		ko.Spec.VisibilityTimeout = nil
 	}
 `
-	assert.Equal(
-		expected,
-		code.SetResourceGetAttributes(crd.Config(), crd, "resp", "ko", 1),
-	)
+	got, err := code.SetResourceGetAttributes(crd.Config(), crd, "resp", "ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestSetResource_RDS_DBSubnetGroup_ReadMany(t *testing.T) {
@@ -1510,10 +1511,9 @@ func TestSetResource_RDS_DBSubnetGroup_ReadMany(t *testing.T) {
 		return nil, ackerr.NotFound
 	}
 `
-	assert.Equal(
-		expected,
-		code.SetResource(crd.Config(), crd, model.OpTypeList, "resp", "ko", 1),
-	)
+	got, err := code.SetResource(crd.Config(), crd, model.OpTypeList, "resp", "ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestGetOutputShape_VPC_No_Override(t *testing.T) {
@@ -1578,10 +1578,9 @@ func TestSetResource_MQ_Broker_SetResourceIdentifiers(t *testing.T) {
 	r.ko.Status.BrokerID = &identifier.NameOrID
 
 `
-	assert.Equal(
-		expected,
-		code.SetResourceIdentifiers(crd.Config(), crd, "identifier", "r.ko", 1),
-	)
+	got, err := code.SetResourceIdentifiers(crd.Config(), crd, "identifier", "r.ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestSetResource_RDS_DBInstances_SetResourceIdentifiers(t *testing.T) {
@@ -1600,10 +1599,9 @@ func TestSetResource_RDS_DBInstances_SetResourceIdentifiers(t *testing.T) {
 	r.ko.Spec.DBInstanceIdentifier = &identifier.NameOrID
 
 `
-	assert.Equal(
-		expected,
-		code.SetResourceIdentifiers(crd.Config(), crd, "identifier", "r.ko", 1),
-	)
+	got, err := code.SetResourceIdentifiers(crd.Config(), crd, "identifier", "r.ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestSetResource_SNS_Topics_SetResourceIdentifiers(t *testing.T) {
@@ -1621,10 +1619,9 @@ func TestSetResource_SNS_Topics_SetResourceIdentifiers(t *testing.T) {
 	}
 	r.ko.Status.ACKResourceMetadata.ARN = identifier.ARN
 `
-	assert.Equal(
-		expected,
-		code.SetResourceIdentifiers(crd.Config(), crd, "identifier", "r.ko", 1),
-	)
+	got, err := code.SetResourceIdentifiers(crd.Config(), crd, "identifier", "r.ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestSetResource_SQS_Queues_SetResourceIdentifiers(t *testing.T) {
@@ -1643,10 +1640,9 @@ func TestSetResource_SQS_Queues_SetResourceIdentifiers(t *testing.T) {
 	r.ko.Status.QueueURL = &identifier.NameOrID
 
 `
-	assert.Equal(
-		expected,
-		code.SetResourceIdentifiers(crd.Config(), crd, "identifier", "r.ko", 1),
-	)
+	got, err := code.SetResourceIdentifiers(crd.Config(), crd, "identifier", "r.ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestSetResource_RDS_DBSubnetGroup_SetResourceIdentifiers(t *testing.T) {
@@ -1667,10 +1663,9 @@ func TestSetResource_RDS_DBSubnetGroup_SetResourceIdentifiers(t *testing.T) {
 	r.ko.Spec.Name = &identifier.NameOrID
 
 `
-	assert.Equal(
-		expected,
-		code.SetResourceIdentifiers(crd.Config(), crd, "identifier", "r.ko", 1),
-	)
+	got, err := code.SetResourceIdentifiers(crd.Config(), crd, "identifier", "r.ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestSetResource_APIGWV2_ApiMapping_SetResourceIdentifiers(t *testing.T) {
@@ -1693,10 +1688,9 @@ func TestSetResource_APIGWV2_ApiMapping_SetResourceIdentifiers(t *testing.T) {
 		r.ko.Spec.DomainName = aws.String(f1)
 	}
 `
-	assert.Equal(
-		expected,
-		code.SetResourceIdentifiers(crd.Config(), crd, "identifier", "r.ko", 1),
-	)
+	got, err := code.SetResourceIdentifiers(crd.Config(), crd, "identifier", "r.ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestSetResource_SageMaker_ModelPackage_SetResourceIdentifiers(t *testing.T) {
@@ -1714,10 +1708,9 @@ func TestSetResource_SageMaker_ModelPackage_SetResourceIdentifiers(t *testing.T)
 	}
 	r.ko.Status.ACKResourceMetadata.ARN = identifier.ARN
 `
-	assert.Equal(
-		expected,
-		code.SetResourceIdentifiers(crd.Config(), crd, "identifier", "r.ko", 1),
-	)
+	got, err := code.SetResourceIdentifiers(crd.Config(), crd, "identifier", "r.ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestSetResource_EC2_VPC_SetResourceIdentifiers(t *testing.T) {
@@ -1736,10 +1729,9 @@ func TestSetResource_EC2_VPC_SetResourceIdentifiers(t *testing.T) {
 	r.ko.Status.VPCID = &identifier.NameOrID
 
 `
-	assert.Equal(
-		expected,
-		code.SetResourceIdentifiers(crd.Config(), crd, "identifier", "r.ko", 1),
-	)
+	got, err := code.SetResourceIdentifiers(crd.Config(), crd, "identifier", "r.ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestSetResource_EC2_SecurityGroups_SetResourceIdentifiers(t *testing.T) {
@@ -1783,10 +1775,9 @@ func TestSetResource_EC2_SecurityGroups_SetResourceIdentifiers(t *testing.T) {
 		ko.Status.Tags = nil
 	}
 `
-	assert.Equal(
-		expected,
-		code.SetResource(crd.Config(), crd, model.OpTypeCreate, "resp", "ko", 1),
-	)
+	got, err := code.SetResource(crd.Config(), crd, model.OpTypeCreate, "resp", "ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestSetResource_EKS_Cluster_PopulateResourceFromAnnotation(t *testing.T) {
@@ -1806,10 +1797,9 @@ func TestSetResource_EKS_Cluster_PopulateResourceFromAnnotation(t *testing.T) {
 	r.ko.Spec.Name = &f0
 
 `
-	assert.Equal(
-		expected,
-		code.PopulateResourceFromAnnotation(crd.Config(), crd, "fields", "r.ko", 1),
-	)
+	got, err := code.PopulateResourceFromAnnotation(crd.Config(), crd, "fields", "r.ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestSetResource_OpensearchServerless_SecurityPolicy_PopulateResourceFromAnnotation(t *testing.T) {
@@ -1834,10 +1824,9 @@ func TestSetResource_OpensearchServerless_SecurityPolicy_PopulateResourceFromAnn
 	r.ko.Spec.Type = &f1
 
 `
-	assert.Equal(
-		expected,
-		code.PopulateResourceFromAnnotation(crd.Config(), crd, "fields", "r.ko", 1),
-	)
+	got, err := code.PopulateResourceFromAnnotation(crd.Config(), crd, "fields", "r.ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestSetResource_SageMaker_ModelPackage_PopulateResourceFromAnnotation(t *testing.T) {
@@ -1861,10 +1850,9 @@ func TestSetResource_SageMaker_ModelPackage_PopulateResourceFromAnnotation(t *te
 	arn := ackv1alpha1.AWSResourceName(resourceARN)
 	r.ko.Status.ACKResourceMetadata.ARN = &arn
 `
-	assert.Equal(
-		expected,
-		code.PopulateResourceFromAnnotation(crd.Config(), crd, "identifier", "r.ko", 1),
-	)
+	got, err := code.PopulateResourceFromAnnotation(crd.Config(), crd, "identifier", "r.ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestSetResource_APIGWV2_ApiMapping_PopulateResourceFromAnnotation(t *testing.T) {
@@ -1889,10 +1877,9 @@ func TestSetResource_APIGWV2_ApiMapping_PopulateResourceFromAnnotation(t *testin
 	r.ko.Spec.DomainName = &f1
 
 `
-	assert.Equal(
-		expected,
-		code.PopulateResourceFromAnnotation(crd.Config(), crd, "fields", "r.ko", 1),
-	)
+	got, err := code.PopulateResourceFromAnnotation(crd.Config(), crd, "fields", "r.ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestSetResource_IAM_Role_NestedSetConfig(t *testing.T) {
@@ -1987,10 +1974,9 @@ func TestSetResource_IAM_Role_NestedSetConfig(t *testing.T) {
 		ko.Spec.Tags = nil
 	}
 `
-	assert.Equal(
-		expected,
-		code.SetResource(crd.Config(), crd, model.OpTypeGet, "resp", "ko", 1),
-	)
+	got, err := code.SetResource(crd.Config(), crd, model.OpTypeGet, "resp", "ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestSetResource_EC2_DHCPOptions_NestedSetConfig(t *testing.T) {
@@ -2059,10 +2045,9 @@ func TestSetResource_EC2_DHCPOptions_NestedSetConfig(t *testing.T) {
 		ko.Status.Tags = nil
 	}
 `
-	assert.Equal(
-		expected,
-		code.SetResource(crd.Config(), crd, model.OpTypeCreate, "resp", "ko", 1),
-	)
+	got, err := code.SetResource(crd.Config(), crd, model.OpTypeCreate, "resp", "ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestSetResource_EC2_Instance_Create(t *testing.T) {
@@ -2587,10 +2572,9 @@ func TestSetResource_EC2_Instance_Create(t *testing.T) {
 		return nil, ackerr.NotFound
 	}
 `
-	assert.Equal(
-		expected,
-		code.SetResource(crd.Config(), crd, op, "resp", "ko", 1),
-	)
+	got, err := code.SetResource(crd.Config(), crd, op, "resp", "ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestSetResource_EC2_Instance_ReadMany(t *testing.T) {
@@ -3118,10 +3102,9 @@ func TestSetResource_EC2_Instance_ReadMany(t *testing.T) {
 		return nil, ackerr.NotFound
 	}
 `
-	assert.Equal(
-		expected,
-		code.SetResource(crd.Config(), crd, op, "resp", "ko", 1),
-	)
+	got, err := code.SetResource(crd.Config(), crd, op, "resp", "ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
@@ -5045,10 +5028,9 @@ func TestSetResource_WAFv2_RuleGroup_ReadOne(t *testing.T) {
 		ko.Spec.VisibilityConfig = nil
 	}
 `
-	assert.Equal(
-		expected,
-		code.SetResource(crd.Config(), crd, op, "resp", "ko", 1),
-	)
+	got, err := code.SetResource(crd.Config(), crd, op, "resp", "ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestSetResource_MQ_OnlySetUnchangedFields_Update(t *testing.T) {
@@ -5189,7 +5171,8 @@ func TestSetResource_MQ_OnlySetUnchangedFields_Update(t *testing.T) {
 		}
 	}
 `
-	actual := code.SetResource(crd.Config(), crd, op, "resp", "ko", 1)
+	actual, err := code.SetResource(crd.Config(), crd, op, "resp", "ko", 1)
+	require.NoError(err)
 
 	assert.Equal(
 		expected,
@@ -5446,7 +5429,8 @@ func TestSetResource_ELBv2_IgnoreSetFrom(t *testing.T) {
 		return nil, ackerr.NotFound
 	}
 `
-	actual := code.SetResource(crd.Config(), crd, op, "resp", "ko", 1)
+	actual, err := code.SetResource(crd.Config(), crd, op, "resp", "ko", 1)
+	require.NoError(err)
 
 	assert.Equal(
 		expected,
