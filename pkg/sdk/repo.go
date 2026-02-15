@@ -105,6 +105,7 @@ func EnsureRepo(
 	awsSDKGoVersion string,
 	controllerRepoPath string,
 ) (string, error) {
+	totalStart := time.Now()
 	var err error
 	srcPath := filepath.Join(cacheDir, "src")
 	if err = os.MkdirAll(srcPath, os.ModePerm); err != nil {
@@ -114,6 +115,7 @@ func EnsureRepo(
 	// Clone repository if it doesn't exist
 	sdkDir := filepath.Join(srcPath, "aws-sdk-go-v2")
 	if _, err = os.Stat(sdkDir); os.IsNotExist(err) {
+		cloneStart := time.Now()
 		ctx, cancel := context.WithTimeout(ctx, defaultGitCloneTimeout)
 		defer cancel()
 		err = util.CloneRepository(ctx, sdkDir, sdkRepoURLV2)
@@ -125,38 +127,39 @@ func EnsureRepo(
 			}
 			return "", fmt.Errorf("cannot clone repository: %v", err)
 		}
+		util.Tracef("git clone: %s\n", time.Since(cloneStart))
+	} else {
+		util.Tracef("git clone: skipped (cached)\n")
 	}
 
-	// Fetch all tags
-	if fetchTags {
-		ctx, cancel := context.WithTimeout(ctx, defaultGitFetchTimeout)
-		defer cancel()
-		err = util.FetchRepositoryTags(ctx, sdkDir)
-		if err != nil {
-			return "", fmt.Errorf("cannot fetch tags: %v", err)
-		}
-
-	}
-
-	// get sdkVersion and ensure it prefix
-	// TODO(a-hilaly) Parse `ack-generate-metadata.yaml` and pass the aws-sdk-go
-	// version here.
+	// Resolve the SDK version before fetching so we only fetch the tag we need
 	sdkVersion, err := getSDKVersion(awsSDKGoVersion, "", controllerRepoPath)
 	if err != nil {
 		return "", err
 	}
 	sdkVersion = ensureSemverPrefix(sdkVersion)
 
-	repo, err := util.LoadRepository(sdkDir)
-	if err != nil {
-		return "", fmt.Errorf("cannot read local repository: %v", err)
+	// Fetch the tag only if it doesn't already exist locally
+	if fetchTags && !util.HasTag(sdkDir, sdkVersion) {
+		fetchStart := time.Now()
+		ctx, cancel := context.WithTimeout(ctx, defaultGitFetchTimeout)
+		defer cancel()
+		err = util.FetchRepositoryTag(ctx, sdkDir, sdkVersion)
+		if err != nil {
+			return "", fmt.Errorf("cannot fetch tag %s: %v", sdkVersion, err)
+		}
+		util.Tracef("git fetch tag %s: %s\n", sdkVersion, time.Since(fetchStart))
+	} else if fetchTags {
+		util.Tracef("git fetch: skipped (tag %s exists locally)\n", sdkVersion)
 	}
 
-	// Now checkout the local repository.
-	err = util.CheckoutRepositoryTag(repo, sdkVersion)
+	checkoutStart := time.Now()
+	err = util.CheckoutRepositoryTag(sdkDir, sdkVersion)
 	if err != nil {
 		return "", fmt.Errorf("cannot checkout tag: %v", err)
 	}
+	util.Tracef("git checkout (%s): %s\n", sdkVersion, time.Since(checkoutStart))
+	util.Tracef("EnsureRepo total: %s\n", time.Since(totalStart))
 	return sdkDir, nil
 }
 

@@ -17,9 +17,11 @@ import (
 	"path/filepath"
 	"strings"
 	ttpl "text/template"
+	"time"
 
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate/templateset"
 	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
+	"github.com/aws-controllers-k8s/code-generator/pkg/util"
 	"github.com/iancoleman/strcase"
 )
 
@@ -47,19 +49,30 @@ func APIs(
 	m *ackmodel.Model,
 	templateBasePaths []string,
 ) (*templateset.TemplateSet, error) {
+	totalStart := time.Now()
+
+	enumStart := time.Now()
 	enumDefs, err := m.GetEnumDefs()
 	if err != nil {
 		return nil, err
 	}
+	util.Tracef("GetEnumDefs (%d enums): %s\n", len(enumDefs), time.Since(enumStart))
+
+	typeStart := time.Now()
 	typeDefs, err := m.GetTypeDefs()
 	if err != nil {
 		return nil, err
 	}
+	util.Tracef("GetTypeDefs (%d types): %s\n", len(typeDefs), time.Since(typeStart))
+
+	crdStart := time.Now()
 	crds, err := m.GetCRDs()
 	if err != nil {
 		return nil, err
 	}
+	util.Tracef("GetCRDs (%d CRDs): %s\n", len(crds), time.Since(crdStart))
 
+	tplStart := time.Now()
 	ts := templateset.New(
 		templateBasePaths,
 		apisIncludePaths,
@@ -91,6 +104,8 @@ func APIs(
 			return nil, err
 		}
 	}
+	util.Tracef("template setup: %s\n", time.Since(tplStart))
+	util.Tracef("APIs() total: %s\n", time.Since(totalStart))
 	return ts, nil
 }
 

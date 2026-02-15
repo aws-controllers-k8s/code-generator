@@ -18,8 +18,6 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/go-git/go-git/v5"
-
 	"github.com/aws-controllers-k8s/code-generator/pkg/apiv2"
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
@@ -49,7 +47,6 @@ type Helper struct {
 	// Default is "services.k8s.aws"
 	APIGroupSuffix string
 	cfg            ackgenconfig.Config
-	gitRepository  *git.Repository
 	basePath       string
 	loader         *awssdkmodel.Loader
 	// Default is set by `FirstAPIVersion`
@@ -71,15 +68,7 @@ func NewHelper(basePath string, cfg ackgenconfig.Config) *Helper {
 // WithSDKVersion checks out the sdk git repository to the provided version. To use
 // this function h.basePath should point to a git repository.
 func (h *Helper) WithSDKVersion(version string) error {
-	if h.gitRepository == nil {
-		gitRepository, err := util.LoadRepository(h.basePath)
-		if err != nil {
-			return fmt.Errorf("error loading repository from %s: %v", h.basePath, err)
-		}
-		h.gitRepository = gitRepository
-	}
-
-	err := util.CheckoutRepositoryTag(h.gitRepository, version)
+	err := util.CheckoutRepositoryTag(h.basePath, version)
 	if err != nil {
 		return fmt.Errorf("cannot checkout tag %s: %v", version, err)
 	}

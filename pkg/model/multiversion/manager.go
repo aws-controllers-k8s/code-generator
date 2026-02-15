@@ -18,13 +18,10 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/go-git/go-git/v5"
-
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/config"
 	ackmetadata "github.com/aws-controllers-k8s/code-generator/pkg/metadata"
 	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
 	acksdk "github.com/aws-controllers-k8s/code-generator/pkg/sdk"
-	"github.com/aws-controllers-k8s/code-generator/pkg/util"
 )
 
 var (
@@ -37,7 +34,6 @@ var (
 // of each non-deprecated version with their corresponding ackmodel.Model
 // and APIInfos.
 type APIVersionManager struct {
-	gitRepo  *git.Repository
 	metadata *ackmetadata.ServiceMetadata
 
 	hubVersion    string
@@ -66,11 +62,6 @@ func NewAPIVersionManager(
 	}
 
 	spokeVersions := []string{}
-
-	gitRepo, err := util.LoadRepository(sdkCacheDir)
-	if err != nil {
-		return nil, fmt.Errorf("cannot read sdk git repository: %v", err)
-	}
 
 	// create model for each non-deprecated api version
 	models := map[string]*ackmodel.Model{}
@@ -124,7 +115,6 @@ func NewAPIVersionManager(
 
 	sort.Strings(spokeVersions)
 	model := &APIVersionManager{
-		gitRepo:       gitRepo,
 		metadata:      metadata,
 		hubVersion:    hubVersion,
 		spokeVersions: spokeVersions,
