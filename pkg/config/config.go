@@ -16,7 +16,7 @@ package config
 import (
 	"io/ioutil"
 
-	"github.com/ghodss/yaml"
+	"sigs.k8s.io/yaml"
 )
 
 // Config represents instructions to the ACK code generator for a particular
@@ -194,7 +194,7 @@ func New(
 		return Config{}, err
 	}
 	gc := defaultConfig
-	if err = yaml.Unmarshal(content, &gc); err != nil {
+	if err = yaml.UnmarshalStrict(content, &gc); err != nil {
 		return Config{}, err
 	}
 	return gc, nil

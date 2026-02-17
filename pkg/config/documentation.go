@@ -3,7 +3,7 @@ package config
 import (
 	"io/ioutil"
 
-	"github.com/ghodss/yaml"
+	"sigs.k8s.io/yaml"
 )
 
 // DocumentationConfig represents the configuration of the documentation file,
@@ -44,7 +44,7 @@ func NewDocumentationConfig(
 		return DocumentationConfig{}, err
 	}
 	gc := DocumentationConfig{}
-	if err = yaml.Unmarshal(content, &gc); err != nil {
+	if err = yaml.UnmarshalStrict(content, &gc); err != nil {
 		return DocumentationConfig{}, err
 	}
 	return gc, nil

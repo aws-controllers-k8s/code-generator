@@ -1,4 +1,5 @@
-model_name: firehose
+sdk_names:
+  model_name: firehose
 ignore:
   resource_names:
      # - DeliveryStream

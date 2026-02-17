@@ -1,5 +1,5 @@
 ignore:
-  resources:
+  resource_names:
     - Configuration
     - User
   field_paths:
