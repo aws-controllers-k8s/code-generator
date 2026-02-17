@@ -2225,7 +2225,7 @@ func setResourceForScalar(
 	setTo := sourceVar
 	shape := shapeRef.Shape
 	if shape.Type == "timestamp" {
-		setTo = "&metav1.Time{*" + sourceVar + "}"
+		setTo = "&metav1.Time{Time: *" + sourceVar + "}"
 	}
 
 	targetVar = strings.TrimPrefix(targetVar, ".")
