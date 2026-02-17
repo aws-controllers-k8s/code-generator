@@ -62,6 +62,7 @@ func TestMQ_GetOutputShapeGoType(t *testing.T) {
 	require.NotNil(crd)
 
 	exp := "*svcsdk.CreateBrokerOutput"
-	otype := crd.GetOutputShapeGoType(crd.Ops.Create)
+	otype, err := crd.GetOutputShapeGoType(crd.Ops.Create)
+	require.NoError(err)
 	assert.Equal(exp, otype)
 }

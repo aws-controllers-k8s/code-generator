@@ -247,7 +247,9 @@ func TestGetReferenceFieldName(t *testing.T) {
 		f := model.Field{}
 		f.ShapeRef = tc.shapeRef
 		f.Names = names.New(tc.fieldName)
-		referenceFieldName := f.GetReferenceFieldName().Camel
+		refNames, err := f.GetReferenceFieldName()
+		assert.NoError(err)
+		referenceFieldName := refNames.Camel
 		msg := fmt.Sprintf("for %s, expected reference field name of %s but got %s",
 			tc.fieldName, tc.expectedReferenceFieldName, referenceFieldName)
 		assert.Equal(tc.expectedReferenceFieldName, referenceFieldName, msg)
@@ -314,12 +316,16 @@ func TestReferenceFieldPath(t *testing.T) {
 	//Non nested fieldPath
 	field.Path = "MyField"
 	field.Names = names.New("MyField")
-	assert.Equal("MyFieldRef", field.ReferenceFieldPath())
+	refPath, err := field.ReferenceFieldPath()
+	assert.NoError(err)
+	assert.Equal("MyFieldRef", refPath)
 
 	// Nested fieldPath
 	field.Path = "subPathA.subPathB.MyField"
 	field.Names = names.New("MyField")
-	assert.Equal("subPathA.subPathB.MyFieldRef", field.ReferenceFieldPath())
+	refPath, err = field.ReferenceFieldPath()
+	assert.NoError(err)
+	assert.Equal("subPathA.subPathB.MyFieldRef", refPath)
 }
 
 func TestFieldPathWithUnderscore(t *testing.T) {

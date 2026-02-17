@@ -79,10 +79,9 @@ func TestSetSDK_APIGWv2_Route_Create(t *testing.T) {
 		res.Target = r.ko.Spec.Target
 	}
 `
-	assert.Equal(
-		expected,
-		code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1),
-	)
+	got, err := code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestSetSDK_MemoryDB_User_Create(t *testing.T) {
@@ -140,10 +139,9 @@ func TestSetSDK_MemoryDB_User_Create(t *testing.T) {
 		res.UserName = r.ko.Spec.Name
 	}
 `
-	assert.Equal(
-		expected,
-		code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1),
-	)
+	got, err := code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestSetSDK_OpenSearch_Domain_Create(t *testing.T) {
@@ -567,10 +565,9 @@ func TestSetSDK_OpenSearch_Domain_Create(t *testing.T) {
 		res.VPCOptions = f19
 	}
 `
-	assert.Equal(
-		expected,
-		code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1),
-	)
+	got, err := code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestSetSDK_DynamoDB_Table_Create(t *testing.T) {
@@ -774,10 +771,9 @@ func TestSetSDK_DynamoDB_Table_Create(t *testing.T) {
 		res.WarmThroughput = f14
 	}
 `
-	assert.Equal(
-		expected,
-		code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1),
-	)
+	got, err := code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestSetSDK_ECR_Repository_Create(t *testing.T) {
@@ -825,10 +821,9 @@ func TestSetSDK_ECR_Repository_Create(t *testing.T) {
 		res.Tags = f4
 	}
 `
-	assert.Equal(
-		expected,
-		code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1),
-	)
+	got, err := code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 // func TestSetSDK_Elasticache_ReplicationGroup_Create(t *testing.T) {
@@ -1366,10 +1361,9 @@ func TestSetSDK_MQ_Broker_newUpdateRequest_OmitUnchangedValues(t *testing.T) {
 		}
 	}
 `
-	assert.Equal(
-		expected,
-		code.SetSDK(crd.Config(), crd, model.OpTypeUpdate, "r.ko", "res", 1),
-	)
+	got, err := code.SetSDK(crd.Config(), crd, model.OpTypeUpdate, "r.ko", "res", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestSetSDK_RDS_DBInstance_Create(t *testing.T) {
@@ -1630,10 +1624,9 @@ func TestSetSDK_RDS_DBInstance_Create(t *testing.T) {
 		res.VpcSecurityGroupIds = aws.ToStringSlice(r.ko.Spec.VPCSecurityGroupIDs)
 	}
 `
-	assert.Equal(
-		expected,
-		code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1),
-	)
+	got, err := code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestSetSDK_RDS_DBInstance_Update(t *testing.T) {
@@ -1939,10 +1932,9 @@ func TestSetSDK_RDS_DBInstance_Update(t *testing.T) {
 		}
 	}
 `
-	assert.Equal(
-		expected,
-		code.SetSDK(crd.Config(), crd, model.OpTypeUpdate, "r.ko", "res", 1),
-	)
+	got, err := code.SetSDK(crd.Config(), crd, model.OpTypeUpdate, "r.ko", "res", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestSetSDK_S3_Bucket_Create(t *testing.T) {
@@ -1987,10 +1979,9 @@ func TestSetSDK_S3_Bucket_Create(t *testing.T) {
 		res.ObjectLockEnabledForBucket = r.ko.Spec.ObjectLockEnabledForBucket
 	}
 `
-	assert.Equal(
-		expected,
-		code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1),
-	)
+	got, err := code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestSetSDK_S3_Bucket_Delete(t *testing.T) {
@@ -2007,10 +1998,9 @@ func TestSetSDK_S3_Bucket_Delete(t *testing.T) {
 		res.Bucket = r.ko.Spec.Name
 	}
 `
-	assert.Equal(
-		expected,
-		code.SetSDK(crd.Config(), crd, model.OpTypeDelete, "r.ko", "res", 1),
-	)
+	got, err := code.SetSDK(crd.Config(), crd, model.OpTypeDelete, "r.ko", "res", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestSetSDK_SNS_Topic_Create(t *testing.T) {
@@ -2061,10 +2051,9 @@ func TestSetSDK_SNS_Topic_Create(t *testing.T) {
 		res.Tags = f2
 	}
 `
-	assert.Equal(
-		expected,
-		code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1),
-	)
+	got, err := code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestSetSDK_SNS_Topic_GetAttributes(t *testing.T) {
@@ -2087,10 +2076,9 @@ func TestSetSDK_SNS_Topic_GetAttributes(t *testing.T) {
 		res.TopicArn = aws.String(rm.ARNFromName(*r.ko.Spec.Name))
 	}
 `
-	assert.Equal(
-		expected,
-		code.SetSDKGetAttributes(crd.Config(), crd, "r.ko", "res", 1),
-	)
+	got, err := code.SetSDKGetAttributes(crd.Config(), crd, "r.ko", "res", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestSetSDK_SQS_Queue_Create(t *testing.T) {
@@ -2150,10 +2138,9 @@ func TestSetSDK_SQS_Queue_Create(t *testing.T) {
 		res.Tags = aws.ToStringMap(r.ko.Spec.Tags)
 	}
 `
-	assert.Equal(
-		expected,
-		code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1),
-	)
+	got, err := code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestSetSDK_SQS_Queue_GetAttributes(t *testing.T) {
@@ -2180,10 +2167,9 @@ func TestSetSDK_SQS_Queue_GetAttributes(t *testing.T) {
 		res.QueueUrl = r.ko.Status.QueueURL
 	}
 `
-	assert.Equal(
-		expected,
-		code.SetSDKGetAttributes(crd.Config(), crd, "r.ko", "res", 1),
-	)
+	got, err := code.SetSDKGetAttributes(crd.Config(), crd, "r.ko", "res", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestSetSDK_MQ_Broker_Create(t *testing.T) {
@@ -2347,10 +2333,9 @@ func TestSetSDK_MQ_Broker_Create(t *testing.T) {
 		res.Users = f18
 	}
 `
-	assert.Equal(
-		expected,
-		code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1),
-	)
+	got, err := code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestSetSDK_EC2_VPC_ReadMany(t *testing.T) {
@@ -2369,10 +2354,9 @@ func TestSetSDK_EC2_VPC_ReadMany(t *testing.T) {
 		res.VpcIds = f4
 	}
 `
-	assert.Equal(
-		expected,
-		code.SetSDK(crd.Config(), crd, model.OpTypeList, "r.ko", "res", 1),
-	)
+	got, err := code.SetSDK(crd.Config(), crd, model.OpTypeList, "r.ko", "res", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func Test_SetSDK_ECR_Repository_newListRequestPayload(t *testing.T) {
@@ -2396,10 +2380,9 @@ func Test_SetSDK_ECR_Repository_newListRequestPayload(t *testing.T) {
 		res.RepositoryNames = f3
 	}
 `
-	assert.Equal(
-		expected,
-		code.SetSDK(crd.Config(), crd, model.OpTypeList, "r.ko", "res", 1),
-	)
+	got, err := code.SetSDK(crd.Config(), crd, model.OpTypeList, "r.ko", "res", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestSetSDK_IAM_User_NewPath(t *testing.T) {
@@ -2420,10 +2403,9 @@ func TestSetSDK_IAM_User_NewPath(t *testing.T) {
 		res.UserName = r.ko.Spec.UserName
 	}
 `
-	assert.Equal(
-		expected,
-		code.SetSDK(crd.Config(), crd, model.OpTypeUpdate, "r.ko", "res", 1),
-	)
+	got, err := code.SetSDK(crd.Config(), crd, model.OpTypeUpdate, "r.ko", "res", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 // func TestSetSDK_Lambda_Ignore_Code_SHA256(t *testing.T) {
@@ -4630,10 +4612,9 @@ func TestSetSDK_WAFv2_RuleGroup_Create(t *testing.T) {
 		res.VisibilityConfig = f7
 	}
 `
-	assert.Equal(
-		expected,
-		code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1),
-	)
+	got, err := code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestSetSDK_Lambda_Function_EnvironmentVariable_MapOfSecrets_Create(t *testing.T) {
@@ -4789,7 +4770,8 @@ func TestSetSDK_Lambda_Function_EnvironmentVariable_MapOfSecrets_Create(t *testi
 		res.VpcConfig = f19
 	}
 `
-	actual := code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1)
+	actual, err := code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1)
+	require.NoError(err)
 
 	assert.Equal(expected, actual)
 }
@@ -4955,7 +4937,8 @@ func TestSetSDK_Lambda_Function_EnvironmentVariable_MapOfSecrets_Update(t *testi
 	}
 `
 
-	actual := code.SetSDK(crd.Config(), crd, model.OpTypeUpdate, "r.ko", "res", 1)
+	actual, err := code.SetSDK(crd.Config(), crd, model.OpTypeUpdate, "r.ko", "res", 1)
+	require.NoError(err)
 
 	assert.Equal(expected, actual)
 }
@@ -5176,7 +5159,8 @@ func TestSetSDK_MQ_Broker_Configuration_Nested_Set_To(t *testing.T) {
 		res.HttpEndpointDestinationUpdate = f7
 	}
 `
-	actual := code.SetSDK(crd.Config(), crd, model.OpTypeUpdate, "r.ko", "res", 1)
+	actual, err := code.SetSDK(crd.Config(), crd, model.OpTypeUpdate, "r.ko", "res", 1)
+	require.NoError(err)
 
 	assert.Equal(expected, actual)
 }
@@ -5236,7 +5220,8 @@ func TestEMRContainers_VirtualCluster_WithUnion(t *testing.T) {
 	}
 `
 
-	actual := code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1)
+	actual, err := code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1)
+	require.NoError(err)
 
 	assert.Equal(
 		expected,
@@ -6127,7 +6112,8 @@ func TestPipes_Pipe_WithUnion(t *testing.T) {
 	}
 `
 
-	actual := code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1)
+	actual, err := code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1)
+	require.NoError(err)
 
 	assert.Equal(
 		expected,
@@ -6294,10 +6280,9 @@ func TestSetSDK_Backup_BackupPlan_Create(t *testing.T) {
 	}
 	res.BackupPlan = fw
 `
-	assert.Equal(
-		expected,
-		code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1),
-	)
+	got, err := code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestSetSDK_Backup_BackupPlan_Update(t *testing.T) {
@@ -6458,8 +6443,7 @@ func TestSetSDK_Backup_BackupPlan_Update(t *testing.T) {
 	}
 	res.BackupPlan = fw
 `
-	assert.Equal(
-		expected,
-		code.SetSDK(crd.Config(), crd, model.OpTypeUpdate, "r.ko", "res", 1),
-	)
+	got, err := code.SetSDK(crd.Config(), crd, model.OpTypeUpdate, "r.ko", "res", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }

@@ -7,6 +7,7 @@ import (
 
 	"github.com/aws-controllers-k8s/code-generator/pkg/testutil"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestInitializeNestedStructField(t *testing.T) {
@@ -20,8 +21,9 @@ func TestInitializeNestedStructField(t *testing.T) {
 
 	f := crd.Fields["Logging.LoggingEnabled.TargetBucket"]
 
-	s := code.InitializeNestedStructField(crd, "r.ko", f,
+	s, err := code.InitializeNestedStructField(crd, "r.ko", f,
 		"svcapitypes", 1)
+	require.NoError(t, err)
 	expected :=
 		`	r.ko.Spec.Logging = &svcapitypes.BucketLoggingStatus{}
 	r.ko.Spec.Logging.LoggingEnabled = &svcapitypes.LoggingEnabled{}

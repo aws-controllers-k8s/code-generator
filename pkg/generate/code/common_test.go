@@ -150,8 +150,9 @@ func TestFindPrimaryIdentifierFieldNames_APIGatewayV2_API_ReadOne(t *testing.T) 
 
 	expModelIdentifier := "ApiId"
 	expShapeIdentifier := "ApiId"
-	crIdentifier, shapeIdentifier := code.FindPrimaryIdentifierFieldNames(
+	crIdentifier, shapeIdentifier, err := code.FindPrimaryIdentifierFieldNames(
 		crd.Config(), crd, crd.Ops.ReadOne)
+	require.NoError(err)
 
 	assert.Equal(expModelIdentifier, crIdentifier)
 	assert.Equal(expShapeIdentifier, shapeIdentifier)

@@ -57,11 +57,20 @@ func ReferenceFieldsValidation(
 	field *model.Field,
 	sourceVarName string,
 	indentLevel int,
-) (out string) {
+) (string, error) {
 	isListOfRefs := field.ShapeRef.Shape.Type == "list"
 
-	out = iterReferenceValues(field, indentLevel, sourceVarName, false,
-		func(fieldAccessPrefix string, _, innerIndentLevel int) (innerOut string) {
+	refFieldName, err := field.GetReferenceFieldName()
+	if err != nil {
+		return "", err
+	}
+	refFieldPath, err := field.ReferenceFieldPath()
+	if err != nil {
+		return "", err
+	}
+
+	out, err := iterReferenceValues(field, indentLevel, sourceVarName, false,
+		func(fieldAccessPrefix string, _, innerIndentLevel int) (innerOut string, err error) {
 			innerIndent := strings.Repeat("\t", innerIndentLevel)
 
 			// Get parent field path, in order to get to both the refs and concretes
@@ -72,14 +81,14 @@ func ReferenceFieldsValidation(
 			// not present at the same time in desired resource
 			if isListOfRefs {
 				innerOut += fmt.Sprintf("%sif len(%s.%s) > 0"+
-					" && len(%s.%s) > 0 {\n", innerIndent, parentFP.String(), field.GetReferenceFieldName().Camel, parentFP.String(), field.Names.Camel)
+					" && len(%s.%s) > 0 {\n", innerIndent, parentFP.String(), refFieldName.Camel, parentFP.String(), field.Names.Camel)
 			} else {
 				innerOut += fmt.Sprintf("%sif %s.%s != nil"+
-					" && %s.%s != nil {\n", innerIndent, parentFP.String(), field.GetReferenceFieldName().Camel, parentFP.String(), field.Names.Camel)
+					" && %s.%s != nil {\n", innerIndent, parentFP.String(), refFieldName.Camel, parentFP.String(), field.Names.Camel)
 			}
 			innerOut += fmt.Sprintf("%s\treturn "+
 				"ackerr.ResourceReferenceAndIDNotSupportedFor(%q, %q)\n",
-				innerIndent, field.Path, field.ReferenceFieldPath())
+				innerIndent, field.Path, refFieldPath)
 			innerOut += fmt.Sprintf("%s}\n", innerIndent)
 
 			// If the field is required, make sure either Ref or original
@@ -88,22 +97,25 @@ func ReferenceFieldsValidation(
 				if isListOfRefs {
 					innerOut += fmt.Sprintf("%sif len(%s.%s) == 0 &&"+
 						" len(%s.%s) == 0 {\n", innerIndent, parentFP.String(),
-						field.GetReferenceFieldName().Camel, parentFP.String(), field.Names.Camel)
+						refFieldName.Camel, parentFP.String(), field.Names.Camel)
 				} else {
 					innerOut += fmt.Sprintf("%sif %s.%s == nil &&"+
 						" %s.%s == nil {\n", innerIndent, parentFP.String(),
-						field.GetReferenceFieldName().Camel, parentFP.String(), field.Names.Camel)
+						refFieldName.Camel, parentFP.String(), field.Names.Camel)
 				}
 				innerOut += fmt.Sprintf("%s\treturn "+
 					"ackerr.ResourceReferenceOrIDRequiredFor(%q, %q)\n",
-					innerIndent, field.Names.Camel, field.GetReferenceFieldName().Camel)
+					innerIndent, field.Names.Camel, refFieldName.Camel)
 				innerOut += fmt.Sprintf("%s}\n", innerIndent)
 			}
 
-			return innerOut
+			return innerOut, nil
 		})
+	if err != nil {
+		return "", err
+	}
 
-	return out
+	return out, nil
 }
 
 // ResolveReferencesForField returns Go code for accessing all references that
@@ -169,7 +181,7 @@ func ReferenceFieldsValidation(
 //			}
 //		}
 //	}
-func ResolveReferencesForField(field *model.Field, sourceVarName string, indentLevel int) string {
+func ResolveReferencesForField(field *model.Field, sourceVarName string, indentLevel int) (string, error) {
 	isListOfRefs := field.ShapeRef.Shape.Type == "list"
 
 	resRefElemType := field.ShapeRef.GoType()
@@ -177,8 +189,13 @@ func ResolveReferencesForField(field *model.Field, sourceVarName string, indentL
 		resRefElemType = field.ShapeRef.Shape.MemberRef.GoType()
 	}
 
-	iterOut := iterReferenceValues(field, indentLevel, sourceVarName, true,
-		func(fieldAccessPrefix string, listDepth, innerIndentLevel int) string {
+	refFieldPath, err := field.ReferenceFieldPath()
+	if err != nil {
+		return "", err
+	}
+
+	iterOut, err := iterReferenceValues(field, indentLevel, sourceVarName, true,
+		func(fieldAccessPrefix string, listDepth, innerIndentLevel int) (string, error) {
 			innerIndent := strings.Repeat("\t", innerIndentLevel)
 
 			outPrefix := ""
@@ -208,7 +225,7 @@ func ResolveReferencesForField(field *model.Field, sourceVarName string, indentL
 
 			outPrefix += fmt.Sprintf("%sarr := %s.From\n", innerIndent, fieldAccessPrefix)
 			outPrefix += fmt.Sprintf("%sif arr.Name == nil || *arr.Name == \"\" {\n", innerIndent)
-			outPrefix += fmt.Sprintf("%s\treturn hasReferences, fmt.Errorf(\"provided resource reference is nil or empty: %s\")\n", innerIndent, field.ReferenceFieldPath())
+			outPrefix += fmt.Sprintf("%s\treturn hasReferences, fmt.Errorf(\"provided resource reference is nil or empty: %s\")\n", innerIndent, refFieldPath)
 			outPrefix += fmt.Sprintf("%s}\n", innerIndent)
 
 			outPrefix += fmt.Sprintf("%snamespace := ko.ObjectMeta.GetNamespace()\n", innerIndent)
@@ -218,7 +235,10 @@ func ResolveReferencesForField(field *model.Field, sourceVarName string, indentL
 
 			outPrefix += getReferencedStateForField(field, innerIndentLevel)
 
-			concreteValueAccessor := buildIndexBasedFieldAccessor(field, sourceVarName, indexVarFmt)
+			concreteValueAccessor, err := buildIndexBasedFieldAccessor(field, sourceVarName, indexVarFmt)
+			if err != nil {
+				return "", err
+			}
 			if isListOfRefs {
 				outPrefix += fmt.Sprintf("%sif %s == nil {\n", innerIndent, concreteValueAccessor)
 				outPrefix += fmt.Sprintf("%s\t%s = make([]%s, 0, 1)\n", innerIndent, concreteValueAccessor, resRefElemType)
@@ -228,10 +248,13 @@ func ResolveReferencesForField(field *model.Field, sourceVarName string, indentL
 				outPrefix += fmt.Sprintf("%s%s = (%s)(obj.%s)\n", innerIndent, concreteValueAccessor, resRefElemType, field.FieldConfig.References.Path)
 			}
 
-			return outPrefix + outSuffix
+			return outPrefix + outSuffix, nil
 		})
+	if err != nil {
+		return "", err
+	}
 
-	return iterOut
+	return iterOut, nil
 }
 
 // ClearResolvedReferencesForField returns Go code that iterates over all
@@ -245,11 +268,11 @@ func ResolveReferencesForField(field *model.Field, sourceVarName string, indentL
 //			ko.Spec.Routes[f0idx].GatewayID = nil
 //		}
 //	}
-func ClearResolvedReferencesForField(field *model.Field, targetVarName string, indentLevel int) string {
+func ClearResolvedReferencesForField(field *model.Field, targetVarName string, indentLevel int) (string, error) {
 	isListOfRefs := field.ShapeRef.Shape.Type == "list"
 
-	iterOut := iterReferenceValues(field, indentLevel, targetVarName, true,
-		func(fieldAccessPrefix string, _, innerIndentLevel int) (innerOut string) {
+	iterOut, err := iterReferenceValues(field, indentLevel, targetVarName, true,
+		func(fieldAccessPrefix string, _, innerIndentLevel int) (innerOut string, err error) {
 			innerIndent := strings.Repeat("\t", innerIndentLevel)
 
 			// If we are dealing with a list of references, then we don't need to
@@ -262,13 +285,20 @@ func ClearResolvedReferencesForField(field *model.Field, targetVarName string, i
 			} else {
 				innerOut += fmt.Sprintf("%sif %s != nil {\n", innerIndent, fieldAccessPrefix)
 			}
-			innerOut += fmt.Sprintf("%s\t%s = nil\n", innerIndent, buildIndexBasedFieldAccessor(field, targetVarName, indexVarFmt))
+			concreteValueAccessor, err := buildIndexBasedFieldAccessor(field, targetVarName, indexVarFmt)
+			if err != nil {
+				return "", err
+			}
+			innerOut += fmt.Sprintf("%s\t%s = nil\n", innerIndent, concreteValueAccessor)
 			innerOut += fmt.Sprintf("%s}\n", innerIndent)
 
-			return innerOut
+			return innerOut, nil
 		})
+	if err != nil {
+		return "", err
+	}
 
-	return iterOut
+	return iterOut, nil
 }
 
 // iterReferenceValues returns Go code that drills down through the spec, doing
@@ -287,10 +317,19 @@ func iterReferenceValues(
 	indentLevel int,
 	sourceVarName string,
 	shouldRenderIndexes bool,
-	innerRender func(fieldAccessPrefix string, listDepth, indentLevel int) (innerOut string),
-) (out string) {
+	innerRender func(fieldAccessPrefix string, listDepth, indentLevel int) (innerOut string, err error),
+) (string, error) {
 	r := field.CRD
-	fp := fieldpath.FromString(field.ReferenceFieldPath())
+	refFieldPath, err := field.ReferenceFieldPath()
+	if err != nil {
+		return "", err
+	}
+	fp := fieldpath.FromString(refFieldPath)
+
+	refFieldName, err := field.GetReferenceFieldName()
+	if err != nil {
+		return "", err
+	}
 
 	outPrefix := ""
 	outSuffix := ""
@@ -304,7 +343,10 @@ func iterReferenceValues(
 		curFP := fp.CopyAt(fpDepth).String()
 		cur, ok := r.Fields[curFP]
 		if !ok {
-			panic(fmt.Sprintf("unable to find field with path %q. crd: %q", curFP, r.Kind))
+			return "", fmt.Errorf(
+				"resource %q: unable to find field with path %q",
+				r.Kind, curFP,
+			)
 		}
 
 		ref := cur.ShapeRef
@@ -313,7 +355,10 @@ func iterReferenceValues(
 
 		switch ref.Shape.Type {
 		case ("map"):
-			panic("references cannot be within a map")
+			return "", fmt.Errorf(
+				"resource %q, field %q: references cannot be within a map",
+				r.Kind, field.Path,
+			)
 		case ("structure"):
 			fieldAccessPrefix = fmt.Sprintf("%s.%s", fieldAccessPrefix, fp.At(fpDepth))
 
@@ -339,12 +384,15 @@ func iterReferenceValues(
 		}
 	}
 
-	fieldAccessPrefix = fmt.Sprintf("%s.%s", fieldAccessPrefix, field.GetReferenceFieldName().Camel)
+	fieldAccessPrefix = fmt.Sprintf("%s.%s", fieldAccessPrefix, refFieldName.Camel)
 	innerIndentLevel := indentLevel + fpDepth
 
-	innerPrefix := innerRender(fieldAccessPrefix, currentListDepth, innerIndentLevel)
+	innerPrefix, err := innerRender(fieldAccessPrefix, currentListDepth, innerIndentLevel)
+	if err != nil {
+		return "", err
+	}
 
-	return outPrefix + innerPrefix + outSuffix
+	return outPrefix + innerPrefix + outSuffix, nil
 }
 
 // buildNestedFieldAccessor generates Go code that accesses an inner struct,
@@ -358,7 +406,7 @@ func iterReferenceValues(
 // By default, this method will iterate through every field in the field path.
 // Supplying a `parentOffset` will only iterate through the first `fp.Size() -
 // parentOffset` number of paths.
-func buildIndexBasedFieldAccessorWithOffset(field *model.Field, sourceVarName, indexVarFmt string, parentOffset int) string {
+func buildIndexBasedFieldAccessorWithOffset(field *model.Field, sourceVarName, indexVarFmt string, parentOffset int) (string, error) {
 	r := field.CRD
 	fp := fieldpath.FromString(field.Path)
 
@@ -371,7 +419,7 @@ func buildIndexBasedFieldAccessorWithOffset(field *model.Field, sourceVarName, i
 
 		cur, ok := r.Fields[curFP.String()]
 		if !ok {
-			panic(fmt.Sprintf("unable to find field with path %q. crd: %q", curFP.String(), r.Kind))
+			return "", fmt.Errorf("unable to find field with path %q. crd: %q", curFP.String(), r.Kind)
 		}
 
 		fieldName := curFP.Pop()
@@ -394,12 +442,12 @@ func buildIndexBasedFieldAccessorWithOffset(field *model.Field, sourceVarName, i
 		fieldNamePrefix = fmt.Sprintf("%s.%s%s", fieldNamePrefix, fieldName, indexList)
 	}
 
-	return fmt.Sprintf("%s%s%s", sourceVarName, r.Config().PrefixConfig.SpecField, fieldNamePrefix)
+	return fmt.Sprintf("%s%s%s", sourceVarName, r.Config().PrefixConfig.SpecField, fieldNamePrefix), nil
 }
 
 // buildIndexBasedFieldAccessor calls buildNestedFieldAccessorWithOffset with an
 // offset of 0.
-func buildIndexBasedFieldAccessor(field *model.Field, sourceVarName, indexVarFmt string) string {
+func buildIndexBasedFieldAccessor(field *model.Field, sourceVarName, indexVarFmt string) (string, error) {
 	return buildIndexBasedFieldAccessorWithOffset(field, sourceVarName, indexVarFmt, 0)
 }
 

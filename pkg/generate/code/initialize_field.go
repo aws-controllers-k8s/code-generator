@@ -47,7 +47,7 @@ func InitializeNestedStructField(
 	apiPkgAlias string,
 	// Number of levels of indentation to use
 	indentLevel int,
-) string {
+) (string, error) {
 	out := ""
 	indent := strings.Repeat("\t", indentLevel)
 	fieldPath := field.Path
@@ -59,11 +59,16 @@ func InitializeNestedStructField(
 			front := fp.Front()
 			frontField := r.Fields[front]
 			if frontField == nil {
-				panic(fmt.Sprintf("unable to find the field with name %s"+
-					" for fieldpath %s", front, fieldPath))
+				return "", fmt.Errorf(
+					"resource %q, field %q: unable to find field %q in fieldpath",
+					r.Names.Original, fieldPath, front,
+				)
 			}
 			if frontField.ShapeRef == nil {
-				panic(fmt.Sprintf("nil ShapeRef for field %s", front))
+				return "", fmt.Errorf(
+					"resource %q, field %q: nil ShapeRef for field %q",
+					r.Names.Original, fieldPath, front,
+				)
 			}
 			fieldShapePath := strings.Replace(fieldPath, front,
 				frontField.ShapeRef.ShapeName, 1)
@@ -90,9 +95,10 @@ func InitializeNestedStructField(
 				elemName := fp.At(index)
 				elemShapeRef := fsp.ShapeRefAt(frontField.ShapeRef, index)
 				if elemShapeRef.Shape.Type != "structure" {
-					panic(fmt.Sprintf("only nested structures are supported."+
-						" Shape type for %s is %s inside fieldpath %s", elemName,
-						elemShapeRef.Shape.Type, fieldPath))
+					return "", fmt.Errorf(
+						"resource %q, field %q: only nested structures are supported, but %q has shape type %q",
+						r.Names.Original, fieldPath, elemName, elemShapeRef.Shape.Type,
+					)
 				}
 				out += fmt.Sprintf("%s%s.%s = &%s%s{}\n",
 					indent, elemAccessPrefix, elemName, importPath,
@@ -103,5 +109,5 @@ func InitializeNestedStructField(
 			}
 		}
 	}
-	return out
+	return out, nil
 }

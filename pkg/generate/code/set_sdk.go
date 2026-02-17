@@ -91,7 +91,7 @@ func SetSDK(
 	targetVarName string,
 	// Number of levels of indentation to use
 	indentLevel int,
-) string {
+) (string, error) {
 	var op *awssdkmodel.Operation
 	switch opType {
 	case model.OpTypeCreate:
@@ -107,13 +107,13 @@ func SetSDK(
 	case model.OpTypeDelete:
 		op = r.Ops.Delete
 	default:
-		return ""
+		return "", nil
 	}
 	if op == nil {
-		return ""
+		return "", nil
 	}
 	if op.InputRef.Shape == nil {
-		return ""
+		return "", nil
 	}
 
 	out := "\n"
@@ -142,7 +142,7 @@ func SetSDK(
 	// Otherwise, it returns the original input shape.
 	inputShape, err := r.GetInputShape(op)
 	if err != nil {
-		return ""
+		return "", err
 	}
 
 	// If we have an input wrapper, create the wrapper variable and adjust targetVarName
@@ -234,7 +234,10 @@ func SetSDK(
 				case "string":
 					value = "\"" + value + "\""
 				default:
-					panic("Member type not handled")
+					return "", fmt.Errorf(
+						"resource %q, field %q: member type %s not handled",
+						r.Names.Original, memberName, memberShape.Type,
+					)
 				}
 
 				out += fmt.Sprintf("%s%s.%s = %s\n", indent, targetVarName, memberName, value)
@@ -397,7 +400,7 @@ func SetSDK(
 					memberShape,
 					indentLevel+1,
 				)
-				out += setSDKForContainer(
+				containerOut, err := setSDKForContainer(
 					cfg, r,
 					memberName,
 					memberVarName,
@@ -408,6 +411,10 @@ func SetSDK(
 					opType,
 					indentLevel+1,
 				)
+				if err != nil {
+					return "", err
+				}
+				out += containerOut
 				out += setSDKForScalar(
 					memberName,
 					targetVarName,
@@ -464,7 +471,7 @@ func SetSDK(
 		out += fmt.Sprintf("%s%s.%s = %s\n", indent, originalTargetVarName, *inputWrapperFieldPath, targetVarName)
 	}
 
-	return out
+	return out, nil
 }
 
 // SetSDKGetAttributes returns the Go code that sets the Input shape for a
@@ -496,22 +503,20 @@ func SetSDKGetAttributes(
 	targetVarName string,
 	// Number of levels of indentation to use
 	indentLevel int,
-) string {
+) (string, error) {
 	op := r.Ops.GetAttributes
 	if op == nil {
-		return ""
+		return "", nil
 	}
 	inputShape := op.InputRef.Shape
 	if inputShape == nil {
-		return ""
+		return "", nil
 	}
 	if !r.UnpacksAttributesMap() {
-		// This is a bug in the code generation if this occurs...
-		msg := fmt.Sprintf(
-			"called SetSDKGetAttributes for a resource '%s' that doesn't unpack attributes map",
+		return "", fmt.Errorf(
+			"resource %q: called SetSDKGetAttributes for a resource that doesn't unpack attributes map",
 			r.Names.Original,
 		)
-		panic(msg)
 	}
 
 	out := "\n"
@@ -520,12 +525,10 @@ func SetSDKGetAttributes(
 	inputFieldOverrides := map[string][]string{}
 	rConfig := cfg.GetResourceConfig(r.Names.Original)
 	if rConfig == nil {
-		// This is a bug in the code generation if this occurs...
-		msg := fmt.Sprintf(
-			"called SetSDKGetAttributes for a resource '%s' that doesn't have a ResourceConfig",
+		return "", fmt.Errorf(
+			"resource %q: called SetSDKGetAttributes for a resource that doesn't have a ResourceConfig",
 			r.Names.Original,
 		)
-		panic(msg)
 	}
 	attrCfg := rConfig.UnpackAttributesMapConfig
 	if attrCfg != nil && attrCfg.GetAttributesInput != nil {
@@ -634,7 +637,7 @@ func SetSDKGetAttributes(
 			"%s}\n", indent,
 		)
 	}
-	return out
+	return out, nil
 }
 
 // SetSDKSetAttributes returns the Go code that sets the Input shape for a
@@ -688,29 +691,27 @@ func SetSDKSetAttributes(
 	targetVarName string,
 	// Number of levels of indentation to use
 	indentLevel int,
-) string {
+) (string, error) {
 	op := r.Ops.SetAttributes
 	if op == nil {
-		return ""
+		return "", nil
 	}
 	inputShape := op.InputRef.Shape
 	if inputShape == nil {
-		return ""
+		return "", nil
 	}
 	if !r.UnpacksAttributesMap() {
-		// This is a bug in the code generation if this occurs...
-		msg := fmt.Sprintf(
-			"called SetSDKSetAttributes for a resource '%s' that doesn't unpack attributes map",
+		return "", fmt.Errorf(
+			"resource %q: called SetSDKSetAttributes for a resource that doesn't unpack attributes map",
 			r.Names.Original,
 		)
-		panic(msg)
 	}
 
 	if r.SetAttributesSingleAttribute() {
 		// TODO(jaypipes): For now, because these APIs require *multiple* calls
 		// to the backend, one for each attribute being set, we'll go ahead and
 		// rely on the CustomOperation functionality to write code for these...
-		return ""
+		return "", nil
 	}
 
 	out := "\n"
@@ -844,7 +845,7 @@ func SetSDKSetAttributes(
 			"%s}\n", indent,
 		)
 	}
-	return out
+	return out, nil
 }
 
 // setSDKReadMany is a special-case handling of those APIs where there is no
@@ -875,10 +876,10 @@ func setSDKReadMany(
 	sourceVarName string,
 	targetVarName string,
 	indentLevel int,
-) string {
+) (string, error) {
 	inputShape := op.InputRef.Shape
 	if inputShape == nil {
-		return ""
+		return "", nil
 	}
 
 	out := "\n"
@@ -898,8 +899,10 @@ func setSDKReadMany(
 				case "string":
 					value = "\"" + value + "\""
 				default:
-					panic(fmt.Sprintf("Unsupported shape type %s in "+
-						"generate.code.setSDKReadMany", memberShape.Type))
+					return "", fmt.Errorf(
+						"resource %q, field %q: unsupported shape type %s in setSDKReadMany",
+						r.Names.Original, memberName, memberShape.Type,
+					)
 				}
 
 				out += fmt.Sprintf("%s%s.%s =%s\n", indent, targetVarName, memberName, value)
@@ -922,9 +925,10 @@ func setSDKReadMany(
 			if strings.EqualFold(fieldName, shapeIdentifier) {
 				resVarPath, err = r.GetSanitizedMemberPath(crIdentifier, op, sourceVarName)
 				if err != nil {
-					panic(fmt.Sprintf(
-						"Unable to locate identifier field %s in "+
-							"%s Spec/Status in generate.code.setSDKReadMany", crIdentifier, r.Kind))
+					return "", fmt.Errorf(
+						"resource %q, field %q: unable to locate identifier field in Spec/Status in setSDKReadMany",
+						r.Names.Original, crIdentifier,
+					)
 				}
 			} else {
 				// TODO(jaypipes): check generator config for exceptions?
@@ -991,7 +995,7 @@ func setSDKReadMany(
 		)
 	}
 
-	return out
+	return out, nil
 }
 
 // setSDKForContainer returns a string of Go code that sets the value of a
@@ -1014,7 +1018,7 @@ func setSDKForContainer(
 	isListMember bool,
 	op model.OpType,
 	indentLevel int,
-) string {
+) (string, error) {
 	switch targetShapeRef.Shape.Type {
 	case "structure":
 		return SetSDKForStruct(
@@ -1077,7 +1081,7 @@ func setSDKForContainer(
 			)
 			// }
 			out += fmt.Sprintf("%s}\n", indent)
-			return out
+			return out, nil
 		}
 
 		return setSDKForScalar(
@@ -1089,7 +1093,7 @@ func setSDKForContainer(
 			isListMember,
 			targetShapeRef,
 			indentLevel,
-		)
+		), nil
 	}
 }
 
@@ -1183,7 +1187,7 @@ func SetSDKForStruct(
 	sourceVarName string,
 	op model.OpType,
 	indentLevel int,
-) string {
+) (string, error) {
 	out := ""
 	indent := strings.Repeat("\t", indentLevel)
 	targetShape := targetShapeRef.Shape
@@ -1242,7 +1246,7 @@ func SetSDKForStruct(
 					memberShape,
 					indentLevel+1,
 				)
-				out += setSDKForContainer(
+				containerOut, err := setSDKForContainer(
 					cfg, r,
 					memberName,
 					memberVarName,
@@ -1253,6 +1257,10 @@ func SetSDKForStruct(
 					op,
 					indentLevel+1,
 				)
+				if err != nil {
+					return "", err
+				}
+				out += containerOut
 				out += setSDKForScalar(
 					memberName,
 					targetVarName,
@@ -1294,7 +1302,7 @@ func SetSDKForStruct(
 			"%s}\n", indent,
 		)
 	}
-	return out
+	return out, nil
 }
 
 // setSDKForSlice returns a string of Go code that sets a target variable value
@@ -1314,13 +1322,13 @@ func setSDKForSlice(
 	sourceVarName string,
 	op model.OpType,
 	indentLevel int,
-) string {
+) (string, error) {
 	out := ""
 	indent := strings.Repeat("\t", indentLevel)
 	targetShape := targetShapeRef.Shape
 	if targetShape.MemberRef.Shape.Type == "string" && !targetShape.MemberRef.Shape.IsEnum() && !r.IsSecretField(sourceFieldPath) {
 		out += fmt.Sprintf("%s%s = aws.ToStringSlice(%s)\n", indent, targetVarName, sourceVarName)
-		return out
+		return out, nil
 	}
 
 	iterVarName := fmt.Sprintf("%siter", targetVarName)
@@ -1336,7 +1344,7 @@ func setSDKForSlice(
 		out += fmt.Sprintf("%s\t%s := aws.ToStringSlice(%s)\n", indent, elemVarName, iterVarName)
 		out += fmt.Sprintf("%s\t%s = append(%s, %s)\n", indent, targetVarName, targetVarName, elemVarName)
 		out += fmt.Sprintf("%s}\n", indent)
-		return out
+		return out, nil
 	} else if targetShape.MemberRef.Shape.Type == "map" &&
 		!targetShape.MemberRef.Shape.ValueRef.Shape.IsEnum() &&
 		targetShape.MemberRef.Shape.KeyRef.Shape.Type == "string" {
@@ -1344,12 +1352,12 @@ func setSDKForSlice(
 			out += fmt.Sprintf("%s\t%s := aws.ToStringMap(%s)\n", indent, elemVarName, iterVarName)
 			out += fmt.Sprintf("%s\t%s = append(%s, %s)\n", indent, targetVarName, targetVarName, elemVarName)
 			out += fmt.Sprintf("%s}\n", indent)
-			return out
+			return out, nil
 		} else if targetShape.ValueRef.Shape.ValueRef.Shape.Type == "boolean" {
 			out += fmt.Sprintf("%s\t%s := aws.ToBoolMap(%s)\n", indent, elemVarName, iterVarName)
 			out += fmt.Sprintf("%s\t%s = append(%s, %s)\n", indent, targetVarName, targetVarName, elemVarName)
 			out += fmt.Sprintf("%s}\n", indent)
-			return out
+			return out, nil
 		}
 	}
 	//		f0elem := string{}
@@ -1372,7 +1380,7 @@ func setSDKForSlice(
 		out += fmt.Sprintf("%s\t%s = string(*%s)\n", indent, elemVarName, iterVarName)
 		elemVarName = fmt.Sprintf("svcsdktypes.%s(%s)", targetShape.MemberRef.ShapeName, elemVarName)
 	} else {
-		out += setSDKForContainer(
+		containerOut, err := setSDKForContainer(
 			cfg, r,
 			containerFieldName,
 			elemVarName,
@@ -1383,6 +1391,10 @@ func setSDKForSlice(
 			op,
 			indentLevel+1,
 		)
+		if err != nil {
+			return "", err
+		}
+		out += containerOut
 	}
 	//  f0 = append(f0, elem0)
 	setPointer := ""
@@ -1394,7 +1406,7 @@ func setSDKForSlice(
 	}
 	out += fmt.Sprintf("%s\t%s = append(%s, %s%s)\n", indent, targetVarName, targetVarName, setPointer, elemVarName)
 	out += fmt.Sprintf("%s}\n", indent)
-	return out
+	return out, nil
 }
 
 // setSDKForMap returns a string of Go code that sets a target variable value
@@ -1414,7 +1426,7 @@ func setSDKForMap(
 	sourceVarName string,
 	op model.OpType,
 	indentLevel int,
-) string {
+) (string, error) {
 	out := ""
 	indent := strings.Repeat("\t", indentLevel)
 	targetShape := targetShapeRef.Shape
@@ -1429,18 +1441,18 @@ func setSDKForMap(
 		!targetShape.ValueRef.Shape.MemberRef.Shape.IsEnum() {
 		out += fmt.Sprintf("%s\t%s[%s] = aws.ToStringSlice(%s)\n", indent, targetVarName, keyVarName, valIterVarName)
 		out += fmt.Sprintf("%s}\n", indent)
-		return out
+		return out, nil
 	} else if targetShape.ValueRef.Shape.Type == "map" &&
 		targetShape.ValueRef.Shape.KeyRef.Shape.Type == "string" &&
 		!targetShape.ValueRef.Shape.ValueRef.Shape.IsEnum() {
 		if targetShape.ValueRef.Shape.ValueRef.Shape.Type == "string" {
 			out += fmt.Sprintf("%s\t%s[%s] = aws.ToStringMap(%s)\n", indent, targetVarName, keyVarName, valIterVarName)
 			out += fmt.Sprintf("%s}\n", indent)
-			return out
+			return out, nil
 		} else if targetShape.ValueRef.Shape.ValueRef.Shape.Type == "boolean" {
 			out += fmt.Sprintf("%s\t%s[%s] = aws.ToBoolMap(%s)\n", indent, targetVarName, keyVarName, valIterVarName)
 			out += fmt.Sprintf("%s}\n", indent)
-			return out
+			return out, nil
 		}
 	}
 	out += varEmptyConstructorSDKType(
@@ -1462,7 +1474,7 @@ func setSDKForMap(
 		out += fmt.Sprintf("%s\t%s = string(*%s)\n", indent, valVarName, valIterVarName)
 		valVarName = fmt.Sprintf("svcsdktypes.%s(%s)", targetShape.ValueRef.ShapeName, valVarName)
 	} else {
-		out += setSDKForContainer(
+		containerOut, err := setSDKForContainer(
 			cfg, r,
 			containerFieldName,
 			valVarName,
@@ -1473,6 +1485,10 @@ func setSDKForMap(
 			op,
 			indentLevel+1,
 		)
+		if err != nil {
+			return "", err
+		}
+		out += containerOut
 	}
 
 	dereference := "*"
@@ -1482,7 +1498,7 @@ func setSDKForMap(
 	// f0[f0key] = f0val
 	out += fmt.Sprintf("%s\t%s[%s] = %s%s\n", indent, targetVarName, keyVarName, dereference, valVarName)
 	out += fmt.Sprintf("%s}\n", indent)
-	return out
+	return out, nil
 }
 
 func varEmptyConstructorSDKType(
@@ -1791,7 +1807,7 @@ func setSDKForUnion(
 	sourceVarName string,
 	op model.OpType,
 	indentLevel int,
-) string {
+) (string, error) {
 	out := ""
 	indent := strings.Repeat("\t", indentLevel)
 	targetShape := targetShapeRef.Shape
@@ -1857,7 +1873,7 @@ func setSDKForUnion(
 					memberShape,
 					indentLevel+1,
 				)
-				out += setSDKForContainer(
+				containerOut, err := setSDKForContainer(
 					cfg, r,
 					memberName,
 					indexedVarName,
@@ -1868,6 +1884,10 @@ func setSDKForUnion(
 					op,
 					indentLevel+1,
 				)
+				if err != nil {
+					return "", err
+				}
+				out += containerOut
 				if memberShape.Type == "list" {
 					out += fmt.Sprintf("%s\t%s.Value = %s\n", indent, elemVarName, indexedVarName)
 				} else {
@@ -1887,5 +1907,5 @@ func setSDKForUnion(
 		out += fmt.Sprintf("%s}\n", indent)
 	}
 
-	return out
+	return out, nil
 }

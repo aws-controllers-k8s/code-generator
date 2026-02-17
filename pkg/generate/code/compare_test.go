@@ -134,12 +134,11 @@ func TestCompareResource_S3_Bucket(t *testing.T) {
 		}
 	}
 `
-	assert.Equal(
-		expected,
-		code.CompareResource(
-			crd.Config(), crd, "delta", "a.ko", "b.ko", 1,
-		),
+	got, err := code.CompareResource(
+		crd.Config(), crd, "delta", "a.ko", "b.ko", 1,
 	)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestCompareResource_Lambda_CodeSigningConfig(t *testing.T) {
@@ -182,12 +181,11 @@ func TestCompareResource_Lambda_CodeSigningConfig(t *testing.T) {
 		}
 	}
 `
-	assert.Equal(
-		expected,
-		code.CompareResource(
-			crd.Config(), crd, "delta", "a.ko", "b.ko", 1,
-		),
+	got, err := code.CompareResource(
+		crd.Config(), crd, "delta", "a.ko", "b.ko", 1,
 	)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestCompareResource_Lambda_Function(t *testing.T) {
@@ -408,12 +406,11 @@ func TestCompareResource_Lambda_Function(t *testing.T) {
 		}
 	}
 `
-	assert.Equal(
-		expected,
-		code.CompareResource(
-			crd.Config(), crd, "delta", "a.ko", "b.ko", 1,
-		),
+	got, err := code.CompareResource(
+		crd.Config(), crd, "delta", "a.ko", "b.ko", 1,
 	)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestCompareResource_APIGatewayv2_Route(t *testing.T) {
@@ -511,12 +508,11 @@ func TestCompareResource_APIGatewayv2_Route(t *testing.T) {
 		}
 	}
 `
-	assert.Equal(
-		expected,
-		code.CompareResource(
-			crd.Config(), crd, "delta", "a.ko", "b.ko", 1,
-		),
+	got, err := code.CompareResource(
+		crd.Config(), crd, "delta", "a.ko", "b.ko", 1,
 	)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestCompareResource_IAM_OIDC_URL(t *testing.T) {
@@ -550,12 +546,11 @@ func TestCompareResource_IAM_OIDC_URL(t *testing.T) {
 		}
 	}
 `
-	assert.Equal(
-		expected,
-		code.CompareResource(
-			crd.Config(), crd, "delta", "a.ko", "b.ko", 1,
-		),
+	got, err := code.CompareResource(
+		crd.Config(), crd, "delta", "a.ko", "b.ko", 1,
 	)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }
 
 func TestCompareResource_MemoryDB_User(t *testing.T) {
@@ -598,10 +593,9 @@ func TestCompareResource_MemoryDB_User(t *testing.T) {
 		delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
 	}
 `
-	assert.Equal(
-		expected,
-		code.CompareResource(
-			crd.Config(), crd, "delta", "a.ko", "b.ko", 1,
-		),
+	got, err := code.CompareResource(
+		crd.Config(), crd, "delta", "a.ko", "b.ko", 1,
 	)
+	require.NoError(err)
+	assert.Equal(expected, got)
 }

@@ -55,12 +55,11 @@ func TestSyncedLambdaFunction(t *testing.T) {
 		return false, nil
 	}
 `
-	assert.Equal(
-		expectedSyncedConditions,
-		code.ResourceIsSynced(
-			crd.Config(), crd, "r.ko", 1,
-		),
+	got, err := code.ResourceIsSynced(
+		crd.Config(), crd, "r.ko", 1,
 	)
+	require.NoError(err)
+	assert.Equal(expectedSyncedConditions, got)
 }
 
 func TestSyncedDynamodbTable(t *testing.T) {
@@ -98,10 +97,9 @@ func TestSyncedDynamodbTable(t *testing.T) {
 		return false, nil
 	}
 `
-	assert.Equal(
-		expectedSyncedConditions,
-		code.ResourceIsSynced(
-			crd.Config(), crd, "r.ko", 1,
-		),
+	got, err := code.ResourceIsSynced(
+		crd.Config(), crd, "r.ko", 1,
 	)
+	require.NoError(err)
+	assert.Equal(expectedSyncedConditions, got)
 }

@@ -45,13 +45,13 @@ func TestCheckRequiredFields_Attributes_ARNField(t *testing.T) {
 	expReqFieldsInShape := `
 	return (ko.Status.ACKResourceMetadata == nil || ko.Status.ACKResourceMetadata.ARN == nil)
 `
+	gotCode, err := code.CheckRequiredFieldsMissingFromShape(
+		crd, model.OpTypeGetAttributes, "ko", 1,
+	)
+	require.NoError(err)
 	assert.Equal(
 		strings.TrimSpace(expReqFieldsInShape),
-		strings.TrimSpace(
-			code.CheckRequiredFieldsMissingFromShape(
-				crd, model.OpTypeGetAttributes, "ko", 1,
-			),
-		),
+		strings.TrimSpace(gotCode),
 	)
 }
 
@@ -67,9 +67,10 @@ func TestCheckRequiredFields_Attributes_StatusField(t *testing.T) {
 	expRequiredFieldsCode := `
 	return r.ko.Status.QueueURL == nil
 `
-	gotCode := code.CheckRequiredFieldsMissingFromShape(
+	gotCode, err := code.CheckRequiredFieldsMissingFromShape(
 		crd, model.OpTypeGetAttributes, "r.ko", 1,
 	)
+	require.NoError(err)
 	assert.Equal(
 		strings.TrimSpace(expRequiredFieldsCode),
 		strings.TrimSpace(gotCode),
@@ -88,9 +89,10 @@ func TestCheckRequiredFields_Attributes_StatusAndSpecField(t *testing.T) {
 	expRequiredFieldsCode := `
 	return r.ko.Spec.APIID == nil || r.ko.Status.RouteID == nil
 `
-	gotCode := code.CheckRequiredFieldsMissingFromShape(
+	gotCode, err := code.CheckRequiredFieldsMissingFromShape(
 		crd, model.OpTypeGet, "r.ko", 1,
 	)
+	require.NoError(err)
 	assert.Equal(
 		strings.TrimSpace(expRequiredFieldsCode),
 		strings.TrimSpace(gotCode),
@@ -109,9 +111,10 @@ func TestCheckRequiredFields_RenamedSpecField(t *testing.T) {
 	expRequiredFieldsCode := `
 	return r.ko.Spec.ClusterName == nil || r.ko.Spec.Name == nil
 `
-	gotCode := code.CheckRequiredFieldsMissingFromShape(
+	gotCode, err := code.CheckRequiredFieldsMissingFromShape(
 		crd, model.OpTypeGet, "r.ko", 1,
 	)
+	require.NoError(err)
 	assert.Equal(
 		strings.TrimSpace(expRequiredFieldsCode),
 		strings.TrimSpace(gotCode),
@@ -130,9 +133,10 @@ func TestCheckRequiredFields_StatusField_ReadMany(t *testing.T) {
 	expRequiredFieldsCode := `
 	return r.ko.Status.VPCID == nil
 `
-	gotCode := code.CheckRequiredFieldsMissingFromShape(
+	gotCode, err := code.CheckRequiredFieldsMissingFromShape(
 		crd, model.OpTypeList, "r.ko", 1,
 	)
+	require.NoError(err)
 	assert.Equal(
 		strings.TrimSpace(expRequiredFieldsCode),
 		strings.TrimSpace(gotCode),

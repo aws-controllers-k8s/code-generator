@@ -69,7 +69,7 @@ func CheckRequiredFieldsMissingFromShape(
 	opType model.OpType,
 	koVarName string,
 	indentLevel int,
-) string {
+) (string, error) {
 	var op *awssdkmodel.Operation
 	switch opType {
 	case model.OpTypeGet:
@@ -77,13 +77,13 @@ func CheckRequiredFieldsMissingFromShape(
 	case model.OpTypeList:
 		op = r.Ops.ReadMany
 		return checkRequiredFieldsMissingFromShapeReadMany(
-			r, koVarName, indentLevel, op, op.InputRef.Shape)
+			r, koVarName, indentLevel, op, op.InputRef.Shape), nil
 	case model.OpTypeGetAttributes:
 		op = r.Ops.GetAttributes
 	case model.OpTypeSetAttributes:
 		op = r.Ops.SetAttributes
 	default:
-		return ""
+		return "", nil
 	}
 
 	shape := op.InputRef.Shape
@@ -102,10 +102,10 @@ func checkRequiredFieldsMissingFromShape(
 	indentLevel int,
 	op *awssdkmodel.Operation,
 	shape *awssdkmodel.Shape,
-) string {
+) (string, error) {
 	indent := strings.Repeat("\t", indentLevel)
 	if shape == nil || len(shape.Required) == 0 {
-		return fmt.Sprintf("%sreturn false", indent)
+		return fmt.Sprintf("%sreturn false", indent), nil
 	}
 
 	// Loop over the required member fields in the shape and identify whether
@@ -139,21 +139,17 @@ func checkRequiredFieldsMissingFromShape(
 
 		resVarPath, err := r.GetSanitizedMemberPath(memberName, op, koVarName)
 		if err != nil {
-			// If it isn't in our spec/status fields, we have a problem!
-			msg := fmt.Sprintf(
-				"GENERATION FAILURE! there's a required field %s in "+
-					"Shape %s that isn't in either the CR's Spec or "+
-					"Status structs!",
-				memberName, shape.ShapeName,
+			return "", fmt.Errorf(
+				"resource %q: required field %q in shape %q is not in the CR's Spec or Status structs",
+				r.Names.Original, memberName, shape.ShapeName,
 			)
-			panic(msg)
 		}
 		missing = append(missing, fmt.Sprintf("%s == nil", resVarPath))
 	}
 	// Use '||' because if any of the required fields are missing the object
 	// is not created yet
 	missingCondition := strings.Join(missing, " || ")
-	return fmt.Sprintf("%sreturn %s\n", indent, missingCondition)
+	return fmt.Sprintf("%sreturn %s\n", indent, missingCondition), nil
 }
 
 // checkRequiredFieldsMissingFromShapeReadMany is a special-case handling

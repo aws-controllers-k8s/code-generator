@@ -91,7 +91,7 @@ func SetResource(
 	targetVarName string,
 	// Number of levels of indentation to use
 	indentLevel int,
-) string {
+) (string, error) {
 	var op *awssdkmodel.Operation
 	switch opType {
 	case model.OpTypeCreate:
@@ -105,14 +105,17 @@ func SetResource(
 	case model.OpTypeDelete:
 		op = r.Ops.Delete
 	default:
-		return ""
+		return "", nil
 	}
 	if op == nil {
-		return ""
+		return "", nil
 	}
-	outputShape, _ := r.GetOutputShape(op)
+	outputShape, err := r.GetOutputShape(op)
+	if err != nil {
+		return "", err
+	}
 	if outputShape == nil {
-		return ""
+		return "", nil
 	}
 
 	// If the output shape has a list containing the resource,
@@ -273,13 +276,10 @@ func SetResource(
 				sourceMemberShapeRef = fp.ShapeRef(sourceMemberShapeRef)
 			}
 			if sourceMemberShapeRef == nil || sourceMemberShapeRef.Shape == nil {
-				// Technically this should not happen, so let's bail here if it
-				// does...
-				msg := fmt.Sprintf(
-					"expected .Shape to not be nil for ShapeRef of memberName %s",
-					memberName,
+				return "", fmt.Errorf(
+					"resource %q, field %q: expected .Shape to not be nil for ShapeRef",
+					r.Names.Original, memberName,
 				)
-				panic(msg)
 			}
 		}
 
@@ -369,7 +369,7 @@ func SetResource(
 					targetMemberShapeRef.Shape,
 					indentLevel+1,
 				)
-				out += setResourceForContainer(
+				containerOut, err := setResourceForContainer(
 					cfg, r,
 					f.Names.Camel,
 					memberVarName,
@@ -382,6 +382,10 @@ func SetResource(
 					opType,
 					indentLevel+1,
 				)
+				if err != nil {
+					return "", err
+				}
+				out += containerOut
 				out += setResourceForScalar(
 					qualifiedTargetVar,
 					memberVarName,
@@ -436,22 +440,22 @@ func SetResource(
 			)
 		}
 	}
-	return out
+	return out, nil
 }
 
 func ListMemberNameInReadManyOutput(
 	r *model.CRD,
-) string {
+) (string, error) {
 	// Find the element in the output shape that contains the list of
 	// resources. This heuristic is simplistic (just look for the field with a
 	// list type) but seems to be followed consistently by the aws-sdk-go-v2 for
 	// List operations.
 	for memberName, memberShapeRef := range r.Ops.ReadMany.OutputRef.Shape.MemberRefs {
 		if memberShapeRef.Shape.Type == "list" {
-			return memberName
+			return memberName, nil
 		}
 	}
-	panic("List output shape had no field of type 'list'")
+	return "", fmt.Errorf("resource %q: list output shape had no field of type 'list'", r.Names.Original)
 }
 
 // setResourceReadMany sets the supplied target variable from the results of a
@@ -525,10 +529,10 @@ func setResourceReadMany(
 	targetVarName string,
 	// Number of levels of indentation to use
 	indentLevel int,
-) string {
+) (string, error) {
 	outputShape := op.OutputRef.Shape
 	if outputShape == nil {
-		return ""
+		return "", nil
 	}
 
 	out := "\n"
@@ -566,7 +570,7 @@ func setResourceReadMany(
 	}
 
 	if listShapeName == "" {
-		panic("List output shape had no field of type 'list'")
+		return "", fmt.Errorf("resource %q: list output shape had no field of type 'list'", r.Names.Original)
 	}
 
 	// Set of field names in the element shape that, if the generator config
@@ -576,11 +580,10 @@ func setResourceReadMany(
 
 	for _, mfName := range matchFieldNames {
 		if inSpec, inStat := r.HasMember(mfName, op.ExportedName); !inSpec && !inStat {
-			msg := fmt.Sprintf(
-				"Match field name %s is not in %s Spec or Status fields",
-				mfName, r.Names.Camel,
+			return "", fmt.Errorf(
+				"resource %q: match field name %q is not in Spec or Status fields",
+				r.Names.Original, mfName,
 			)
-			panic(msg)
 		}
 	}
 
@@ -710,7 +713,7 @@ func setResourceReadMany(
 					targetMemberShapeRef.Shape,
 					flIndentLvl+1,
 				)
-				out += setResourceForContainer(
+				containerOut, err := setResourceForContainer(
 					cfg, r,
 					f.Names.Camel,
 					memberVarName,
@@ -723,6 +726,10 @@ func setResourceReadMany(
 					opType,
 					flIndentLvl+1,
 				)
+				if err != nil {
+					return "", err
+				}
+				out += containerOut
 				out += setResourceForScalar(
 					qualifiedTargetVar,
 					memberVarName,
@@ -810,7 +817,7 @@ func setResourceReadMany(
 	out += fmt.Sprintf("%sif !found {\n", indent)
 	out += fmt.Sprintf("%s\t%s\n", indent, cfg.SetManyOutputNotFoundErrReturn)
 	out += fmt.Sprintf("%s}\n", indent)
-	return out
+	return out, nil
 }
 
 // ackResourceMetadataGuardConstructor returns Go code representing a nil-guard
@@ -919,22 +926,20 @@ func SetResourceGetAttributes(
 	targetVarName string,
 	// Number of levels of indentation to use
 	indentLevel int,
-) string {
+) (string, error) {
 	if !r.UnpacksAttributesMap() {
-		// This is a bug in the code generation if this occurs...
-		msg := fmt.Sprintf(
-			"called SetResourceGetAttributes for a resource '%s' that doesn't unpack attributes map",
-			r.Ops.GetAttributes.Name,
+		return "", fmt.Errorf(
+			"resource %q: called SetResourceGetAttributes but resource doesn't unpack attributes map",
+			r.Names.Original,
 		)
-		panic(msg)
 	}
 	op := r.Ops.GetAttributes
 	if op == nil {
-		return ""
+		return "", nil
 	}
 	inputShape := op.InputRef.Shape
 	if inputShape == nil {
-		return ""
+		return "", nil
 	}
 
 	out := "\n"
@@ -1035,7 +1040,7 @@ func SetResourceGetAttributes(
 			indent,
 		)
 	}
-	return out
+	return out, nil
 }
 
 // SetResourceIdentifiers returns the Go code that sets an empty CR object with
@@ -1119,7 +1124,7 @@ func SetResourceIdentifiers(
 	targetVarName string,
 	// Number of levels of indentation to use
 	indentLevel int,
-) string {
+) (string, error) {
 	op := r.Ops.ReadOne
 	if op == nil {
 		switch {
@@ -1130,12 +1135,12 @@ func SetResourceIdentifiers(
 			// If single lookups can only be done using ReadMany
 			op = r.Ops.ReadMany
 		default:
-			return ""
+			return "", nil
 		}
 	}
 	inputShape := op.InputRef.Shape
 	if inputShape == nil {
-		return ""
+		return "", nil
 	}
 
 	primaryKeyOut := ""
@@ -1159,11 +1164,11 @@ func SetResourceIdentifiers(
 
 	// Check if the CRD defines the primary keys
 	if r.IsARNPrimaryKey() {
-		return arnOut
+		return arnOut, nil
 	}
 	primaryField, err := r.GetPrimaryKeyField()
 	if err != nil {
-		panic(err)
+		return "", err
 	}
 
 	var primaryCRField, primaryShapeField string
@@ -1177,9 +1182,13 @@ func SetResourceIdentifiers(
 			sourceVarName,
 			indentLevel)
 	} else {
-		primaryCRField, primaryShapeField = FindPrimaryIdentifierFieldNames(cfg, r, op)
+		var findErr error
+		primaryCRField, primaryShapeField, findErr = FindPrimaryIdentifierFieldNames(cfg, r, op)
+		if findErr != nil {
+			return "", findErr
+		}
 		if primaryShapeField == PrimaryIdentifierARNOverride {
-			return arnOut
+			return arnOut, nil
 		}
 	}
 
@@ -1241,7 +1250,10 @@ func SetResourceIdentifiers(
 
 		switch targetField.ShapeRef.Shape.Type {
 		case "list", "structure", "map":
-			panic("primary identifier '" + targetField.Path + "' must be a scalar type since NameOrID is a string")
+			return "", fmt.Errorf(
+				"resource %q: primary identifier %q must be a scalar type since NameOrID is a string",
+				r.Names.Original, targetField.Path,
+			)
 		default:
 			break
 		}
@@ -1265,7 +1277,7 @@ func SetResourceIdentifiers(
 		}
 	}
 
-	return primaryKeyConditionalOut + primaryKeyOut + additionalKeyOut
+	return primaryKeyConditionalOut + primaryKeyOut + additionalKeyOut, nil
 }
 
 // PopulateResourceFromAnnotation returns the Go code that sets an empty CR object with
@@ -1356,7 +1368,7 @@ func PopulateResourceFromAnnotation(
 	targetVarName string,
 	// Number of levels of indentation to use
 	indentLevel int,
-) string {
+) (string, error) {
 	op := r.Ops.ReadOne
 	if op == nil {
 		switch {
@@ -1367,12 +1379,12 @@ func PopulateResourceFromAnnotation(
 			// If single lookups can only be done using ReadMany
 			op = r.Ops.ReadMany
 		default:
-			return ""
+			return "", nil
 		}
 	}
 	inputShape := op.InputRef.Shape
 	if inputShape == nil {
-		return ""
+		return "", nil
 	}
 
 	primaryKeyOut := ""
@@ -1394,11 +1406,11 @@ func PopulateResourceFromAnnotation(
 		indent, targetVarName,
 	)
 	if r.IsARNPrimaryKey() {
-		return primaryKeyConditionalOut + arnOut
+		return primaryKeyConditionalOut + arnOut, nil
 	}
 	primaryField, err := r.GetPrimaryKeyField()
 	if err != nil {
-		panic(err)
+		return "", err
 	}
 
 	var primaryCRField, primaryShapeField string
@@ -1414,9 +1426,13 @@ func PopulateResourceFromAnnotation(
 			indentLevel,
 		)
 	} else {
-		primaryCRField, primaryShapeField = FindPrimaryIdentifierFieldNames(cfg, r, op)
+		var findErr error
+		primaryCRField, primaryShapeField, findErr = FindPrimaryIdentifierFieldNames(cfg, r, op)
+		if findErr != nil {
+			return "", findErr
+		}
 		if primaryShapeField == PrimaryIdentifierARNOverride {
-			return primaryKeyConditionalOut + arnOut
+			return primaryKeyConditionalOut + arnOut, nil
 		}
 	}
 
@@ -1478,7 +1494,10 @@ func PopulateResourceFromAnnotation(
 
 		switch targetField.ShapeRef.Shape.Type {
 		case "list", "structure", "map":
-			panic("primary identifier '" + targetField.Path + "' must be a scalar type since NameOrID is a string")
+			return "", fmt.Errorf(
+				"resource %q: primary identifier %q must be a scalar type since NameOrID is a string",
+				r.Names.Original, targetField.Path,
+			)
 		}
 
 		sourceVarPath := fmt.Sprintf("%s%s", targetVarName, memberPath)
@@ -1504,7 +1523,7 @@ func PopulateResourceFromAnnotation(
 		}
 	}
 
-	return out + primaryKeyOut + additionalKeyOut
+	return out + primaryKeyOut + additionalKeyOut, nil
 }
 
 // findFieldInCR will search for a given field, by its name, in a CR and returns
@@ -1692,7 +1711,7 @@ func setResourceForContainer(
 	isListMember bool,
 	op model.OpType,
 	indentLevel int,
-) string {
+) (string, error) {
 	switch sourceShapeRef.Shape.Type {
 	case "structure":
 		return SetResourceForStruct(
@@ -1752,7 +1771,7 @@ func setResourceForContainer(
 			indentLevel,
 			isListMember,
 			false,
-		)
+		), nil
 	}
 }
 
@@ -1775,7 +1794,7 @@ func SetResourceForStruct(
 	targetFieldPath string,
 	op model.OpType,
 	indentLevel int,
-) string {
+) (string, error) {
 	out := ""
 	indent := strings.Repeat("\t", indentLevel)
 	sourceShape := sourceShapeRef.Shape
@@ -1810,9 +1829,10 @@ func SetResourceForStruct(
 		// the sourceShape's index; continue using sourceShape's index here for consistency.
 		sourceMemberIndex, err := GetMemberIndex(sourceShape, targetMemberName)
 		if err != nil {
-			msg := fmt.Sprintf(
-				"could not determine source shape index: %v", err)
-			panic(msg)
+			return "", fmt.Errorf(
+				"resource %q, field %q: could not determine source shape index: %w",
+				r.Names.Original, targetMemberName, err,
+			)
 		}
 
 		targetMemberShapeRef := targetShape.MemberRefs[targetMemberName]
@@ -1859,7 +1879,7 @@ func SetResourceForStruct(
 					targetMemberShapeRef.Shape,
 					indentLevel+1,
 				)
-				out += setResourceForContainer(
+				containerOut, err := setResourceForContainer(
 					cfg, r,
 					targetMemberCleanNames.Camel,
 					indexedVarName,
@@ -1872,6 +1892,10 @@ func SetResourceForStruct(
 					op,
 					indentLevel+1,
 				)
+				if err != nil {
+					return "", err
+				}
+				out += containerOut
 
 				out += setResourceForScalar(
 					qualifiedTargetVar,
@@ -1973,7 +1997,7 @@ func SetResourceForStruct(
 			}
 		}
 	}
-	return out
+	return out, nil
 }
 
 // setResourceForSlice returns a string of Go code that sets a target variable
@@ -1997,7 +2021,7 @@ func setResourceForSlice(
 	targetFieldPath string,
 	op model.OpType,
 	indentLevel int,
-) string {
+) (string, error) {
 	out := ""
 	indent := strings.Repeat("\t", indentLevel)
 
@@ -2013,7 +2037,7 @@ func setResourceForSlice(
 		out += fmt.Sprintf("%s\t%s := aws.StringSlice(%s)\n", indent, elemVarName, iterVarName)
 		out += fmt.Sprintf("%s\t%s = append(%s, %s)\n", indent, targetVarName, targetVarName, elemVarName)
 		out += fmt.Sprintf("%s}\n", indent)
-		return out
+		return out, nil
 	} else if sourceShape.MemberRef.Shape.Type == "map" &&
 		!sourceShape.MemberRef.Shape.ValueRef.Shape.IsEnum() &&
 		sourceShape.MemberRef.Shape.KeyRef.Shape.Type == "string" {
@@ -2021,12 +2045,12 @@ func setResourceForSlice(
 			out += fmt.Sprintf("%s\t%s := aws.StringMap(%s)\n", indent, elemVarName, iterVarName)
 			out += fmt.Sprintf("%s\t%s = append(%s, %s)\n", indent, targetVarName, targetVarName, elemVarName)
 			out += fmt.Sprintf("%s}\n", indent)
-			return out
+			return out, nil
 		} else if sourceShape.MemberRef.Shape.ValueRef.Shape.Type == "boolean" {
 			out += fmt.Sprintf("%s\t%s := aws.BoolMap(%s)\n", indent, elemVarName, iterVarName)
 			out += fmt.Sprintf("%s\t%s = append(%s, %s)\n", indent, targetVarName, targetVarName, elemVarName)
 			out += fmt.Sprintf("%s}\n", indent)
-			return out
+			return out, nil
 		}
 	}
 	//		var f0elem0 string
@@ -2078,11 +2102,10 @@ func setResourceForSlice(
 			)
 		} else {
 			// This is a bug in the code generation if this occurs...
-			msg := fmt.Sprintf(
-				"could not find targetSetCfg.From %s in struct member type.",
-				*targetSetCfg.From,
+			return "", fmt.Errorf(
+				"resource %q, field %q: could not find targetSetCfg.From %s in struct member type",
+				r.Names.Original, targetFieldName, *targetSetCfg.From,
 			)
-			panic(msg)
 		}
 	} else {
 		//  f0elem0 = *f0iter0
@@ -2094,7 +2117,7 @@ func setResourceForSlice(
 		if sourceShape.MemberRef.Shape.Type == "structure" {
 			containerFieldName = targetFieldName
 		}
-		out += setResourceForContainer(
+		containerOut, err := setResourceForContainer(
 			cfg, r,
 			containerFieldName,
 			elemVarName,
@@ -2107,13 +2130,17 @@ func setResourceForSlice(
 			op,
 			indentLevel+1,
 		)
+		if err != nil {
+			return "", err
+		}
+		out += containerOut
 	}
 	if sourceShape.MemberRef.Shape.RealType == "union" {
 		sourceShape.MemberRef.Shape.Type = "structure"
 	}
 	out += fmt.Sprintf("%s\t%s = append(%s, %s)\n", indent, targetVarName, targetVarName, elemVarName)
 	out += fmt.Sprintf("%s}\n", indent)
-	return out
+	return out, nil
 }
 
 // setResourceForMap returns a string of Go code that sets a target variable
@@ -2137,7 +2164,7 @@ func setResourceForMap(
 	targetFieldPath string,
 	op model.OpType,
 	indentLevel int,
-) string {
+) (string, error) {
 	out := ""
 	indent := strings.Repeat("\t", indentLevel)
 	sourceShape := sourceShapeRef.Shape
@@ -2157,18 +2184,18 @@ func setResourceForMap(
 		sourceShape.ValueRef.Shape.MemberRef.Shape.Type == "string" {
 		out += fmt.Sprintf("%s\t%s[%s] = aws.StringSlice(%s)\n", indent, targetVarName, keyVarName, valIterVarName)
 		out += fmt.Sprintf("%s}\n", indent)
-		return out
+		return out, nil
 	} else if sourceShape.ValueRef.Shape.Type == "map" &&
 		!sourceShape.ValueRef.Shape.ValueRef.Shape.IsEnum() &&
 		sourceShape.ValueRef.Shape.KeyRef.Shape.Type == "string" {
 		if sourceShape.ValueRef.Shape.ValueRef.Shape.Type == "string" {
 			out += fmt.Sprintf("%s\t%s[%s] = aws.StringMap(%s)\n", indent, targetVarName, keyVarName, valIterVarName)
 			out += fmt.Sprintf("%s}\n", indent)
-			return out
+			return out, nil
 		} else if sourceShape.ValueRef.Shape.ValueRef.Shape.Type == "boolean" {
 			out += fmt.Sprintf("%s\t%s[%s] = aws.BoolMap(%s)\n", indent, targetVarName, keyVarName, valIterVarName)
 			out += fmt.Sprintf("%s}\n", indent)
-			return out
+			return out, nil
 		}
 	}
 	//		f0elem := string{}
@@ -2179,7 +2206,7 @@ func setResourceForMap(
 		indentLevel+1,
 	)
 	//  f0val = *f0valiter
-	out += setResourceForContainer(
+	containerOut, err := setResourceForContainer(
 		cfg, r,
 		containerFieldName,
 		valVarName,
@@ -2192,6 +2219,10 @@ func setResourceForMap(
 		op,
 		indentLevel+1,
 	)
+	if err != nil {
+		return "", err
+	}
+	out += containerOut
 	addressOfVar := ""
 	switch sourceShape.ValueRef.Shape.Type {
 	case "structure", "list", "map":
@@ -2204,7 +2235,7 @@ func setResourceForMap(
 	// f0[f0key] = f0val
 	out += fmt.Sprintf("%s\t%s[%s] = %s%s\n", indent, targetVarName, keyVarName, addressOfVar, valVarName)
 	out += fmt.Sprintf("%s}\n", indent)
-	return out
+	return out, nil
 }
 
 // setResourceForScalar returns a string of Go code that sets a target variable
@@ -2398,7 +2429,7 @@ func setResourceForUnion(
 	targetFieldPath string,
 	op model.OpType,
 	indentLevel int,
-) string {
+) (string, error) {
 	out := ""
 	indent := strings.Repeat("\t", indentLevel)
 	sourceShape := sourceShapeRef.Shape
@@ -2431,9 +2462,10 @@ func setResourceForUnion(
 
 		sourceMemberIndex, err := GetMemberIndex(sourceShape, targetMemberName)
 		if err != nil {
-			msg := fmt.Sprintf(
-				"could not determine source shape index: %v", err)
-			panic(msg)
+			return "", fmt.Errorf(
+				"resource %q, field %q: could not determine source shape index: %w",
+				r.Names.Original, targetMemberName, err,
+			)
 		}
 
 		targetMemberShapeRef := targetShape.MemberRefs[targetMemberName]
@@ -2478,7 +2510,7 @@ func setResourceForUnion(
 					targetMemberShapeRef.Shape,
 					indentLevel+2,
 				)
-				out += setResourceForContainer(
+				containerOut, err := setResourceForContainer(
 					cfg, r,
 					targetMemberCleanNames.Camel,
 					indexedVarName,
@@ -2491,6 +2523,10 @@ func setResourceForUnion(
 					op,
 					indentLevel+2,
 				)
+				if err != nil {
+					return "", err
+				}
+				out += containerOut
 
 				out += setResourceForScalar(
 					qualifiedTargetVar,
@@ -2515,5 +2551,5 @@ func setResourceForUnion(
 	}
 	out += fmt.Sprintf("%s}\n", indent)
 
-	return out
+	return out, nil
 }

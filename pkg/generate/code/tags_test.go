@@ -47,12 +47,11 @@ func TestToACKTagsForListShape(t *testing.T) {
 		}
 	}
 `
-	assert.Equal(
-		expectedSyncedConditions,
-		code.GoCodeConvertToACKTags(
-			crd, "tags", "result", "keyOrder", 1,
-		),
+	got, err := code.GoCodeConvertToACKTags(
+		crd, "tags", "result", "keyOrder", 1,
 	)
+	require.NoError(err)
+	assert.Equal(expectedSyncedConditions, got)
 }
 
 func TestToACKTagsForMapShape(t *testing.T) {
@@ -76,12 +75,11 @@ func TestToACKTagsForMapShape(t *testing.T) {
 		}
 	}
 `
-	assert.Equal(
-		expectedSyncedConditions,
-		code.GoCodeConvertToACKTags(
-			crd, "tags", "result", "keyOrder", 1,
-		),
+	got, err := code.GoCodeConvertToACKTags(
+		crd, "tags", "result", "keyOrder", 1,
 	)
+	require.NoError(err)
+	assert.Equal(expectedSyncedConditions, got)
 }
 
 func TestFromACKTagsForListShape(t *testing.T) {
@@ -107,12 +105,11 @@ func TestFromACKTagsForListShape(t *testing.T) {
 		result = append(result, &tag)
 	}
 `
-	assert.Equal(
-		expectedSyncedConditions,
-		code.GoCodeFromACKTags(
-			crd, "tags", "keyOrder", "result", 1,
-		),
+	got, err := code.GoCodeFromACKTags(
+		crd, "tags", "keyOrder", "result", 1,
 	)
+	require.NoError(err)
+	assert.Equal(expectedSyncedConditions, got)
 }
 
 func TestFromACKTagsForMapShape(t *testing.T) {
@@ -130,10 +127,9 @@ func TestFromACKTagsForMapShape(t *testing.T) {
 		result[k] = &v
 	}
 `
-	assert.Equal(
-		expectedSyncedConditions,
-		code.GoCodeFromACKTags(
-			crd, "tags", "keyOrder", "result", 1,
-		),
+	got, err := code.GoCodeFromACKTags(
+		crd, "tags", "keyOrder", "result", 1,
 	)
+	require.NoError(err)
+	assert.Equal(expectedSyncedConditions, got)
 }
