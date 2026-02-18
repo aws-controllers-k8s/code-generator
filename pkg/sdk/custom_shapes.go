@@ -17,7 +17,7 @@ import (
 	"errors"
 	"fmt"
 
-	simpleschema "github.com/kro-run/kro/pkg/simpleschema"
+	simpleschema "github.com/kubernetes-sigs/kro/pkg/simpleschema"
 	apiextv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 
 	awssdkmodel "github.com/aws-controllers-k8s/code-generator/pkg/api"
@@ -86,7 +86,7 @@ func (i *customShapeInjector) injectSimpleSchemaShapes(customShapes map[string]m
 				return fmt.Errorf("CustomType name %s already exists in the API", shapeName)
 			}
 		}
-		openAPISchema, err := simpleschema.ToOpenAPISpec(fieldsMap)
+		openAPISchema, err := simpleschema.ToOpenAPISpec(fieldsMap, nil)
 		if err != nil {
 			return err
 		}
