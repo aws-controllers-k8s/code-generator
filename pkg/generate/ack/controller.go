@@ -18,6 +18,7 @@ import (
 	"sort"
 	"strings"
 	ttpl "text/template"
+	"time"
 
 	awssdkmodel "github.com/aws-controllers-k8s/code-generator/pkg/api"
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/config"
@@ -26,6 +27,7 @@ import (
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate/templateset"
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
+	"github.com/aws-controllers-k8s/code-generator/pkg/util"
 )
 
 var (
@@ -220,11 +222,16 @@ func Controller(
 	// serviceAccountName is the name of the ServiceAccount used in the Helm chart
 	serviceAccountName string,
 ) (*templateset.TemplateSet, error) {
+	totalStart := time.Now()
+
+	crdStart := time.Now()
 	crds, err := m.GetCRDs()
 	if err != nil {
 		return nil, err
 	}
+	util.Tracef("GetCRDs (%d CRDs): %s\n", len(crds), time.Since(crdStart))
 
+	tplStart := time.Now()
 	metaVars := m.MetaVars()
 
 	// Hook code can reference a template path, and we can look up the template
@@ -325,6 +332,8 @@ func Controller(
 			return nil, err
 		}
 	}
+	util.Tracef("template setup (%d templates): %s\n", len(ts.Executed())+len(controllerConfigTemplatePaths), time.Since(tplStart))
+	util.Tracef("Controller() total: %s\n", time.Since(totalStart))
 	return ts, nil
 }
 

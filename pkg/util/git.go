@@ -14,102 +14,51 @@
 package util
 
 import (
+	"bytes"
 	"context"
-	"errors"
 	"fmt"
-	"io"
-
-	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing"
+	"os/exec"
 )
-
-// LoadRepository loads a repository from the local file system.
-// TODO(a-hilaly): load repository into a memory filesystem (needs go1.16
-// migration or use something like https://github.com/spf13/afero
-func LoadRepository(path string) (*git.Repository, error) {
-	return git.PlainOpen(path)
-}
 
 // CloneRepository clones a git repository into a given directory.
 //
-// Calling his function is equivalent to executing `git clone $repositoryURL $path`
+// Equivalent to: git clone $repositoryURL $path
 func CloneRepository(ctx context.Context, path, repositoryURL string) error {
-	_, err := git.PlainCloneContext(ctx, path, false, &git.CloneOptions{
-		URL:      repositoryURL,
-		Progress: nil,
-		// Clone and fetch all tags
-		Tags: git.AllTags,
-	})
-	return err
+	cmd := exec.CommandContext(ctx, "git", "clone", repositoryURL, path)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("%w: %s", err, string(out))
+	}
+	return nil
 }
 
-// FetchRepositoryTags fetches a repository remote tags.
-//
-// Calling this function is equivalent to executing `git -C $path fetch --all --tags`
-func FetchRepositoryTags(ctx context.Context, path string) error {
-	// PlainOpen will make the git commands run against the local
-	// repository and directly make changes to it. So no need to
-	// save/rewrite the refs
-	repo, err := git.PlainOpen(path)
-	if err != nil {
-		return err
-	}
-
-	err = repo.FetchContext(ctx, &git.FetchOptions{
-		Progress: nil,
-		Tags:     git.AllTags,
-	})
-	// weirdly go-git returns a error "Already up to date" when all tags
-	// are already fetched. We should ignore this error.
-	if err == git.NoErrAlreadyUpToDate {
-		return nil
-	}
-	return err
+// HasTag checks if a tag exists in the local repository.
+func HasTag(path string, tag string) bool {
+	cmd := exec.Command("git", "-C", path, "rev-parse", "--verify", fmt.Sprintf("refs/tags/%s", tag))
+	return cmd.Run() == nil
 }
 
-// getRepositoryTagRef returns the git reference (commit hash) of a given tag.
-// NOTE: It is not possible to checkout a tag without knowing it's reference.
+// FetchRepositoryTag fetches a single tag from the remote repository.
 //
-// Calling this function is equivalent to executing `git rev-list -n 1 $tagName`
-func getRepositoryTagRef(repo *git.Repository, tagName string) (*plumbing.Reference, error) {
-	tagRefs, err := repo.Tags()
+// Equivalent to: git -C $path fetch origin tag $tag
+func FetchRepositoryTag(ctx context.Context, path string, tag string) error {
+	cmd := exec.CommandContext(ctx, "git", "-C", path, "fetch", "origin", "tag", tag)
+	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("%w: %s", err, string(out))
 	}
-
-	for {
-		tagRef, err := tagRefs.Next()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return nil, fmt.Errorf("error finding tag reference: %v", err)
-		}
-		if tagRef.Name().Short() == tagName {
-			return tagRef, nil
-		}
-	}
-	return nil, errors.New("tag reference not found")
+	return nil
 }
 
-// CheckoutRepositoryTag checkouts a repository tag by looking for the tag
-// reference then calling the checkout function.
+// CheckoutRepositoryTag checks out a repository tag.
 //
-// Calling This function is equivalent to executing `git checkout tags/$tag`
-func CheckoutRepositoryTag(repo *git.Repository, tag string) error {
-	tagRef, err := getRepositoryTagRef(repo, tag)
-	if err != nil {
-		return err
+// Equivalent to: git -C $path checkout tags/$tag -f
+func CheckoutRepositoryTag(path string, tag string) error {
+	cmd := exec.Command("git", "-C", path, "checkout", fmt.Sprintf("tags/%s", tag), "-f")
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("%w: %s", err, stderr.String())
 	}
-	wt, err := repo.Worktree()
-	if err != nil {
-		return err
-	}
-	// AWS-SDK-GO-V2 - Hash value for tag not found, hence use tagName to checkout
-	err = wt.Checkout(&git.CheckoutOptions{
-		// Checkout only take hashes or branch names.
-		Branch: tagRef.Name(),
-		Force:  true,
-	})
-	return err
+	return nil
 }
