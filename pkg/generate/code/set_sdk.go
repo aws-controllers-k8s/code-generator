@@ -1697,7 +1697,7 @@ func setSDKForScalar(
 				actualType[1],
 			)
 		}
-		out += fmt.Sprintf("%s\treturn nil, fmt.Errorf(\"error: field %s is of type %s32\")\n", indent, ogShapeName.Original, actualType[2])
+		out += fmt.Sprintf("%s\treturn nil, fmt.Errorf(\"error: field %s is of type %s32\")\n", indent, ogShapeName.CamelLower, actualType[2])
 		out += fmt.Sprintf("%s}\n", indent)
 		tempVar := ogShapeName.CamelLower + "Copy"
 		out += fmt.Sprintf("%s%s := %s32(%s)\n", indent, tempVar, actualType[2], dereferencedVal)
