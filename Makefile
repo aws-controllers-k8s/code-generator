@@ -20,7 +20,8 @@ GO_CMD_FLAGS=-tags codegen
 
 .PHONY: all build-ack-generate test \
 	build-controller build-controller-image \
-	local-build-controller-image lint-shell
+	local-build-controller-image lint-shell \
+	check-crd-compatibility
 
 all: test
 
@@ -43,6 +44,12 @@ build-controller-image:	## Build container image for SERVICE
 local-build-controller-image: export LOCAL_MODULES = true
 local-build-controller-image:	## Build container image for SERVICE allowing local modules
 	@./scripts/build-controller-image.sh $(AWS_SERVICE)
+
+BASE_REF ?= main
+CRD_PATHS ?= config/crd/bases,helm/crds
+
+check-crd-compatibility: build-ack-generate	## Check CRDs for breaking changes against BASE_REF
+	@bin/ack-generate crd-compat-check --base-ref=$(BASE_REF) --crd-paths=$(CRD_PATHS)
 
 test: 				## Run code tests
 	go test ${GO_CMD_FLAGS} ./...
