@@ -1,7 +1,8 @@
 {{- define "type_def" -}}
 // +kubebuilder:skipversion
 type {{ .Names.Camel }} struct {
-{{- range $attrName, $attr := .Attrs }}
+{{- range $attrName := .SortedAttrNames }}
+{{- $attr := (index $.Attrs $attrName) }}
 	{{- if $attr.Shape }}
 	{{ $attr.Shape.Documentation }}
 	{{- end }}
