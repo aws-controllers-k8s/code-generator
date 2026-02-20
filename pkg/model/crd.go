@@ -273,6 +273,26 @@ func (r *CRD) SpecFieldNames() []string {
 	return res
 }
 
+// StatusFieldNames returns a sorted slice of field names for the Status fields
+func (r *CRD) StatusFieldNames() []string {
+	res := make([]string, 0, len(r.StatusFields))
+	for fieldName := range r.StatusFields {
+		res = append(res, fieldName)
+	}
+	sort.Strings(res)
+	return res
+}
+
+// SortedTypeImportPaths returns the type import paths in sorted order.
+func (r *CRD) SortedTypeImportPaths() []string {
+	paths := make([]string, 0, len(r.TypeImports))
+	for p := range r.TypeImports {
+		paths = append(paths, p)
+	}
+	sort.Strings(paths)
+	return paths
+}
+
 // UnpacksAttributesMap returns true if the underlying API has
 // Get{Resource}Attributes/Set{Resource}Attributes API calls that map real,
 // schema'd fields to a raw `map[string]*string` for this resource (see SNS and

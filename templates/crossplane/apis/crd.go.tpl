@@ -6,7 +6,8 @@ package {{ .APIVersion }}
 
 import (
 {{- if .CRD.TypeImports }}
-{{- range $packagePath, $alias := .CRD.TypeImports }}
+{{- range $packagePath := .CRD.SortedTypeImportPaths }}
+{{- $alias := (index $.CRD.TypeImports $packagePath) }}
     {{ if $alias }}{{ $alias }} {{ end }}"{{ $packagePath }}"
 {{ end }}
 
@@ -23,7 +24,8 @@ type {{ .CRD.Kind }}Parameters struct {
 	// +kubebuilder:validation:Required
 	Region string `json:"region"`
 	{{- end }}
-	{{- range $fieldName, $field := .CRD.SpecFields }}
+	{{- range $fieldName := .CRD.SpecFieldNames }}
+	{{- $field := (index $.CRD.SpecFields $fieldName) }}
 	{{- if $field.ShapeRef }}
 	{{ $field.ShapeRef.Documentation }}
 	{{- end }}
@@ -42,7 +44,8 @@ type {{ .CRD.Kind }}Spec struct {
 
 // {{ .CRD.Kind }}Observation defines the observed state of {{ .CRD.Kind }}
 type {{ .CRD.Kind }}Observation struct {
-	{{- range $fieldName, $field := .CRD.StatusFields }}
+	{{- range $fieldName := .CRD.StatusFieldNames }}
+	{{- $field := (index $.CRD.StatusFields $fieldName) }}
 	{{- if $field.ShapeRef }}
 	{{ $field.ShapeRef.Documentation }}
 	{{- end }}

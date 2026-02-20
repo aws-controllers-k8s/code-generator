@@ -3,6 +3,7 @@ package api
 import (
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
 	"unicode"
 )
@@ -302,7 +303,13 @@ loop:
 // renameExportable renames all operation names to be exportable names.
 // All nested Shape names are also updated to the exportable variant.
 func (a *API) renameExportable() {
-	for name, op := range a.Operations {
+	opNames := make([]string, 0, len(a.Operations))
+	for name := range a.Operations {
+		opNames = append(opNames, name)
+	}
+	sort.Strings(opNames)
+	for _, name := range opNames {
+		op := a.Operations[name]
 		newName := a.ExportableName(name)
 		if newName != name {
 			delete(a.Operations, name)
@@ -311,7 +318,13 @@ func (a *API) renameExportable() {
 		op.ExportedName = newName
 	}
 
-	for k, s := range a.Shapes {
+	shapeKeys := make([]string, 0, len(a.Shapes))
+	for k := range a.Shapes {
+		shapeKeys = append(shapeKeys, k)
+	}
+	sort.Strings(shapeKeys)
+	for _, k := range shapeKeys {
+		s := a.Shapes[k]
 		// FIXME SNS has lower and uppercased shape names with the same name,
 		// except the lowercased variant is used exclusively for string and
 		// other primitive types. Renaming both would cause a collision.
@@ -320,7 +333,13 @@ func (a *API) renameExportable() {
 			continue
 		}
 
-		for mName, member := range s.MemberRefs {
+		memberNames := make([]string, 0, len(s.MemberRefs))
+		for mName := range s.MemberRefs {
+			memberNames = append(memberNames, mName)
+		}
+		sort.Strings(memberNames)
+		for _, mName := range memberNames {
+			member := s.MemberRefs[mName]
 			newName := a.ExportableName(mName)
 			if newName != mName {
 				delete(s.MemberRefs, mName)

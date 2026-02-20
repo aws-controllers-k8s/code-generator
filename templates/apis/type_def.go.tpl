@@ -3,7 +3,8 @@
 {{ .Shape.Documentation }}
 {{- end }}
 type {{ .Names.Camel }} struct {
-{{- range $attrName, $attr := .Attrs }}
+{{- range $attrName := .SortedAttrNames }}
+{{- $attr := (index $.Attrs $attrName) }}
 	{{- if $attr.Shape.Documentation }}
 	{{ $attr.Shape.Documentation }}
 	{{- end }}

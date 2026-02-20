@@ -15,6 +15,7 @@ package model
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	awssdkmodel "github.com/aws-controllers-k8s/code-generator/pkg/api"
@@ -63,7 +64,13 @@ type SDKAPI struct {
 // output request/response payloads
 func (a *SDKAPI) GetPayloads() []string {
 	res := []string{}
-	for _, op := range a.API.Operations {
+	opIDs := make([]string, 0, len(a.API.Operations))
+	for opID := range a.API.Operations {
+		opIDs = append(opIDs, opID)
+	}
+	sort.Strings(opIDs)
+	for _, opID := range opIDs {
+		op := a.API.Operations[opID]
 		res = append(res, op.InputRef.ShapeName)
 		res = append(res, op.OutputRef.ShapeName)
 	}
@@ -78,7 +85,13 @@ func (a *SDKAPI) GetOperationMap(cfg *ackgenconfig.Config) (*OperationMap, error
 	}
 	// create an index of Operations by operation types and resource name
 	opMap := OperationMap{}
-	for opID, op := range a.API.Operations {
+	opIDs := make([]string, 0, len(a.API.Operations))
+	for opID := range a.API.Operations {
+		opIDs = append(opIDs, opID)
+	}
+	sort.Strings(opIDs)
+	for _, opID := range opIDs {
+		op := a.API.Operations[opID]
 		opTypes, opResourceNames := getOpTypesAndResourcesMapping(opID, cfg)
 		for _, opType := range opTypes {
 			if _, found := opMap[opType]; !found {
@@ -100,7 +113,13 @@ func (a *SDKAPI) GetOperationMap(cfg *ackgenconfig.Config) (*OperationMap, error
 	// only and list that in our `operations:` configuration value.
 	//
 	// see: https://github.com/aws-controllers-k8s/community/issues/1555
-	for opID, opCfg := range cfg.Operations {
+	cfgOpIDs := make([]string, 0, len(cfg.Operations))
+	for opID := range cfg.Operations {
+		cfgOpIDs = append(cfgOpIDs, opID)
+	}
+	sort.Strings(cfgOpIDs)
+	for _, opID := range cfgOpIDs {
+		opCfg := cfg.Operations[opID]
 		if len(opCfg.ResourceName) == 0 {
 			continue
 		}
@@ -256,8 +275,13 @@ func (a *SDKAPI) CRDNames(cfg *ackgenconfig.Config) []names.Names {
 		panic(err)
 	}
 	createOps := (*opMap)[OpTypeCreate]
-	crdNames := []names.Names{}
+	crdNameKeys := make([]string, 0, len(createOps))
 	for crdName := range createOps {
+		crdNameKeys = append(crdNameKeys, crdName)
+	}
+	sort.Strings(crdNameKeys)
+	crdNames := []names.Names{}
+	for _, crdName := range crdNameKeys {
 		if cfg.ResourceIsIgnored(crdName) {
 			continue
 		}
