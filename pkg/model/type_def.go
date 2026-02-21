@@ -14,6 +14,7 @@
 package model
 
 import (
+	"sort"
 	"strings"
 
 	awssdkmodel "github.com/aws-controllers-k8s/code-generator/pkg/api"
@@ -26,6 +27,16 @@ type TypeDef struct {
 	Names names.Names
 	Attrs map[string]*Attr
 	Shape *awssdkmodel.Shape
+}
+
+// SortedAttrNames returns the attribute names in sorted order.
+func (td *TypeDef) SortedAttrNames() []string {
+	names := make([]string, 0, len(td.Attrs))
+	for name := range td.Attrs {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names
 }
 
 // GetAttribute returns the Attribute with name "attrName".

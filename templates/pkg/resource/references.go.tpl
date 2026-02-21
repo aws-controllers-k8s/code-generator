@@ -31,7 +31,8 @@ import (
 )
 
 {{ if .CRD.HasReferenceFields -}}
-{{ range $fieldName, $field := .CRD.Fields -}}
+{{ range $fieldName := .CRD.SortedFieldNames -}}
+{{ $field := (index $.CRD.Fields $fieldName) -}}
 {{ if and $field.HasReference (not (eq $field.ReferencedServiceName $servicePackageName)) -}}
 // +kubebuilder:rbac:groups={{ $field.ReferencedServiceName -}}.services.k8s.aws,resources={{ ToLower $field.ReferencedResourceNamePlural }},verbs=get;list
 // +kubebuilder:rbac:groups={{ $field.ReferencedServiceName -}}.services.k8s.aws,resources={{ ToLower $field.ReferencedResourceNamePlural }}/status,verbs=get;list
@@ -47,7 +48,8 @@ import (
 func (rm *resourceManager) ClearResolvedReferences(res acktypes.AWSResource) (acktypes.AWSResource) {
 	ko := rm.concreteResource(res).ko.DeepCopy()
 
-{{ range $fieldName, $field := .CRD.Fields -}}
+{{ range $fieldName := .CRD.SortedFieldNames -}}
+{{ $field := (index $.CRD.Fields $fieldName) -}}
 {{ if $field.HasReference -}}
 {{ GoCodeClearResolvedReferences $field "ko" 1 }}
 {{ end -}}
@@ -77,14 +79,15 @@ func (rm *resourceManager) ResolveReferences(
 {{- if $hookCode := Hook .CRD "references_pre_resolve" }}
 {{ $hookCode }}
 {{- end }}
-	{{ range $fieldName, $field := .CRD.Fields -}}
+	{{ range $fieldName := .CRD.SortedFieldNames -}}
+	{{ $field := (index $.CRD.Fields $fieldName) -}}
 	{{ if $field.HasReference -}}
 	if fieldHasReferences, err := rm.resolveReferenceFor{{ $field.FieldPathWithUnderscore }}(ctx, apiReader, ko); err != nil {
 		return &resource{ko}, (resourceHasReferences || fieldHasReferences), err
 	} else {
 		resourceHasReferences = resourceHasReferences || fieldHasReferences
 	}
-	
+
 	{{ end -}}
 	{{ end -}}
 {{- if $hookCode := Hook .CRD "references_post_resolve" }}
@@ -97,7 +100,8 @@ func (rm *resourceManager) ResolveReferences(
 // validateReferenceFields validates the reference field and corresponding
 // identifier field.
 func validateReferenceFields(ko *svcapitypes.{{ .CRD.Names.Camel }}) error {
-{{ range $fieldName, $field := .CRD.Fields -}}
+{{ range $fieldName := .CRD.SortedFieldNames -}}
+{{ $field := (index $.CRD.Fields $fieldName) -}}
 {{ if $field.HasReference }}
 {{ GoCodeReferencesValidation $field "ko" 1 -}}
 {{ end -}}
@@ -107,23 +111,24 @@ func validateReferenceFields(ko *svcapitypes.{{ .CRD.Names.Camel }}) error {
 
 {{- $getReferencedResourceStateResources := (Nil) -}}
 
-{{ range $fieldName, $field := .CRD.Fields -}}
+{{ range $fieldName := .CRD.SortedFieldNames -}}
+{{ $field := (index $.CRD.Fields $fieldName) -}}
 {{ if $field.HasReference }}
 // resolveReferenceFor{{ $field.FieldPathWithUnderscore }} reads the resource referenced
 // from {{ $field.ReferenceFieldPath }} field and sets the {{ $field.Path }}
 // from referenced resource. Returns a boolean indicating whether a reference
-// contains references, or an error 
+// contains references, or an error
 func (rm *resourceManager) resolveReferenceFor{{ $field.FieldPathWithUnderscore }}(
 	ctx context.Context,
 	apiReader client.Reader,
-	ko *svcapitypes.{{ .CRD.Names.Camel }},
+	ko *svcapitypes.{{ $.CRD.Names.Camel }},
 ) (hasReferences bool, err error) {
 {{ GoCodeResolveReference $field "ko" 1 }}
 	return hasReferences, nil
 }
 
-{{- if not (and $getReferencedResourceStateResources (eq (index $getReferencedResourceStateResources .FieldConfig.References.Resource) "true" )) }}
-{{- $getReferencedResourceStateResources = AddToMap $getReferencedResourceStateResources .FieldConfig.References.Resource "true" }}
+{{- if not (and $getReferencedResourceStateResources (eq (index $getReferencedResourceStateResources $field.FieldConfig.References.Resource) "true" )) }}
+{{- $getReferencedResourceStateResources = AddToMap $getReferencedResourceStateResources $field.FieldConfig.References.Resource "true" }}
 {{ template "read_referenced_resource_and_validate" $field }}
 {{ end -}}
 {{ end -}}

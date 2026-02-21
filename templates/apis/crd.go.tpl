@@ -4,7 +4,8 @@ package {{ .APIVersion }}
 
 import (
 {{- if .CRD.TypeImports }}
-{{- range $packagePath, $alias := .CRD.TypeImports }}
+{{- range $packagePath := .CRD.SortedTypeImportPaths }}
+{{- $alias := (index $.CRD.TypeImports $packagePath) }}
     {{ if $alias }}{{ $alias }} {{ end }}"{{ $packagePath }}"
 {{ end }}
 
@@ -15,7 +16,8 @@ import (
 
 {{ .CRD.Documentation }}
 type {{ .CRD.Kind }}Spec struct {
-{{ range $fieldName, $field := .CRD.SpecFields }}
+{{ range $fieldName := .CRD.SpecFieldNames }}
+{{- $field := (index $.CRD.SpecFields $fieldName) }}
 {{ if $field.GetDocumentation -}}
     {{ $field.GetDocumentation }}
 {{ end -}}
@@ -45,7 +47,8 @@ type {{ .CRD.Kind }}Status struct {
 	// resource
 	// +kubebuilder:validation:Optional
 	Conditions []*ackv1alpha1.Condition `json:"conditions"`
-	{{- range $fieldName, $field := .CRD.StatusFields }}
+	{{- range $fieldName := .CRD.StatusFieldNames }}
+	{{- $field := (index $.CRD.StatusFields $fieldName) }}
 	{{- if $field.GetDocumentation }}
 	{{ $field.GetDocumentation }}
 	{{- end }}

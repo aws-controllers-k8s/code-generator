@@ -126,7 +126,13 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 		return nil, fmt.Errorf("generator.yaml validation failed:\n  %s", strings.Join(msgs, "\n  "))
 	}
 
-	for crdName, createOp := range createOps {
+	crdNameKeys := make([]string, 0, len(createOps))
+	for crdName := range createOps {
+		crdNameKeys = append(crdNameKeys, crdName)
+	}
+	sort.Strings(crdNameKeys)
+	for _, crdName := range crdNameKeys {
+		createOp := createOps[crdName]
 		if m.cfg.ResourceIsIgnored(crdName) {
 			continue
 		}
@@ -162,7 +168,8 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 		// but operates at different lifecycle stages.
 		inputWrapperFieldPath := m.cfg.GetInputWrapperFieldPath(createOp)
 
-		for memberName, memberShapeRef := range inputShape.MemberRefs {
+		for _, memberName := range inputShape.MemberNames() {
+			memberShapeRef := inputShape.MemberRefs[memberName]
 			if memberShapeRef.Shape == nil {
 				return nil, ErrNilShapePointer
 			}
@@ -177,7 +184,8 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 				// this logic to handle list/map types similar to getWrapperShape
 				// in crd.go.
 				if wrapperShape.Type == "structure" {
-					for wrapperMemberName, wrapperMemberShapeRef := range wrapperShape.MemberRefs {
+					for _, wrapperMemberName := range wrapperShape.MemberNames() {
+						wrapperMemberShapeRef := wrapperShape.MemberRefs[wrapperMemberName]
 						if wrapperMemberShapeRef.Shape == nil {
 							return nil, ErrNilShapePointer
 						}
@@ -231,7 +239,14 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 		// confusion.
 		customNestedFields := make(map[string]*ackgenconfig.FieldConfig)
 
-		for targetFieldName, fieldConfig := range m.cfg.GetFieldConfigs(crdName) {
+		fieldConfigs := m.cfg.GetFieldConfigs(crdName)
+		fieldConfigNames := make([]string, 0, len(fieldConfigs))
+		for fn := range fieldConfigs {
+			fieldConfigNames = append(fieldConfigNames, fn)
+		}
+		sort.Strings(fieldConfigNames)
+		for _, targetFieldName := range fieldConfigNames {
+			fieldConfig := fieldConfigs[targetFieldName]
 			if fieldConfig.IsReadOnly {
 				// It's a Status field...
 				continue
@@ -314,13 +329,15 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 			// We might be in a "wrapper" shape. Unwrap it to find the real object
 			// representation for the CRD's createOp. If there is a single member
 			// shape and that member shape is a structure, unwrap it.
-			for _, memberRef := range outputShape.MemberRefs {
+			for _, mn := range outputShape.MemberNames() {
+				memberRef := outputShape.MemberRefs[mn]
 				if memberRef.Shape.Type == "structure" {
 					outputShape = memberRef.Shape
 				}
 			}
 		}
-		for memberName, memberShapeRef := range outputShape.MemberRefs {
+		for _, memberName := range outputShape.MemberNames() {
+			memberShapeRef := outputShape.MemberRefs[memberName]
 			if memberShapeRef.Shape == nil {
 				return nil, ErrNilShapePointer
 			}
@@ -354,7 +371,14 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 
 		// Now add the additional Status fields that are required from other
 		// API operations.
-		for targetFieldName, fieldConfig := range m.cfg.GetFieldConfigs(crdName) {
+		statusFieldConfigs := m.cfg.GetFieldConfigs(crdName)
+		statusFieldConfigNames := make([]string, 0, len(statusFieldConfigs))
+		for fn := range statusFieldConfigs {
+			statusFieldConfigNames = append(statusFieldConfigNames, fn)
+		}
+		sort.Strings(statusFieldConfigNames)
+		for _, targetFieldName := range statusFieldConfigNames {
+			fieldConfig := statusFieldConfigs[targetFieldName]
 			if !fieldConfig.IsReadOnly {
 				// It's a Spec field...
 				continue
@@ -563,7 +587,13 @@ func (m *Model) GetTypeDefs() ([]*TypeDef, error) {
 
 	payloads := m.SDKAPI.GetPayloads()
 
-	for shapeName, shape := range m.SDKAPI.API.Shapes {
+	shapeNames := make([]string, 0, len(m.SDKAPI.API.Shapes))
+	for shapeName := range m.SDKAPI.API.Shapes {
+		shapeNames = append(shapeNames, shapeName)
+	}
+	sort.Strings(shapeNames)
+	for _, shapeName := range shapeNames {
+		shape := m.SDKAPI.API.Shapes[shapeName]
 		if util.InStrings(shapeName, payloads) && !m.IsShapeUsedInCRDs(shapeName) {
 			// Payloads are not type defs, unless explicitly used
 			continue
@@ -582,7 +612,8 @@ func (m *Model) GetTypeDefs() ([]*TypeDef, error) {
 		}
 
 		attrs := map[string]*Attr{}
-		for memberName, memberRef := range shape.MemberRefs {
+		for _, memberName := range shape.MemberNames() {
+			memberRef := shape.MemberRefs[memberName]
 			memberNames := names.New(memberName)
 			memberShape := memberRef.Shape
 			if !m.IsShapeUsedInCRDs(memberShape.ShapeName) {
@@ -674,7 +705,8 @@ func (m *Model) processNestedFieldTypeDefs(
 		return err
 	}
 	for _, crd := range crds {
-		for fieldPath, field := range crd.Fields {
+		for _, fieldPath := range crd.SortedFieldNames() {
+			field := crd.Fields[fieldPath]
 			if !strings.Contains(fieldPath, ".") {
 				// top-level fields have already had their structure
 				// transformed during the CRD.AddSpecField and
@@ -981,13 +1013,13 @@ func replaceSecretAttrGoType(
 // data type overridden (e.g. for SecretKeyReferences)
 func (m *Model) processFields(crds []*CRD) error {
 	for _, crd := range crds {
-		for _, field := range crd.SpecFields {
-			if err := m.processTopLevelField(crd, field); err != nil {
+		for _, fieldName := range crd.SpecFieldNames() {
+			if err := m.processTopLevelField(crd, crd.SpecFields[fieldName]); err != nil {
 				return err
 			}
 		}
-		for _, field := range crd.StatusFields {
-			if err := m.processTopLevelField(crd, field); err != nil {
+		for _, fieldName := range crd.StatusFieldNames() {
+			if err := m.processTopLevelField(crd, crd.StatusFields[fieldName]); err != nil {
 				return err
 			}
 		}
@@ -1073,7 +1105,8 @@ func (m *Model) processStructField(
 	field *Field,
 ) error {
 	fieldShape := field.ShapeRef.Shape
-	for memberName, memberRef := range fieldShape.MemberRefs {
+	for _, memberName := range fieldShape.MemberNames() {
+		memberRef := fieldShape.MemberRefs[memberName]
 		if err := m.processField(crd, fieldPath, field, memberName, memberRef); err != nil {
 			return err
 		}
@@ -1094,7 +1127,8 @@ func (m *Model) processListField(
 	if elementFieldShape.Type != "structure" {
 		return nil
 	}
-	for memberName, memberRef := range elementFieldShape.MemberRefs {
+	for _, memberName := range elementFieldShape.MemberNames() {
+		memberRef := elementFieldShape.MemberRefs[memberName]
 		if err := m.processField(crd, fieldPath, field, memberName, memberRef); err != nil {
 			return err
 		}
@@ -1115,7 +1149,8 @@ func (m *Model) processMapField(
 	if valueFieldShape.Type != "structure" {
 		return nil
 	}
-	for memberName, memberRef := range valueFieldShape.MemberRefs {
+	for _, memberName := range valueFieldShape.MemberNames() {
+		memberRef := valueFieldShape.MemberRefs[memberName]
 		if err := m.processField(crd, fieldPath, field, memberName, memberRef); err != nil {
 			return err
 		}
@@ -1129,7 +1164,13 @@ func (m *Model) processMapField(
 func (m *Model) GetEnumDefs() ([]*EnumDef, error) {
 	edefs := []*EnumDef{}
 
-	for shapeName, shape := range m.SDKAPI.API.Shapes {
+	enumShapeNames := make([]string, 0, len(m.SDKAPI.API.Shapes))
+	for shapeName := range m.SDKAPI.API.Shapes {
+		enumShapeNames = append(enumShapeNames, shapeName)
+	}
+	sort.Strings(enumShapeNames)
+	for _, shapeName := range enumShapeNames {
+		shape := m.SDKAPI.API.Shapes[shapeName]
 		if !shape.IsEnum() {
 			continue
 		}
