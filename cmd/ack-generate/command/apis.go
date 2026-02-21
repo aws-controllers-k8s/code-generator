@@ -23,6 +23,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/config"
 	ackgenerate "github.com/aws-controllers-k8s/code-generator/pkg/generate/ack"
 	ackmetadata "github.com/aws-controllers-k8s/code-generator/pkg/metadata"
 	"github.com/aws-controllers-k8s/code-generator/pkg/sdk"
@@ -95,22 +96,37 @@ func generateAPIs(cmd *cobra.Command, args []string) error {
 		optOutputPath = filepath.Join(optServicesDir, svcAlias)
 	}
 
-	repoStart := time.Now()
-	ctx, cancel := sdk.ContextWithSigterm(context.Background())
-	defer cancel()
-	sdkDirPath, err := sdk.EnsureRepo(ctx, optCacheDir, optRefreshCache, optAWSSDKGoVersion, optOutputPath)
+	// Load generator config to resolve model name before fetching
+	cfg, err := ackgenconfig.New(optGeneratorConfigPath, ackgenerate.DefaultConfig)
 	if err != nil {
 		return err
 	}
-	sdkDir = sdkDirPath
-	util.Tracef("EnsureRepo: %s\n", time.Since(repoStart))
+
+	// Resolve SDK version and fetch the model file
+	fetchStart := time.Now()
+	resolvedVersion, err := sdk.GetSDKVersion(optAWSSDKGoVersion, "", optOutputPath)
+	if err != nil {
+		return err
+	}
+	resolvedVersion = sdk.EnsureSemverPrefix(resolvedVersion)
+
+	modelName := resolveModelName(svcAlias, cfg)
+	ctx, cancel := sdk.ContextWithSigterm(context.Background())
+	defer cancel()
+	basePath, err := sdk.EnsureModel(ctx, optCacheDir, resolvedVersion, modelName)
+	if err != nil {
+		return err
+	}
+	sdkDir = basePath
+	sdkVersion = resolvedVersion
+	util.Tracef("EnsureModel: %s\n", time.Since(fetchStart))
 
 	modelStart := time.Now()
 	metadata, err := ackmetadata.NewServiceMetadata(optMetadataConfigPath)
 	if err != nil {
 		return err
 	}
-	m, err := loadModelWithLatestAPIVersion(svcAlias, metadata)
+	m, err := loadModelWithLatestAPIVersion(svcAlias, metadata, cfg)
 	if err != nil {
 		return err
 	}

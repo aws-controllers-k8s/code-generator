@@ -24,6 +24,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
+	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/config"
 	cpgenerate "github.com/aws-controllers-k8s/code-generator/pkg/generate/crossplane"
 	"github.com/aws-controllers-k8s/code-generator/pkg/sdk"
 )
@@ -44,13 +45,6 @@ func generateCrossplane(_ *cobra.Command, args []string) error {
 		return fmt.Errorf("please specify the service alias for the AWS service API to generate")
 	}
 
-	ctx, cancel := sdk.ContextWithSigterm(context.Background())
-	defer cancel()
-	sdkDirPath, err := sdk.EnsureRepo(ctx, optCacheDir, optRefreshCache, optAWSSDKGoVersion, optOutputPath)
-	if err != nil {
-		return err
-	}
-	sdkDir = sdkDirPath
 	svcAlias := strings.ToLower(args[0])
 	if optGeneratorConfigPath == "" {
 		// default generator configuration file path is now: apis/<service>/<generator-config.yaml>
@@ -58,7 +52,31 @@ func generateCrossplane(_ *cobra.Command, args []string) error {
 		// resources can exist in multiple versions.
 		optGeneratorConfigPath = filepath.Join(optOutputPath, "apis", svcAlias, "generator-config.yaml")
 	}
-	m, err := loadModel(svcAlias, optGenVersion, "aws.crossplane.io", cpgenerate.DefaultConfig)
+
+	// Load generator config to resolve model name before fetching
+	cfg, err := ackgenconfig.New(optGeneratorConfigPath, cpgenerate.DefaultConfig)
+	if err != nil {
+		return err
+	}
+
+	// Resolve SDK version and fetch the model file
+	resolvedVersion, err := sdk.GetSDKVersion(optAWSSDKGoVersion, "", optOutputPath)
+	if err != nil {
+		return err
+	}
+	resolvedVersion = sdk.EnsureSemverPrefix(resolvedVersion)
+
+	modelName := resolveModelName(svcAlias, cfg)
+	ctx, cancel := sdk.ContextWithSigterm(context.Background())
+	defer cancel()
+	basePath, err := sdk.EnsureModel(ctx, optCacheDir, resolvedVersion, modelName)
+	if err != nil {
+		return err
+	}
+	sdkDir = basePath
+	sdkVersion = resolvedVersion
+
+	m, err := loadModel(svcAlias, optGenVersion, "aws.crossplane.io", cfg)
 	if err != nil {
 		return err
 	}

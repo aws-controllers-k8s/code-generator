@@ -32,7 +32,6 @@ A tool to generate AWS service controller code`
 var (
 	defaultCacheDir            string
 	optCacheDir                string
-	optRefreshCache            bool
 	optAWSSDKGoVersion         string
 	defaultTemplateDirs        []string
 	optTemplateDirs            []string
@@ -40,6 +39,7 @@ var (
 	optServicesDir             string
 	optDryRun                  bool
 	sdkDir                     string
+	sdkVersion                 string
 	optGeneratorConfigPath     string
 	optMetadataConfigPath      string
 	optDocumentationConfigPath string
@@ -107,10 +107,7 @@ func init() {
 		&optServicesDir, "services-dir", defaultServicesDir, "Path to directory to output service-specific code",
 	)
 	rootCmd.PersistentFlags().StringVar(
-		&optCacheDir, "cache-dir", defaultCacheDir, "Path to directory to store cached files (including clone'd aws-sdk-go-v2 repo)",
-	)
-	rootCmd.PersistentFlags().BoolVar(
-		&optRefreshCache, "refresh-cache", true, "If true, and aws-sdk-go-v2 repo is already cloned, will git pull the latest aws-sdk-go-v2 commit",
+		&optCacheDir, "cache-dir", defaultCacheDir, "Path to directory to store cached model files",
 	)
 	rootCmd.PersistentFlags().StringVar(
 		&optGeneratorConfigPath, "generator-config-path", "", "Path to file containing instructions for code generation to use",
