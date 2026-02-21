@@ -23,6 +23,8 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
 
+	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/config"
+	ackgenerate "github.com/aws-controllers-k8s/code-generator/pkg/generate/ack"
 	olmgenerate "github.com/aws-controllers-k8s/code-generator/pkg/generate/olm"
 	ackmetadata "github.com/aws-controllers-k8s/code-generator/pkg/metadata"
 	"github.com/aws-controllers-k8s/code-generator/pkg/sdk"
@@ -83,19 +85,34 @@ func generateOLMAssets(cmd *cobra.Command, args []string) error {
 
 	version := args[1]
 
-	// get the generator inputs
-	ctx, cancel := sdk.ContextWithSigterm(context.Background())
-	defer cancel()
-	sdkDirPath, err := sdk.EnsureRepo(ctx, optCacheDir, optRefreshCache, optAWSSDKGoVersion, optOutputPath)
+	// Load generator config to resolve model name before fetching
+	cfg, err := ackgenconfig.New(optGeneratorConfigPath, ackgenerate.DefaultConfig)
 	if err != nil {
 		return err
 	}
-	sdkDir = sdkDirPath
+
+	// Resolve SDK version and fetch the model file
+	resolvedVersion, err := sdk.GetSDKVersion(optAWSSDKGoVersion, "", optOutputPath)
+	if err != nil {
+		return err
+	}
+	resolvedVersion = sdk.EnsureSemverPrefix(resolvedVersion)
+
+	modelName := resolveModelName(svcAlias, cfg)
+	ctx, cancel := sdk.ContextWithSigterm(context.Background())
+	defer cancel()
+	basePath, err := sdk.EnsureModel(ctx, optCacheDir, resolvedVersion, modelName)
+	if err != nil {
+		return err
+	}
+	sdkDir = basePath
+	sdkVersion = resolvedVersion
+
 	metadata, err := ackmetadata.NewServiceMetadata(optMetadataConfigPath)
 	if err != nil {
 		return err
 	}
-	m, err := loadModelWithLatestAPIVersion(svcAlias, metadata)
+	m, err := loadModelWithLatestAPIVersion(svcAlias, metadata, cfg)
 	if err != nil {
 		return err
 	}

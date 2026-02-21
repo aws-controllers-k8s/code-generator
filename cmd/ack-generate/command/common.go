@@ -22,39 +22,39 @@ import (
 	k8sversion "k8s.io/apimachinery/pkg/version"
 
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/config"
-	ackgenerate "github.com/aws-controllers-k8s/code-generator/pkg/generate/ack"
 	ackmetadata "github.com/aws-controllers-k8s/code-generator/pkg/metadata"
 	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
 	acksdk "github.com/aws-controllers-k8s/code-generator/pkg/sdk"
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
 )
 
-// loadModelWithLatestAPIVersion finds the AWS SDK for a given service alias and
-// creates a new model with the latest API version.
-func loadModelWithLatestAPIVersion(svcAlias string, metadata *ackmetadata.ServiceMetadata) (*ackmodel.Model, error) {
-	latestAPIVersion, err := getLatestAPIVersion(metadata.APIVersions)
-	if err != nil {
-		return nil, err
-	}
-	return loadModel(svcAlias, latestAPIVersion, "", ackgenerate.DefaultConfig)
-}
-
-// loadModel finds the AWS SDK for a given service alias and creates a new model
-// with the given API version.
-func loadModel(svcAlias string, apiVersion string, apiGroup string, defaultCfg ackgenconfig.Config) (*ackmodel.Model, error) {
-	totalStart := time.Now()
-
-	cfgStart := time.Now()
-	cfg, err := ackgenconfig.New(optGeneratorConfigPath, defaultCfg)
-	if err != nil {
-		return nil, err
-	}
-	util.Tracef("config loading: %s\n", time.Since(cfgStart))
-
+// resolveModelName returns the SDK model name for a service, checking the
+// generator config for an override.
+func resolveModelName(svcAlias string, cfg ackgenconfig.Config) string {
 	modelName := strings.ToLower(cfg.SDKNames.Model)
 	if modelName == "" {
 		modelName = svcAlias
 	}
+	return modelName
+}
+
+// loadModelWithLatestAPIVersion finds the AWS SDK for a given service alias and
+// creates a new model with the latest API version.
+func loadModelWithLatestAPIVersion(svcAlias string, metadata *ackmetadata.ServiceMetadata, cfg ackgenconfig.Config) (*ackmodel.Model, error) {
+	latestAPIVersion, err := getLatestAPIVersion(metadata.APIVersions)
+	if err != nil {
+		return nil, err
+	}
+	return loadModel(svcAlias, latestAPIVersion, "", cfg)
+}
+
+// loadModel finds the AWS SDK for a given service alias and creates a new model
+// with the given API version. The cfg parameter should be pre-loaded by the
+// caller so that the model name can be resolved before fetching.
+func loadModel(svcAlias string, apiVersion string, apiGroup string, cfg ackgenconfig.Config) (*ackmodel.Model, error) {
+	totalStart := time.Now()
+
+	modelName := resolveModelName(svcAlias, cfg)
 
 	apiStart := time.Now()
 	sdkHelper := acksdk.NewHelper(sdkDir, cfg)
