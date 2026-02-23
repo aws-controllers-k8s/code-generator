@@ -14,6 +14,7 @@
 package command
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strings"
@@ -22,8 +23,10 @@ import (
 	k8sversion "k8s.io/apimachinery/pkg/version"
 
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/config"
+	ackgenerate "github.com/aws-controllers-k8s/code-generator/pkg/generate/ack"
 	ackmetadata "github.com/aws-controllers-k8s/code-generator/pkg/metadata"
 	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
+	"github.com/aws-controllers-k8s/code-generator/pkg/sdk"
 	acksdk "github.com/aws-controllers-k8s/code-generator/pkg/sdk"
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
 )
@@ -107,4 +110,35 @@ func getServiceAccountName() (string, error) {
 	}
 
 	return "", fmt.Errorf("service account name not set")
+}
+
+// setupGenerator loads the generator configuration, resolves the SDK version and fetches the
+// model file
+func setupGenerator(svcAlias string) (ackgenconfig.Config, error) {
+	// Load generator config to resolve model name before fetching
+	cfg, err := ackgenconfig.New(optGeneratorConfigPath, ackgenerate.DefaultConfig)
+	if err != nil {
+		return cfg, err
+	}
+
+	// Resolve SDK version and fetch the model file
+	fetchStart := time.Now()
+	resolvedVersion, err := sdk.GetSDKVersion(optAWSSDKGoVersion, "", optOutputPath)
+	if err != nil {
+		return cfg, err
+	}
+	resolvedVersion = sdk.EnsureSemverPrefix(resolvedVersion)
+
+	modelName := resolveModelName(svcAlias, cfg)
+	ctx, cancel := sdk.ContextWithSigterm(context.Background())
+	defer cancel()
+	basePath, err := sdk.EnsureModel(ctx, optCacheDir, resolvedVersion, modelName)
+	if err != nil {
+		return cfg, err
+	}
+	sdkDir = basePath
+	sdkVersion = resolvedVersion
+	util.Tracef("EnsureModel: %s\n", time.Since(fetchStart))
+
+	return cfg, nil
 }

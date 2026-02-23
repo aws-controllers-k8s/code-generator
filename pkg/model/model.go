@@ -564,8 +564,7 @@ func (m *Model) RemoveIgnoredOperations(ops *Ops) {
 
 // IsShapeUsedInCRDs returns true if the supplied shape name is a member of amy
 // CRD's payloads or those payloads sub-member shapes
-func (m *Model) IsShapeUsedInCRDs(shapeName string) bool {
-	crds, _ := m.GetCRDs()
+func (m *Model) IsShapeUsedInCRDs(shapeName string, crds []*CRD) bool {
 	for _, crd := range crds {
 		if crd.HasShapeAsMember(shapeName) {
 			return true
@@ -587,6 +586,11 @@ func (m *Model) GetTypeDefs() ([]*TypeDef, error) {
 
 	payloads := m.SDKAPI.GetPayloads()
 
+	crds, err := m.GetCRDs()
+	if err != nil {
+		return nil, err
+	}
+
 	shapeNames := make([]string, 0, len(m.SDKAPI.API.Shapes))
 	for shapeName := range m.SDKAPI.API.Shapes {
 		shapeNames = append(shapeNames, shapeName)
@@ -594,7 +598,7 @@ func (m *Model) GetTypeDefs() ([]*TypeDef, error) {
 	sort.Strings(shapeNames)
 	for _, shapeName := range shapeNames {
 		shape := m.SDKAPI.API.Shapes[shapeName]
-		if util.InStrings(shapeName, payloads) && !m.IsShapeUsedInCRDs(shapeName) {
+		if util.InStrings(shapeName, payloads) && !m.IsShapeUsedInCRDs(shapeName, crds) {
 			// Payloads are not type defs, unless explicitly used
 			continue
 		}
@@ -616,7 +620,7 @@ func (m *Model) GetTypeDefs() ([]*TypeDef, error) {
 			memberRef := shape.MemberRefs[memberName]
 			memberNames := names.New(memberName)
 			memberShape := memberRef.Shape
-			if !m.IsShapeUsedInCRDs(memberShape.ShapeName) {
+			if !m.IsShapeUsedInCRDs(memberShape.ShapeName, crds) {
 				continue
 			}
 			gt, err := m.getShapeCleanGoType(memberShape)

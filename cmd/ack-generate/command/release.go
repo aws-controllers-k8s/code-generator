@@ -14,7 +14,6 @@
 package command
 
 import (
-	"context"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
@@ -22,7 +21,6 @@ import (
 
 	"github.com/spf13/cobra"
 
-	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/config"
 	ackgenerate "github.com/aws-controllers-k8s/code-generator/pkg/generate/ack"
 	ackmetadata "github.com/aws-controllers-k8s/code-generator/pkg/metadata"
 	"github.com/aws-controllers-k8s/code-generator/pkg/sdk"
@@ -61,27 +59,10 @@ func generateRelease(cmd *cobra.Command, args []string) error {
 	releaseVersion := strings.ToLower(args[1])
 
 	// Load generator config to resolve model name before fetching
-	cfg, err := ackgenconfig.New(optGeneratorConfigPath, ackgenerate.DefaultConfig)
+	cfg, err := setupGenerator(svcAlias)
 	if err != nil {
 		return err
 	}
-
-	// Resolve SDK version and fetch the model file
-	resolvedVersion, err := sdk.GetSDKVersion(optAWSSDKGoVersion, "", optOutputPath)
-	if err != nil {
-		return err
-	}
-	resolvedVersion = sdk.EnsureSemverPrefix(resolvedVersion)
-
-	modelName := resolveModelName(svcAlias, cfg)
-	ctx, cancel := sdk.ContextWithSigterm(context.Background())
-	defer cancel()
-	basePath, err := sdk.EnsureModel(ctx, optCacheDir, resolvedVersion, modelName)
-	if err != nil {
-		return err
-	}
-	sdkDir = basePath
-	sdkVersion = resolvedVersion
 
 	m, err := loadModel(svcAlias, "", "", cfg)
 	if err != nil {
