@@ -58,19 +58,19 @@ func APIs(
 	}
 	util.Tracef("GetEnumDefs (%d enums): %s\n", len(enumDefs), time.Since(enumStart))
 
-	typeStart := time.Now()
-	typeDefs, err := m.GetTypeDefs()
-	if err != nil {
-		return nil, err
-	}
-	util.Tracef("GetTypeDefs (%d types): %s\n", len(typeDefs), time.Since(typeStart))
-
 	crdStart := time.Now()
 	crds, err := m.GetCRDs()
 	if err != nil {
 		return nil, err
 	}
 	util.Tracef("GetCRDs (%d CRDs): %s\n", len(crds), time.Since(crdStart))
+
+	typeStart := time.Now()
+	typeDefs, err := m.GetTypeDefs()
+	if err != nil {
+		return nil, err
+	}
+	util.Tracef("GetTypeDefs (%d types): %s\n", len(typeDefs), time.Since(typeStart))
 
 	tplStart := time.Now()
 	ts := templateset.New(
