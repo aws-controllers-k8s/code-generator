@@ -14,7 +14,6 @@
 package command
 
 import (
-	"context"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
@@ -83,19 +82,17 @@ func generateOLMAssets(cmd *cobra.Command, args []string) error {
 
 	version := args[1]
 
-	// get the generator inputs
-	ctx, cancel := sdk.ContextWithSigterm(context.Background())
-	defer cancel()
-	sdkDirPath, err := sdk.EnsureRepo(ctx, optCacheDir, optRefreshCache, optAWSSDKGoVersion, optOutputPath)
+	// Load generator config to resolve model name before fetching
+	cfg, err := setupGenerator(svcAlias)
 	if err != nil {
 		return err
 	}
-	sdkDir = sdkDirPath
+
 	metadata, err := ackmetadata.NewServiceMetadata(optMetadataConfigPath)
 	if err != nil {
 		return err
 	}
-	m, err := loadModelWithLatestAPIVersion(svcAlias, metadata)
+	m, err := loadModelWithLatestAPIVersion(svcAlias, metadata, cfg)
 	if err != nil {
 		return err
 	}

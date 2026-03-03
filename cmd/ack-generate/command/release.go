@@ -14,7 +14,6 @@
 package command
 
 import (
-	"context"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
@@ -59,14 +58,13 @@ func generateRelease(cmd *cobra.Command, args []string) error {
 	// version supplied hasn't been used (as a Git tag) before...
 	releaseVersion := strings.ToLower(args[1])
 
-	ctx, cancel := sdk.ContextWithSigterm(context.Background())
-	defer cancel()
-	sdkDirPath, err := sdk.EnsureRepo(ctx, optCacheDir, optRefreshCache, optAWSSDKGoVersion, optOutputPath)
+	// Load generator config to resolve model name before fetching
+	cfg, err := setupGenerator(svcAlias)
 	if err != nil {
 		return err
 	}
-	sdkDir = sdkDirPath
-	m, err := loadModel(svcAlias, "", "", ackgenerate.DefaultConfig)
+
+	m, err := loadModel(svcAlias, "", "", cfg)
 	if err != nil {
 		return err
 	}

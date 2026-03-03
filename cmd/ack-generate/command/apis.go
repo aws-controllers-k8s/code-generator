@@ -14,7 +14,6 @@
 package command
 
 import (
-	"context"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
@@ -95,22 +94,18 @@ func generateAPIs(cmd *cobra.Command, args []string) error {
 		optOutputPath = filepath.Join(optServicesDir, svcAlias)
 	}
 
-	repoStart := time.Now()
-	ctx, cancel := sdk.ContextWithSigterm(context.Background())
-	defer cancel()
-	sdkDirPath, err := sdk.EnsureRepo(ctx, optCacheDir, optRefreshCache, optAWSSDKGoVersion, optOutputPath)
+	// Load generator config to resolve model name before fetching
+	cfg, err := setupGenerator(svcAlias)
 	if err != nil {
 		return err
 	}
-	sdkDir = sdkDirPath
-	util.Tracef("EnsureRepo: %s\n", time.Since(repoStart))
 
 	modelStart := time.Now()
 	metadata, err := ackmetadata.NewServiceMetadata(optMetadataConfigPath)
 	if err != nil {
 		return err
 	}
-	m, err := loadModelWithLatestAPIVersion(svcAlias, metadata)
+	m, err := loadModelWithLatestAPIVersion(svcAlias, metadata, cfg)
 	if err != nil {
 		return err
 	}

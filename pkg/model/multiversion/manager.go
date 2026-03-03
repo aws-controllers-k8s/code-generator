@@ -14,9 +14,11 @@
 package multiversion
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"sort"
+	"strings"
 
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/config"
 	ackmetadata "github.com/aws-controllers-k8s/code-generator/pkg/metadata"
@@ -84,12 +86,20 @@ func NewAPIVersionManager(
 			return nil, err
 		}
 
-		sdkAPIHelper := acksdk.NewHelper(sdkCacheDir, cfg)
-		err = sdkAPIHelper.WithSDKVersion(apiInfo.AWSSDKVersion)
+		// Resolve the model name and fetch the model file
+		modelName := strings.ToLower(cfg.SDKNames.Model)
+		if modelName == "" {
+			modelName = servicePackageName
+		}
+		basePath, err := acksdk.EnsureModel(
+			context.Background(), sdkCacheDir,
+			acksdk.EnsureSemverPrefix(apiInfo.AWSSDKVersion), modelName,
+		)
 		if err != nil {
 			return nil, err
 		}
 
+		sdkAPIHelper := acksdk.NewHelper(basePath, cfg)
 		sdkAPI, err := sdkAPIHelper.API(servicePackageName)
 		if err != nil {
 			return nil, err

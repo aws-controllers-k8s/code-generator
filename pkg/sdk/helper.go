@@ -21,9 +21,6 @@ import (
 	"github.com/aws-controllers-k8s/code-generator/pkg/apiv2"
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
-	"github.com/aws-controllers-k8s/code-generator/pkg/util"
-
-	awssdkmodel "github.com/aws-controllers-k8s/code-generator/pkg/api"
 )
 
 var (
@@ -48,7 +45,6 @@ type Helper struct {
 	APIGroupSuffix string
 	cfg            ackgenconfig.Config
 	basePath       string
-	loader         *awssdkmodel.Loader
 	// Default is set by `FirstAPIVersion`
 	apiVersion string
 }
@@ -58,21 +54,7 @@ func NewHelper(basePath string, cfg ackgenconfig.Config) *Helper {
 	return &Helper{
 		cfg:      cfg,
 		basePath: basePath,
-		loader: &awssdkmodel.Loader{
-			BaseImport:            basePath,
-			IgnoreUnsupportedAPIs: true,
-		},
 	}
-}
-
-// WithSDKVersion checks out the sdk git repository to the provided version. To use
-// this function h.basePath should point to a git repository.
-func (h *Helper) WithSDKVersion(version string) error {
-	err := util.CheckoutRepositoryTag(h.basePath, version)
-	if err != nil {
-		return fmt.Errorf("cannot checkout tag %s: %v", version, err)
-	}
-	return nil
 }
 
 // WithAPIVersion sets the `apiVersion` field.
