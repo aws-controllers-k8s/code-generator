@@ -599,3 +599,72 @@ func TestCompareResource_MemoryDB_User(t *testing.T) {
 	require.NoError(err)
 	assert.Equal(expected, got)
 }
+
+func TestCompareResource_IAM_Role_IAMPolicy(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "iam", &testutil.TestingModelOptions{
+		GeneratorConfigFile: "generator-iam-policy.yaml",
+	})
+
+	crd := testutil.GetCRDByName(t, g, "Role")
+	require.NotNil(crd)
+
+	// The AssumeRolePolicyDocument field is marked as is_iam_policy: true
+	// so it should use IAMPolicyDocumentEqual instead of string comparison
+	expected := `
+	if ackcompare.HasNilDifference(a.ko.Spec.AssumeRolePolicyDocument, b.ko.Spec.AssumeRolePolicyDocument) {
+		delta.Add("Spec.AssumeRolePolicyDocument", a.ko.Spec.AssumeRolePolicyDocument, b.ko.Spec.AssumeRolePolicyDocument)
+	} else if a.ko.Spec.AssumeRolePolicyDocument != nil && b.ko.Spec.AssumeRolePolicyDocument != nil {
+		if equal, err := ackcompare.IAMPolicyDocumentEqual(*a.ko.Spec.AssumeRolePolicyDocument, *b.ko.Spec.AssumeRolePolicyDocument); err != nil || !equal {
+			delta.Add("Spec.AssumeRolePolicyDocument", a.ko.Spec.AssumeRolePolicyDocument, b.ko.Spec.AssumeRolePolicyDocument)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.Description, b.ko.Spec.Description) {
+		delta.Add("Spec.Description", a.ko.Spec.Description, b.ko.Spec.Description)
+	} else if a.ko.Spec.Description != nil && b.ko.Spec.Description != nil {
+		if *a.ko.Spec.Description != *b.ko.Spec.Description {
+			delta.Add("Spec.Description", a.ko.Spec.Description, b.ko.Spec.Description)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.MaxSessionDuration, b.ko.Spec.MaxSessionDuration) {
+		delta.Add("Spec.MaxSessionDuration", a.ko.Spec.MaxSessionDuration, b.ko.Spec.MaxSessionDuration)
+	} else if a.ko.Spec.MaxSessionDuration != nil && b.ko.Spec.MaxSessionDuration != nil {
+		if *a.ko.Spec.MaxSessionDuration != *b.ko.Spec.MaxSessionDuration {
+			delta.Add("Spec.MaxSessionDuration", a.ko.Spec.MaxSessionDuration, b.ko.Spec.MaxSessionDuration)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.Path, b.ko.Spec.Path) {
+		delta.Add("Spec.Path", a.ko.Spec.Path, b.ko.Spec.Path)
+	} else if a.ko.Spec.Path != nil && b.ko.Spec.Path != nil {
+		if *a.ko.Spec.Path != *b.ko.Spec.Path {
+			delta.Add("Spec.Path", a.ko.Spec.Path, b.ko.Spec.Path)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.PermissionsBoundary, b.ko.Spec.PermissionsBoundary) {
+		delta.Add("Spec.PermissionsBoundary", a.ko.Spec.PermissionsBoundary, b.ko.Spec.PermissionsBoundary)
+	} else if a.ko.Spec.PermissionsBoundary != nil && b.ko.Spec.PermissionsBoundary != nil {
+		if *a.ko.Spec.PermissionsBoundary != *b.ko.Spec.PermissionsBoundary {
+			delta.Add("Spec.PermissionsBoundary", a.ko.Spec.PermissionsBoundary, b.ko.Spec.PermissionsBoundary)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.RoleName, b.ko.Spec.RoleName) {
+		delta.Add("Spec.RoleName", a.ko.Spec.RoleName, b.ko.Spec.RoleName)
+	} else if a.ko.Spec.RoleName != nil && b.ko.Spec.RoleName != nil {
+		if *a.ko.Spec.RoleName != *b.ko.Spec.RoleName {
+			delta.Add("Spec.RoleName", a.ko.Spec.RoleName, b.ko.Spec.RoleName)
+		}
+	}
+	desiredACKTags, _ := convertToOrderedACKTags(a.ko.Spec.Tags)
+	latestACKTags, _ := convertToOrderedACKTags(b.ko.Spec.Tags)
+	if !ackcompare.MapStringStringEqual(desiredACKTags, latestACKTags) {
+		delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
+	}
+`
+	got, err := code.CompareResource(
+		crd.Config(), crd, "delta", "a.ko", "b.ko", 1,
+	)
+	require.NoError(err)
+	assert.Equal(expected, got)
+}

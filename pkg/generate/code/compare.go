@@ -160,6 +160,12 @@ func CompareResource(
 			continue
 		}
 
+		// Use semantic IAM policy comparison for fields marked as IAM policies
+		if fieldConfig != nil && fieldConfig.IsIAMPolicy {
+			out += compareIAMPolicy(deltaVarName, firstResAdaptedVarName, secondResAdaptedVarName, fieldPath, indentLevel)
+			continue
+		}
+
 		memberShapeRef := specField.ShapeRef
 		memberShape := memberShapeRef.Shape
 
@@ -533,6 +539,74 @@ func compareSlice(
 	)
 
 	return out, nil
+}
+
+// compareIAMPolicy outputs Go code that compares two IAM policy document
+// strings using semantic comparison that handles IAM-specific semantics like
+// statement ordering independence and Action/Resource as string vs array.
+//
+// Output code will look something like this:
+//
+//	if ackcompare.HasNilDifference(a.ko.Spec.PolicyDocument, b.ko.Spec.PolicyDocument) {
+//	    delta.Add("Spec.PolicyDocument", a.ko.Spec.PolicyDocument, b.ko.Spec.PolicyDocument)
+//	} else if a.ko.Spec.PolicyDocument != nil && b.ko.Spec.PolicyDocument != nil {
+//	    if equal, err := ackcompare.IAMPolicyDocumentEqual(*a.ko.Spec.PolicyDocument, *b.ko.Spec.PolicyDocument); err != nil || !equal {
+//	        delta.Add("Spec.PolicyDocument", a.ko.Spec.PolicyDocument, b.ko.Spec.PolicyDocument)
+//	    }
+//	}
+func compareIAMPolicy(
+	// String representing the name of the variable that is of type
+	// `*ackcompare.Delta`. We will generate Go code that calls the `Add()`
+	// method of this variable when differences between fields are detected.
+	deltaVarName string,
+	// String representing the name of the variable that represents the desired
+	// CR under comparison. This will typically be something like
+	// "a.ko.Spec.PolicyDocument". See `templates/pkg/resource/delta.go.tpl`.
+	desiredResVarName string,
+	// String representing the name of the variable that represents the latest
+	// CR under comparison. This will typically be something like
+	// "b.ko.Spec.PolicyDocument". See `templates/pkg/resource/delta.go.tpl`.
+	latestResVarName string,
+	// String indicating the current field path being evaluated, e.g.
+	// "Spec.PolicyDocument".
+	fieldPath string,
+	// Number of levels of indentation to use
+	indentLevel int,
+) string {
+	out := ""
+	indent := strings.Repeat("\t", indentLevel)
+
+	// if ackcompare.HasNilDifference(a.ko.Spec.PolicyDocument, b.ko.Spec.PolicyDocument) {
+	out += fmt.Sprintf(
+		"%sif ackcompare.HasNilDifference(%s, %s) {\n",
+		indent, desiredResVarName, latestResVarName,
+	)
+	//     delta.Add("Spec.PolicyDocument", a.ko.Spec.PolicyDocument, b.ko.Spec.PolicyDocument)
+	out += fmt.Sprintf(
+		"%s\t%s.Add(\"%s\", %s, %s)\n",
+		indent, deltaVarName, fieldPath, desiredResVarName, latestResVarName,
+	)
+	// } else if a.ko.Spec.PolicyDocument != nil && b.ko.Spec.PolicyDocument != nil {
+	out += fmt.Sprintf(
+		"%s} else if %s != nil && %s != nil {\n",
+		indent, desiredResVarName, latestResVarName,
+	)
+	//     if equal, err := ackcompare.IAMPolicyDocumentEqual(*a.ko.Spec.PolicyDocument, *b.ko.Spec.PolicyDocument); err != nil || !equal {
+	out += fmt.Sprintf(
+		"%s\tif equal, err := ackcompare.IAMPolicyDocumentEqual(*%s, *%s); err != nil || !equal {\n",
+		indent, desiredResVarName, latestResVarName,
+	)
+	//         delta.Add("Spec.PolicyDocument", a.ko.Spec.PolicyDocument, b.ko.Spec.PolicyDocument)
+	out += fmt.Sprintf(
+		"%s\t\t%s.Add(\"%s\", %s, %s)\n",
+		indent, deltaVarName, fieldPath, desiredResVarName, latestResVarName,
+	)
+	//     }
+	out += fmt.Sprintf("%s\t}\n", indent)
+	// }
+	out += fmt.Sprintf("%s}\n", indent)
+
+	return out
 }
 
 // compareTags outputs Go code that compares two slices of tags from two
