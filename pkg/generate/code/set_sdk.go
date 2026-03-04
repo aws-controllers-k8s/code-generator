@@ -1564,6 +1564,13 @@ func varEmptyConstructorSDKType(
 		}
 		if shape.ValueRef.Shape.IsEnum() {
 			goType = fmt.Sprintf("map[string]svcsdktypes.%s", shape.ValueRef.ShapeName)
+		} else if shape.ValueRef.Shape.Type == "structure" {
+			// Use original shape name for SDK struct types if available
+			valueShapeName := shape.ValueRef.ShapeName
+			if shape.ValueRef.Shape.OriginalShapeName != "" {
+				valueShapeName = shape.ValueRef.Shape.OriginalShapeName
+			}
+			goType = "map[string]svcsdktypes." + valueShapeName
 		}
 		out += fmt.Sprintf("%s%s := %s{}\n", indent, varName, goType)
 
