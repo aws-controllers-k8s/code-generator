@@ -1,13 +1,12 @@
 ignore:
   resource_names: []
-  idempotency_tokens:
-      - Application
   field_paths:
       - Configuration.Configurations
 sdk_names:
   model_name: emr-serverless
 resources:
   Application:
+      ignore_idempotency_token: true
       fields:
           WorkerTypeSpecifications:
             from:

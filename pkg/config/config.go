@@ -113,12 +113,6 @@ type IgnoreSpec struct {
 	// the field as it appears in AWS SDK objects. You can refer to a field by
 	// giving its "<shape_name>.<field_name>". For example, "CreateApiInput.Name".
 	FieldPaths []string `json:"field_paths"`
-	// IdempotencyTokens is a list of resource names for which the code generator
-	// should automatically exclude fields that have the smithy.api#idempotencyToken
-	// trait (or the equivalent idempotencyToken trait in the v1 SDK model). These
-	// fields are SDK implementation details that are auto-filled by the SDK
-	// middleware when nil and should not be exposed in the CRD.
-	IdempotencyTokens []string `json:"idempotency_tokens"`
 }
 
 type PrefixConfig struct {
