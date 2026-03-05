@@ -177,7 +177,10 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 			// Idempotency tokens are SDK implementation details that are
 			// auto-filled by the SDK middleware when nil. They should not
 			// be exposed in the CRD as they are not resource properties.
-			if memberShapeRef.IdempotencyToken || memberShapeRef.Shape.IdempotencyToken {
+			// This filtering is opt-in via ignore.idempotency_tokens
+			// in generator.yaml.
+			if util.InStrings(crdName, m.cfg.Ignore.IdempotencyTokens) &&
+				(memberShapeRef.IdempotencyToken || memberShapeRef.Shape.IdempotencyToken) {
 				continue
 			}
 

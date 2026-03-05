@@ -126,6 +126,7 @@ func TestEC2_Volume(t *testing.T) {
 
 	expSpecFieldCamel := []string{
 		"AvailabilityZone",
+		"ClientToken",
 		"DryRun",
 		"Encrypted",
 		"IOPS",

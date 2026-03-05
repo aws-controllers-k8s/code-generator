@@ -2207,6 +2207,9 @@ func TestSetSDK_MQ_Broker_Create(t *testing.T) {
 		}
 		res.Configuration = f3
 	}
+	if r.ko.Spec.CreatorRequestID != nil {
+		res.CreatorRequestId = r.ko.Spec.CreatorRequestID
+	}
 	if r.ko.Spec.DeploymentMode != nil {
 		res.DeploymentMode = svcsdktypes.DeploymentMode(*r.ko.Spec.DeploymentMode)
 	}
@@ -5176,6 +5179,9 @@ func TestEMRContainers_VirtualCluster_WithUnion(t *testing.T) {
 	assert.NotNil(crd.Ops.Create)
 
 	expected := `
+	if r.ko.Spec.ClientToken != nil {
+		res.ClientToken = r.ko.Spec.ClientToken
+	}
 	if r.ko.Spec.ContainerProvider != nil {
 		f1 := &svcsdktypes.ContainerProvider{}
 		if r.ko.Spec.ContainerProvider.ID != nil {
@@ -6489,11 +6495,13 @@ func TestSetSDK_EMRServerless_Application_Create(t *testing.T) {
 	assert.NotContains(got, "WorkerTypeSpecificationInput_",
 		"Should use original SDK shape name WorkerTypeSpecificationInput, not renamed version")
 
-	// Verify idempotency token fields are excluded from the generated code.
+	// Verify idempotency token fields are excluded from the generated code
+	// when the resource is listed in ignore.idempotency_tokens in generator.yaml.
 	// The ClientToken field in CreateApplicationInput has the
-	// smithy.api#idempotencyToken trait, so the code generator should
-	// automatically exclude it from the CRD and generated SDK code. The SDK
-	// middleware auto-fills it with a UUID when nil.
+	// smithy.api#idempotencyToken trait, and the emr-serverless test config
+	// lists Application in idempotency_tokens, so the code generator should
+	// exclude it from the CRD and generated SDK code. The SDK middleware
+	// auto-fills it with a UUID when nil.
 	assert.NotContains(got, "ClientToken",
 		"ClientToken (idempotency token) should not appear in Create SDK code")
 }
@@ -6527,7 +6535,8 @@ func TestSetSDK_EMRServerless_Application_Update(t *testing.T) {
 			"Should use original SDK shape name in Update operation")
 	}
 
-	// Verify idempotency token fields are excluded from Update as well.
+	// Verify idempotency token fields are excluded from Update as well
+	// when the resource is listed in ignore.idempotency_tokens.
 	// UpdateApplicationInput.ClientToken also has the
 	// smithy.api#idempotencyToken trait.
 	assert.NotContains(got, "ClientToken",
