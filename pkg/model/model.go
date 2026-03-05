@@ -174,6 +174,13 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 				return nil, ErrNilShapePointer
 			}
 
+			// Idempotency tokens are SDK implementation details that are
+			// auto-filled by the SDK middleware when nil. They should not
+			// be exposed in the CRD as they are not resource properties.
+			if memberShapeRef.IdempotencyToken || memberShapeRef.Shape.IdempotencyToken {
+				continue
+			}
+
 			// If this is the wrapper field and we have input_wrapper_field_path
 			// configured, add the wrapper's member fields instead of the wrapper
 			if inputWrapperFieldPath != nil && memberName == *inputWrapperFieldPath {

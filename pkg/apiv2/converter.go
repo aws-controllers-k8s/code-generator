@@ -266,8 +266,9 @@ func addMemberRefs(apiShape *awssdkmodel.Shape, shape Shape, serviceAlias string
 		}
 		documentation, _ := member.Traits["smithy.api#documentation"].(string)
 		apiShape.MemberRefs[memberName] = &awssdkmodel.ShapeRef{
-			ShapeName:     shapeNameClean,
-			Documentation: awssdkmodel.AppendDocstring("", documentation),
+			ShapeName:        shapeNameClean,
+			Documentation:    awssdkmodel.AppendDocstring("", documentation),
+			IdempotencyToken: member.isIdempotencyToken(),
 		}
 		val, ok := member.Traits["smithy.api#default"]
 		if ok {
@@ -310,6 +311,14 @@ func addEnumRef(apiShape *awssdkmodel.Shape, shape Shape) {
 
 func (s ShapeRef) isRequired() bool {
 	_, ok := s.Traits["smithy.api#required"]
+	return ok
+}
+
+// isIdempotencyToken returns true if the Smithy shape reference has the
+// smithy.api#idempotencyToken trait. Idempotency tokens are SDK implementation
+// details that are auto-filled by the SDK middleware when nil.
+func (s ShapeRef) isIdempotencyToken() bool {
+	_, ok := s.Traits["smithy.api#idempotencyToken"]
 	return ok
 }
 
