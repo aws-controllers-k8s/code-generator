@@ -423,6 +423,11 @@ type FieldConfig struct {
 	// admission layer. The code generator will add kubebuilder:validation:XValidation
 	// lines to the CRD, preventing changes to this field after it’s set.
 	IsImmutable bool `json:"is_immutable"`
+	// IsIAMPolicy indicates that the field contains an IAM policy document
+	// and should be compared using semantic IAM policy comparison rather than
+	// string comparison. This handles IAM-specific semantics like statement
+	// ordering independence and Action/Resource as string vs array.
+	IsIAMPolicy bool `json:"is_iam_policy"`
 	// From instructs the code generator that the value of the field should
 	// be retrieved from the specified operation and member path
 	From *SourceFieldConfig `json:"from,omitempty"`
