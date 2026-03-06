@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	github.com/aws-controllers-k8s/pkg v0.0.23
-	github.com/aws-controllers-k8s/runtime v0.57.0
+	github.com/aws-controllers-k8s/runtime v0.58.0
 	github.com/aws/aws-sdk-go v1.49.0
 	github.com/aws/aws-sdk-go-v2 v1.32.7
 	github.com/dlclark/regexp2 v1.10.0 // indirect
@@ -96,6 +96,7 @@ require (
 
 require (
 	github.com/google/btree v1.1.3 // indirect
+	github.com/micahhausler/aws-iam-policy v0.4.4 // indirect
 	go.yaml.in/yaml/v2 v2.4.3 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.13.0 // indirect
