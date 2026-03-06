@@ -6494,6 +6494,16 @@ func TestSetSDK_EMRServerless_Application_Create(t *testing.T) {
 	assert.Contains(got, "map[string]svcsdktypes.WorkerTypeSpecificationInput{}")
 	assert.NotContains(got, "WorkerTypeSpecificationInput_",
 		"Should use original SDK shape name WorkerTypeSpecificationInput, not renamed version")
+
+	// Verify idempotency token fields are excluded from the generated code
+	// when ignore_idempotency_token is enabled on the resource in generator.yaml.
+	// The ClientToken field in CreateApplicationInput has the
+	// smithy.api#idempotencyToken trait, and the emr-serverless test config
+	// has ignore_idempotency_token: true on Application, so the code generator
+	// should exclude it from the CRD and generated SDK code. The SDK middleware
+	// auto-fills it with a UUID when nil.
+	assert.NotContains(got, "ClientToken",
+		"ClientToken (idempotency token) should not appear in Create SDK code")
 }
 
 // TestSetSDK_EMRServerless_Application_Update tests that the EMR Serverless
@@ -6524,6 +6534,13 @@ func TestSetSDK_EMRServerless_Application_Update(t *testing.T) {
 		assert.NotContains(got, "WorkerTypeSpecificationInput_",
 			"Should use original SDK shape name in Update operation")
 	}
+
+	// Verify idempotency token fields are excluded from Update as well
+	// when ignore_idempotency_token is enabled on the resource.
+	// UpdateApplicationInput.ClientToken also has the
+	// smithy.api#idempotencyToken trait.
+	assert.NotContains(got, "ClientToken",
+		"ClientToken (idempotency token) should not appear in Update SDK code")
 }
 
 // TestSetSDK_EMRServerless_Application_InitialCapacityConfig tests that

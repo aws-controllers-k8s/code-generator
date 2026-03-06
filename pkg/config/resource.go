@@ -116,6 +116,12 @@ type ResourceConfig struct {
 	// TagConfig contains instructions for the code generator to generate
 	// custom code for ensuring tags
 	TagConfig *TagConfig `json:"tags,omitempty"`
+	// IgnoreIdempotencyToken instructs the code generator to automatically
+	// exclude fields that have the smithy.api#idempotencyToken trait (or the
+	// equivalent idempotencyToken trait in the v1 SDK model). These fields are
+	// SDK implementation details that are auto-filled by the SDK middleware
+	// when nil and should not be exposed in the CRD.
+	IgnoreIdempotencyToken bool `json:"ignore_idempotency_token,omitempty"`
 }
 
 // TagConfig instructs the code  generator on how to generate functions that
