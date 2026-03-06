@@ -668,3 +668,89 @@ func TestCompareResource_IAM_Role_IAMPolicy(t *testing.T) {
 	require.NoError(err)
 	assert.Equal(expected, got)
 }
+
+// TestCompareResource_QuickSight_DataSet tests that the delta code generation
+// correctly handles the QuickSight DataSet resource, specifically the
+// RowLevelPermissionTagConfiguration.TagRuleConfigurations field which is a
+// list-of-lists-of-strings ([][]*string). This was the original field that
+// triggered the "unsupported element type in compareSlice: list" error.
+func TestCompareResource_QuickSight_DataSet(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "quicksight")
+
+	crd := testutil.GetCRDByName(t, g, "DataSet")
+	require.NotNil(crd)
+
+	// RowLevelPermissionTagConfiguration.TagRuleConfigurations is [][]*string
+	// (a list where each element is itself a list of strings). The generated
+	// comparison code should use equality.Semantic.Equalities.DeepEqual.
+	expected := `
+	if ackcompare.HasNilDifference(a.ko.Spec.AWSAccountID, b.ko.Spec.AWSAccountID) {
+		delta.Add("Spec.AWSAccountID", a.ko.Spec.AWSAccountID, b.ko.Spec.AWSAccountID)
+	} else if a.ko.Spec.AWSAccountID != nil && b.ko.Spec.AWSAccountID != nil {
+		if *a.ko.Spec.AWSAccountID != *b.ko.Spec.AWSAccountID {
+			delta.Add("Spec.AWSAccountID", a.ko.Spec.AWSAccountID, b.ko.Spec.AWSAccountID)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.DataSetID, b.ko.Spec.DataSetID) {
+		delta.Add("Spec.DataSetID", a.ko.Spec.DataSetID, b.ko.Spec.DataSetID)
+	} else if a.ko.Spec.DataSetID != nil && b.ko.Spec.DataSetID != nil {
+		if *a.ko.Spec.DataSetID != *b.ko.Spec.DataSetID {
+			delta.Add("Spec.DataSetID", a.ko.Spec.DataSetID, b.ko.Spec.DataSetID)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.ImportMode, b.ko.Spec.ImportMode) {
+		delta.Add("Spec.ImportMode", a.ko.Spec.ImportMode, b.ko.Spec.ImportMode)
+	} else if a.ko.Spec.ImportMode != nil && b.ko.Spec.ImportMode != nil {
+		if *a.ko.Spec.ImportMode != *b.ko.Spec.ImportMode {
+			delta.Add("Spec.ImportMode", a.ko.Spec.ImportMode, b.ko.Spec.ImportMode)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.Name, b.ko.Spec.Name) {
+		delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
+	} else if a.ko.Spec.Name != nil && b.ko.Spec.Name != nil {
+		if *a.ko.Spec.Name != *b.ko.Spec.Name {
+			delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.RowLevelPermissionTagConfiguration, b.ko.Spec.RowLevelPermissionTagConfiguration) {
+		delta.Add("Spec.RowLevelPermissionTagConfiguration", a.ko.Spec.RowLevelPermissionTagConfiguration, b.ko.Spec.RowLevelPermissionTagConfiguration)
+	} else if a.ko.Spec.RowLevelPermissionTagConfiguration != nil && b.ko.Spec.RowLevelPermissionTagConfiguration != nil {
+		if ackcompare.HasNilDifference(a.ko.Spec.RowLevelPermissionTagConfiguration.Status, b.ko.Spec.RowLevelPermissionTagConfiguration.Status) {
+			delta.Add("Spec.RowLevelPermissionTagConfiguration.Status", a.ko.Spec.RowLevelPermissionTagConfiguration.Status, b.ko.Spec.RowLevelPermissionTagConfiguration.Status)
+		} else if a.ko.Spec.RowLevelPermissionTagConfiguration.Status != nil && b.ko.Spec.RowLevelPermissionTagConfiguration.Status != nil {
+			if *a.ko.Spec.RowLevelPermissionTagConfiguration.Status != *b.ko.Spec.RowLevelPermissionTagConfiguration.Status {
+				delta.Add("Spec.RowLevelPermissionTagConfiguration.Status", a.ko.Spec.RowLevelPermissionTagConfiguration.Status, b.ko.Spec.RowLevelPermissionTagConfiguration.Status)
+			}
+		}
+		if len(a.ko.Spec.RowLevelPermissionTagConfiguration.TagRuleConfigurations) != len(b.ko.Spec.RowLevelPermissionTagConfiguration.TagRuleConfigurations) {
+			delta.Add("Spec.RowLevelPermissionTagConfiguration.TagRuleConfigurations", a.ko.Spec.RowLevelPermissionTagConfiguration.TagRuleConfigurations, b.ko.Spec.RowLevelPermissionTagConfiguration.TagRuleConfigurations)
+		} else if len(a.ko.Spec.RowLevelPermissionTagConfiguration.TagRuleConfigurations) > 0 {
+			if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.RowLevelPermissionTagConfiguration.TagRuleConfigurations, b.ko.Spec.RowLevelPermissionTagConfiguration.TagRuleConfigurations) {
+				delta.Add("Spec.RowLevelPermissionTagConfiguration.TagRuleConfigurations", a.ko.Spec.RowLevelPermissionTagConfiguration.TagRuleConfigurations, b.ko.Spec.RowLevelPermissionTagConfiguration.TagRuleConfigurations)
+			}
+		}
+		if len(a.ko.Spec.RowLevelPermissionTagConfiguration.TagRules) != len(b.ko.Spec.RowLevelPermissionTagConfiguration.TagRules) {
+			delta.Add("Spec.RowLevelPermissionTagConfiguration.TagRules", a.ko.Spec.RowLevelPermissionTagConfiguration.TagRules, b.ko.Spec.RowLevelPermissionTagConfiguration.TagRules)
+		} else if len(a.ko.Spec.RowLevelPermissionTagConfiguration.TagRules) > 0 {
+			if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.RowLevelPermissionTagConfiguration.TagRules, b.ko.Spec.RowLevelPermissionTagConfiguration.TagRules) {
+				delta.Add("Spec.RowLevelPermissionTagConfiguration.TagRules", a.ko.Spec.RowLevelPermissionTagConfiguration.TagRules, b.ko.Spec.RowLevelPermissionTagConfiguration.TagRules)
+			}
+		}
+	}
+	if len(a.ko.Spec.Tags) != len(b.ko.Spec.Tags) {
+		delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
+	} else if len(a.ko.Spec.Tags) > 0 {
+		if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.Tags, b.ko.Spec.Tags) {
+			delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
+		}
+	}
+`
+	got, err := code.CompareResource(
+		crd.Config(), crd, "delta", "a.ko", "b.ko", 1,
+	)
+	require.NoError(err)
+	assert.Equal(expected, got)
+}
