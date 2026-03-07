@@ -31,6 +31,7 @@ var (
 		"helm/templates/cluster-role-controller.yaml.tpl",
 		"helm/templates/_helpers.tpl.tpl",
 		"helm/Chart.yaml.tpl",
+		"helm/crds/kustomization.yaml.tpl",
 		"helm/values.yaml.tpl",
 		"helm/values.schema.json",
 		"helm/templates/NOTES.txt.tpl",
