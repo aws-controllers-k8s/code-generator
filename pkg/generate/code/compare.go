@@ -525,6 +525,13 @@ func compareSlice(
 			"%sif !equality.Semantic.Equalities.DeepEqual(%s, %s) {\n",
 			indent, firstResVarName, secondResVarName,
 		)
+	case "list", "map":
+		// For nested collection types (e.g. [][]*string or []map[string]*string),
+		// use DeepEqual since there's no simple element-wise comparison available.
+		out += fmt.Sprintf(
+			"%sif !equality.Semantic.Equalities.DeepEqual(%s, %s) {\n",
+			indent, firstResVarName, secondResVarName,
+		)
 	default:
 		return "", fmt.Errorf("field %q: unsupported element type in compareSlice: %s", fieldPath, elemType)
 	}
