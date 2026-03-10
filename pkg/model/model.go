@@ -679,6 +679,12 @@ func (m *Model) getShapeCleanGoType(shape *awssdkmodel.Shape) (string, error) {
 		if err != nil {
 			return "", err
 		}
+		// For timestamp list members, use the non-pointer form
+		// (metav1.Time instead of *metav1.Time) because controller-gen's
+		// deepcopy generator does not handle []*metav1.Time correctly.
+		if shape.MemberRef.Shape.Type == "timestamp" {
+			gt = strings.TrimPrefix(gt, "*")
+		}
 		return "[]" + gt, nil
 	case "timestamp":
 		// time.Time needs to be converted to apimachinery/metav1.Time

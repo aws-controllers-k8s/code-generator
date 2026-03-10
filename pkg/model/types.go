@@ -56,6 +56,15 @@ func CleanGoType(
 			gte += "_SDK"
 		}
 
+		// For timestamp list members, use the non-pointer form (metav1.Time
+		// instead of *metav1.Time) because controller-gen's deepcopy
+		// generator does not handle []*metav1.Time correctly — it produces
+		// code that passes **metav1.Time to DeepCopyInto which expects
+		// *metav1.Time.
+		if shape.MemberRef.Shape.Type == "timestamp" {
+			mgt = strings.TrimPrefix(mgt, "*")
+			mgtwp = strings.TrimPrefix(mgtwp, "*")
+		}
 		gt = "[]" + mgt
 		gtwp = "[]" + mgtwp
 	} else if shape.Type == "map" && fieldCfg != nil && fieldCfg.IsSecret {

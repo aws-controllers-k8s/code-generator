@@ -6565,3 +6565,94 @@ func TestSetSDK_EMRServerless_Application_InitialCapacityConfig(t *testing.T) {
 	// which has a bad default value in the SDK model
 	assert.Contains(got, "WorkerCount")
 }
+
+// TestSetSDK_QuickSight_DataSet_Create tests that the SetSDK code generation
+// for the QuickSight DataSet resource correctly handles:
+//
+//  1. Union types as map values (PhysicalTableMap): The PhysicalTable shape is
+//     a union type used as the value type in a map. The generated code must
+//     declare the map value as an interface variable (not a struct pointer),
+//     use Member* wrapper types for dispatch, and avoid dereferencing the
+//     interface when assigning to the map.
+//
+//  2. Timestamp list members (DatasetParameters.DateTimeDatasetParameter.
+//     DefaultValues.StaticValues): List elements of type timestamp should use
+//     value-type access (.Time not &.Time) because the K8s type is
+//     []metav1.Time (not []*metav1.Time).
+func TestSetSDK_QuickSight_DataSet_Create(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "quicksight")
+
+	crd := testutil.GetCRDByName(t, g, "DataSet")
+	require.NotNil(crd)
+	assert.NotNil(crd.Ops.Create)
+
+	got, err := code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1)
+	require.NoError(err)
+
+	// --- Union type as map value (PhysicalTableMap) ---
+	// The PhysicalTable shape is a union. When used as a map value, the
+	// generated code must:
+	//   a) Declare the value variable as the interface type, not a struct pointer
+	//   b) Use PhysicalTableMember* wrapper types for each variant
+	//   c) Assign to the map without dereferencing (interfaces are not pointers)
+
+	// (a) The map value variable should be declared as the interface type
+	assert.Contains(got, "var f14val svcsdktypes.PhysicalTable")
+	// Ensure we do NOT get the old struct-pointer pattern
+	assert.NotContains(got, "f14val := &svcsdktypes.PhysicalTable{}")
+
+	// (b) Each union member should use the Member* wrapper type
+	assert.Contains(got, "f14valf0Parent := &svcsdktypes.PhysicalTableMemberCustomSql{}")
+	assert.Contains(got, "f14valf1Parent := &svcsdktypes.PhysicalTableMemberRelationalTable{}")
+	assert.Contains(got, "f14valf2Parent := &svcsdktypes.PhysicalTableMemberS3Source{}")
+
+	// The isInterfaceSet guard should be present to enforce single-member semantics
+	assert.Contains(got, "isInterfaceSet := false")
+	assert.Contains(got, "isInterfaceSet = true")
+
+	// (c) Map assignment should NOT dereference the interface value
+	assert.Contains(got, "f14[f14key] = f14val")
+	// Ensure we do NOT get the old dereference pattern
+	assert.NotContains(got, "f14[f14key] = *f14val")
+
+	// --- Timestamp list members (DateTimeStaticValues) ---
+	// The StaticValues field is []time.Time in the SDK. The K8s type is
+	// []metav1.Time (value type, not pointer). When converting from K8s to
+	// SDK, we should access .Time directly (not &.Time).
+	assert.Contains(got, "f6elemf0f0f0elem = f6elemf0f0f0iter.Time")
+	// Ensure we do NOT get the old pointer pattern for list timestamp elements
+	assert.NotContains(got, "f6elemf0f0f0elem = &f6elemf0f0f0iter.Time")
+}
+
+// TestSetSDK_QuickSight_DataSet_Update tests that the same fixes apply to the
+// Update operation's SetSDK code generation.
+func TestSetSDK_QuickSight_DataSet_Update(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "quicksight")
+
+	crd := testutil.GetCRDByName(t, g, "DataSet")
+	require.NotNil(crd)
+	assert.NotNil(crd.Ops.Update)
+
+	got, err := code.SetSDK(crd.Config(), crd, model.OpTypeUpdate, "r.ko", "res", 1)
+	require.NoError(err)
+
+	// --- Union type as map value (PhysicalTableMap) in Update ---
+	// Same pattern as Create: interface variable, Member* wrappers, no deref
+	assert.Contains(got, "var f12val svcsdktypes.PhysicalTable")
+	assert.NotContains(got, "f12val := &svcsdktypes.PhysicalTable{}")
+	assert.Contains(got, "f12[f12key] = f12val")
+	assert.NotContains(got, "f12[f12key] = *f12val")
+
+	// --- Timestamp list members in Update ---
+	// DateTimeStaticValues in DatasetParameters
+	assert.Contains(got, ".Time")
+	// OverrideDatasetParameterOperation.NewDefaultValues.DateTimeStaticValues
+	// should also use value-type access
+	assert.NotContains(got, "= &f6elemf0f0f0iter.Time")
+}

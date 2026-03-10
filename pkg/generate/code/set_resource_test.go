@@ -5437,3 +5437,95 @@ func TestSetResource_ELBv2_IgnoreSetFrom(t *testing.T) {
 		actual,
 	)
 }
+
+// TestSetResource_QuickSight_DataSet_Create tests that the SetResource code
+// generation for the QuickSight DataSet Create output shape works without
+// errors. The Create output shape for QuickSight DataSet is minimal (Arn,
+// DataSetId, IngestionArn, IngestionId), so this test primarily validates
+// that code generation completes successfully and produces the expected
+// scalar field assignments.
+func TestSetResource_QuickSight_DataSet_Create(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "quicksight")
+
+	crd := testutil.GetCRDByName(t, g, "DataSet")
+	require.NotNil(crd)
+	assert.NotNil(crd.Ops.Create)
+
+	got, err := code.SetResource(crd.Config(), crd, model.OpTypeCreate, "resp", "ko", 1)
+	require.NoError(err)
+
+	// The Create output should set the DataSetID from the response
+	assert.Contains(got, "ko.Spec.DataSetID = resp.DataSetId")
+	// The Create output should set the ARN
+	assert.Contains(got, "ackv1alpha1.AWSResourceName(*resp.Arn)")
+	// The Create output should set status fields
+	assert.Contains(got, "ko.Status.IngestionARN = resp.IngestionArn")
+	assert.Contains(got, "ko.Status.IngestionID = resp.IngestionId")
+}
+
+// TestSetResource_QuickSight_DataSet_TimestampListType tests that the model
+// correctly generates []metav1.Time (value type) for timestamp list fields,
+// not []*metav1.Time (pointer type). This is critical because controller-gen
+// does not generate correct deepcopy code for []*metav1.Time since metav1.Time
+// is an external type with its own DeepCopyInto method.
+func TestSetResource_QuickSight_DataSet_TimestampListType(t *testing.T) {
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "quicksight")
+
+	crd := testutil.GetCRDByName(t, g, "DataSet")
+	require.NotNil(crd)
+
+	// Find the DateTimeDatasetParameterDefaultValues type definition which
+	// contains the StaticValues field (a list of timestamps).
+	typeDef := testutil.GetTypeDefByName(t, g, "DateTimeDatasetParameterDefaultValues")
+	require.NotNil(typeDef)
+
+	// The StaticValues field should be []metav1.Time, not []*metav1.Time
+	staticValuesAttr, ok := typeDef.Attrs["StaticValues"]
+	require.True(ok, "StaticValues field should exist in DateTimeDatasetParameterDefaultValues")
+	require.Contains(staticValuesAttr.GoType, "[]metav1.Time",
+		"StaticValues should be []metav1.Time (value type), not []*metav1.Time")
+	require.NotContains(staticValuesAttr.GoType, "[]*metav1.Time",
+		"StaticValues should NOT be []*metav1.Time (pointer type)")
+
+	// Also check NewDefaultValues.DateTimeStaticValues
+	newDefaultValuesDef := testutil.GetTypeDefByName(t, g, "NewDefaultValues")
+	require.NotNil(newDefaultValuesDef)
+
+	dateTimeAttr, ok := newDefaultValuesDef.Attrs["DateTimeStaticValues"]
+	require.True(ok, "DateTimeStaticValues field should exist in NewDefaultValues")
+	require.Contains(dateTimeAttr.GoType, "[]metav1.Time",
+		"DateTimeStaticValues should be []metav1.Time (value type)")
+}
+
+// TestSetResource_QuickSight_DataSet_ReadOne tests that the SetResource code
+// generation for the QuickSight DataSet ReadOne output shape correctly handles
+// timestamp list fields. The DescribeDataSet response wraps the DataSet in a
+// nested field, so the ReadOne output is minimal without output_wrapper_field_path.
+// Instead, we validate the SetSDK (K8s→SDK) path for Create/Update which
+// exercises the same varEmptyConstructorK8sType and setResourceForScalar
+// functions for timestamp list fields.
+func TestSetResource_QuickSight_DataSet_ReadOne(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "quicksight")
+
+	crd := testutil.GetCRDByName(t, g, "DataSet")
+	require.NotNil(crd)
+	assert.NotNil(crd.Ops.Create)
+
+	// Test the SetSDK (K8s→SDK) path for Create, which contains the
+	// timestamp list fields (DateTimeStaticValues).
+	got, err := code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1)
+	require.NoError(err)
+
+	// Timestamp list element access should use .Time (value type),
+	// not &.Time (pointer type).
+	assert.Contains(got, "f6elemf0f0f0elem = f6elemf0f0f0iter.Time")
+	assert.NotContains(got, "f6elemf0f0f0elem = &f6elemf0f0f0iter.Time")
+}
