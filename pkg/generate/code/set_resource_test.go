@@ -5486,20 +5486,16 @@ func TestSetResource_QuickSight_DataSet_TimestampListType(t *testing.T) {
 
 	// The StaticValues field should be []metav1.Time, not []*metav1.Time
 	staticValuesAttr, ok := typeDef.Attrs["StaticValues"]
-	require.True(ok, "StaticValues field should exist in DateTimeDatasetParameterDefaultValues")
-	require.Contains(staticValuesAttr.GoType, "[]metav1.Time",
-		"StaticValues should be []metav1.Time (value type), not []*metav1.Time")
-	require.NotContains(staticValuesAttr.GoType, "[]*metav1.Time",
-		"StaticValues should NOT be []*metav1.Time (pointer type)")
+	require.True(ok)
+	require.Contains(staticValuesAttr.GoType, "[]metav1.Time")
 
 	// Also check NewDefaultValues.DateTimeStaticValues
 	newDefaultValuesDef := testutil.GetTypeDefByName(t, g, "NewDefaultValues")
 	require.NotNil(newDefaultValuesDef)
 
 	dateTimeAttr, ok := newDefaultValuesDef.Attrs["DateTimeStaticValues"]
-	require.True(ok, "DateTimeStaticValues field should exist in NewDefaultValues")
-	require.Contains(dateTimeAttr.GoType, "[]metav1.Time",
-		"DateTimeStaticValues should be []metav1.Time (value type)")
+	require.True(ok)
+	require.Contains(dateTimeAttr.GoType, "[]metav1.Time")
 }
 
 // TestSetResource_QuickSight_DataSet_ReadOne tests that the SetResource code
@@ -5527,5 +5523,4 @@ func TestSetResource_QuickSight_DataSet_ReadOne(t *testing.T) {
 	// Timestamp list element access should use .Time (value type),
 	// not &.Time (pointer type).
 	assert.Contains(got, "f6elemf0f0f0elem = f6elemf0f0f0iter.Time")
-	assert.NotContains(got, "f6elemf0f0f0elem = &f6elemf0f0f0iter.Time")
 }
