@@ -2204,6 +2204,12 @@ func setResourceForMap(
 		targetShape.ValueRef.Shape,
 		indentLevel+1,
 	)
+	// If the map value is a union type, temporarily set its Type to "union"
+	// so that setResourceForContainer generates the correct type-switch code
+	// instead of treating it as a regular struct.
+	if sourceShape.ValueRef.Shape.RealType == "union" {
+		sourceShape.ValueRef.Shape.Type = "union"
+	}
 	//  f0val = *f0valiter
 	containerOut, err := setResourceForContainer(
 		cfg, r,
@@ -2222,6 +2228,9 @@ func setResourceForMap(
 		return "", err
 	}
 	out += containerOut
+	if sourceShape.ValueRef.Shape.RealType == "union" {
+		sourceShape.ValueRef.Shape.Type = "structure"
+	}
 	addressOfVar := ""
 	switch sourceShape.ValueRef.Shape.Type {
 	case "structure", "list", "map":
@@ -2255,7 +2264,13 @@ func setResourceForScalar(
 	setTo := sourceVar
 	shape := shapeRef.Shape
 	if shape.Type == "timestamp" {
-		setTo = "&metav1.Time{*" + sourceVar + "}"
+		if isList {
+			// In a list context, SDK v2 uses []time.Time (values, not
+			// pointers), and the K8s type is []metav1.Time (also values).
+			setTo = "metav1.Time{" + sourceVar + "}"
+		} else {
+			setTo = "&metav1.Time{*" + sourceVar + "}"
+		}
 	}
 
 	targetVar = strings.TrimPrefix(targetVar, ".")

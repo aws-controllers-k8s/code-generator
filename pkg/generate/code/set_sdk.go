@@ -1470,6 +1470,11 @@ func setSDKForMap(
 	if targetShape.ValueRef.Shape.Type == "structure" {
 		containerFieldName = targetFieldName
 	}
+	// If the map value is a union type, temporarily set its Type to "union"
+	// so that setSDKForContainer generates the correct type-switch code.
+	if targetShape.ValueRef.Shape.RealType == "union" {
+		targetShape.ValueRef.Shape.Type = "union"
+	}
 	if targetShape.ValueRef.Shape.IsEnum() {
 		out += fmt.Sprintf("%s\t%s = string(*%s)\n", indent, valVarName, valIterVarName)
 		valVarName = fmt.Sprintf("svcsdktypes.%s(%s)", targetShape.ValueRef.ShapeName, valVarName)
@@ -1490,9 +1495,16 @@ func setSDKForMap(
 		}
 		out += containerOut
 	}
+	if targetShape.ValueRef.Shape.RealType == "union" {
+		targetShape.ValueRef.Shape.Type = "structure"
+	}
 
 	dereference := "*"
 	if !targetShapeRef.HasDefaultValue() && targetShape.ValueRef.Shape.Type != "structure" {
+		dereference = ""
+	}
+	// Union types are interfaces, not pointers — no dereference needed
+	if targetShape.ValueRef.Shape.RealType == "union" {
 		dereference = ""
 	}
 	// f0[f0key] = f0val
@@ -1528,8 +1540,11 @@ func varEmptyConstructorSDKType(
 	switch shape.Type {
 	case "structure":
 		// f0 := &svcsdk.BookData{}
-
-		if goType == ".Tag" {
+		// For union types (interfaces in SDK v2), declare as var instead of
+		// composite literal since interfaces can't be instantiated directly.
+		if shape.RealType == "union" {
+			out += fmt.Sprintf("%svar %s %s\n", indent, varName, goType)
+		} else if goType == ".Tag" {
 			out += fmt.Sprintf("%s%s := %s{}\n", indent, varName, goType)
 		} else {
 			out += fmt.Sprintf("%s%s := &%s{}\n", indent, varName, goType)
@@ -1628,7 +1643,19 @@ func varEmptyConstructorK8sType(
 		}
 	case "list", "map":
 		// f0 := []*string{}
-		out += fmt.Sprintf("%s%s := %s{}\n", indent, varName, goType)
+		// For lists of timestamps, use []metav1.Time instead of []*time.Time
+		// because controller-gen's deepcopy generator does not handle
+		// []*metav1.Time correctly.
+		if shape.Type == "list" && shape.MemberRef.Shape.Type == "timestamp" {
+			out += fmt.Sprintf("%s%s := []metav1.Time{}\n", indent, varName)
+		} else {
+			out += fmt.Sprintf("%s%s := %s{}\n", indent, varName, goType)
+		}
+	case "timestamp":
+		// var f0 metav1.Time
+		// Use non-pointer form for timestamp because list elements use
+		// []metav1.Time (not []*metav1.Time)
+		out += fmt.Sprintf("%svar %s metav1.Time\n", indent, varName)
 	default:
 		// var f0 *string
 		out += fmt.Sprintf("%svar %s *%s\n", indent, varName, goType)
@@ -1661,6 +1688,11 @@ func setSDKForScalar(
 	shape := shapeRef.Shape
 	if shape.Type == "timestamp" {
 		setTo = "&" + setTo + ".Time"
+		if isListMember {
+			// In a list context, K8s type is []metav1.Time (values) and
+			// SDK v2 type is []time.Time (values). No address-of needed.
+			setTo = strings.TrimPrefix(setTo, "&")
+		}
 	} else if shapeRef.UseIndirection() {
 		setTo = "*" + setTo
 	}
