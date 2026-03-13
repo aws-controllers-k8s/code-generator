@@ -761,6 +761,11 @@ func (m *Model) processNestedFieldTypeDefs(
 					return fmt.Errorf("resource %q, field %q: %w", crd.Names.Original, fieldPath, err)
 				}
 			}
+			if len(field.CustomCELRules()) > 0 {
+				if err := setTypeDefAttributeCELRules(crd, fieldPath, field.CustomCELRules(), tdefs); err != nil {
+					return fmt.Errorf("resource %q, field %q: %w", crd.Names.Original, fieldPath, err)
+				}
+			}
 		}
 	}
 	return nil
@@ -905,6 +910,19 @@ func setTypeDefAttributeImmutable(crd *CRD, fieldPath string, tdefs []*TypeDef) 
 	}
 	if fieldAttr != nil {
 		fieldAttr.IsImmutable = true
+	}
+	return nil
+}
+
+// setTypeDefAttributeCELRules sets the CustomCELRules on the Attr corresponding
+// to the nested field at fieldPath.
+func setTypeDefAttributeCELRules(crd *CRD, fieldPath string, rules []ackgenconfig.CELRule, tdefs []*TypeDef) error {
+	_, fieldAttr, err := getAttributeFromPath(crd, fieldPath, tdefs)
+	if err != nil {
+		return err
+	}
+	if fieldAttr != nil {
+		fieldAttr.CustomCELRules = rules
 	}
 	return nil
 }
