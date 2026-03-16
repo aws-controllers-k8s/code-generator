@@ -2207,9 +2207,6 @@ func TestSetSDK_MQ_Broker_Create(t *testing.T) {
 		}
 		res.Configuration = f3
 	}
-	if r.ko.Spec.CreatorRequestID != nil {
-		res.CreatorRequestId = r.ko.Spec.CreatorRequestID
-	}
 	if r.ko.Spec.DeploymentMode != nil {
 		res.DeploymentMode = svcsdktypes.DeploymentMode(*r.ko.Spec.DeploymentMode)
 	}
@@ -5179,9 +5176,6 @@ func TestEMRContainers_VirtualCluster_WithUnion(t *testing.T) {
 	assert.NotNil(crd.Ops.Create)
 
 	expected := `
-	if r.ko.Spec.ClientToken != nil {
-		res.ClientToken = r.ko.Spec.ClientToken
-	}
 	if r.ko.Spec.ContainerProvider != nil {
 		f1 := &svcsdktypes.ContainerProvider{}
 		if r.ko.Spec.ContainerProvider.ID != nil {
@@ -6496,11 +6490,10 @@ func TestSetSDK_EMRServerless_Application_Create(t *testing.T) {
 		"Should use original SDK shape name WorkerTypeSpecificationInput, not renamed version")
 
 	// Verify idempotency token fields are excluded from the generated code
-	// when ignore_idempotency_token is enabled on the resource in generator.yaml.
-	// The ClientToken field in CreateApplicationInput has the
-	// smithy.api#idempotencyToken trait, and the emr-serverless test config
-	// has ignore_idempotency_token: true on Application, so the code generator
-	// should exclude it from the CRD and generated SDK code. The SDK middleware
+	// by default. The ClientToken field in CreateApplicationInput has the
+	// smithy.api#idempotencyToken trait, so the code generator should
+	// exclude it from the CRD and generated SDK code unless
+	// include_idempotency_token is set to true. The SDK middleware
 	// auto-fills it with a UUID when nil.
 	assert.NotContains(got, "ClientToken",
 		"ClientToken (idempotency token) should not appear in Create SDK code")
@@ -6535,8 +6528,7 @@ func TestSetSDK_EMRServerless_Application_Update(t *testing.T) {
 			"Should use original SDK shape name in Update operation")
 	}
 
-	// Verify idempotency token fields are excluded from Update as well
-	// when ignore_idempotency_token is enabled on the resource.
+	// Verify idempotency token fields are excluded from Update by default.
 	// UpdateApplicationInput.ClientToken also has the
 	// smithy.api#idempotencyToken trait.
 	assert.NotContains(got, "ClientToken",
@@ -6564,6 +6556,27 @@ func TestSetSDK_EMRServerless_Application_InitialCapacityConfig(t *testing.T) {
 	// The generated code should properly handle the nested WorkerCount field
 	// which has a bad default value in the SDK model
 	assert.Contains(got, "WorkerCount")
+}
+
+// TestSetSDK_EMRServerless_Application_IncludeIdempotencyToken tests that
+// setting include_idempotency_token: true in generator.yaml causes the
+// ClientToken field to appear in the generated SDK code.
+func TestSetSDK_EMRServerless_Application_IncludeIdempotencyToken(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "emr-serverless", &testutil.TestingModelOptions{
+		GeneratorConfigFile: "generator-include-idempotency-token.yaml",
+	})
+
+	crd := testutil.GetCRDByName(t, g, "Application")
+	require.NotNil(crd)
+
+	got, err := code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1)
+	require.NoError(err)
+
+	assert.Contains(got, "ClientToken",
+		"ClientToken should appear in Create SDK code when include_idempotency_token is true")
 }
 
 // TestSetSDK_QuickSight_DataSet_Create tests that the SetSDK code generation
