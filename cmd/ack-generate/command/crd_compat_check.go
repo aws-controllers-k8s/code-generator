@@ -70,7 +70,7 @@ func checkCRDCompat(cmd *cobra.Command, args []string) error {
 
 	if len(crdFiles) == 0 {
 		fmt.Println("No CRD files found, nothing to check.")
-		return nil
+		return fmt.Errorf("no CRD files found in %v", optCRDPaths)
 	}
 
 	hasBreaking := false
