@@ -362,6 +362,19 @@ func (rm *resourceManager) FilterSystemTags(res acktypes.AWSResource, systemTags
 {{- end }}
 }
 
+// OnAdopted is called after a resource has been successfully adopted and
+// marked as managed. Override this behavior using the "on_adopted" hook
+// in generator.yaml. The default implementation is a no-op.
+func (rm *resourceManager) OnAdopted(
+	ctx context.Context,
+	res acktypes.AWSResource,
+) (acktypes.AWSResource, error) {
+{{- if $hookCode := Hook .CRD "on_adopted" }}
+{{ $hookCode }}
+{{- end }}
+	return res, nil
+}
+
 // mirrorAWSTags ensures that AWS tags are included in the desired resource
 // if they are present in the latest resource. This will ensure that the
 // aws tags are not present in a diff. The logic of the controller will
