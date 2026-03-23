@@ -568,3 +568,103 @@ func Test_ClearResolvedReferencesForField_SingleReference_WithinMultipleSlices(t
 	require.NoError(err)
 	assert.Equal(expected, got)
 }
+
+func Test_ResolveReferencesForField_SingleReference_WithinMap(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "quicksight",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-nested-references.yaml",
+		})
+
+	crd := testutil.GetCRDByName(t, g, "DataSet")
+	require.NotNil(crd)
+
+	expected :=
+		`	for f0idx, f0iter := range ko.Spec.PhysicalTableMap {
+		if f0iter.CustomSQL != nil {
+			if f0iter.CustomSQL.DataSourceRef != nil && f0iter.CustomSQL.DataSourceRef.From != nil {
+				hasReferences = true
+				arr := f0iter.CustomSQL.DataSourceRef.From
+				if arr.Name == nil || *arr.Name == "" {
+					return hasReferences, fmt.Errorf("provided resource reference is nil or empty: PhysicalTableMap.CustomSQL.DataSourceRef")
+				}
+				namespace := ko.ObjectMeta.GetNamespace()
+				if arr.Namespace != nil && *arr.Namespace != "" {
+					namespace = *arr.Namespace
+				}
+				obj := &svcapitypes.DataSet{}
+				if err := getReferencedResourceState_DataSet(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
+					return hasReferences, err
+				}
+				ko.Spec.PhysicalTableMap[f0idx].CustomSQL.DataSourceARN = (*string)(obj.Status.ACKResourceMetadata.ARN)
+			}
+		}
+	}
+`
+
+	field := crd.Fields["PhysicalTableMap.CustomSQL.DataSourceARN"]
+	require.NotNil(field, "Field PhysicalTableMap.CustomSQL.DataSourceARN not found")
+	got, err := code.ResolveReferencesForField(field, "ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
+}
+
+func Test_ClearResolvedReferencesForField_SingleReference_WithinMap(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "quicksight",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-nested-references.yaml",
+		})
+
+	crd := testutil.GetCRDByName(t, g, "DataSet")
+	require.NotNil(crd)
+
+	expected :=
+		`	for f0idx, f0iter := range ko.Spec.PhysicalTableMap {
+		if f0iter.CustomSQL != nil {
+			if f0iter.CustomSQL.DataSourceRef != nil {
+				ko.Spec.PhysicalTableMap[f0idx].CustomSQL.DataSourceARN = nil
+			}
+		}
+	}
+`
+
+	field := crd.Fields["PhysicalTableMap.CustomSQL.DataSourceARN"]
+	require.NotNil(field, "Field PhysicalTableMap.CustomSQL.DataSourceARN not found")
+	got, err := code.ClearResolvedReferencesForField(field, "ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
+}
+
+func Test_ReferenceFieldsValidation_MapNestedReference(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "quicksight",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-nested-references.yaml",
+		})
+
+	crd := testutil.GetCRDByName(t, g, "DataSet")
+	require.NotNil(crd)
+
+	expected :=
+		`	for _, f0iter := range ko.Spec.PhysicalTableMap {
+		if f0iter.CustomSQL != nil {
+			if f0iter.CustomSQL.DataSourceRef != nil && f0iter.CustomSQL.DataSourceARN != nil {
+				return ackerr.ResourceReferenceAndIDNotSupportedFor("PhysicalTableMap.CustomSQL.DataSourceARN", "PhysicalTableMap.CustomSQL.DataSourceRef")
+			}
+		}
+	}
+`
+
+	field := crd.Fields["PhysicalTableMap.CustomSQL.DataSourceARN"]
+	require.NotNil(field, "Field PhysicalTableMap.CustomSQL.DataSourceARN not found")
+	got, err := code.ReferenceFieldsValidation(field, "ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
+}

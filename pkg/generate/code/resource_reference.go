@@ -355,10 +355,20 @@ func iterReferenceValues(
 
 		switch ref.Shape.Type {
 		case ("map"):
-			return "", fmt.Errorf(
-				"resource %q, field %q: references cannot be within a map",
-				r.Kind, field.Path,
+			iterVarName := fmt.Sprintf(iterVarFmt, currentListDepth)
+			idxVarName := fmt.Sprintf(indexVarFmt, currentListDepth)
+
+			fieldAccessPrefix = fmt.Sprintf("%s.%s", fieldAccessPrefix, fp.At(fpDepth))
+
+			outPrefix += fmt.Sprintf("%sfor %s, %s := range %s {\n", indent,
+				lo.Ternary(shouldRenderIndexes, idxVarName, "_"),
+				iterVarName,
+				fieldAccessPrefix,
 			)
+			outSuffix = fmt.Sprintf("%s}\n%s", indent, outSuffix)
+
+			fieldAccessPrefix = iterVarName
+			currentListDepth++
 		case ("structure"):
 			fieldAccessPrefix = fmt.Sprintf("%s.%s", fieldAccessPrefix, fp.At(fpDepth))
 
@@ -425,7 +435,7 @@ func buildIndexBasedFieldAccessorWithOffset(field *model.Field, sourceVarName, i
 		fieldName := curFP.Pop()
 		indexList := ""
 
-		if cur.ShapeRef.Shape.Type == "list" {
+		if cur.ShapeRef.Shape.Type == "list" || cur.ShapeRef.Shape.Type == "map" {
 
 			// We want to access indexes when iterating through lists of
 			// structs. If we find a list at the end of the field path, then we
