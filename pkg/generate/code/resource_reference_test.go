@@ -582,11 +582,11 @@ func Test_ResolveReferencesForField_SingleReference_WithinMap(t *testing.T) {
 	require.NotNil(crd)
 
 	expected :=
-		`	for f0idx, f0iter := range ko.Spec.PhysicalTableMap {
-		if f0iter.CustomSQL != nil {
-			if f0iter.CustomSQL.DataSourceRef != nil && f0iter.CustomSQL.DataSourceRef.From != nil {
+		`	for f0key, f0value := range ko.Spec.PhysicalTableMap {
+		if f0value.CustomSQL != nil {
+			if f0value.CustomSQL.DataSourceRef != nil && f0value.CustomSQL.DataSourceRef.From != nil {
 				hasReferences = true
-				arr := f0iter.CustomSQL.DataSourceRef.From
+				arr := f0value.CustomSQL.DataSourceRef.From
 				if arr.Name == nil || *arr.Name == "" {
 					return hasReferences, fmt.Errorf("provided resource reference is nil or empty: PhysicalTableMap.CustomSQL.DataSourceRef")
 				}
@@ -598,7 +598,7 @@ func Test_ResolveReferencesForField_SingleReference_WithinMap(t *testing.T) {
 				if err := getReferencedResourceState_DataSet(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
 					return hasReferences, err
 				}
-				ko.Spec.PhysicalTableMap[f0idx].CustomSQL.DataSourceARN = (*string)(obj.Status.ACKResourceMetadata.ARN)
+				ko.Spec.PhysicalTableMap[f0key].CustomSQL.DataSourceARN = (*string)(obj.Status.ACKResourceMetadata.ARN)
 			}
 		}
 	}
@@ -624,10 +624,10 @@ func Test_ClearResolvedReferencesForField_SingleReference_WithinMap(t *testing.T
 	require.NotNil(crd)
 
 	expected :=
-		`	for f0idx, f0iter := range ko.Spec.PhysicalTableMap {
-		if f0iter.CustomSQL != nil {
-			if f0iter.CustomSQL.DataSourceRef != nil {
-				ko.Spec.PhysicalTableMap[f0idx].CustomSQL.DataSourceARN = nil
+		`	for f0key, f0value := range ko.Spec.PhysicalTableMap {
+		if f0value.CustomSQL != nil {
+			if f0value.CustomSQL.DataSourceRef != nil {
+				ko.Spec.PhysicalTableMap[f0key].CustomSQL.DataSourceARN = nil
 			}
 		}
 	}
@@ -653,9 +653,9 @@ func Test_ReferenceFieldsValidation_MapNestedReference(t *testing.T) {
 	require.NotNil(crd)
 
 	expected :=
-		`	for _, f0iter := range ko.Spec.PhysicalTableMap {
-		if f0iter.CustomSQL != nil {
-			if f0iter.CustomSQL.DataSourceRef != nil && f0iter.CustomSQL.DataSourceARN != nil {
+		`	for _, f0value := range ko.Spec.PhysicalTableMap {
+		if f0value.CustomSQL != nil {
+			if f0value.CustomSQL.DataSourceRef != nil && f0value.CustomSQL.DataSourceARN != nil {
 				return ackerr.ResourceReferenceAndIDNotSupportedFor("PhysicalTableMap.CustomSQL.DataSourceARN", "PhysicalTableMap.CustomSQL.DataSourceRef")
 			}
 		}
