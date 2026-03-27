@@ -6656,3 +6656,55 @@ func TestSetSDK_QuickSight_DataSet_Update(t *testing.T) {
 	// should also use value-type access
 	assert.NotContains(got, "= &f6elemf0f0f0iter.Time")
 }
+
+// TestSetSDK_QuickSight_Analysis_Create tests that the SetSDK code generation
+// for the QuickSight Analysis resource correctly handles "double" type list
+// members. The Analysis Definition contains DecimalParameterDeclaration with
+// DefaultValues.StaticValues which is []float64 in the SDK but []*float64 in
+// the CRD. The generated code must dereference the CRD pointer element (*iter)
+// when assigning to the SDK value element.
+func TestSetSDK_QuickSight_Analysis_Create(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "quicksight")
+
+	crd := testutil.GetCRDByName(t, g, "Analysis")
+	require.NotNil(crd)
+	assert.NotNil(crd.Ops.Create)
+
+	got, err := code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1)
+	require.NoError(err)
+
+	// --- Double list members (DecimalParameterDeclaration.DefaultValues.StaticValues) ---
+	// The StaticValues field is []float64 in the SDK (value type) but
+	// []*float64 in the CRD (pointer type). When iterating over the CRD
+	// slice, the loop variable is *float64 and must be dereferenced to
+	// assign to the SDK's float64 element variable.
+	assert.Contains(got, "[]float64{}")
+	// The dereference must be present: elem = *iter
+	assert.Contains(got, "= *f2f6elemf1f0f1iter")
+	// Must NOT have the broken non-dereferenced assignment
+	assert.NotContains(got, "= f2f6elemf1f0f1iter\n")
+}
+
+// TestSetSDK_QuickSight_Analysis_Update tests that the same double list
+// dereference fix applies to the Update operation.
+func TestSetSDK_QuickSight_Analysis_Update(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "quicksight")
+
+	crd := testutil.GetCRDByName(t, g, "Analysis")
+	require.NotNil(crd)
+	assert.NotNil(crd.Ops.Update)
+
+	got, err := code.SetSDK(crd.Config(), crd, model.OpTypeUpdate, "r.ko", "res", 1)
+	require.NoError(err)
+
+	// Same pattern as Create: double list elements must be dereferenced
+	assert.Contains(got, "[]float64{}")
+	assert.Contains(got, "= *f2f6elemf1f0f1iter")
+	assert.NotContains(got, "= f2f6elemf1f0f1iter\n")
+}
