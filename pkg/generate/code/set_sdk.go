@@ -1765,6 +1765,16 @@ func setSDKForScalar(
 		}
 		out += fmt.Sprintf("%stemp := int32(%s)\n", indent, setTo)
 		out += fmt.Sprintf("%s%s = &temp\n", indent, targetVarPath)
+	} else if shape.Type == "double" || shape.Type == "long" {
+		targetVarPath := targetVarName
+		if targetFieldName != "" {
+			targetVarPath += "." + targetFieldName
+		}
+		if isListMember {
+			out += fmt.Sprintf("%s%s = %s\n", indent, targetVarPath, setTo)
+		} else {
+			out += fmt.Sprintf("%s%s = %s\n", indent, targetVarPath, strings.TrimPrefix(setTo, "*"))
+		}
 	} else {
 
 		targetVarPath := targetVarName

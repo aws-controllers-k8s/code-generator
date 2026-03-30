@@ -115,6 +115,70 @@ func TestSetSDKForScalar(t *testing.T) {
 	res.Temperature = &temperatureCopy
 `,
 		},
+		{
+			// "double" maps to float64 natively — no range check or cast
+			// needed. In non-list context, the CRD source is *float64 and
+			// the SDK target is *float64, so we strip the dereference.
+			name:            "double scalar non-list",
+			targetFieldName: "Value",
+			targetVarName:   "res",
+			targetVarType:   "structure",
+			sourceFieldPath: "Value",
+			sourceVarName:   "ko.Spec.Value",
+			isListMember:    false,
+			shapeRef: &awssdkmodel.ShapeRef{
+				Shape: &awssdkmodel.Shape{
+					Type: "double",
+				},
+				OriginalMemberName: "Value",
+			},
+			indentLevel: 1,
+			expected:    "\tres.Value = ko.Spec.Value\n",
+		},
+		{
+			// In a list context, the CRD source element is *float64 but
+			// the SDK target element is float64 (value type). The generated
+			// code must dereference with *.
+			name:            "double scalar list member",
+			targetFieldName: "",
+			targetVarName:   "f0elem",
+			targetVarType:   "",
+			sourceFieldPath: "Values",
+			sourceVarName:   "f0iter",
+			isListMember:    true,
+			shapeRef: &awssdkmodel.ShapeRef{
+				Shape: &awssdkmodel.Shape{
+					Type:      "double",
+					ShapeName: "Double",
+				},
+				OriginalMemberName: "Values",
+				OrigShapeName:      "Double",
+			},
+			indentLevel: 1,
+			expected:    "\tf0elem = *f0iter\n",
+		},
+		{
+			// "long" maps to int64 natively — no range check or cast needed.
+			// In a list context, the CRD source element is *int64 but the
+			// SDK target element is int64 (value type). Must dereference.
+			name:            "long scalar list member",
+			targetFieldName: "",
+			targetVarName:   "f0elem",
+			targetVarType:   "",
+			sourceFieldPath: "Values",
+			sourceVarName:   "f0iter",
+			isListMember:    true,
+			shapeRef: &awssdkmodel.ShapeRef{
+				Shape: &awssdkmodel.Shape{
+					Type:      "long",
+					ShapeName: "Long",
+				},
+				OriginalMemberName: "Values",
+				OrigShapeName:      "Long",
+			},
+			indentLevel: 1,
+			expected:    "\tf0elem = *f0iter\n",
+		},
 	}
 
 	for _, tc := range testCases {

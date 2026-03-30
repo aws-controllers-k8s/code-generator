@@ -3,7 +3,34 @@ ignore:
   field_paths:
     - CreateDataSetOutput.RequestId
     - CreateDataSetOutput.Status
+    - CreateAnalysisOutput.RequestId
+    - CreateAnalysisOutput.Status
+    - UpdateAnalysisOutput.RequestId
+    - UpdateAnalysisOutput.Status
+    - DeleteAnalysisOutput.RequestId
+    - DeleteAnalysisOutput.Status
+    - DescribeAnalysisOutput.RequestId
+    - DescribeAnalysisOutput.Status
+
+operations:
+  DescribeAnalysis:
+    output_wrapper_field_path: Analysis
+
+empty_shapes:
+  - AxisDisplayDataDrivenRange
+  - AllSheetsFilterScopeConfiguration
+
 resources:
+  Analysis:
+    exceptions:
+      errors:
+        404:
+          code: ResourceNotFoundException
+    fields:
+      AnalysisId:
+        is_primary_key: true
+    tags:
+      ignore: true
   DataSet:
     exceptions:
       errors:
