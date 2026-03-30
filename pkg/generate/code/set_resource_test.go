@@ -1162,6 +1162,7 @@ func TestSetResource_ECR_Repository_ReadMany(t *testing.T) {
 	expected := `
 	found := false
 	for _, elem := range resp.Repositories {
+		_ = elem
 		if elem.CreatedAt != nil {
 			ko.Status.CreatedAt = &metav1.Time{*elem.CreatedAt}
 		} else {
@@ -1442,6 +1443,7 @@ func TestSetResource_RDS_DBSubnetGroup_ReadMany(t *testing.T) {
 	expected := `
 	found := false
 	for _, elem := range resp.DBSubnetGroups {
+		_ = elem
 		if elem.DBSubnetGroupArn != nil {
 			if ko.Status.ACKResourceMetadata == nil {
 				ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
@@ -2066,6 +2068,7 @@ func TestSetResource_EC2_Instance_Create(t *testing.T) {
 	expected := `
 	found := false
 	for _, elem := range resp.Instances {
+		_ = elem
 		if elem.AmiLaunchIndex != nil {
 			amiLaunchIndexCopy := int64(*elem.AmiLaunchIndex)
 			ko.Status.AMILaunchIndex = &amiLaunchIndexCopy
@@ -2594,6 +2597,7 @@ func TestSetResource_EC2_Instance_ReadMany(t *testing.T) {
 	found := false
 	for _, iter0 := range resp.Reservations {
 		for _, elem := range iter0.Instances {
+			_ = elem
 			if elem.AmiLaunchIndex != nil {
 				amiLaunchIndexCopy := int64(*elem.AmiLaunchIndex)
 				ko.Status.AMILaunchIndex = &amiLaunchIndexCopy
@@ -5195,6 +5199,7 @@ func TestSetResource_ELBv2_IgnoreSetFrom(t *testing.T) {
 	expected := `
 	found := false
 	for _, elem := range resp.Rules {
+		_ = elem
 		if elem.Actions != nil {
 			f0 := []*svcapitypes.Action{}
 			for _, f0iter := range elem.Actions {

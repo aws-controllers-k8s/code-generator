@@ -86,6 +86,11 @@ func (m *Model) crdNames() []string {
 
 	crds, _ := m.GetCRDs()
 	for _, crd := range crds {
+		// Sub-resources are internal implementation details and should not
+		// appear in CRD kustomization, RBAC, or any user-facing config.
+		if m.cfg.IsSubResource(crd.Names.Original) {
+			continue
+		}
 		crdConfigs = append(crdConfigs, strings.ToLower(crd.Plural))
 	}
 

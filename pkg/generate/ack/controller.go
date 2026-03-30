@@ -28,6 +28,7 @@ import (
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
+	"github.com/aws-controllers-k8s/pkg/names"
 )
 
 var (
@@ -58,12 +59,69 @@ var (
 		"pkg/resource/sdk_update_custom.go.tpl",
 		"pkg/resource/sdk_update_set_attributes.go.tpl",
 		"pkg/resource/sdk_update_not_implemented.go.tpl",
+		"pkg/resource/sdk_update_sub_resource_sync.go.tpl",
+		"pkg/resource/sdk_delete_sub_resource_sync.go.tpl",
+		"pkg/resource/sdk_find_sub_resource_get.go.tpl",
 	}
 	controllerCopyPaths = []string{}
 	controllerFuncMap   = ttpl.FuncMap{
 		"ToLower": strings.ToLower,
 		"TrimPrefix": func(s string, prefix string) string {
 			return strings.TrimPrefix(s, prefix)
+		},
+		"HasPrefix": func(s string, prefix string) bool {
+			return strings.HasPrefix(s, prefix)
+		},
+		"ManagerPrimaryKey": func(r *ackmodel.CRD) string {
+			return r.Config().GetManagerPrimaryKey(r.Names.Original)
+		},
+		"ManagerReadFieldPath": func(r *ackmodel.CRD) string {
+			return r.Config().GetManagerReadFieldPath(r.Names.Original)
+		},
+		"ManagerConversion": func(r *ackmodel.CRD) map[string]*ackgenconfig.SourceConfig {
+			return r.Config().GetManagerConversion(r.Names.Original)
+		},
+		"ManagerBatch": func(r *ackmodel.CRD) *ackgenconfig.BatchConfig {
+			return r.Config().GetManagerBatch(r.Names.Original)
+		},
+		"IsSubResource": func(r *ackmodel.CRD) bool {
+			return r.Config().IsSubResource(r.Names.Original)
+		},
+		// SubResourceManagerInfos returns a slice of SubResourceManagerInfo
+		// for each sub-resource with a manager defined under the given CRD.
+		// Returns nil if the CRD has no sub-resources with managers.
+		"SubResourceManagerInfos": func(r *ackmodel.CRD) []SubResourceManagerInfo {
+			subResources := r.Config().GetSubResources(r.Names.Original)
+			if len(subResources) == 0 {
+				return nil
+			}
+			var infos []SubResourceManagerInfo
+			for internalName, subResCfg := range subResources {
+				if subResCfg.Manager == nil || subResCfg.Manager.Conversion == nil {
+					continue
+				}
+				fieldPath := subResCfg.Manager.Conversion.ParentFieldPath
+				snakeName := names.New(internalName).Snake
+				readFieldPath := ""
+				fieldGoType := ""
+				if subResCfg.Manager.ReadFieldPath != "" {
+					readFieldPath = subResCfg.Manager.ReadFieldPath
+					// Extract the field name from the parent field path (e.g. "Spec.Policies" -> "Policies")
+					parts := strings.SplitN(fieldPath, ".", 2)
+					if len(parts) == 2 {
+						if f, ok := r.SpecFields[parts[1]]; ok {
+							fieldGoType = f.GoType
+						}
+					}
+				}
+				infos = append(infos, SubResourceManagerInfo{
+					FieldPath:     fieldPath,
+					PackageName:   snakeName,
+					ReadFieldPath: readFieldPath,
+					FieldGoType:   fieldGoType,
+				})
+			}
+			return infos
 		},
 		"Dereference": func(s *string) string {
 			return *s
@@ -269,13 +327,44 @@ func Controller(
 		"tags.go.tpl",
 	}
 	for _, crd := range crds {
+		isSubRes := crd.Config().IsSubResource(crd.Names.Original)
+
+		// Determine output base path: sub-resources nest under parent
+		var outBase string
+		if isSubRes {
+			parentName := crd.Config().GetParentResourceName(crd.Names.Original)
+			parentSnake := names.New(parentName).Snake
+			outBase = filepath.Join("pkg/resource", parentSnake, crd.Names.Snake)
+		} else {
+			outBase = filepath.Join("pkg/resource", crd.Names.Snake)
+		}
+
 		for _, target := range targets {
 			// skip adding "tags.go.tpl" file if tagging is ignored for a crd
 			if target == "tags.go.tpl" && crd.Config().TagsAreIgnored(crd.Names.Original) {
 				continue
 			}
-			outPath := filepath.Join("pkg/resource", crd.Names.Snake, strings.TrimSuffix(target, ".tpl"))
+			// Sub-resources only need delta.go and sdk.go — the resource
+			// struct, resourceManager, and all other scaffolding are
+			// generated directly in the sub-resource manager file.
+			if isSubRes && target != "delta.go.tpl" && target != "sdk.go.tpl" {
+				continue
+			}
+			outPath := filepath.Join(outBase, strings.TrimSuffix(target, ".tpl"))
 			tplPath := filepath.Join("pkg/resource", target)
+			crdVars := &templateCRDVars{
+				metaVars,
+				m.SDKAPI,
+				crd,
+			}
+			if err = ts.Add(outPath, tplPath, crdVars); err != nil {
+				return nil, err
+			}
+		}
+		// Generate manager.go for sub-resources when the manager field is specified
+		if crd.Config().GetManagerName(crd.Names.Original) != "" {
+			outPath := filepath.Join(outBase, "manager.go")
+			tplPath := filepath.Join("pkg/resource", "sub_resource_manager.go.tpl")
 			crdVars := &templateCRDVars{
 				metaVars,
 				m.SDKAPI,
@@ -306,6 +395,11 @@ func Controller(
 	// using Map to implement the Set
 	referencedServiceNamesMap := make(map[string]struct{})
 	for _, crd := range crds {
+		// Exclude sub-resource packages from main.go imports — they are
+		// imported by the parent resource's hooks, not by the main controller.
+		if crd.Config().IsSubResource(crd.Names.Original) {
+			continue
+		}
 		snakeCasedCRDNames = append(snakeCasedCRDNames, crd.Names.Snake)
 		for _, serviceName := range crd.ReferencedServiceNames() {
 			referencedServiceNamesMap[serviceName] = struct{}{}
@@ -354,4 +448,20 @@ type templateConfigVars struct {
 	templateset.MetaVars
 	GeneratorConfig    *ackgenconfig.Config
 	ServiceAccountName string
+}
+
+// SubResourceManagerInfo holds the information needed by templates to generate
+// sub-resource manager sync code in the parent resource's sdkUpdate function.
+type SubResourceManagerInfo struct {
+	// FieldPath is the parent spec field path (e.g. "Spec.Policies")
+	FieldPath string
+	// PackageName is the snake_case package name for the sub-resource manager
+	// (e.g. "role_policies")
+	PackageName string
+	// ReadFieldPath is the dotted path on the sub-resource ko that Get returns
+	// (e.g. "Spec.PolicyARNs"). Empty if Get is not generated.
+	ReadFieldPath string
+	// FieldGoType is the Go type of the parent field (e.g. "[]*string")
+	// Used for type assertions when assigning Get results.
+	FieldGoType string
 }

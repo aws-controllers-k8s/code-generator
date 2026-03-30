@@ -40,6 +40,9 @@ var (
 	apisCopyPaths = []string{}
 	apisFuncMap   = ttpl.FuncMap{
 		"Join": strings.Join,
+		"IsSubResource": func(r *ackmodel.CRD) bool {
+			return r.Config().IsSubResource(r.Names.Original)
+		},
 	}
 )
 
