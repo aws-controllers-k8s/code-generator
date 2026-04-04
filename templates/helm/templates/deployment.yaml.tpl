@@ -77,6 +77,9 @@ spec:
         - --enable-leader-election
         - --leader-election-namespace
         - "$(LEADER_ELECTION_NAMESPACE)"
+{{ "{{- if .Values.leaderElection.enableControllerWarmup }}" }}
+        - --enable-controller-warmup
+{{ "{{- end }}" }}
 {{ "{{- end }}" }}
 {{ "{{- if gt (int .Values.reconcile.defaultResyncPeriod) 0 }}" }}
         - --reconcile-default-resync-seconds
