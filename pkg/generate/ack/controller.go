@@ -148,6 +148,12 @@ var (
 		"GoCodeIsSynced": func(r *ackmodel.CRD, resVarName string, indentLevel int) (string, error) {
 			return code.ResourceIsSynced(r.Config(), r, resVarName, indentLevel)
 		},
+		"GoCodeResourceIsUpdateable": func(r *ackmodel.CRD, resVarName string, indentLevel int) (string, error) {
+			return code.ResourceIsUpdateable(r.Config(), r, resVarName, indentLevel)
+		},
+		"GoCodeResourceIsDeletable": func(r *ackmodel.CRD, resVarName string, indentLevel int) (string, error) {
+			return code.ResourceIsDeletable(r.Config(), r, resVarName, indentLevel)
+		},
 		"GoCodeCompareStruct": func(r *ackmodel.CRD, shape *awssdkmodel.Shape, deltaVarName string, sourceVarName string, targetVarName string, fieldPath string, indentLevel int) (string, error) {
 			return code.CompareStruct(r.Config(), r, nil, shape, deltaVarName, sourceVarName, targetVarName, fieldPath, indentLevel)
 		},
