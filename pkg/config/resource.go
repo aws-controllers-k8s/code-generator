@@ -40,6 +40,16 @@ type ResourceConfig struct {
 	// Synced contains instructions for the code generator to generate Go code
 	// that verifies whether a resource is synced or not.
 	Synced *SyncedConfig `json:"synced"`
+	// Updateable contains instructions for the code generator to generate
+	// guard code that checks whether a resource can be updated based on its
+	// current status. If the resource is not in an allowed state, the update
+	// operation is requeued.
+	Updateable *UpdateableConfig `json:"updateable,omitempty"`
+	// Deletable contains instructions for the code generator to generate
+	// guard code that checks whether a resource can be deleted based on its
+	// current status. If the resource is not in an allowed state, the delete
+	// operation is requeued.
+	Deletable *DeletableConfig `json:"deletable,omitempty"`
 	// Renames identifies fields in Operations that should be renamed.
 	Renames *RenamesConfig `json:"renames,omitempty"`
 	// ListOperation contains instructions for the code generator to generate
@@ -158,6 +168,42 @@ type SyncedCondition struct {
 	Path *string `json:"path"`
 	// In contains a list of possible values `Path` should be equal to.
 	In []string `json:"in"`
+}
+
+// StatusCondition represents a single field condition for updateable/deletable
+// guards. It uses the same path+in pattern as SyncedCondition but is a
+// separate type to allow future divergence (e.g. requeue_after_seconds).
+type StatusCondition struct {
+	// Path of the field. e.g. Status.Status
+	Path *string `json:"path"`
+	// In contains the list of values the field must be IN for the operation
+	// to proceed. If the field value is NOT in this list, the operation is
+	// requeued.
+	In []string `json:"in"`
+}
+
+// UpdateableConfig instructs the code generator on how to generate guard code
+// that checks whether a resource can be updated based on its current status.
+type UpdateableConfig struct {
+	// When is a list of conditions. ALL conditions must be satisfied for the
+	// resource to be considered updateable. If any condition is not met, the
+	// update is requeued.
+	When []StatusCondition `json:"when"`
+	// RequeueAfterSeconds is the delay in seconds before the requeue.
+	// Defaults to 30.
+	RequeueAfterSeconds *int `json:"requeue_after_seconds,omitempty"`
+}
+
+// DeletableConfig instructs the code generator on how to generate guard code
+// that checks whether a resource can be deleted based on its current status.
+type DeletableConfig struct {
+	// When is a list of conditions. ALL conditions must be satisfied for the
+	// resource to be considered deletable. If any condition is not met, the
+	// delete is requeued.
+	When []StatusCondition `json:"when"`
+	// RequeueAfterSeconds is the delay in seconds before the requeue.
+	// Defaults to 30.
+	RequeueAfterSeconds *int `json:"requeue_after_seconds,omitempty"`
 }
 
 // HooksConfig instructs the code generator how to inject custom callback hooks

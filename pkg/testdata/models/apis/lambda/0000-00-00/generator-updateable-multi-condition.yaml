@@ -11,41 +11,20 @@ resources:
         from:
           operation: GetFunction
           path: Code.RepositoryType
-    synced:
-      when:
-        - path: Status.State
-          in:
-            - AVAILABLE
-            - ACTIVE
-        - path: Status.LastUpdateStatus
-          in:
-            - AVAILABLE
-            - ACTIVE
-        - path: Status.CodeSize
-          in:
-            - 1
-            - 2
     updateable:
       when:
         - path: Status.State
           in:
             - Active
-    deletable:
-      when:
-        - path: Status.State
+        - path: Status.LastUpdateStatus
           in:
-            - Active
-            - Failed
-  CodeSigningConfig:
-    fields:
-      Tags:
-        compare:
-          is_ignored: true
+            - Successful
+      requeue_after_seconds: 15
 ignore:
   field_paths:
     - CreateFunctionInput.Architectures
     - CreateFunctionInput.LoggingConfig
-    - CreateFunctionInput.EphemeralStorage   
+    - CreateFunctionInput.EphemeralStorage
     - FunctionCode.SourceKMSKeyArn
     - CreateFunctionInput.SnapStart
     - CreateFunctionInput.VpcConfig.Ipv6AllowedForDualStack
