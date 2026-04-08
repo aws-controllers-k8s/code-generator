@@ -81,6 +81,9 @@ type ResourceConfig struct {
 	// Reconcile describes options for controlling the reconciliation
 	// logic for a particular resource.
 	Reconcile *ReconcileConfig `json:"reconcile,omitempty"`
+	// PreDeleteSync contains instructions for the code generator about
+	// how to handle pre-delete sync delta comparison for a resource.
+	PreDeleteSync *PreDeleteSyncConfig `json:"pre_delete_sync,omitempty"`
 	// UpdateConditionsCustomMethodName provides the name of the custom method on the
 	// `resourceManager` struct that will set Conditions on a `resource` struct
 	// depending on the status of the resource.
@@ -423,6 +426,16 @@ type ReconcileConfig struct {
 	// causing ACK controllers to refresh the status views of all watched resources, but this
 	// behaviour is expensive and may be turned off in future ACK runtime options.
 	RequeueOnSuccessSeconds int `json:"requeue_on_success_seconds,omitempty"`
+}
+
+// PreDeleteSyncConfig contains instructions for the code generator about
+// how to handle pre-delete sync delta comparison for a resource.
+type PreDeleteSyncConfig struct {
+	// CompareAll indicates that ALL spec fields (including those with
+	// compare.is_ignored: true) should be included in the pre-delete delta
+	// comparison. When false (the default), only fields with
+	// compare.pre_delete_include: true are included.
+	CompareAll bool `json:"compare_all"`
 }
 
 // ResourceIsIgnored returns true if resource name is configured to be ignored

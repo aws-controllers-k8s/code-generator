@@ -38,3 +38,20 @@ func newResourceDelta(
 {{- end }}
 	return delta
 }
+
+// newResourceDeltaForPreDelete returns a new `ackcompare.Delta` that includes
+// fields normally excluded by compare.is_ignored. Used for pre-delete sync.
+func newResourceDeltaForPreDelete(
+	a *resource,
+	b *resource,
+) *ackcompare.Delta {
+	delta := ackcompare.NewDelta()
+	if ((a == nil && b != nil) ||
+			(a != nil && b == nil)) {
+		delta.Add("", a, b)
+		return delta
+	}
+
+{{ GoCodeCompareForPreDelete .CRD "delta" "a.ko" "b.ko" 1}}
+	return delta
+}

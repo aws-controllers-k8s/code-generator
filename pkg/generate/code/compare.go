@@ -988,3 +988,212 @@ func fastCompareTypes(
 	}
 	return out, needToCloseBlock, nil
 }
+
+// CompareResourceForPreDelete returns the Go code that traverses a set of two
+// Resources, adding differences between the two Resources to an
+// `ackcompare.Delta`.
+//
+// When the resource has `pre_delete_sync.compare_all: true` set, ALL fields
+// are included (even those with `compare.is_ignored: true`), mirroring
+// CompareResource without the is_ignored skip.
+//
+// Otherwise (the default), only fields explicitly opted in via
+// `compare.pre_delete_include: true` are included; all other fields are
+// skipped. This opt-in approach reduces blast radius so controllers only get
+// pre-delete comparison on fields they've deliberately configured.
+func CompareResourceForPreDelete(
+	cfg *ackgenconfig.Config,
+	r *model.CRD,
+	// String representing the name of the variable that is of type
+	// `*ackcompare.Delta`. We will generate Go code that calls the `Add()`
+	// method of this variable when differences between fields are detected.
+	deltaVarName string,
+	// String representing the name of the variable that represents the first
+	// CR under comparison. This will typically be something like "a.ko". See
+	// `templates/pkg/resource/delta.go.tpl`.
+	firstResVarName string,
+	// String representing the name of the variable that represents the second
+	// CR under comparison. This will typically be something like "b.ko". See
+	// `templates/pkg/resource/delta.go.tpl`.
+	secondResVarName string,
+	// Number of levels of indentation to use
+	indentLevel int,
+) (string, error) {
+	out := "\n"
+
+	resConfig := cfg.GetResourceConfig(r.Names.Camel)
+
+	// Determine whether to include all fields in the pre-delete delta.
+	// If compare_all is set at the resource level, include all fields
+	// (even is_ignored ones). Otherwise, only include fields explicitly
+	// opted in via compare.pre_delete_include: true.
+	compareAll := false
+	if resConfig != nil && resConfig.PreDeleteSync != nil {
+		compareAll = resConfig.PreDeleteSync.CompareAll
+	}
+
+	tagField, err := r.GetTagField()
+	if err != nil {
+		return "", err
+	}
+
+	// We need a deterministic order to traverse our top-level fields...
+	specFieldNames := []string{}
+	for fieldName := range r.SpecFields {
+		specFieldNames = append(specFieldNames, fieldName)
+	}
+	sort.Strings(specFieldNames)
+
+	for _, fieldName := range specFieldNames {
+		specField := r.SpecFields[fieldName]
+		indent := strings.Repeat("\t", indentLevel)
+		firstResAdaptedVarName := firstResVarName + cfg.PrefixConfig.SpecField
+		firstResAdaptedVarName += "." + specField.Names.Camel
+		secondResAdaptedVarName := secondResVarName + cfg.PrefixConfig.SpecField
+		secondResAdaptedVarName += "." + specField.Names.Camel
+
+		var fieldConfig *ackgenconfig.FieldConfig
+		var compareConfig *ackgenconfig.CompareFieldConfig
+
+		if resConfig != nil {
+			fieldConfig = resConfig.GetFieldConfig(fieldName)
+		}
+		if fieldConfig != nil {
+			compareConfig = fieldConfig.Compare
+		}
+
+		if !compareAll {
+			// Default opt-in behavior: only include fields with pre_delete_include
+			if compareConfig == nil || !compareConfig.PreDeleteInclude {
+				continue
+			}
+		}
+
+		// this is the "path" to the field within the structs being compared.
+		// This is passed down into the compareXXX functions recursively and
+		// appended to with each level of nested structs we recurse into.
+		fieldPath := strings.TrimPrefix(
+			cfg.PrefixConfig.SpecField+"."+specField.Names.Camel, ".",
+		)
+
+		// Use equality.Semantic.Equalities.DeepEqual for comparing Reference fields because
+		// some of reference fields are list of pointer to structs and
+		// DeepEqual is easy way to compare them
+		if specField.IsReference() {
+			out += fmt.Sprintf("%sif !equality.Semantic.Equalities.DeepEqual(%s, %s) {\n",
+				indent, firstResAdaptedVarName, secondResAdaptedVarName)
+			out += fmt.Sprintf("%s\t%s.Add(\"%s\", %s, %s)\n", indent,
+				deltaVarName, fieldPath, firstResAdaptedVarName,
+				secondResAdaptedVarName)
+			out += fmt.Sprintf("%s}\n", indent)
+			continue
+		}
+
+		// Use a special comparison model for tags, since they need to be
+		// converted into the common ACK tag type before doing a map delta
+		if tagField != nil && specField == tagField {
+			out += compareTags(deltaVarName, firstResAdaptedVarName, secondResAdaptedVarName, fieldPath, indentLevel)
+			continue
+		}
+
+		// Use semantic IAM policy comparison for fields marked as IAM policies
+		if fieldConfig != nil && fieldConfig.IsIAMPolicy {
+			out += compareIAMPolicy(deltaVarName, firstResAdaptedVarName, secondResAdaptedVarName, fieldPath, indentLevel)
+			continue
+		}
+
+		memberShapeRef := specField.ShapeRef
+		memberShape := memberShapeRef.Shape
+
+		// Use len, bytes.Equal and HasNilDifference to fast compare types, and
+		// try to avoid deep comparison as much as possible.
+		fastComparisonOutput, needToCloseBlock, err := fastCompareTypes(
+			compareConfig,
+			memberShape,
+			deltaVarName,
+			fieldPath,
+			firstResAdaptedVarName,
+			secondResAdaptedVarName,
+			indentLevel,
+		)
+		if err != nil {
+			return "", err
+		}
+		out += fastComparisonOutput
+
+		switch memberShape.Type {
+		case "blob":
+			// We already handled the case of blobs above, so we can skip it here.
+		case "structure":
+			// Recurse through all the struct's fields and subfields, building
+			// nested conditionals and calls to `delta.Add()`...
+			structOut, err := CompareStruct(
+				cfg, r,
+				compareConfig,
+				memberShape,
+				deltaVarName,
+				firstResAdaptedVarName,
+				secondResAdaptedVarName,
+				fieldPath,
+				indentLevel+1,
+			)
+			if err != nil {
+				return "", err
+			}
+			out += structOut
+		case "list":
+			// Returns Go code that compares all the elements of the slice fields...
+			sliceOut, err := compareSlice(
+				cfg, r,
+				compareConfig,
+				memberShape,
+				deltaVarName,
+				firstResAdaptedVarName,
+				secondResAdaptedVarName,
+				fieldPath,
+				indentLevel+1,
+			)
+			if err != nil {
+				return "", err
+			}
+			out += sliceOut
+		case "map":
+			// Returns Go code that compares all the elements of the map fields...
+			mapOut, err := compareMap(
+				cfg, r,
+				compareConfig,
+				memberShape,
+				deltaVarName,
+				firstResAdaptedVarName,
+				secondResAdaptedVarName,
+				fieldPath,
+				indentLevel+1,
+			)
+			if err != nil {
+				return "", err
+			}
+			out += mapOut
+		default:
+			scalarOut, err := compareScalar(
+				compareConfig,
+				memberShape,
+				deltaVarName,
+				firstResAdaptedVarName,
+				secondResAdaptedVarName,
+				fieldPath,
+				indentLevel+1,
+			)
+			if err != nil {
+				return "", err
+			}
+			out += scalarOut
+		}
+		if needToCloseBlock {
+			// }
+			out += fmt.Sprintf(
+				"%s}\n", indent,
+			)
+		}
+	}
+	return out, nil
+}

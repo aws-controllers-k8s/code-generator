@@ -669,6 +669,130 @@ func TestCompareResource_IAM_Role_IAMPolicy(t *testing.T) {
 	assert.Equal(expected, got)
 }
 
+func TestCompareResourceForPreDelete_S3_Bucket_NoPreDeleteInclude(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "s3")
+
+	crd := testutil.GetCRDByName(t, g, "Bucket")
+	require.NotNil(crd)
+
+	// With the default S3 generator config, no fields have
+	// compare.pre_delete_include: true, so the pre-delete delta should be
+	// empty (only opted-in fields are included by default).
+	got, err := code.CompareResourceForPreDelete(
+		crd.Config(), crd, "delta", "a.ko", "b.ko", 1,
+	)
+	require.NoError(err)
+	assert.Equal("\n", got)
+}
+
+func TestCompareResourceForPreDelete_S3_Bucket_WithPreDeleteInclude(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "s3", &testutil.TestingModelOptions{
+		GeneratorConfigFile: "generator-with-pre-delete-include.yaml",
+	})
+
+	crd := testutil.GetCRDByName(t, g, "Bucket")
+	require.NotNil(crd)
+
+	// With pre_delete_include: true on ACL, only ACL should appear in the
+	// pre-delete delta output (other fields are not opted in).
+	expected := `
+	if ackcompare.HasNilDifference(a.ko.Spec.ACL, b.ko.Spec.ACL) {
+		delta.Add("Spec.ACL", a.ko.Spec.ACL, b.ko.Spec.ACL)
+	} else if a.ko.Spec.ACL != nil && b.ko.Spec.ACL != nil {
+		if *a.ko.Spec.ACL != *b.ko.Spec.ACL {
+			delta.Add("Spec.ACL", a.ko.Spec.ACL, b.ko.Spec.ACL)
+		}
+	}
+`
+	got, err := code.CompareResourceForPreDelete(
+		crd.Config(), crd, "delta", "a.ko", "b.ko", 1,
+	)
+	require.NoError(err)
+	assert.Equal(expected, got)
+
+	// Verify that CompareResource does NOT contain ACL (it's is_ignored)
+	compareOut, err := code.CompareResource(
+		crd.Config(), crd, "delta", "a.ko", "b.ko", 1,
+	)
+	require.NoError(err)
+	assert.NotContains(compareOut, "Spec.ACL")
+}
+
+func TestCompareResourceForPreDelete_S3_Bucket_CompareAll(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "s3", &testutil.TestingModelOptions{
+		GeneratorConfigFile: "generator-with-pre-delete-compare-all.yaml",
+	})
+
+	crd := testutil.GetCRDByName(t, g, "Bucket")
+	require.NotNil(crd)
+
+	// With pre_delete_sync.compare_all: true, ALL fields should be included
+	// in the pre-delete delta, including ACL (which has is_ignored: true).
+	got, err := code.CompareResourceForPreDelete(
+		crd.Config(), crd, "delta", "a.ko", "b.ko", 1,
+	)
+	require.NoError(err)
+
+	// ACL (is_ignored) should be included
+	assert.Contains(got, "Spec.ACL")
+	// All non-ignored fields should also be included
+	assert.Contains(got, "Spec.CreateBucketConfiguration")
+	assert.Contains(got, "Spec.GrantFullControl")
+	assert.Contains(got, "Spec.GrantRead")
+	assert.Contains(got, "Spec.GrantReadACP")
+	assert.Contains(got, "Spec.GrantWrite")
+	assert.Contains(got, "Spec.GrantWriteACP")
+	assert.Contains(got, "Spec.Logging")
+	assert.Contains(got, "Spec.Name")
+	assert.Contains(got, "Spec.ObjectLockEnabledForBucket")
+	assert.Contains(got, "Spec.Tagging")
+
+	// CompareResource should NOT contain ACL
+	compareOut, err := code.CompareResource(
+		crd.Config(), crd, "delta", "a.ko", "b.ko", 1,
+	)
+	require.NoError(err)
+	assert.NotContains(compareOut, "Spec.ACL")
+
+	// The pre-delete output should be a superset of CompareResource
+	assert.Contains(got, compareOut)
+}
+
+func TestCompareResourceForPreDelete_S3_Bucket_EmptyWithoutOptIn(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "s3")
+
+	crd := testutil.GetCRDByName(t, g, "Bucket")
+	require.NotNil(crd)
+
+	// Pre-delete delta should be empty when no fields are opted in
+	preDeleteOut, err := code.CompareResourceForPreDelete(
+		crd.Config(), crd, "delta", "a.ko", "b.ko", 1,
+	)
+	require.NoError(err)
+	assert.Equal("\n", preDeleteOut)
+
+	// But CompareResource should still work normally (non-ignored fields present)
+	compareOut, err := code.CompareResource(
+		crd.Config(), crd, "delta", "a.ko", "b.ko", 1,
+	)
+	require.NoError(err)
+	assert.Contains(compareOut, "Spec.CreateBucketConfiguration")
+	assert.Contains(compareOut, "Spec.Name")
+	assert.NotContains(compareOut, "Spec.ACL")
+}
+
 // TestCompareResource_QuickSight_DataSet tests that the delta code generation
 // correctly handles the QuickSight DataSet resource, specifically the
 // RowLevelPermissionTagConfiguration.TagRuleConfigurations field which is a
