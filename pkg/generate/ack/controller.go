@@ -145,6 +145,9 @@ var (
 		"GoCodeCompare": func(r *ackmodel.CRD, deltaVarName string, sourceVarName string, targetVarName string, indentLevel int) (string, error) {
 			return code.CompareResource(r.Config(), r, deltaVarName, sourceVarName, targetVarName, indentLevel)
 		},
+		"GoCodeCompareForPreDelete": func(r *ackmodel.CRD, deltaVarName string, sourceVarName string, targetVarName string, indentLevel int) (string, error) {
+			return code.CompareResourceForPreDelete(r.Config(), r, deltaVarName, sourceVarName, targetVarName, indentLevel)
+		},
 		"GoCodeIsSynced": func(r *ackmodel.CRD, resVarName string, indentLevel int) (string, error) {
 			return code.ResourceIsSynced(r.Config(), r, resVarName, indentLevel)
 		},

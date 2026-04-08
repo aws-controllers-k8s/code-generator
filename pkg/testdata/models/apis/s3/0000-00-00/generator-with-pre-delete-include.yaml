@@ -1,0 +1,40 @@
+ignore:
+  resource_names:
+    - Object
+    - MultipartUpload
+  shape_names:
+    # These shapes are structs with no members...
+    - SSES3
+  field_paths:
+    - CreateBucketInput.ObjectOwnership
+    - CreateBucketConfiguration.Bucket
+    - CreateBucketConfiguration.Location
+    - BucketLoggingStatus.LoggingEnabled.TargetObjectKeyFormat
+resources:
+  Bucket:
+    renames:
+      operations:
+        CreateBucket:
+          input_fields:
+            Bucket: Name
+        DeleteBucket:
+          input_fields:
+            Bucket: Name
+    list_operation:
+      match_fields:
+        - Name
+    tags:
+      path: Tagging.TagSet
+    fields:
+      ACL:
+        compare:
+          is_ignored: true
+          pre_delete_include: true
+      Logging:
+        from:
+          operation: PutBucketLogging
+          path: BucketLoggingStatus
+      Tagging:
+        from:
+          operation: PutBucketTagging
+          path: Tagging
