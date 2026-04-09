@@ -187,12 +187,6 @@ type ManagerConfig struct {
 // generator should produce the conversion logic that transforms a parent
 // resource into the sub-resource's internal resource slice.
 type SourceConfig struct {
-	// ParentFieldPath is the path from the parent resource type to the field
-	// holding the source collection (list or map), e.g., "Spec.Policies" or
-	// "Status.Conditions".
-	// When omitted under sub_resources, this is derived automatically as
-	// "Spec.<SubResourceName>" from the sub-resource key name.
-	ParentFieldPath string `json:"parent_field_path,omitempty"`
 	// Per-element mappings: sub-resource spec field → parent element field path
 	// For maps: "$key" and "$value" are special tokens for map key/value
 	// For lists with scalar elements: "." means the element itself
@@ -985,6 +979,25 @@ func (c *Config) GetManagerConversion(resName string) map[string]*SourceConfig {
 		}
 	}
 	return nil
+}
+
+// GetManagerParentFieldPath returns the parent field path for a sub-resource,
+// derived from the sub-resource's internal name and its parent resource name.
+// The internal name is formed as ParentName + SubResName during config loading,
+// so the original sub-resource key is recovered by stripping the parent prefix,
+// yielding "Spec.<SubResName>". Returns empty string if not found.
+func (c *Config) GetManagerParentFieldPath(resName string) string {
+	if c == nil {
+		return ""
+	}
+	parentName := c.GetParentResourceName(resName)
+	if parentName == "" {
+		return ""
+	}
+	// The internal name is ParentName + SubResName (e.g. "RolePolicies").
+	// Strip the parent prefix to recover the original sub-resource key.
+	subResKey := strings.TrimPrefix(resName, parentName)
+	return "Spec." + subResKey
 }
 
 // GetManagerBatch returns the BatchConfig for a resource, or nil if

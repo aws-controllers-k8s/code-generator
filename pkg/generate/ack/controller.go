@@ -81,6 +81,9 @@ var (
 		"ManagerConversion": func(r *ackmodel.CRD) map[string]*ackgenconfig.SourceConfig {
 			return r.Config().GetManagerConversion(r.Names.Original)
 		},
+		"ManagerParentFieldPath": func(r *ackmodel.CRD) string {
+			return r.Config().GetManagerParentFieldPath(r.Names.Original)
+		},
 		"ManagerBatch": func(r *ackmodel.CRD) *ackgenconfig.BatchConfig {
 			return r.Config().GetManagerBatch(r.Names.Original)
 		},
@@ -100,7 +103,7 @@ var (
 				if subResCfg.Manager == nil || subResCfg.Manager.Conversion == nil {
 					continue
 				}
-				fieldPath := subResCfg.Manager.Conversion.ParentFieldPath
+				fieldPath := r.Config().GetManagerParentFieldPath(internalName)
 				snakeName := names.New(internalName).Snake
 				readFieldPath := ""
 				fieldGoType := ""

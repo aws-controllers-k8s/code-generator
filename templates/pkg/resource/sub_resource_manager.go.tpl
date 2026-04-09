@@ -153,6 +153,7 @@ func (rm *resourceManager) sync(
 
 {{ $conversion := ManagerConversion .CRD }}
 {{ if $conversion }}
+{{ $parentFieldPath := ManagerParentFieldPath .CRD }}
 // NewManager creates a resourceManager using the provided SDK client and
 // metrics recorder.
 func NewManager(
@@ -228,7 +229,7 @@ func ConvertToResources(
 
 func convertFrom{{ $typeName }}(parent svcapitypes.{{ $typeName }}) []resource {
 {{- if $src.IsSingleton }}
-	src := parent.{{ $src.ParentFieldPath }}
+	src := parent.{{ $parentFieldPath }}
 	if src == nil {
 		return nil
 	}
@@ -252,7 +253,7 @@ func convertFrom{{ $typeName }}(parent svcapitypes.{{ $typeName }}) []resource {
 {{- end }}
 	return []resource{ {ko: ko} }
 {{- else }}
-	collection := parent.{{ $src.ParentFieldPath }}
+	collection := parent.{{ $parentFieldPath }}
 	if collection == nil {
 		return nil
 	}

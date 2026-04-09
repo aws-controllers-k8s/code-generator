@@ -206,7 +206,6 @@ func New(
 // applyDefaults sets default values for config fields that were not explicitly
 // provided in the generator config file. For sub-resources it:
 //   - defaults TagConfig to ignore tags
-//   - derives ParentFieldPath from the sub-resource key name when not set
 //   - rekeys the SubResources map to prefix each key with the parent resource
 //     name (e.g. "Policies" under "Role" becomes "RolePolicies")
 //   - updates Operations entries whose resource_name matches the original
@@ -221,13 +220,6 @@ func (c *Config) applyDefaults() {
 			// Default tags to ignored for sub-resources.
 			if subResCfg.TagConfig == nil {
 				subResCfg.TagConfig = &TagConfig{Ignore: true}
-			}
-
-			// Derive ParentFieldPath when not explicitly set.
-			if subResCfg.Manager != nil && subResCfg.Manager.Conversion != nil {
-				if subResCfg.Manager.Conversion.ParentFieldPath == "" {
-					subResCfg.Manager.Conversion.ParentFieldPath = "Spec." + subResName
-				}
 			}
 
 			// Build the internal name by prefixing with parent name.
