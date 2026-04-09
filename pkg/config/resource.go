@@ -130,8 +130,7 @@ type ResourceConfig struct {
 
 // SubResourceConfig defines a sub-resource kind nested under a parent
 // resource's sub_resources field. It reuses ResourceConfig fields and adds
-// a Manager field. When defined under sub_resources, the conversion config
-// uses a flat SourceConfig (not a map) since the parent type is implicit.
+// a Manager field.
 type SubResourceConfig struct {
 	ResourceConfig `json:",inline"`
 	// Manager, when specified, instructs the code generator to produce a
@@ -161,69 +160,121 @@ type TagConfig struct {
 // ManagerConfig instructs the code generator to produce a sub-resource
 // manager file for the resource.
 type ManagerConfig struct {
-	// PrimaryKey is a scoped dotted path with exactly two segments: a scope
-	// prefix (Spec or Status) and a field name (e.g., "Spec.PolicyARN",
-	// "Status.ID"). It identifies the unique key for a sub-resource item
-	// within its collection and is used by the generated Key() method.
-	PrimaryKey string `json:"primary_key"`
 	// ReadFieldPath is the dotted path to the field on the sub-resource's
-	// Spec or Status that the Get method should return after calling
-	// ReadOne/ReadMany. For example, "Spec.PolicyARN" or "Spec.PolicyNames".
-	// When set, the Manager's Get method is generated.
+	// Spec or Status that the Get method should read after calling sdkFind.
+	// For list sources, this is the field holding the full list of results
+	// (e.g. "Spec.PolicyARNs"). When empty, Get uses the primary key field.
 	ReadFieldPath string `json:"read_field_path,omitempty"`
-	// Conversion contains configuration for how the code generator should
-	// produce the conversion logic that transforms a parent resource's spec
-	// into the sub-resource's internal resource slice. When defined under
-	// sub_resources, this is a flat SourceConfig since the parent type is
-	// implicit from the nesting relationship.
-	Conversion *SourceConfig `json:"conversion,omitempty"`
-	// Batch contains configuration for batch-capable APIs that accept multiple
-	// sub-resource items in a single call, including the collection field path
-	// used to merge items and consolidating into a single batched API call.
-	Batch *BatchConfig `json:"batch,omitempty"`
+	// Mapper is a list of field mappings from the parent CRD to the
+	// sub-resource CRD. Each entry maps a parent field path to a
+	// sub-resource field path with a specified mapping type.
+	Mapper []*MapperConfig `json:"mapper,omitempty"`
 }
 
-// SourceConfig contains per-parent-type configuration for how the code
-// generator should produce the conversion logic that transforms a parent
-// resource into the sub-resource's internal resource slice.
-type SourceConfig struct {
-	// Per-element mappings: sub-resource spec field → parent element field path
-	// For maps: "$key" and "$value" are special tokens for map key/value
-	// For lists with scalar elements: "." means the element itself
-	Element map[string]string `json:"element"`
-	// Arbitrary mappings applied uniformly to every sub-resource:
-	// sub-resource spec field → parent field path relative to the top-level
-	// type (e.g., "Spec.Name") or static value
-	Fields map[string]string `json:"fields,omitempty"`
-	// Singleton indicates the source_field_path points to a single scalar or
-	// struct field rather than a collection (list or map). When true, the
-	// generated conversion wraps the single value into a one-element slice.
-	Singleton bool `json:"singleton,omitempty"`
+// MapperConfig defines a single field mapping from a parent CRD field to a
+// sub-resource CRD field.
+type MapperConfig struct {
+	// From is the dotted field path on the parent CRD
+	// (e.g. "Spec.AssumeRolePolicyDocument").
+	From string `json:"from"`
+	// To is the dotted field path on the sub-resource CRD
+	// (e.g. "Spec.PolicyDocument").
+	To string `json:"to"`
 }
 
-// HasMapTokens returns true if any element mapping uses the "$key" or "$value"
-// tokens, indicating the source collection is a map rather than a slice.
-func (s *SourceConfig) HasMapTokens() bool {
-	for _, v := range s.Element {
-		if v == "$key" || v == "$value" {
-			return true
-		}
-	}
-	return false
+// MapperType represents how parent resource fields are mapped to sub-resource
+// fields during conversion.
+type MapperType int
+
+const (
+	// MapperTypeOneToOne maps a single parent field to a single sub-resource
+	// field. Used when one parent field value populates exactly one field on
+	// one sub-resource instance.
+	MapperTypeOneToOne MapperType = iota
+	// MapperTypeOneToMany maps a single parent field to all sub-resource
+	// instances. Used when one parent field value (e.g. a list or map) is
+	// expanded into multiple sub-resource instances.
+	MapperTypeOneToMany
+)
+
+// SourceType represents the kind of field the parent field path points to
+// for a sub-resource conversion source.
+type SourceType int
+
+const (
+	// SourceTypeScalar indicates the parent field is a single scalar
+	// (e.g. *string).
+	SourceTypeScalar SourceType = iota
+	// SourceTypeStruct indicates the parent field is a single struct
+	// (e.g. *PolicyDetail).
+	SourceTypeStruct
+	// SourceTypeListScalar indicates the parent field is a list of scalars
+	// (e.g. []*string).
+	SourceTypeListScalar
+	// SourceTypeListStruct indicates the parent field is a list of structs
+	// (e.g. []*PolicyDetail).
+	SourceTypeListStruct
+	// SourceTypeMap indicates the parent field is a map of string to scalar
+	// (e.g. map[string]*string).
+	SourceTypeMap
+	// SourceTypeMapScalar indicates the parent field is a map with scalar
+	// values (e.g. map[string]*string).
+	SourceTypeMapScalar
+	// SourceTypeMapStruct indicates the parent field is a map with struct
+	// values (e.g. map[string]*PolicyDetail).
+	SourceTypeMapStruct
+)
+
+// SourceTypeInfo holds the derived parent field path and its source type
+// for a sub-resource conversion source. This is an internal value computed
+// at code generation time from the parent CRD's field shape.
+type SourceTypeInfo struct {
+	// FieldPath is the dotted path from the parent resource to the source
+	// field (e.g. "Spec.Policies").
+	FieldPath string
+	// Type is the kind of source at FieldPath.
+	Type SourceType
+	// MapperType is the mapping cardinality derived from the source type.
+	// Scalar and struct sources use OneToOne; list and map sources use
+	// OneToMany.
+	MapperType MapperType
+	// ParentKind is the Go kind name of the parent CRD (e.g. "Role").
+	ParentKind string
 }
 
-// IsSingleton returns true if the source field is a singleton (scalar/struct)
-// rather than a collection (list/map).
-func (s *SourceConfig) IsSingleton() bool {
-	return s.Singleton
+// IsScalar returns true when the source field is a single scalar.
+func (s *SourceTypeInfo) IsScalar() bool {
+	return s.Type == SourceTypeScalar
 }
 
-// BatchConfig indicates the AWS API accepts multiple sub-resource items in a
-// single call and identifies the collection field to merge when consolidating
-// multiple sub-resources into a single batched API call.
-type BatchConfig struct {
-	// Sub-resource spec field path holding the collection to merge
-	CollectionFieldPath string `json:"collection_field_path"`
+// IsStruct returns true when the source field is a single struct.
+func (s *SourceTypeInfo) IsStruct() bool {
+	return s.Type == SourceTypeStruct
+}
+
+// IsListScalar returns true when the source field is a list of scalars.
+func (s *SourceTypeInfo) IsListScalar() bool {
+	return s.Type == SourceTypeListScalar
+}
+
+// IsListStruct returns true when the source field is a list of structs.
+func (s *SourceTypeInfo) IsListStruct() bool {
+	return s.Type == SourceTypeListStruct
+}
+
+// IsMap returns true when the source field is a map.
+func (s *SourceTypeInfo) IsMap() bool {
+	return s.Type == SourceTypeMap
+}
+
+// IsMapScalar returns true when the source field is a map with scalar values.
+func (s *SourceTypeInfo) IsMapScalar() bool {
+	return s.Type == SourceTypeMapScalar
+}
+
+// IsMapStruct returns true when the source field is a map with struct values.
+func (s *SourceTypeInfo) IsMapStruct() bool {
+	return s.Type == SourceTypeMapStruct
 }
 
 // SyncedConfig instructs the code generator on how to generate functions that checks
@@ -925,24 +976,6 @@ func (c *Config) GetManagerName(resName string) string {
 	return ""
 }
 
-// GetManagerPrimaryKey returns the primary_key value for a resource, or empty
-// string if not configured. Searches sub_resources maps.
-func (c *Config) GetManagerPrimaryKey(resName string) string {
-	if c == nil {
-		return ""
-	}
-	for _, rConfig := range c.Resources {
-		if rConfig.SubResources != nil {
-			if subRes, found := rConfig.SubResources[resName]; found {
-				if subRes.Manager != nil {
-					return subRes.Manager.PrimaryKey
-				}
-			}
-		}
-	}
-	return ""
-}
-
 // GetManagerReadFieldPath returns the read_field_path value for a resource, or
 // empty string if not configured. Searches sub_resources maps.
 func (c *Config) GetManagerReadFieldPath(resName string) string {
@@ -961,19 +994,17 @@ func (c *Config) GetManagerReadFieldPath(resName string) string {
 	return ""
 }
 
-// GetManagerConversion returns the conversion config for a resource as a map
-// keyed by parent resource name, or nil if not configured. The map is built
-// from the flat SourceConfig on the sub-resource's ManagerConfig, using the
-// enclosing parent resource name as the key.
-func (c *Config) GetManagerConversion(resName string) map[string]*SourceConfig {
+// GetManagerMapper returns the mapper config for a resource, or nil if not
+// configured. Searches sub_resources maps.
+func (c *Config) GetManagerMapper(resName string) []*MapperConfig {
 	if c == nil {
 		return nil
 	}
-	for parentName, rConfig := range c.Resources {
+	for _, rConfig := range c.Resources {
 		if rConfig.SubResources != nil {
 			if subRes, found := rConfig.SubResources[resName]; found {
-				if subRes.Manager != nil && subRes.Manager.Conversion != nil {
-					return map[string]*SourceConfig{parentName: subRes.Manager.Conversion}
+				if subRes.Manager != nil {
+					return subRes.Manager.Mapper
 				}
 			}
 		}
@@ -998,24 +1029,6 @@ func (c *Config) GetManagerParentFieldPath(resName string) string {
 	// Strip the parent prefix to recover the original sub-resource key.
 	subResKey := strings.TrimPrefix(resName, parentName)
 	return "Spec." + subResKey
-}
-
-// GetManagerBatch returns the BatchConfig for a resource, or nil if
-// not configured. Searches sub_resources maps.
-func (c *Config) GetManagerBatch(resName string) *BatchConfig {
-	if c == nil {
-		return nil
-	}
-	for _, rConfig := range c.Resources {
-		if rConfig.SubResources != nil {
-			if subRes, found := rConfig.SubResources[resName]; found {
-				if subRes.Manager != nil {
-					return subRes.Manager.Batch
-				}
-			}
-		}
-	}
-	return nil
 }
 
 // GetSubResources returns the sub_resources map for the given parent resource

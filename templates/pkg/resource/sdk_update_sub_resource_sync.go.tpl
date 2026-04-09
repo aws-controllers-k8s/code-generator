@@ -4,8 +4,8 @@
 	// Sync sub-resource managers for fields managed by separate API operations.
 {{- range $info := $subResInfos }}
 	if delta.DifferentAt("{{ $info.FieldPath }}") {
-		mgr := {{ $info.PackageName }}.NewManager(rm.sdkapi, rm.metrics)
-		if err = mgr.Sync(ctx, desired.ko, latest.ko); err != nil {
+		mgr_{{ $info.PackageName }} := {{ $info.PackageName }}.NewManager(rm.sdkapi, rm.metrics)
+		if err = mgr_{{ $info.PackageName }}.Sync(ctx, desired.ko, latest.ko); err != nil {
 			return nil, err
 		}
 	}
