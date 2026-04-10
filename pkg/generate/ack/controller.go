@@ -88,13 +88,21 @@ var (
 		},
 		// ManagerPrimaryKey derives the primary key for a sub-resource by
 		// finding the mapper entry whose From matches the parent field path
-		// or a special token ("$item"/"$item.*" for lists, "$key" for maps),
-		// and returning its To.
+		// or a special token ("$item.*" for struct lists, "$item" for scalar
+		// lists, "$key" for maps), and returning its To. Struct field
+		// patterns ($item.Field) take priority over bare $item.
 		"ManagerPrimaryKey": func(r *ackmodel.CRD) string {
 			fieldPath := r.Config().GetManagerParentFieldPath(r.Names.Original)
 			mapper := r.Config().GetManagerMapper(r.Names.Original)
+			// First pass: prefer $item.Field (struct field access)
 			for _, m := range mapper {
-				if m.From == fieldPath || m.From == "$item" || m.From == "$key" || strings.HasPrefix(m.From, "$item.") {
+				if strings.HasPrefix(m.From, "$item.") {
+					return m.To
+				}
+			}
+			// Second pass: bare $item, $key, or exact field path match
+			for _, m := range mapper {
+				if m.From == fieldPath || m.From == "$item" || m.From == "$key" {
 					return m.To
 				}
 			}
@@ -327,24 +335,20 @@ func Controller(
 		info := &ackgenconfig.SourceTypeInfo{FieldPath: fieldPath, ParentKind: parentCRD.Kind}
 		switch f.ShapeRef.Shape.Type {
 		case "map":
-			info.MapperType = ackgenconfig.MapperTypeOneToMany
 			if f.ShapeRef.Shape.ValueRef.Shape != nil && f.ShapeRef.Shape.ValueRef.Shape.Type == "structure" {
 				info.Type = ackgenconfig.SourceTypeMapStruct
 			} else {
 				info.Type = ackgenconfig.SourceTypeMapScalar
 			}
 		case "list":
-			info.MapperType = ackgenconfig.MapperTypeOneToMany
 			if f.ShapeRef.Shape.MemberRef.Shape != nil && f.ShapeRef.Shape.MemberRef.Shape.Type == "structure" {
 				info.Type = ackgenconfig.SourceTypeListStruct
 			} else {
 				info.Type = ackgenconfig.SourceTypeListScalar
 			}
 		case "structure":
-			info.MapperType = ackgenconfig.MapperTypeOneToOne
 			info.Type = ackgenconfig.SourceTypeStruct
 		case "string", "boolean", "integer", "long", "float", "double", "timestamp", "blob":
-			info.MapperType = ackgenconfig.MapperTypeOneToOne
 			info.Type = ackgenconfig.SourceTypeScalar
 		default:
 			return nil, fmt.Errorf("manager source type not implemented for shape type %q at %s in %s", f.ShapeRef.Shape.Type, fieldPath, r.Names.Original)

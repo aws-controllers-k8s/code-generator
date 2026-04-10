@@ -7,6 +7,7 @@ import (
 
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
 	ackcfg "github.com/aws-controllers-k8s/runtime/pkg/config"
+	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackmetrics "github.com/aws-controllers-k8s/runtime/pkg/metrics"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
@@ -120,6 +121,82 @@ func (rm *resourceManager) sync(
 }
 
 {{ $srcType := ManagerSourceType .CRD }}
+{{ $readFieldPath := ManagerReadFieldPath .CRD }}
+
+// NewManager creates a resourceManager using the provided SDK client and
+// metrics recorder.
+func NewManager(
+	sdkapi *svcsdk.Client,
+	metrics *ackmetrics.Metrics,
+) *resourceManager {
+	return &resourceManager{
+		sdkapi:  sdkapi,
+		metrics: metrics,
+	}
+}
+
+// Sync converts the desired and latest parent resources into internal
+// resource slices, then delegates to sync.
+func (rm *resourceManager) Sync(
+	ctx context.Context,
+	desired any,
+	latest any,
+) error {
+	desiredResources := convertToResources(desired)
+	latestResources := convertToResources(latest)
+	return rm.sync(ctx, desiredResources, latestResources)
+}
+
+// Get reads the current state of the sub-resources from AWS and writes the
+// result back onto the parent resource.
+func (rm *resourceManager) Get(
+	ctx context.Context,
+	parent *svcapitypes.{{ $srcType.ParentKind }},
+) error {
+	seeds := convertFromParent(parent)
+	if len(seeds) == 0 {
+		parent.{{ $srcType.FieldPath }} = nil
+		return nil
+	}
+	found, err := rm.sdkFind(ctx, &seeds[0])
+	if err != nil {
+		// For sub-resources, NotFound from sdkFind means the parent exists
+		// but has no items (e.g. no attached policies, no tags). This is
+		// valid — clear the parent field and return success.
+		if err == ackerr.NotFound {
+			parent.{{ $srcType.FieldPath }} = nil
+			return nil
+		}
+		return err
+	}
+	if found == nil {
+		parent.{{ $srcType.FieldPath }} = nil
+		return nil
+	}
+{{- if $readFieldPath }}
+	parent.{{ $srcType.FieldPath }} = found.ko.{{ $readFieldPath }}
+{{- end }}
+	return nil
+}
+
+// convertToResources maps fields from the parent resource into sub-resource
+// instances using the source-type-specific convertFromParent.
+func convertToResources(parent any) []resource {
+	if parent == nil {
+		return nil
+	}
+	switch v := parent.(type) {
+	case *svcapitypes.{{ $srcType.ParentKind }}:
+		if v == nil {
+			return nil
+		}
+		return convertFromParent(v)
+	}
+	return nil
+}
+
+// convertFromParent is source-type-specific: it maps parent fields into
+// sub-resource instances.
 {{- if $srcType.IsScalar }}
 {{ template "sub_resource_manager_scalar" . }}
 {{- else if $srcType.IsStruct }}

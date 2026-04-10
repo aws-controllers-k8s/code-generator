@@ -182,21 +182,6 @@ type MapperConfig struct {
 	To string `json:"to"`
 }
 
-// MapperType represents how parent resource fields are mapped to sub-resource
-// fields during conversion.
-type MapperType int
-
-const (
-	// MapperTypeOneToOne maps a single parent field to a single sub-resource
-	// field. Used when one parent field value populates exactly one field on
-	// one sub-resource instance.
-	MapperTypeOneToOne MapperType = iota
-	// MapperTypeOneToMany maps a single parent field to all sub-resource
-	// instances. Used when one parent field value (e.g. a list or map) is
-	// expanded into multiple sub-resource instances.
-	MapperTypeOneToMany
-)
-
 // SourceType represents the kind of field the parent field path points to
 // for a sub-resource conversion source.
 type SourceType int
@@ -234,10 +219,6 @@ type SourceTypeInfo struct {
 	FieldPath string
 	// Type is the kind of source at FieldPath.
 	Type SourceType
-	// MapperType is the mapping cardinality derived from the source type.
-	// Scalar and struct sources use OneToOne; list and map sources use
-	// OneToMany.
-	MapperType MapperType
 	// ParentKind is the Go kind name of the parent CRD (e.g. "Role").
 	ParentKind string
 }
