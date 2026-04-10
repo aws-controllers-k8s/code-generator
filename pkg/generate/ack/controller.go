@@ -353,6 +353,27 @@ func Controller(
 		default:
 			return nil, fmt.Errorf("manager source type not implemented for shape type %q at %s in %s", f.ShapeRef.Shape.Type, fieldPath, r.Names.Original)
 		}
+
+		// Derive BatchFieldPath: if the mapper has a "$item" entry whose
+		// target field is a list on the sub-resource CRD, the SDK operation
+		// accepts multiple items per call and we can batch.
+		mapper := r.Config().GetManagerMapper(r.Names.Original)
+		for _, m := range mapper {
+			if m.From == "$item" {
+				// Check if the target field is a list on the sub-resource CRD.
+				// The To path is "Spec.FieldName" — extract the field name.
+				toParts := strings.SplitN(m.To, ".", 2)
+				if len(toParts) == 2 {
+					if sf, ok := r.SpecFields[toParts[1]]; ok {
+						if sf.ShapeRef != nil && sf.ShapeRef.Shape != nil && sf.ShapeRef.Shape.Type == "list" {
+							info.BatchFieldPath = m.To
+						}
+					}
+				}
+				break
+			}
+		}
+
 		return info, nil
 	}
 

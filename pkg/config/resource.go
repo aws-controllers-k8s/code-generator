@@ -221,6 +221,11 @@ type SourceTypeInfo struct {
 	Type SourceType
 	// ParentKind is the Go kind name of the parent CRD (e.g. "Role").
 	ParentKind string
+	// BatchFieldPath is the dotted path on the sub-resource CRD to the
+	// collection field that can be merged when batching multiple items into
+	// a single SDK call. Empty when the SDK operation accepts only one item
+	// per call.
+	BatchFieldPath string
 }
 
 // IsScalar returns true when the source field is a single scalar.

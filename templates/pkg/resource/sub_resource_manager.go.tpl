@@ -99,6 +99,36 @@ func (rm *resourceManager) sync(
 
 	d := computeDelta(desired, latest)
 
+{{ $srcType := ManagerSourceType .CRD }}
+{{ if $srcType.BatchFieldPath }}
+	if len(d.toCreate) > 0 {
+		merged := mergeResources(d.toCreate)
+		if merged != nil {
+			_, err = rm.sdkCreate(ctx, merged)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	if len(d.toUpdate) > 0 {
+		merged := mergeResources(d.toUpdate)
+		if merged != nil {
+			_, err = rm.sdkCreate(ctx, merged)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	if len(d.toDelete) > 0 {
+		merged := mergeResources(d.toDelete)
+		if merged != nil {
+			_, err = rm.sdkDelete(ctx, merged)
+			if err != nil {
+				return err
+			}
+		}
+	}
+{{ else }}
 	for _, r := range d.toCreate {
 		_, err = rm.sdkCreate(ctx, r)
 		if err != nil {
@@ -117,10 +147,32 @@ func (rm *resourceManager) sync(
 			return err
 		}
 	}
+{{ end }}
 	return nil
 }
 
-{{ $srcType := ManagerSourceType .CRD }}
+{{ if $srcType.BatchFieldPath }}
+// mergeResources combines multiple sub-resource items into a single resource
+// by concatenating the batch collection field ({{ $srcType.BatchFieldPath }}).
+func mergeResources(items []*resource) *resource {
+	if len(items) == 0 {
+		return nil
+	}
+	if len(items) == 1 {
+		return items[0]
+	}
+	merged := items[0].ko.DeepCopy()
+	merged.{{ $srcType.BatchFieldPath }} = nil
+	for _, item := range items {
+		merged.{{ $srcType.BatchFieldPath }} = append(
+			merged.{{ $srcType.BatchFieldPath }},
+			item.ko.{{ $srcType.BatchFieldPath }}...,
+		)
+	}
+	return &resource{ko: merged}
+}
+{{ end }}
+
 {{ $readFieldPath := ManagerReadFieldPath .CRD }}
 
 // NewManager creates a resourceManager using the provided SDK client and
