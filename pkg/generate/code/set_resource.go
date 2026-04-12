@@ -2473,6 +2473,9 @@ func setResourceForUnion(
 		if sourceMemberShapeRef == nil {
 			continue
 		}
+		if sourceMemberShapeRef.Shape.RealType == "union" {
+			sourceMemberShapeRef.Shape.Type = "union"
+		}
 
 		sourceMemberIndex, err := GetMemberIndex(sourceShape, targetMemberName)
 		if err != nil {
@@ -2560,6 +2563,9 @@ func setResourceForUnion(
 				false,
 				true,
 			)
+		}
+		if sourceMemberShapeRef.Shape.RealType == "union" {
+			sourceMemberShapeRef.Shape.Type = "structure"
 		}
 		out += fmt.Sprintf("%s\t}\n", indent)
 	}
