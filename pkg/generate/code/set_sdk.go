@@ -1937,7 +1937,7 @@ func setSDKForUnion(
 					return "", err
 				}
 				out += containerOut
-				if memberShape.Type == "list" {
+				if memberShape.Type == "list" || memberShape.Type == "union" {
 					out += fmt.Sprintf("%s\t%s.Value = %s\n", indent, elemVarName, indexedVarName)
 				} else {
 					out += fmt.Sprintf("%s\t%s.Value = *%s\n", indent, elemVarName, indexedVarName)
