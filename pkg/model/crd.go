@@ -802,9 +802,21 @@ func (crd *CRD) addCustomNestedFields(customNestedFields map[string]*ackgenconfi
 		if err != nil {
 			return fmt.Errorf("resource %q, custom nested field %q: %w", crd.Names.Original, customNestedField, err)
 		}
-		parentField.ShapeRef.Shape.MemberRefs[fieldName] = memberShapeRef
+		//parentField.ShapeRef.Shape.MemberRefs[fieldName] = memberShapeRef
+		addMemberShapRef(parentField.ShapeRef, memberShapeRef, fieldName)
 	}
 	return nil
+}
+
+func addMemberShapRef(shapeRef, memberShapeRef *awssdkmodel.ShapeRef, fieldName string) {
+	switch shapeRef.Shape.Type {
+	case "structure":
+		shapeRef.Shape.MemberRefs[fieldName] = memberShapeRef
+	case "list":
+		shapeRef.Shape.MemberRef.Shape.MemberRefs[fieldName] = memberShapeRef
+	case "map":
+		shapeRef.Shape.ValueRef.Shape.MemberRefs[fieldName] = memberShapeRef
+	}
 }
 
 // ReconcileRequeuOnSuccessSeconds returns the duration after which to requeue
