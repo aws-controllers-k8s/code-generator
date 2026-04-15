@@ -1937,7 +1937,11 @@ func setSDKForUnion(
 					return "", err
 				}
 				out += containerOut
-				if memberShape.Type == "list" {
+				// TODO (knottnt) refactor union Shape.Type handling
+				// Union type check is coupled to mutating Shape.Type in prior recursions.
+				// While this does work and test coverage validates the behavior this pattern of
+				// assign Shape.Type to union is confusing and makes function logic difficult to follow.
+				if memberShape.Type == "list" || memberShape.Type == "union" {
 					out += fmt.Sprintf("%s\t%s.Value = %s\n", indent, elemVarName, indexedVarName)
 				} else {
 					out += fmt.Sprintf("%s\t%s.Value = *%s\n", indent, elemVarName, indexedVarName)

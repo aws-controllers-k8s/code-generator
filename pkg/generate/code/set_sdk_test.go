@@ -6708,3 +6708,64 @@ func TestSetSDK_QuickSight_Analysis_Update(t *testing.T) {
 	assert.Contains(got, "= *f2f6elemf1f0f1iter")
 	assert.NotContains(got, "= f2f6elemf1f0f1iter\n")
 }
+
+// TestSetSDK_BedrockAgentCoreControl_GatewayTarget_NestedUnionNoDereference
+// tests that when a union type (TargetConfiguration) contains a member whose
+// Value is itself a union type (McpTargetConfiguration), the generated code:
+//   - Declares the nested union as a var (interface), not a struct pointer
+//   - Uses Member* wrapper types for each variant of the nested union
+//   - Does NOT dereference the nested union interface when assigning to
+//     the parent's .Value (interfaces are not pointers)
+//
+// This was a compiler error before the fix: "cannot indirect f5f0 (variable
+// of interface type McpTargetConfiguration)"
+func TestSetSDK_BedrockAgentCoreControl_GatewayTarget_NestedUnionNoDereference(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "bedrock-agentcore-control", &testutil.TestingModelOptions{
+		GeneratorConfigFile: "generator-with-nested-union.yaml",
+	})
+
+	crd := testutil.GetCRDByName(t, g, "GatewayTarget")
+	require.NotNil(crd)
+	assert.NotNil(crd.Ops.Create)
+
+	got, err := code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1)
+	require.NoError(err)
+
+	// --- Outer union: TargetConfiguration ---
+	// The outer union variable should be declared as an interface type
+	assert.Contains(got, "var f7 svcsdktypes.TargetConfiguration")
+	assert.NotContains(got, "f7 := &svcsdktypes.TargetConfiguration{}")
+
+	// --- Nested union: McpTargetConfiguration ---
+	// The nested union inside TargetConfigurationMemberMcp should also be
+	// declared as an interface variable, not a struct pointer
+	assert.Contains(got, "var f7f0 svcsdktypes.McpTargetConfiguration")
+	assert.NotContains(got, "f7f0 := &svcsdktypes.McpTargetConfiguration{}")
+
+	// Each nested union member should use the Member* wrapper type
+	assert.Contains(got, "f7f0f0Parent := &svcsdktypes.McpTargetConfigurationMemberApiGateway{}")
+	assert.Contains(got, "f7f0f1Parent := &svcsdktypes.McpTargetConfigurationMemberLambda{}")
+	assert.Contains(got, "f7f0f2Parent := &svcsdktypes.McpTargetConfigurationMemberMcpServer{}")
+	assert.Contains(got, "f7f0f3Parent := &svcsdktypes.McpTargetConfigurationMemberOpenApiSchema{}")
+	assert.Contains(got, "f7f0f4Parent := &svcsdktypes.McpTargetConfigurationMemberSmithyModel{}")
+
+	// The nested union (McpTargetConfiguration) must NOT be dereferenced when
+	// assigned to the parent wrapper's .Value field. Interfaces cannot be
+	// dereferenced with *.
+	assert.Contains(got, "f7f0Parent.Value = f7f0\n")
+	assert.NotContains(got, "f7f0Parent.Value = *f7f0\n")
+
+	// Similarly, doubly-nested unions (ApiSchemaConfiguration inside
+	// McpTargetConfiguration) must not be dereferenced
+	assert.Contains(got, "f7f0f3Parent.Value = f7f0f3\n")
+	assert.NotContains(got, "f7f0f3Parent.Value = *f7f0f3\n")
+	assert.Contains(got, "f7f0f4Parent.Value = f7f0f4\n")
+	assert.NotContains(got, "f7f0f4Parent.Value = *f7f0f4\n")
+
+	// Non-union struct members inside the nested union SHOULD still be
+	// dereferenced (e.g., ApiGatewayTargetConfiguration is a regular struct)
+	assert.Contains(got, "f7f0f0Parent.Value = *f7f0f0\n")
+}

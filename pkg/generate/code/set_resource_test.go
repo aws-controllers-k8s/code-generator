@@ -5524,3 +5524,58 @@ func TestSetResource_QuickSight_DataSet_ReadOne(t *testing.T) {
 	// not &.Time (pointer type).
 	assert.Contains(got, "f6elemf0f0f0elem = f6elemf0f0f0iter.Time")
 }
+
+// TestSetResource_BedrockAgentCoreControl_GatewayTarget_NestedUnionTypeSwitch
+// tests that when a union type (TargetConfiguration) contains a member whose
+// Value is itself a union type (McpTargetConfiguration), the generated
+// set-output code uses a type switch on the nested union interface instead of
+// directly accessing struct fields.
+//
+// Before the fix, the generated code accessed f12f0.Value.ApiGateway,
+// f12f0.Value.Lambda, etc. directly — but f12f0.Value is of type
+// McpTargetConfiguration (an interface), which has no such fields. The fix
+// ensures a proper `switch f12f0.Value.(type)` is generated.
+func TestSetResource_BedrockAgentCoreControl_GatewayTarget_NestedUnionTypeSwitch(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "bedrock-agentcore-control", &testutil.TestingModelOptions{
+		GeneratorConfigFile: "generator-with-nested-union.yaml",
+	})
+
+	crd := testutil.GetCRDByName(t, g, "GatewayTarget")
+	require.NotNil(crd)
+	assert.NotNil(crd.Ops.ReadOne)
+
+	got, err := code.SetResource(crd.Config(), crd, model.OpTypeGet, "resp", "ko", 1)
+	require.NoError(err)
+
+	// --- Outer union: TargetConfiguration ---
+	// The outer union should use a type switch
+	assert.Contains(got, "switch resp.TargetConfiguration.(type) {")
+	assert.Contains(got, "case *svcsdktypes.TargetConfigurationMemberMcp:")
+
+	// --- Nested union: McpTargetConfiguration ---
+	// The nested union inside TargetConfigurationMemberMcp.Value should also
+	// use a type switch, NOT direct field access
+	assert.Contains(got, "switch f12f0.Value.(type) {")
+	assert.Contains(got, "case *svcsdktypes.McpTargetConfigurationMemberApiGateway:")
+	assert.Contains(got, "case *svcsdktypes.McpTargetConfigurationMemberLambda:")
+	assert.Contains(got, "case *svcsdktypes.McpTargetConfigurationMemberMcpServer:")
+	assert.Contains(got, "case *svcsdktypes.McpTargetConfigurationMemberOpenApiSchema:")
+	assert.Contains(got, "case *svcsdktypes.McpTargetConfigurationMemberSmithyModel:")
+
+	// Ensure we do NOT get direct field access on the union interface
+	// (this was the original compiler error)
+	assert.NotContains(got, "f12f0.Value.ApiGateway")
+	assert.NotContains(got, "f12f0.Value.Lambda")
+	assert.NotContains(got, "f12f0.Value.McpServer")
+	assert.NotContains(got, "f12f0.Value.OpenApiSchema")
+	assert.NotContains(got, "f12f0.Value.SmithyModel")
+
+	// Doubly-nested unions (e.g., ApiSchemaConfiguration inside OpenApiSchema
+	// member) should also use type switches
+	assert.Contains(got, "switch f12f0f0f3.Value.(type) {")
+	assert.Contains(got, "case *svcsdktypes.ApiSchemaConfigurationMemberInlinePayload:")
+	assert.Contains(got, "case *svcsdktypes.ApiSchemaConfigurationMemberS3:")
+}

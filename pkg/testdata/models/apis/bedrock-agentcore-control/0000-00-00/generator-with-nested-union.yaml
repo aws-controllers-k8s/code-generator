@@ -1,0 +1,35 @@
+ignore:
+  resource_names:
+    - AgentRuntime
+    - AgentRuntimeEndpoint
+    - ApiKeyCredentialProvider
+    - Browser
+    - BrowserProfile
+    - CodeInterpreter
+    - Evaluator
+    - Gateway
+    # GatewayTarget
+    - Memory
+    - Oauth2CredentialProvider
+    - OnlineEvaluationConfig
+    - WorkloadIdentity
+    - Policy
+    - PolicyEngine
+  field_paths:
+    - CreateGatewayTargetInput.TargetConfiguration.Mcp.Lambda.ToolSchema.InlinePayload.InputSchema
+    - CreateGatewayTargetInput.TargetConfiguration.Mcp.Lambda.ToolSchema.InlinePayload.InputSchema.Items
+    - CreateGatewayTargetInput.TargetConfiguration.Mcp.Lambda.ToolSchema.InlinePayload.InputSchema.Properties
+    - TargetConfiguration.Mcp.Lambda.ToolSchema.InlinePayload.InputSchema
+    - CreateGatewayTargetOutput.TargetConfiguration.Mcp.Lambda.ToolSchema.InlinePayload.InputSchema
+sdk_names:
+  model_name: bedrock-agentcore-control
+
+resources:
+  GatewayTarget:
+    ignore_idempotency_token: true
+    fields:
+      TargetId:
+        is_primary_key: true
+
+    tags:
+      ignore: true
