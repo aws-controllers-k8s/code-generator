@@ -2454,6 +2454,11 @@ func setResourceForUnion(
 
 	sdkGoType := sourceShape.GoTypeWithPkgName()
 	sdkGoType = model.ReplacePkgName(sdkGoType, r.SDKAPIPackageName(), "svcsdktypes", true)
+	// Use the original shape name for SDK type references when the shape
+	// was renamed (e.g. Input/Output suffix collision avoidance).
+	if sourceShape.OriginalShapeName != "" {
+		sdkGoType = "*svcsdktypes." + sourceShape.OriginalShapeName
+	}
 
 	out += fmt.Sprintf("%sswitch %s.(type) {\n", indent, sourceVarName)
 	for _, targetMemberName := range targetShape.MemberNames() {
