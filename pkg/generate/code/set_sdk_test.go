@@ -6769,3 +6769,40 @@ func TestSetSDK_BedrockAgentCoreControl_GatewayTarget_NestedUnionNoDereference(t
 	// dereferenced (e.g., ApiGatewayTargetConfiguration is a regular struct)
 	assert.Contains(got, "f7f0f0Parent.Value = *f7f0f0\n")
 }
+
+// TestSetSDK_BedrockAgentCoreControl_Memory_InputSuffixUnion tests that
+// union types whose names end in "Input" (e.g. MemoryStrategyInput) use
+// the original SDK shape name in generated code, not the renamed version
+// with an underscore suffix (MemoryStrategyInput_). The rename pass adds
+// the underscore to avoid collisions with operation input types, but SDK
+// type references must use the original name.
+func TestSetSDK_BedrockAgentCoreControl_Memory_InputSuffixUnion(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "bedrock-agentcore-control", &testutil.TestingModelOptions{
+		GeneratorConfigFile: "generator-with-input-suffix-union.yaml",
+	})
+
+	crd := testutil.GetCRDByName(t, g, "Memory")
+	require.NotNil(crd)
+	assert.NotNil(crd.Ops.Create)
+
+	got, err := code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1)
+	require.NoError(err)
+
+	// MemoryStrategyInput is a union whose name ends in "Input". The code-gen
+	// renames it to MemoryStrategyInput_ to avoid collision with operation
+	// input types. SDK references must use the original name.
+	assert.Contains(got, "svcsdktypes.MemoryStrategyInput")
+	assert.NotContains(got, "MemoryStrategyInput_",
+		"Should use original SDK shape name MemoryStrategyInput, not renamed MemoryStrategyInput_")
+
+	// CustomConfigurationInput is also a union ending in "Input"
+	assert.NotContains(got, "CustomConfigurationInput_",
+		"Should use original SDK shape name CustomConfigurationInput, not renamed version")
+
+	// TriggerConditionInput is also a union ending in "Input"
+	assert.NotContains(got, "TriggerConditionInput_",
+		"Should use original SDK shape name TriggerConditionInput, not renamed version")
+}

@@ -1533,7 +1533,7 @@ func varEmptyConstructorSDKType(
 	// For SDK types, we need to use the original shape name (before stutter
 	// removal) since the AWS SDK uses the original names. The stutter removal
 	// renames are only for CRD types.
-	if shape.Type == "structure" && shape.OriginalShapeName != "" {
+	if (shape.Type == "structure" || shape.RealType == "union") && shape.OriginalShapeName != "" {
 		// Replace the renamed shape name with the original SDK shape name
 		goType = "svcsdktypes." + shape.OriginalShapeName
 	}
@@ -1863,6 +1863,11 @@ func setSDKForUnion(
 
 	sdkGoType := targetShape.GoTypeWithPkgName()
 	sdkGoType = model.ReplacePkgName(sdkGoType, r.SDKAPIPackageName(), "svcsdktypes", false)
+	// Use the original shape name for SDK type references when the shape
+	// was renamed (e.g. Input/Output suffix collision avoidance).
+	if targetShape.OriginalShapeName != "" {
+		sdkGoType = "svcsdktypes." + targetShape.OriginalShapeName
+	}
 
 	out += fmt.Sprintf("%sisInterfaceSet := false\n", indent)
 
