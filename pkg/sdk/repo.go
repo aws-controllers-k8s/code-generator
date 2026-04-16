@@ -121,6 +121,28 @@ func GetSDKVersion(
 	return "", err
 }
 
+// GetServiceSDKVersion returns the per-service SDK version to use. It first
+// tries to get the version from the --aws-service-sdk-version flag, then from
+// the ack-generate-metadata.yaml aws_service_sdk_version field. Unlike
+// GetSDKVersion, this returns empty string (not error) when no version is
+// available, since per-service version is optional.
+func GetServiceSDKVersion(
+	awsServiceSDKVersion string,
+	lastGenerationVersion string,
+) string {
+	// First try to get the version from --aws-service-sdk-version flag
+	if awsServiceSDKVersion != "" {
+		return awsServiceSDKVersion
+	}
+
+	// then, try to use last generation version (from ack-generate-metadata.yaml)
+	if lastGenerationVersion != "" {
+		return lastGenerationVersion
+	}
+
+	return ""
+}
+
 // getSDKVersionFromGoMod parses a given go.mod file and returns
 // the aws-sdk-go version in the required modules.
 func getSDKVersionFromGoMod(goModPath string) (string, error) {

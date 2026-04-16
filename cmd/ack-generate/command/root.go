@@ -33,6 +33,7 @@ var (
 	defaultCacheDir            string
 	optCacheDir                string
 	optAWSSDKGoVersion         string
+	optAWSServiceSDKVersion    string
 	defaultTemplateDirs        []string
 	optTemplateDirs            []string
 	defaultServicesDir         string
@@ -123,6 +124,9 @@ func init() {
 	)
 	rootCmd.PersistentFlags().StringVar(
 		&optAWSSDKGoVersion, "aws-sdk-go-version", "", "Version of github.com/aws/aws-sdk-go-v2 used to generate apis and controllers files",
+	)
+	rootCmd.PersistentFlags().StringVar(
+		&optAWSServiceSDKVersion, "aws-service-sdk-version", "", "Per-service SDK version (e.g. v1.0.0) for fetching model from per-service tag",
 	)
 	rootCmd.PersistentFlags().StringVar(
 		&optServiceAccountName, "service-account-name", "", "The name of the ServiceAccount used for ACK service controller",
