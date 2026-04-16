@@ -803,20 +803,33 @@ func (crd *CRD) addCustomNestedFields(customNestedFields map[string]*ackgenconfi
 			return fmt.Errorf("resource %q, custom nested field %q: %w", crd.Names.Original, customNestedField, err)
 		}
 		//parentField.ShapeRef.Shape.MemberRefs[fieldName] = memberShapeRef
-		addMemberShapRef(parentField.ShapeRef, memberShapeRef, fieldName)
+		if err := addMemberShapRef(parentField.ShapeRef, memberShapeRef, fieldName); err != nil {
+			return fmt.Errorf("resource %q, custom nested field %q: %w", crd.Names.Original, customNestedField, err)
+		}
 	}
 	return nil
 }
 
-func addMemberShapRef(shapeRef, memberShapeRef *awssdkmodel.ShapeRef, fieldName string) {
+// addMemberShapRef injects a new member shape into the specified shape.
+// It returns an error if the shape type is unsupported or if a member with
+// the given field name already exists.
+func addMemberShapRef(shapeRef, memberShapeRef *awssdkmodel.ShapeRef, fieldName string) error {
+	var memberRefs map[string]*awssdkmodel.ShapeRef
 	switch shapeRef.Shape.Type {
 	case "structure":
-		shapeRef.Shape.MemberRefs[fieldName] = memberShapeRef
+		memberRefs = shapeRef.Shape.MemberRefs
 	case "list":
-		shapeRef.Shape.MemberRef.Shape.MemberRefs[fieldName] = memberShapeRef
+		memberRefs = shapeRef.Shape.MemberRef.Shape.MemberRefs
 	case "map":
-		shapeRef.Shape.ValueRef.Shape.MemberRefs[fieldName] = memberShapeRef
+		memberRefs = shapeRef.Shape.ValueRef.Shape.MemberRefs
+	default:
+		return fmt.Errorf("unsupported shape type %q for adding member %q", shapeRef.Shape.Type, fieldName)
 	}
+	if _, exists := memberRefs[fieldName]; exists {
+		return fmt.Errorf("member %q already exists in shape of type %q", fieldName, shapeRef.Shape.Type)
+	}
+	memberRefs[fieldName] = memberShapeRef
+	return nil
 }
 
 // ReconcileRequeuOnSuccessSeconds returns the duration after which to requeue
