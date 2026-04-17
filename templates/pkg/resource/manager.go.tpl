@@ -62,6 +62,8 @@ type resourceManager struct {
 	awsAccountID ackv1alpha1.AWSAccountID
 	// The AWS Region that this resource manager targets
 	awsRegion ackv1alpha1.AWSRegion
+	// The AWS Partition that this resource manager targets
+	awsPartition ackv1alpha1.AWSPartition
 	// sdk is a pointer to the AWS service API client exposed by the
 	// aws-sdk-go-v2/services/{alias} package.
 	sdkapi *svcsdk.Client
@@ -180,13 +182,13 @@ func (rm *resourceManager) Delete(
 // name for the resource
 func (rm *resourceManager) ARNFromName(name string) string {
 	return fmt.Sprintf(
-		"arn:aws:{{ .ControllerName }}:%s:%s:%s",
+		"arn:%s:{{ .ControllerName }}:%s:%s:%s",
+		rm.awsPartition,
 		rm.awsRegion,
 		rm.awsAccountID,
 		name,
 	)
 }
-
 // LateInitialize returns an acktypes.AWSResource after setting the late initialized
 // fields from the readOne call. This method will initialize the optional fields
 // which were not provided by the k8s user but were defaulted by the AWS service.
@@ -426,6 +428,7 @@ func newResourceManager(
 	rr acktypes.Reconciler,
 	id ackv1alpha1.AWSAccountID,
 	region ackv1alpha1.AWSRegion,
+	partition ackv1alpha1.AWSPartition,
 ) (*resourceManager, error) {
 	return &resourceManager{
 		cfg: 	      cfg,
@@ -435,6 +438,7 @@ func newResourceManager(
 		rr:           rr,
 		awsAccountID: id,
 		awsRegion:    region,
+		awsPartition: partition,
 		sdkapi:	      svcsdk.NewFromConfig(clientcfg),
 	}, nil
 }
