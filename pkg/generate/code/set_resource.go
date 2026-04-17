@@ -1809,7 +1809,7 @@ func SetResourceForStruct(
 		var setCfg *ackgenconfig.SetFieldConfig
 		f, ok := r.Fields[targetFieldPath]
 		if ok {
-			mf, ok := f.MemberFields[targetMemberName]
+			mf, ok := f.MemberFields[names.New(targetMemberName).Camel]
 			if ok {
 				setCfg = mf.GetSetterConfig(op)
 				if setCfg != nil && setCfg.IgnoreResourceSetter() {

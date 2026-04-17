@@ -374,9 +374,8 @@ func (r *CRD) IsPrimaryARNField(fieldName string) bool {
 // IsSecretField returns true if the supplied field *path* refers to a Field
 // that is a SecretKeyReference
 func (r *CRD) IsSecretField(path string) bool {
-	fConfigs := r.cfg.GetFieldConfigs(r.Names.Original)
-	fConfig, found := fConfigs[path]
-	if found {
+	fConfig := r.cfg.GetFieldConfigByPath(r.Names.Original, path)
+	if fConfig != nil {
 		return fConfig.IsSecret
 	}
 	return false
