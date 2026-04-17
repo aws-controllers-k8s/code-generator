@@ -237,6 +237,9 @@ func SetResource(
 		if setCfg != nil && setCfg.IgnoreResourceSetter() {
 			continue
 		}
+        if inSpec && f.FieldConfig != nil && f.FieldConfig.IsSecret {
+            continue
+        }
 
 		onlySetChangedFieldsOnUpdate := op == r.Ops.Update && r.OnlySetChangedFieldsOnUpdate()
 		if onlySetChangedFieldsOnUpdate && inSpec {
@@ -670,6 +673,9 @@ func setResourceReadMany(
 		if setCfg != nil && setCfg.IgnoreResourceSetter() {
 			continue
 		}
+        if inSpec && f.FieldConfig != nil && f.FieldConfig.IsSecret {
+            continue
+        }
 
 		targetMemberShapeRef = f.ShapeRef
 		if sourceMemberShapeRef.Shape.RealType == "union" {
@@ -1815,6 +1821,9 @@ func SetResourceForStruct(
 				if setCfg != nil && setCfg.IgnoreResourceSetter() {
 					continue
 				}
+                if mf.FieldConfig != nil && mf.FieldConfig.IsSecret {
+                    continue
+                }
 			}
 		}
 
@@ -2466,6 +2475,9 @@ func setResourceForUnion(
 				if setCfg != nil && setCfg.IgnoreResourceSetter() {
 					continue
 				}
+                if mf.FieldConfig != nil && mf.FieldConfig.IsSecret {
+                    continue
+                }
 			}
 		}
 
