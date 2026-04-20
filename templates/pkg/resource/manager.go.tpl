@@ -83,7 +83,7 @@ func (rm *resourceManager) ReadOne(
 	ctx context.Context,
 	res acktypes.AWSResource,
 ) (acktypes.AWSResource, error) {
-	r := rm.concreteResource(res)
+	r := rm.concreteResource(res.DeepCopy())
 	if r.ko == nil {
 		// Should never happen... if it does, it's buggy code.
 		panic("resource manager's ReadOne() method received resource with nil CR object")
@@ -106,7 +106,7 @@ func (rm *resourceManager) Create(
 	ctx context.Context,
 	res acktypes.AWSResource,
 ) (acktypes.AWSResource, error) {
-	r := rm.concreteResource(res)
+	r := rm.concreteResource(res.DeepCopy())
 	if r.ko == nil {
 		// Should never happen... if it does, it's buggy code.
 		panic("resource manager's Create() method received resource with nil CR object")
@@ -135,8 +135,8 @@ func (rm *resourceManager) Update(
 	resLatest acktypes.AWSResource,
 	delta *ackcompare.Delta,
 ) (acktypes.AWSResource, error) {
-	desired := rm.concreteResource(resDesired)
-	latest := rm.concreteResource(resLatest)
+	desired := rm.concreteResource(resDesired.DeepCopy())
+	latest := rm.concreteResource(resLatest.DeepCopy())
 	if desired.ko == nil || latest.ko == nil {
 		// Should never happen... if it does, it's buggy code.
 		panic("resource manager's Update() method received resource with nil CR object")
@@ -158,7 +158,7 @@ func (rm *resourceManager) Delete(
 	ctx context.Context,
 	res acktypes.AWSResource,
 ) (acktypes.AWSResource, error) {
-	r := rm.concreteResource(res)
+	r := rm.concreteResource(res.DeepCopy())
 	if r.ko == nil {
 		// Should never happen... if it does, it's buggy code.
 		panic("resource manager's Update() method received resource with nil CR object")
