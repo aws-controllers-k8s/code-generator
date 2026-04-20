@@ -25,75 +25,56 @@ import (
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 )
 
-// CompareResource returns the Go code that traverses a set of two Resources,
-// adding differences between the two Resources to an `ackcompare.Delta`
-//
-// By default, we produce Go code that only looks at the fields in a resource's
-// Spec, since those are the fields that represent the desired state of a
-// resource. When we make a ReadOne/ReadMany/GetAttributes call to a backend
-// AWS API, we construct a Resource and set the Spec fields to values contained
-// in the ReadOne/ReadMany/GetAttributes Output shape. This Resource,
-// constructed from the Read operation, is compared to the Resource we got from
-// the Kubernetes API server's event bus. The code that is returned from this
-// function is the code that compares those two Resources.
-//
-// The Go code we return depends on the Go type of the various fields for the
-// resource being compared.
-//
-// For *scalar* Go types, the output Go code looks like this:
-//
-//	if ackcompare.HasNilDifference(a.ko.Spec.GrantFullControl, b.ko.Spec.GrantFullControl) {
-//	    delta.Add("Spec.GrantFullControl", a.ko.Spec.GrantFullControl, b.ko.Spec.GrantFullControl)
-//	} else if a.ko.Spec.GrantFullControl != nil && b.ko.Spec.GrantFullControl != nil {
-//
-//	    if *a.ko.Spec.GrantFullControl != *b.ko.Spec.GrantFullControl {
-//	        delta.Add("Spec.GrantFullControl", a.ko.Spec.GrantFullControl, b.ko.Spec.GrantFullControl)
-//	    }
-//	}
-//
-// For *struct* Go types, the output Go code looks like this (note that it is a
-// simple recursive-descent output of all the struct's fields...):
-//
-//	if ackcompare.HasNilDifference(a.ko.Spec.CreateBucketConfiguration, b.ko.Spec.CreateBucketConfiguration) {
-//	    delta.Add("Spec.CreateBucketConfiguration", a.ko.Spec.CreateBucketConfiguration, b.ko.Spec.CreateBucketConfiguration)
-//	} else if a.ko.Spec.CreateBucketConfiguration != nil && b.ko.Spec.CreateBucketConfiguration != nil {
-//
-//	    if ackcompare.HasNilDifference(a.ko.Spec.CreateBucketConfiguration.LocationConstraint, b.ko.Spec.CreateBucketConfiguration.LocationConstraint) {
-//	        delta.Add("Spec.CreateBucketConfiguration.LocationConstraint", a.ko.Spec.CreateBucketConfiguration.LocationConstraint, b.ko.Spec.CreateBucketConfiguration.LocationConstraint)
-//	    } else if a.ko.Spec.CreateBucketConfiguration.LocationConstraint != nil && b.ko.Spec.CreateBucketConfiguration.LocationConstraint != nil {
-//	        if *a.ko.Spec.CreateBucketConfiguration.LocationConstraint != *b.ko.Spec.CreateBucketConfiguration.LocationConstraint {
-//	            delta.Add("Spec.CreateBucketConfiguration.LocationConstraint", a.ko.Spec.CreateBucketConfiguration.LocationConstraint, b.ko.Spec.CreateBucketConfiguration.LocationConstraint)
-//	        }
-//	    }
-//	}
-//
-// For *slice of strings* Go types, the output Go code looks like this:
-//
-//	if ackcompare.HasNilDifference(a.ko.Spec.AllowedPublishers, b.ko.Spec.AllowedPublishers) {
-//	    delta.Add("Spec.AllowedPublishers", a.ko.Spec.AllowedPublishers, b.ko.Spec.AllowedPublishers)
-//	} else if a.ko.Spec.AllowedPublishers != nil && b.ko.Spec.AllowedPublishers != nil {
-//
-//	    if !ackcompare.SliceStringPEqual(a.ko.Spec.AllowedPublishers.SigningProfileVersionARNs, b.ko.Spec.AllowedPublishers.SigningProfileVersionARNs) {
-//	        delta.Add("Spec.AllowedPublishers.SigningProfileVersionARNs", a.ko.Spec.AllowedPublishers.SigningProfileVersionARNs, b.ko.Spec.AllowedPublishers.SigningProfileVersionARNs)
-//	    }
-//	}
-func CompareResource(
+// HasPreDeleteSync returns true if the CRD has any pre-delete sync
+// configuration — either pre_delete_sync.compare_all is true, or at least
+// one field has compare.pre_delete_include: true.
+func HasPreDeleteSync(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,
-	// String representing the name of the variable that is of type
-	// `*ackcompare.Delta`. We will generate Go code that calls the `Add()`
-	// method of this variable when differences between fields are detected.
+) bool {
+	resConfig := cfg.GetResourceConfig(r.Names.Camel)
+	if resConfig == nil {
+		return false
+	}
+	if resConfig.PreDeleteSync != nil && resConfig.PreDeleteSync.CompareAll {
+		return true
+	}
+	for fieldName := range r.SpecFields {
+		fieldConfig := resConfig.GetFieldConfig(fieldName)
+		if fieldConfig != nil && fieldConfig.Compare != nil && fieldConfig.Compare.PreDeleteInclude {
+			return true
+		}
+	}
+	return false
+}
+
+// sortedSpecFieldNames returns the spec field names for a CRD in
+// deterministic sorted order.
+func sortedSpecFieldNames(r *model.CRD) []string {
+	fieldNames := make([]string, 0, len(r.SpecFields))
+	for fieldName := range r.SpecFields {
+		fieldNames = append(fieldNames, fieldName)
+	}
+	sort.Strings(fieldNames)
+	return fieldNames
+}
+
+// fieldFilter is a function that determines whether a spec field should be
+// included in the comparison output. It receives the field's compare config
+// (which may be nil) and returns true if the field should be included.
+type fieldFilter func(compareConfig *ackgenconfig.CompareFieldConfig) bool
+
+// compareResourceFields is the shared implementation for generating Go code
+// that compares spec fields between two resources. The includeField callback
+// controls which fields are included in the output.
+func compareResourceFields(
+	cfg *ackgenconfig.Config,
+	r *model.CRD,
 	deltaVarName string,
-	// String representing the name of the variable that represents the first
-	// CR under comparison. This will typically be something like "a.ko". See
-	// `templates/pkg/resource/delta.go.tpl`.
 	firstResVarName string,
-	// String representing the name of the variable that represents the second
-	// CR under comparison. This will typically be something like "b.ko". See
-	// `templates/pkg/resource/delta.go.tpl`.
 	secondResVarName string,
-	// Number of levels of indentation to use
 	indentLevel int,
+	includeField fieldFilter,
 ) (string, error) {
 	out := "\n"
 
@@ -105,13 +86,7 @@ func CompareResource(
 	}
 
 	// We need a deterministic order to traverse our top-level fields...
-	specFieldNames := []string{}
-	for fieldName := range r.SpecFields {
-		specFieldNames = append(specFieldNames, fieldName)
-	}
-	sort.Strings(specFieldNames)
-
-	for _, fieldName := range specFieldNames {
+	for _, fieldName := range sortedSpecFieldNames(r) {
 		specField := r.SpecFields[fieldName]
 		indent := strings.Repeat("\t", indentLevel)
 		firstResAdaptedVarName := firstResVarName + cfg.PrefixConfig.SpecField
@@ -129,7 +104,7 @@ func CompareResource(
 			compareConfig = fieldConfig.Compare
 		}
 
-		if compareConfig != nil && compareConfig.IsIgnored {
+		if !includeField(compareConfig) {
 			continue
 		}
 
@@ -263,6 +238,84 @@ func CompareResource(
 		}
 	}
 	return out, nil
+}
+
+// CompareResource returns the Go code that traverses a set of two Resources,
+// adding differences between the two Resources to an `ackcompare.Delta`
+//
+// By default, we produce Go code that only looks at the fields in a resource's
+// Spec, since those are the fields that represent the desired state of a
+// resource. When we make a ReadOne/ReadMany/GetAttributes call to a backend
+// AWS API, we construct a Resource and set the Spec fields to values contained
+// in the ReadOne/ReadMany/GetAttributes Output shape. This Resource,
+// constructed from the Read operation, is compared to the Resource we got from
+// the Kubernetes API server's event bus. The code that is returned from this
+// function is the code that compares those two Resources.
+//
+// The Go code we return depends on the Go type of the various fields for the
+// resource being compared.
+//
+// For *scalar* Go types, the output Go code looks like this:
+//
+//	if ackcompare.HasNilDifference(a.ko.Spec.GrantFullControl, b.ko.Spec.GrantFullControl) {
+//	    delta.Add("Spec.GrantFullControl", a.ko.Spec.GrantFullControl, b.ko.Spec.GrantFullControl)
+//	} else if a.ko.Spec.GrantFullControl != nil && b.ko.Spec.GrantFullControl != nil {
+//
+//	    if *a.ko.Spec.GrantFullControl != *b.ko.Spec.GrantFullControl {
+//	        delta.Add("Spec.GrantFullControl", a.ko.Spec.GrantFullControl, b.ko.Spec.GrantFullControl)
+//	    }
+//	}
+//
+// For *struct* Go types, the output Go code looks like this (note that it is a
+// simple recursive-descent output of all the struct's fields...):
+//
+//	if ackcompare.HasNilDifference(a.ko.Spec.CreateBucketConfiguration, b.ko.Spec.CreateBucketConfiguration) {
+//	    delta.Add("Spec.CreateBucketConfiguration", a.ko.Spec.CreateBucketConfiguration, b.ko.Spec.CreateBucketConfiguration)
+//	} else if a.ko.Spec.CreateBucketConfiguration != nil && b.ko.Spec.CreateBucketConfiguration != nil {
+//
+//	    if ackcompare.HasNilDifference(a.ko.Spec.CreateBucketConfiguration.LocationConstraint, b.ko.Spec.CreateBucketConfiguration.LocationConstraint) {
+//	        delta.Add("Spec.CreateBucketConfiguration.LocationConstraint", a.ko.Spec.CreateBucketConfiguration.LocationConstraint, b.ko.Spec.CreateBucketConfiguration.LocationConstraint)
+//	    } else if a.ko.Spec.CreateBucketConfiguration.LocationConstraint != nil && b.ko.Spec.CreateBucketConfiguration.LocationConstraint != nil {
+//	        if *a.ko.Spec.CreateBucketConfiguration.LocationConstraint != *b.ko.Spec.CreateBucketConfiguration.LocationConstraint {
+//	            delta.Add("Spec.CreateBucketConfiguration.LocationConstraint", a.ko.Spec.CreateBucketConfiguration.LocationConstraint, b.ko.Spec.CreateBucketConfiguration.LocationConstraint)
+//	        }
+//	    }
+//	}
+//
+// For *slice of strings* Go types, the output Go code looks like this:
+//
+//	if ackcompare.HasNilDifference(a.ko.Spec.AllowedPublishers, b.ko.Spec.AllowedPublishers) {
+//	    delta.Add("Spec.AllowedPublishers", a.ko.Spec.AllowedPublishers, b.ko.Spec.AllowedPublishers)
+//	} else if a.ko.Spec.AllowedPublishers != nil && b.ko.Spec.AllowedPublishers != nil {
+//
+//	    if !ackcompare.SliceStringPEqual(a.ko.Spec.AllowedPublishers.SigningProfileVersionARNs, b.ko.Spec.AllowedPublishers.SigningProfileVersionARNs) {
+//	        delta.Add("Spec.AllowedPublishers.SigningProfileVersionARNs", a.ko.Spec.AllowedPublishers.SigningProfileVersionARNs, b.ko.Spec.AllowedPublishers.SigningProfileVersionARNs)
+//	    }
+//	}
+func CompareResource(
+	cfg *ackgenconfig.Config,
+	r *model.CRD,
+	// String representing the name of the variable that is of type
+	// `*ackcompare.Delta`. We will generate Go code that calls the `Add()`
+	// method of this variable when differences between fields are detected.
+	deltaVarName string,
+	// String representing the name of the variable that represents the first
+	// CR under comparison. This will typically be something like "a.ko". See
+	// `templates/pkg/resource/delta.go.tpl`.
+	firstResVarName string,
+	// String representing the name of the variable that represents the second
+	// CR under comparison. This will typically be something like "b.ko". See
+	// `templates/pkg/resource/delta.go.tpl`.
+	secondResVarName string,
+	// Number of levels of indentation to use
+	indentLevel int,
+) (string, error) {
+	return compareResourceFields(cfg, r, deltaVarName, firstResVarName, secondResVarName, indentLevel,
+		func(compareConfig *ackgenconfig.CompareFieldConfig) bool {
+			// Skip fields marked as ignored in normal reconciliation
+			return compareConfig == nil || !compareConfig.IsIgnored
+		},
+	)
 }
 
 // compareNil outputs Go code that compares two field values for nullability
@@ -1000,7 +1053,7 @@ func fastCompareTypes(
 // Otherwise (the default), only fields explicitly opted in via
 // `compare.pre_delete_include: true` are included; all other fields are
 // skipped. This opt-in approach reduces blast radius so controllers only get
-// pre-delete comparison on fields they've deliberately configured.
+// pre-delete sync comparison on fields they've deliberately configured.
 func CompareResourceForPreDelete(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,
@@ -1019,38 +1072,55 @@ func CompareResourceForPreDelete(
 	// Number of levels of indentation to use
 	indentLevel int,
 ) (string, error) {
-	out := "\n"
-
 	resConfig := cfg.GetResourceConfig(r.Names.Camel)
 
-	// Determine whether to include all fields in the pre-delete delta.
-	// If compare_all is set at the resource level, include all fields
-	// (even is_ignored ones). Otherwise, only include fields explicitly
-	// opted in via compare.pre_delete_include: true.
+	// Determine whether to include all fields in the pre-delete sync delta.
 	compareAll := false
 	if resConfig != nil && resConfig.PreDeleteSync != nil {
 		compareAll = resConfig.PreDeleteSync.CompareAll
 	}
 
-	tagField, err := r.GetTagField()
-	if err != nil {
-		return "", err
+	return compareResourceFields(cfg, r, deltaVarName, firstResVarName, secondResVarName, indentLevel,
+		func(compareConfig *ackgenconfig.CompareFieldConfig) bool {
+			if compareAll {
+				return true
+			}
+			// Default opt-in behavior: only include fields with pre_delete_include
+			return compareConfig != nil && compareConfig.PreDeleteInclude
+		},
+	)
+}
+
+// MergeResourceForPreDelete outputs Go code that copies only the pre-delete sync
+// configured fields from the source variable onto the target variable. This is
+// used to build a merged resource that starts as a deep copy of observed and
+// has only the pre-delete sync fields overwritten from desired.
+//
+// The generated code is a series of simple field assignments for each field
+// that has `compare.pre_delete_include: true` (or all fields when
+// `pre_delete_sync.compare_all: true`).
+func MergeResourceForPreDelete(
+	cfg *ackgenconfig.Config,
+	r *model.CRD,
+	// String representing the variable to copy fields FROM (e.g. "a.ko")
+	sourceVarName string,
+	// String representing the variable to copy fields TO (e.g. "merged.ko")
+	targetVarName string,
+	// Number of levels of indentation to use
+	indentLevel int,
+) (string, error) {
+	out := ""
+
+	resConfig := cfg.GetResourceConfig(r.Names.Camel)
+
+	compareAll := false
+	if resConfig != nil && resConfig.PreDeleteSync != nil {
+		compareAll = resConfig.PreDeleteSync.CompareAll
 	}
 
-	// We need a deterministic order to traverse our top-level fields...
-	specFieldNames := []string{}
-	for fieldName := range r.SpecFields {
-		specFieldNames = append(specFieldNames, fieldName)
-	}
-	sort.Strings(specFieldNames)
-
-	for _, fieldName := range specFieldNames {
+	for _, fieldName := range sortedSpecFieldNames(r) {
 		specField := r.SpecFields[fieldName]
 		indent := strings.Repeat("\t", indentLevel)
-		firstResAdaptedVarName := firstResVarName + cfg.PrefixConfig.SpecField
-		firstResAdaptedVarName += "." + specField.Names.Camel
-		secondResAdaptedVarName := secondResVarName + cfg.PrefixConfig.SpecField
-		secondResAdaptedVarName += "." + specField.Names.Camel
 
 		var fieldConfig *ackgenconfig.FieldConfig
 		var compareConfig *ackgenconfig.CompareFieldConfig
@@ -1063,137 +1133,15 @@ func CompareResourceForPreDelete(
 		}
 
 		if !compareAll {
-			// Default opt-in behavior: only include fields with pre_delete_include
 			if compareConfig == nil || !compareConfig.PreDeleteInclude {
 				continue
 			}
 		}
 
-		// this is the "path" to the field within the structs being compared.
-		// This is passed down into the compareXXX functions recursively and
-		// appended to with each level of nested structs we recurse into.
-		fieldPath := strings.TrimPrefix(
-			cfg.PrefixConfig.SpecField+"."+specField.Names.Camel, ".",
-		)
+		sourceField := sourceVarName + cfg.PrefixConfig.SpecField + "." + specField.Names.Camel
+		targetField := targetVarName + cfg.PrefixConfig.SpecField + "." + specField.Names.Camel
 
-		// Use equality.Semantic.Equalities.DeepEqual for comparing Reference fields because
-		// some of reference fields are list of pointer to structs and
-		// DeepEqual is easy way to compare them
-		if specField.IsReference() {
-			out += fmt.Sprintf("%sif !equality.Semantic.Equalities.DeepEqual(%s, %s) {\n",
-				indent, firstResAdaptedVarName, secondResAdaptedVarName)
-			out += fmt.Sprintf("%s\t%s.Add(\"%s\", %s, %s)\n", indent,
-				deltaVarName, fieldPath, firstResAdaptedVarName,
-				secondResAdaptedVarName)
-			out += fmt.Sprintf("%s}\n", indent)
-			continue
-		}
-
-		// Use a special comparison model for tags, since they need to be
-		// converted into the common ACK tag type before doing a map delta
-		if tagField != nil && specField == tagField {
-			out += compareTags(deltaVarName, firstResAdaptedVarName, secondResAdaptedVarName, fieldPath, indentLevel)
-			continue
-		}
-
-		// Use semantic IAM policy comparison for fields marked as IAM policies
-		if fieldConfig != nil && fieldConfig.IsIAMPolicy {
-			out += compareIAMPolicy(deltaVarName, firstResAdaptedVarName, secondResAdaptedVarName, fieldPath, indentLevel)
-			continue
-		}
-
-		memberShapeRef := specField.ShapeRef
-		memberShape := memberShapeRef.Shape
-
-		// Use len, bytes.Equal and HasNilDifference to fast compare types, and
-		// try to avoid deep comparison as much as possible.
-		fastComparisonOutput, needToCloseBlock, err := fastCompareTypes(
-			compareConfig,
-			memberShape,
-			deltaVarName,
-			fieldPath,
-			firstResAdaptedVarName,
-			secondResAdaptedVarName,
-			indentLevel,
-		)
-		if err != nil {
-			return "", err
-		}
-		out += fastComparisonOutput
-
-		switch memberShape.Type {
-		case "blob":
-			// We already handled the case of blobs above, so we can skip it here.
-		case "structure":
-			// Recurse through all the struct's fields and subfields, building
-			// nested conditionals and calls to `delta.Add()`...
-			structOut, err := CompareStruct(
-				cfg, r,
-				compareConfig,
-				memberShape,
-				deltaVarName,
-				firstResAdaptedVarName,
-				secondResAdaptedVarName,
-				fieldPath,
-				indentLevel+1,
-			)
-			if err != nil {
-				return "", err
-			}
-			out += structOut
-		case "list":
-			// Returns Go code that compares all the elements of the slice fields...
-			sliceOut, err := compareSlice(
-				cfg, r,
-				compareConfig,
-				memberShape,
-				deltaVarName,
-				firstResAdaptedVarName,
-				secondResAdaptedVarName,
-				fieldPath,
-				indentLevel+1,
-			)
-			if err != nil {
-				return "", err
-			}
-			out += sliceOut
-		case "map":
-			// Returns Go code that compares all the elements of the map fields...
-			mapOut, err := compareMap(
-				cfg, r,
-				compareConfig,
-				memberShape,
-				deltaVarName,
-				firstResAdaptedVarName,
-				secondResAdaptedVarName,
-				fieldPath,
-				indentLevel+1,
-			)
-			if err != nil {
-				return "", err
-			}
-			out += mapOut
-		default:
-			scalarOut, err := compareScalar(
-				compareConfig,
-				memberShape,
-				deltaVarName,
-				firstResAdaptedVarName,
-				secondResAdaptedVarName,
-				fieldPath,
-				indentLevel+1,
-			)
-			if err != nil {
-				return "", err
-			}
-			out += scalarOut
-		}
-		if needToCloseBlock {
-			// }
-			out += fmt.Sprintf(
-				"%s}\n", indent,
-			)
-		}
+		out += fmt.Sprintf("%s%s = %s\n", indent, targetField, sourceField)
 	}
 	return out, nil
 }

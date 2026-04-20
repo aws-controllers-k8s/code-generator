@@ -724,6 +724,43 @@ func TestCompareResourceForPreDelete_S3_Bucket_WithPreDeleteInclude(t *testing.T
 	assert.NotContains(compareOut, "Spec.ACL")
 }
 
+func TestCompareResourceForPreDelete_S3_Bucket_WithPreDeleteIncludeNested(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "s3", &testutil.TestingModelOptions{
+		GeneratorConfigFile: "generator-with-pre-delete-include-nested.yaml",
+	})
+
+	crd := testutil.GetCRDByName(t, g, "Bucket")
+	require.NotNil(crd)
+
+	got, err := code.CompareResourceForPreDelete(
+		crd.Config(), crd, "delta", "a.ko", "b.ko", 1,
+	)
+	require.NoError(err)
+
+	// ACL (scalar with pre_delete_include) should be included
+	assert.Contains(got, "Spec.ACL")
+	// Logging (struct with pre_delete_include) should be included with
+	// nested field comparisons
+	assert.Contains(got, "Spec.Logging")
+	assert.Contains(got, "Spec.Logging.LoggingEnabled")
+	// Other fields should NOT be included
+	assert.NotContains(got, "Spec.Name")
+	assert.NotContains(got, "Spec.CreateBucketConfiguration")
+	assert.NotContains(got, "Spec.GrantFullControl")
+
+	// Merge should also include both ACL and Logging
+	mergeOut, err := code.MergeResourceForPreDelete(
+		crd.Config(), crd, "a.ko", "merged.ko", 1,
+	)
+	require.NoError(err)
+	assert.Contains(mergeOut, "merged.ko.Spec.ACL = a.ko.Spec.ACL")
+	assert.Contains(mergeOut, "merged.ko.Spec.Logging = a.ko.Spec.Logging")
+	assert.NotContains(mergeOut, "merged.ko.Spec.Name")
+}
+
 func TestCompareResourceForPreDelete_S3_Bucket_CompareAll(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
@@ -791,6 +828,67 @@ func TestCompareResourceForPreDelete_S3_Bucket_EmptyWithoutOptIn(t *testing.T) {
 	assert.Contains(compareOut, "Spec.CreateBucketConfiguration")
 	assert.Contains(compareOut, "Spec.Name")
 	assert.NotContains(compareOut, "Spec.ACL")
+}
+
+func TestMergeResourceForPreDelete_S3_Bucket_WithPreDeleteInclude(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "s3", &testutil.TestingModelOptions{
+		GeneratorConfigFile: "generator-with-pre-delete-include.yaml",
+	})
+
+	crd := testutil.GetCRDByName(t, g, "Bucket")
+	require.NotNil(crd)
+
+	// Only ACL has pre_delete_include: true, so only ACL should be merged
+	got, err := code.MergeResourceForPreDelete(
+		crd.Config(), crd, "a.ko", "merged.ko", 1,
+	)
+	require.NoError(err)
+	assert.Contains(got, "merged.ko.Spec.ACL = a.ko.Spec.ACL")
+	// Other fields should NOT be merged
+	assert.NotContains(got, "merged.ko.Spec.Name")
+	assert.NotContains(got, "merged.ko.Spec.CreateBucketConfiguration")
+	assert.NotContains(got, "merged.ko.Spec.GrantFullControl")
+}
+
+func TestMergeResourceForPreDelete_S3_Bucket_CompareAll(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "s3", &testutil.TestingModelOptions{
+		GeneratorConfigFile: "generator-with-pre-delete-compare-all.yaml",
+	})
+
+	crd := testutil.GetCRDByName(t, g, "Bucket")
+	require.NotNil(crd)
+
+	// With compare_all: true, all fields should be merged
+	got, err := code.MergeResourceForPreDelete(
+		crd.Config(), crd, "a.ko", "merged.ko", 1,
+	)
+	require.NoError(err)
+	assert.Contains(got, "merged.ko.Spec.ACL = a.ko.Spec.ACL")
+	assert.Contains(got, "merged.ko.Spec.Name = a.ko.Spec.Name")
+	assert.Contains(got, "merged.ko.Spec.CreateBucketConfiguration = a.ko.Spec.CreateBucketConfiguration")
+}
+
+func TestMergeResourceForPreDelete_S3_Bucket_NoOptIn(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "s3")
+
+	crd := testutil.GetCRDByName(t, g, "Bucket")
+	require.NotNil(crd)
+
+	// No pre_delete_include fields, so merge output should be empty
+	got, err := code.MergeResourceForPreDelete(
+		crd.Config(), crd, "a.ko", "merged.ko", 1,
+	)
+	require.NoError(err)
+	assert.Equal("", got)
 }
 
 // TestCompareResource_QuickSight_DataSet tests that the delta code generation
