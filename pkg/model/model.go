@@ -177,12 +177,13 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 			// Idempotency tokens are SDK implementation details that are
 			// auto-filled by the SDK middleware when nil. They should not
 			// be exposed in the CRD as they are not resource properties.
-			// This filtering is opt-in via resources.<name>.ignore_idempotency_token
-			// in generator.yaml.
-			resConfig := m.cfg.GetResourceConfig(crdName)
-			if resConfig != nil && resConfig.IgnoreIdempotencyToken &&
-				(memberShapeRef.IdempotencyToken || memberShapeRef.Shape.IdempotencyToken) {
-				continue
+			// This filtering is on by default. Set include_idempotency_token
+			// to true in generator.yaml to keep these fields.
+			if memberShapeRef.IdempotencyToken || memberShapeRef.Shape.IdempotencyToken {
+				resConfig := m.cfg.GetResourceConfig(crdName)
+				if resConfig == nil || !resConfig.IncludeIdempotencyToken {
+					continue
+				}
 			}
 
 			// If this is the wrapper field and we have input_wrapper_field_path
