@@ -181,10 +181,12 @@
           "type": "boolean",
           "default": false
         },
+        {{- if eq .ControllerName "s3" }}
         "endpoint_use_path_style": {
           "type": "boolean",
           "default": false
         },
+        {{- end }}
         "credentials": {
           "description": "AWS credentials information",
           "properties": {

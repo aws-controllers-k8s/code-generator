@@ -32,7 +32,7 @@ var (
 		"helm/templates/_helpers.tpl.tpl",
 		"helm/Chart.yaml.tpl",
 		"helm/values.yaml.tpl",
-		"helm/values.schema.json",
+		"helm/values.schema.json.tpl",
 		"helm/templates/NOTES.txt.tpl",
 		"helm/templates/role-reader.yaml.tpl",
 		"helm/templates/role-writer.yaml.tpl",
