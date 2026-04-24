@@ -181,6 +181,10 @@
           "type": "boolean",
           "default": false
         },
+        "endpoint_use_path_style": {
+          "type": "boolean",
+          "default": false
+        },
         "credentials": {
           "description": "AWS credentials information",
           "properties": {

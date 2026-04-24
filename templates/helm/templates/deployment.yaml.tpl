@@ -58,6 +58,11 @@ spec:
 {{ "{{- if .Values.aws.allow_unsafe_aws_endpoint_urls }}" }}
         - --allow-unsafe-aws-endpoint-urls
 {{ "{{- end }}" }}
+{{- if eq .ControllerName "s3" }}
+{{ "{{- if .Values.aws.endpoint_use_path_style }}" }}
+        - --aws-endpoint-use-path-style
+{{ "{{- end }}" }}
+{{- end }}
 {{ "{{- if .Values.log.enable_development_logging }}" }}
         - --enable-development-logging
 {{ "{{- end }}" }}

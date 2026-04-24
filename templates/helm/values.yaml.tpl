@@ -92,6 +92,9 @@ aws:
   endpoint_url: ""
   identity_endpoint_url: ""
   allow_unsafe_aws_endpoint_urls: false
+{{- if eq .ControllerName "s3" }}
+  endpoint_use_path_style: false
+{{- end }}
   credentials:
     # If specified, Secret with shared credentials file to use.
     secretName: ""
