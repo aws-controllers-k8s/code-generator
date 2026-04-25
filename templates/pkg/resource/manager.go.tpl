@@ -435,7 +435,7 @@ func newResourceManager(
 		rr:           rr,
 		awsAccountID: id,
 		awsRegion:    region,
-		sdkapi:	      svcsdk.NewFromConfig(clientcfg),
+		sdkapi:	      svcsdk.NewFromConfig(clientcfg{{- if $hookCode := Hook .CRD "new_resource_manager_client_options" }}, {{ $hookCode }}{{ end }}),
 	}, nil
 }
 
