@@ -20,6 +20,7 @@ import (
 	"path/filepath"
 	ttpl "text/template"
 
+	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/config"
 	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
 	ackutil "github.com/aws-controllers-k8s/code-generator/pkg/util"
 )
@@ -170,11 +171,28 @@ func ResourceHookCode(
 	if c == nil {
 		return "", nil
 	}
-	rConfig, ok := c.Resources[resourceName]
-	if !ok {
+	// Look up hooks from top-level resources first, then fall back to
+	// sub-resources. Sub-resource CRDs have Names.Original set to the
+	// internal name (e.g. "RolePolicies") which appears as a key in the
+	// parent resource's SubResources map, not in c.Resources directly.
+	var hooks map[string]*ackgenconfig.HooksConfig
+	if rConfig, ok := c.Resources[resourceName]; ok {
+		hooks = rConfig.Hooks
+	} else {
+		// Search sub-resources
+		for _, rConfig := range c.Resources {
+			if rConfig.SubResources != nil {
+				if subRes, found := rConfig.SubResources[resourceName]; found {
+					hooks = subRes.Hooks
+					break
+				}
+			}
+		}
+	}
+	if hooks == nil {
 		return "", nil
 	}
-	hook, ok := rConfig.Hooks[hookID]
+	hook, ok := hooks[hookID]
 	if !ok {
 		return "", nil
 	}

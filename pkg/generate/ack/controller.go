@@ -14,6 +14,7 @@
 package ack
 
 import (
+	"fmt"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -28,6 +29,7 @@ import (
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
+	"github.com/aws-controllers-k8s/pkg/names"
 )
 
 var (
@@ -58,12 +60,78 @@ var (
 		"pkg/resource/sdk_update_custom.go.tpl",
 		"pkg/resource/sdk_update_set_attributes.go.tpl",
 		"pkg/resource/sdk_update_not_implemented.go.tpl",
+		"pkg/resource/sdk_update_sub_resource_sync.go.tpl",
+		"pkg/resource/sdk_delete_sub_resource_sync.go.tpl",
+		"pkg/resource/sdk_find_sub_resource_get.go.tpl",
+		"pkg/resource/sub_resource_manager_scalar.go.tpl",
+		"pkg/resource/sub_resource_manager_struct.go.tpl",
+		"pkg/resource/sub_resource_manager_list_scalar.go.tpl",
+		"pkg/resource/sub_resource_manager_list_struct.go.tpl",
+		"pkg/resource/sub_resource_manager_map.go.tpl",
+		"pkg/resource/sub_resource_manager_map_scalar.go.tpl",
+		"pkg/resource/sub_resource_manager_map_struct.go.tpl",
 	}
 	controllerCopyPaths = []string{}
 	controllerFuncMap   = ttpl.FuncMap{
 		"ToLower": strings.ToLower,
 		"TrimPrefix": func(s string, prefix string) string {
 			return strings.TrimPrefix(s, prefix)
+		},
+		"HasPrefix": func(s string, prefix string) bool {
+			return strings.HasPrefix(s, prefix)
+		},
+		"ManagerMapper": func(r *ackmodel.CRD) []*ackgenconfig.MapperConfig {
+			return r.Config().GetManagerMapper(r.Names.Original)
+		},
+		"ManagerReadFieldPath": func(r *ackmodel.CRD) string {
+			return r.Config().GetManagerReadFieldPath(r.Names.Original)
+		},
+		// ManagerPrimaryKey derives the primary key for a sub-resource by
+		// finding the mapper entry whose From matches the parent field path
+		// or a special token ("$item.*" for struct lists, "$item" for scalar
+		// lists, "$key" for maps), and returning its To. Struct field
+		// patterns ($item.Field) take priority over bare $item.
+		"ManagerPrimaryKey": func(r *ackmodel.CRD) string {
+			fieldPath := r.Config().GetManagerParentFieldPath(r.Names.Original)
+			mapper := r.Config().GetManagerMapper(r.Names.Original)
+			// First pass: prefer $item.Field (struct field access)
+			for _, m := range mapper {
+				if strings.HasPrefix(m.From, "$item.") {
+					return m.To
+				}
+			}
+			// Second pass: bare $item, $key, or exact field path match
+			for _, m := range mapper {
+				if m.From == fieldPath || m.From == "$item" || m.From == "$key" {
+					return m.To
+				}
+			}
+			return ""
+		},
+		"IsSubResource": func(r *ackmodel.CRD) bool {
+			return r.Config().IsSubResource(r.Names.Original)
+		},
+		// SubResourceManagerInfos returns a slice of SubResourceManagerInfo
+		// for each sub-resource with a manager defined under the given CRD.
+		// Returns nil if the CRD has no sub-resources with managers.
+		"SubResourceManagerInfos": func(r *ackmodel.CRD) []SubResourceManagerInfo {
+			subResources := r.Config().GetSubResources(r.Names.Original)
+			if len(subResources) == 0 {
+				return nil
+			}
+			var infos []SubResourceManagerInfo
+			for internalName, subResCfg := range subResources {
+				if subResCfg.Manager == nil {
+					continue
+				}
+				fieldPath := r.Config().GetManagerParentFieldPath(internalName)
+				snakeName := names.New(internalName).Snake
+				infos = append(infos, SubResourceManagerInfo{
+					FieldPath:   fieldPath,
+					PackageName: snakeName,
+				})
+			}
+			return infos
 		},
 		"Dereference": func(s *string) string {
 			return *s
@@ -234,6 +302,81 @@ func Controller(
 	tplStart := time.Now()
 	metaVars := m.MetaVars()
 
+	// Build a lookup of CRDs by name so ManagerSourceType can resolve
+	// the parent CRD's field shape type.
+	crdsByName := make(map[string]*ackmodel.CRD, len(crds))
+	for _, crd := range crds {
+		crdsByName[crd.Names.Original] = crd
+	}
+
+	// ManagerSourceType returns a SourceTypeInfo for the parent field that
+	// feeds the sub-resource conversion. It derives the field path from the
+	// sub-resource key name and inspects the parent CRD's spec field shape to
+	// determine whether the source is a list, map, or string.
+	controllerFuncMap["ManagerSourceType"] = func(r *ackmodel.CRD) (*ackgenconfig.SourceTypeInfo, error) {
+		fieldPath := r.Config().GetManagerParentFieldPath(r.Names.Original)
+		parentName := r.Config().GetParentResourceName(r.Names.Original)
+		if parentName == "" {
+			return nil, fmt.Errorf("manager source type not implemented: no parent resource for %s", r.Names.Original)
+		}
+		parentCRD, ok := crdsByName[parentName]
+		if !ok {
+			return nil, fmt.Errorf("manager source type not implemented: parent CRD %s not found for %s", parentName, r.Names.Original)
+		}
+		// fieldPath is "Spec.FieldName" — extract the field name
+		parts := strings.SplitN(fieldPath, ".", 2)
+		if len(parts) != 2 {
+			return nil, fmt.Errorf("manager source type not implemented: invalid field path %q for %s", fieldPath, r.Names.Original)
+		}
+		f, ok := parentCRD.SpecFields[parts[1]]
+		if !ok || f.ShapeRef == nil || f.ShapeRef.Shape == nil {
+			return nil, fmt.Errorf("manager source type not implemented: field %s not found in parent %s for %s", parts[1], parentName, r.Names.Original)
+		}
+		info := &ackgenconfig.SourceTypeInfo{FieldPath: fieldPath, ParentKind: parentCRD.Kind}
+		switch f.ShapeRef.Shape.Type {
+		case "map":
+			if f.ShapeRef.Shape.ValueRef.Shape != nil && f.ShapeRef.Shape.ValueRef.Shape.Type == "structure" {
+				info.Type = ackgenconfig.SourceTypeMapStruct
+			} else {
+				info.Type = ackgenconfig.SourceTypeMapScalar
+			}
+		case "list":
+			if f.ShapeRef.Shape.MemberRef.Shape != nil && f.ShapeRef.Shape.MemberRef.Shape.Type == "structure" {
+				info.Type = ackgenconfig.SourceTypeListStruct
+			} else {
+				info.Type = ackgenconfig.SourceTypeListScalar
+			}
+		case "structure":
+			info.Type = ackgenconfig.SourceTypeStruct
+		case "string", "boolean", "integer", "long", "float", "double", "timestamp", "blob":
+			info.Type = ackgenconfig.SourceTypeScalar
+		default:
+			return nil, fmt.Errorf("manager source type not implemented for shape type %q at %s in %s", f.ShapeRef.Shape.Type, fieldPath, r.Names.Original)
+		}
+
+		// Derive BatchFieldPath: if the mapper has a "$item" entry whose
+		// target field is a list on the sub-resource CRD, the SDK operation
+		// accepts multiple items per call and we can batch.
+		mapper := r.Config().GetManagerMapper(r.Names.Original)
+		for _, m := range mapper {
+			if m.From == "$item" {
+				// Check if the target field is a list on the sub-resource CRD.
+				// The To path is "Spec.FieldName" — extract the field name.
+				toParts := strings.SplitN(m.To, ".", 2)
+				if len(toParts) == 2 {
+					if sf, ok := r.SpecFields[toParts[1]]; ok {
+						if sf.ShapeRef != nil && sf.ShapeRef.Shape != nil && sf.ShapeRef.Shape.Type == "list" {
+							info.BatchFieldPath = m.To
+						}
+					}
+				}
+				break
+			}
+		}
+
+		return info, nil
+	}
+
 	// Hook code can reference a template path, and we can look up the template
 	// in any of our base paths...
 	controllerFuncMap["Hook"] = func(r *ackmodel.CRD, hookID string) (string, error) {
@@ -269,13 +412,44 @@ func Controller(
 		"tags.go.tpl",
 	}
 	for _, crd := range crds {
+		isSubRes := crd.Config().IsSubResource(crd.Names.Original)
+
+		// Determine output base path: sub-resources nest under parent
+		var outBase string
+		if isSubRes {
+			parentName := crd.Config().GetParentResourceName(crd.Names.Original)
+			parentSnake := names.New(parentName).Snake
+			outBase = filepath.Join("pkg/resource", parentSnake, crd.Names.Snake)
+		} else {
+			outBase = filepath.Join("pkg/resource", crd.Names.Snake)
+		}
+
 		for _, target := range targets {
 			// skip adding "tags.go.tpl" file if tagging is ignored for a crd
 			if target == "tags.go.tpl" && crd.Config().TagsAreIgnored(crd.Names.Original) {
 				continue
 			}
-			outPath := filepath.Join("pkg/resource", crd.Names.Snake, strings.TrimSuffix(target, ".tpl"))
+			// Sub-resources only need delta.go and sdk.go — the resource
+			// struct, resourceManager, and all other scaffolding are
+			// generated directly in the sub-resource manager file.
+			if isSubRes && target != "delta.go.tpl" && target != "sdk.go.tpl" {
+				continue
+			}
+			outPath := filepath.Join(outBase, strings.TrimSuffix(target, ".tpl"))
 			tplPath := filepath.Join("pkg/resource", target)
+			crdVars := &templateCRDVars{
+				metaVars,
+				m.SDKAPI,
+				crd,
+			}
+			if err = ts.Add(outPath, tplPath, crdVars); err != nil {
+				return nil, err
+			}
+		}
+		// Generate manager.go for sub-resources when the manager field is specified
+		if crd.Config().GetManagerName(crd.Names.Original) != "" {
+			outPath := filepath.Join(outBase, "manager.go")
+			tplPath := filepath.Join("pkg/resource", "sub_resource_manager.go.tpl")
 			crdVars := &templateCRDVars{
 				metaVars,
 				m.SDKAPI,
@@ -306,6 +480,11 @@ func Controller(
 	// using Map to implement the Set
 	referencedServiceNamesMap := make(map[string]struct{})
 	for _, crd := range crds {
+		// Exclude sub-resource packages from main.go imports — they are
+		// imported by the parent resource's hooks, not by the main controller.
+		if crd.Config().IsSubResource(crd.Names.Original) {
+			continue
+		}
 		snakeCasedCRDNames = append(snakeCasedCRDNames, crd.Names.Snake)
 		for _, serviceName := range crd.ReferencedServiceNames() {
 			referencedServiceNamesMap[serviceName] = struct{}{}
@@ -354,4 +533,14 @@ type templateConfigVars struct {
 	templateset.MetaVars
 	GeneratorConfig    *ackgenconfig.Config
 	ServiceAccountName string
+}
+
+// SubResourceManagerInfo holds the information needed by templates to generate
+// sub-resource manager sync code in the parent resource's sdkUpdate function.
+type SubResourceManagerInfo struct {
+	// FieldPath is the parent spec field path (e.g. "Spec.Policies")
+	FieldPath string
+	// PackageName is the snake_case package name for the sub-resource manager
+	// (e.g. "role_policies")
+	PackageName string
 }

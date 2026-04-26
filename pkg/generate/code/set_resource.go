@@ -599,6 +599,8 @@ func setResourceReadMany(
 	opening, closing, flIndentLvl := generateForRangeLoops(&op.OutputRef, pathToShape, sourceVarName, elemVarName, indentLevel)
 	innerForIndent := strings.Repeat("\t", flIndentLvl)
 	out += opening
+	// Prevent unused variable error when all fields in the loop are ignored
+	out += fmt.Sprintf("%s_ = %s\n", innerForIndent, elemVarName)
 
 	for memberIndex, memberName := range sourceElemShape.MemberNames() {
 		sourceMemberShapeRef := sourceElemShape.MemberRefs[memberName]

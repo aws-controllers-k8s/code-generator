@@ -129,12 +129,14 @@ func (c *Config) GetAdditionalColumns(resourceName string) []*AdditionalColumnCo
 	if c == nil {
 		return nil
 	}
-
-	resourceConfig, ok := c.Resources[resourceName]
-	if !ok || resourceConfig.Print == nil || len(resourceConfig.Print.AdditionalColumns) == 0 {
+	rConfig := c.GetResourceConfig(resourceName)
+	if rConfig == nil {
 		return nil
 	}
-	return resourceConfig.Print.AdditionalColumns
+	if rConfig.Print == nil || len(rConfig.Print.AdditionalColumns) == 0 {
+		return nil
+	}
+	return rConfig.Print.AdditionalColumns
 }
 
 // GetCustomListFieldMembers finds all of the custom list fields that need to
@@ -197,5 +199,54 @@ func New(
 	if err = yaml.UnmarshalStrict(content, &gc); err != nil {
 		return Config{}, err
 	}
+	gc.applyDefaults()
 	return gc, nil
+}
+
+// applyDefaults sets default values for config fields that were not explicitly
+// provided in the generator config file. For sub-resources it:
+//   - defaults TagConfig to ignore tags
+//   - rekeys the SubResources map to prefix each key with the parent resource
+//     name (e.g. "Policies" under "Role" becomes "RolePolicies")
+//   - updates Operations entries whose resource_name matches the original
+//     sub-resource key to use the new prefixed name
+func (c *Config) applyDefaults() {
+	for parentName, resCfg := range c.Resources {
+		if len(resCfg.SubResources) == 0 {
+			continue
+		}
+		rekeyed := make(map[string]*SubResourceConfig, len(resCfg.SubResources))
+		for subResName, subResCfg := range resCfg.SubResources {
+			// Default tags to ignored for sub-resources.
+			if subResCfg.TagConfig == nil {
+				subResCfg.TagConfig = &TagConfig{Ignore: true}
+			}
+
+			// Build the internal name by prefixing with parent name.
+			// e.g. "Policies" under "Role" → "RolePolicies"
+			internalName := parentName + subResName
+			rekeyed[internalName] = subResCfg
+
+			// Update any operation configs that reference the original
+			// sub-resource name to use the new internal name.
+			if internalName != subResName {
+				c.rekeyOperationResourceName(subResName, internalName)
+			}
+		}
+		resCfg.SubResources = rekeyed
+		c.Resources[parentName] = resCfg
+	}
+}
+
+// rekeyOperationResourceName updates all Operations entries whose
+// resource_name list contains oldName, replacing it with newName.
+func (c *Config) rekeyOperationResourceName(oldName, newName string) {
+	for opID, opCfg := range c.Operations {
+		for i, rn := range opCfg.ResourceName {
+			if rn == oldName {
+				opCfg.ResourceName[i] = newName
+				c.Operations[opID] = opCfg
+			}
+		}
+	}
 }
