@@ -3,6 +3,9 @@
 package {{ .CRD.Names.Snake }}
 
 import(
+    "slices"
+    "strings"
+
     acktags "github.com/aws-controllers-k8s/runtime/pkg/tags"
 
     svcapitypes "github.com/aws-controllers-k8s/{{ .ControllerName }}-controller/apis/{{ .APIVersion }}"

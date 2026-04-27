@@ -15,6 +15,9 @@ import (
 )
 
 {{ .CRD.Documentation }}
+{{- range $rule := .CRD.CustomCELRules }}
+// +kubebuilder:validation:XValidation:rule="{{ $rule.Rule }}"{{- if $rule.Message }},message="{{ $rule.Message | Deref }}"{{- end }}
+{{- end }}
 type {{ .CRD.Kind }}Spec struct {
 {{ range $fieldName := .CRD.SpecFieldNames }}
 {{- $field := (index $.CRD.SpecFields $fieldName) }}
@@ -24,6 +27,10 @@ type {{ .CRD.Kind }}Spec struct {
 
 {{- if $field.IsImmutable -}}
     // +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
+{{ end -}}
+
+{{- range $rule := $field.CustomCELRules }}
+    // +kubebuilder:validation:XValidation:rule="{{ $rule.Rule }}"{{- if $rule.Message }},message="{{ $rule.Message | Deref }}"{{- end }}
 {{ end -}}
 
 {{- if and ($field.IsRequired) (not $field.HasReference) -}}

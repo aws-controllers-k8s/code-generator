@@ -384,6 +384,13 @@ type ReferencesConfig struct {
 	Path string `json:"path"`
 }
 
+// CELRule represents a single CEL (Common Expression Language) validation rule
+// to be emitted as a +kubebuilder:validation:XValidation marker.
+type CELRule struct {
+	Rule    string  `json:"rule"`
+	Message *string `json:"message,omitempty"`
+}
+
 // FieldConfig contains instructions to the code generator about how
 // to interpret the value of an Attribute and how to map it to a CRD's Spec or
 // Status field
@@ -492,6 +499,9 @@ type FieldConfig struct {
 	//
 	// (See https://github.com/aws-controllers-k8s/pkg/blob/main/names/names.go)
 	GoTag *string `json:"go_tag,omitempty"`
+	// CustomCELRules contains CEL validation rules emitted as
+	// +kubebuilder:validation:XValidation markers on this field.
+	CustomCELRules []CELRule `json:"custom_cel_rules,omitempty"`
 }
 
 // GetFieldConfigs returns all FieldConfigs for a given resource as a map.

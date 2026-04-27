@@ -1,0 +1,20 @@
+resources:
+  Authorizer:
+    fields:
+      JwtConfiguration.Issuer:
+        custom_cel_rules:
+          - rule: "self.startsWith('https://')"
+            message: "Issuer must be an HTTPS URL"
+ignore:
+  resource_names:
+    - Api
+    - ApiMapping
+    - Deployment
+    - DomainName
+    - Integration
+    - IntegrationResponse
+    - Model
+    - Route
+    - RouteResponse
+    - Stage
+    - VpcLink
