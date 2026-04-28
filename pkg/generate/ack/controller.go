@@ -311,7 +311,30 @@ func Controller(
 	// ParentPrimaryKeyAssign emits the Go assignment that copies the
 	// parent's primary key into the sub-resource's primary key field.
 	// Registered here (not in the static map) because it needs crdsByName.
+	//
+	// Special case: if the sub-resource's primary key field name contains
+	// "arn" (case-insensitive), the value is sourced from the parent's
+	// Status.ACKResourceMetadata.ARN rather than from the parent's spec
+	// primary key. This handles operations like TagResource/UntagResource
+	// that identify resources by ARN rather than by name.
 	controllerFuncMap["ParentPrimaryKeyAssign"] = func(r *ackmodel.CRD, parentKind string, koVar string) (string, error) {
+		subPK, err := r.GetPrimaryKeyField()
+		if err != nil {
+			return "", fmt.Errorf("sub-resource %s: %w", r.Names.Original, err)
+		}
+		if subPK == nil {
+			return "", fmt.Errorf("sub-resource %s has no is_primary_key field", r.Names.Original)
+		}
+		// If the sub-resource PK field name contains "arn", source the value
+		// from the parent's Status.ACKResourceMetadata.ARN.
+		if strings.Contains(strings.ToLower(subPK.Names.Original), "arn") {
+			return fmt.Sprintf(
+				"\tif parent.Status.ACKResourceMetadata != nil && parent.Status.ACKResourceMetadata.ARN != nil {\n"+
+					"\t\tarn := string(*parent.Status.ACKResourceMetadata.ARN)\n"+
+					"\t\t%s.Spec.%s = &arn\n"+
+					"\t}",
+				koVar, subPK.Names.Camel), nil
+		}
 		parentCRD, ok := crdsByName[parentKind]
 		if !ok {
 			return "", fmt.Errorf("ParentPrimaryKeyAssign: parent CRD %s not found", parentKind)
@@ -322,13 +345,6 @@ func Controller(
 		}
 		if parentPK == nil {
 			return "", fmt.Errorf("parent %s has no is_primary_key field", parentKind)
-		}
-		subPK, err := r.GetPrimaryKeyField()
-		if err != nil {
-			return "", fmt.Errorf("sub-resource %s: %w", r.Names.Original, err)
-		}
-		if subPK == nil {
-			return "", fmt.Errorf("sub-resource %s has no is_primary_key field", r.Names.Original)
 		}
 		return fmt.Sprintf("\t%s.Spec.%s = parent.Spec.%s", koVar, subPK.Names.Camel, parentPK.Names.Camel), nil
 	}
