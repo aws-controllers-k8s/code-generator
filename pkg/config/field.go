@@ -500,11 +500,11 @@ func (c *Config) GetFieldConfigs(resourceName string) map[string]*FieldConfig {
 	if c == nil {
 		return map[string]*FieldConfig{}
 	}
-	resourceConfig, ok := c.Resources[resourceName]
-	if !ok {
+	rConfig := c.GetResourceConfig(resourceName)
+	if rConfig == nil {
 		return map[string]*FieldConfig{}
 	}
-	return resourceConfig.Fields
+	return rConfig.Fields
 }
 
 // GetFieldConfigByPath returns the FieldConfig provided a resource and path to associated field.

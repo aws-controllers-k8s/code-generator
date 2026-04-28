@@ -117,6 +117,11 @@ func Release(
 
 	reconcileResources := make([]string, 0)
 	for _, crd := range crds {
+		// Sub-resources are internal implementation details — exclude from
+		// Helm values reconcile list and all user-facing release artifacts.
+		if crd.Config().IsSubResource(crd.Names.Original) {
+			continue
+		}
 		reconcileResources = append(reconcileResources, crd.Kind)
 	}
 

@@ -8,6 +8,10 @@ import (
 	"k8s.io/apimachinery/pkg/api/equality"
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	acktags "github.com/aws-controllers-k8s/runtime/pkg/tags"
+{{- $subResInfos := SubResourceManagerInfos .CRD }}
+{{- range $info := $subResInfos }}
+	{{ $info.PackageName }} "github.com/aws-controllers-k8s/{{ $.ControllerName }}-controller/pkg/resource/{{ $.CRD.Names.Snake }}/{{ $info.PackageName }}"
+{{- end }}
 )
 
 // Hack to avoid import errors during build...

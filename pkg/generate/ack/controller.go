@@ -14,6 +14,7 @@
 package ack
 
 import (
+	"fmt"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -28,6 +29,7 @@ import (
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
+	"github.com/aws-controllers-k8s/pkg/names"
 )
 
 var (
@@ -58,12 +60,57 @@ var (
 		"pkg/resource/sdk_update_custom.go.tpl",
 		"pkg/resource/sdk_update_set_attributes.go.tpl",
 		"pkg/resource/sdk_update_not_implemented.go.tpl",
+		"pkg/resource/sdk_update_sub_resource_sync.go.tpl",
+		"pkg/resource/sdk_delete_sub_resource_sync.go.tpl",
+		"pkg/resource/sdk_find_sub_resource_get.go.tpl",
+		"pkg/resource/sdk_create_sub_resource_requeue.go.tpl",
+		"pkg/resource/sub_resource_manager_singleton.go.tpl",
 	}
 	controllerCopyPaths = []string{}
 	controllerFuncMap   = ttpl.FuncMap{
 		"ToLower": strings.ToLower,
 		"TrimPrefix": func(s string, prefix string) string {
 			return strings.TrimPrefix(s, prefix)
+		},
+		"HasPrefix": func(s string, prefix string) bool {
+			return strings.HasPrefix(s, prefix)
+		},
+		// SubResPrimaryKeyField returns the camel-cased name of the field
+		// marked is_primary_key on the sub-resource CRD. Used by the
+		// key() function in the generated manager.
+		"SubResPrimaryKeyField": func(r *ackmodel.CRD) (string, error) {
+			f, err := r.GetPrimaryKeyField()
+			if err != nil {
+				return "", fmt.Errorf("sub-resource %s: %w", r.Names.Original, err)
+			}
+			if f == nil {
+				return "", fmt.Errorf("sub-resource %s has no is_primary_key field", r.Names.Original)
+			}
+			return f.Names.Camel, nil
+		},
+		"IsSubResource": func(r *ackmodel.CRD) bool {
+			return r.Config().IsSubResource(r.Names.Original)
+		},
+		// SubResourceManagerInfos returns a slice of SubResourceManagerInfo
+		// for each sub-resource with a manager defined under the given CRD.
+		// Returns nil if the CRD has no sub-resources with managers.
+		"SubResourceManagerInfos": func(r *ackmodel.CRD) []SubResourceManagerInfo {
+			subResources := r.Config().GetSubResources(r.Names.Original)
+			if len(subResources) == 0 {
+				return nil
+			}
+			var infos []SubResourceManagerInfo
+			for subResName, subResCfg := range subResources {
+				if subResCfg == nil {
+					continue
+				}
+				snakeName := names.New(subResName).Snake
+				infos = append(infos, SubResourceManagerInfo{
+					FieldPath:   "Spec." + subResName,
+					PackageName: snakeName,
+				})
+			}
+			return infos
 		},
 		"Dereference": func(s *string) string {
 			return *s
@@ -234,6 +281,58 @@ func Controller(
 	tplStart := time.Now()
 	metaVars := m.MetaVars()
 
+	// Build a lookup of CRDs by name so ParentKind/ParentPrimaryKeyAssign
+	// can resolve the parent CRD.
+	crdsByName := make(map[string]*ackmodel.CRD, len(crds))
+	for _, crd := range crds {
+		crdsByName[crd.Names.Original] = crd
+	}
+
+	// ParentKind returns the Go Kind name of the parent CRD for a
+	// sub-resource (e.g. "BackupVault" for "AccessPolicy").
+	controllerFuncMap["ParentKind"] = func(r *ackmodel.CRD) (string, error) {
+		parentName := r.Config().GetParentResourceName(r.Names.Original)
+		if parentName == "" {
+			return "", fmt.Errorf("ParentKind: no parent resource for %s", r.Names.Original)
+		}
+		parentCRD, ok := crdsByName[parentName]
+		if !ok {
+			return "", fmt.Errorf("ParentKind: parent CRD %s not found", parentName)
+		}
+		return parentCRD.Kind, nil
+	}
+
+	// SubResFieldPath returns the dotted Spec path on the parent that
+	// holds this sub-resource's injected Spec (always "Spec.<SubResName>").
+	controllerFuncMap["SubResFieldPath"] = func(r *ackmodel.CRD) string {
+		return "Spec." + r.Names.Original
+	}
+
+	// ParentPrimaryKeyAssign emits the Go assignment that copies the
+	// parent's primary key into the sub-resource's primary key field.
+	// Registered here (not in the static map) because it needs crdsByName.
+	controllerFuncMap["ParentPrimaryKeyAssign"] = func(r *ackmodel.CRD, parentKind string, koVar string) (string, error) {
+		parentCRD, ok := crdsByName[parentKind]
+		if !ok {
+			return "", fmt.Errorf("ParentPrimaryKeyAssign: parent CRD %s not found", parentKind)
+		}
+		parentPK, err := parentCRD.GetPrimaryKeyField()
+		if err != nil {
+			return "", fmt.Errorf("parent %s: %w", parentKind, err)
+		}
+		if parentPK == nil {
+			return "", fmt.Errorf("parent %s has no is_primary_key field", parentKind)
+		}
+		subPK, err := r.GetPrimaryKeyField()
+		if err != nil {
+			return "", fmt.Errorf("sub-resource %s: %w", r.Names.Original, err)
+		}
+		if subPK == nil {
+			return "", fmt.Errorf("sub-resource %s has no is_primary_key field", r.Names.Original)
+		}
+		return fmt.Sprintf("\t%s.Spec.%s = parent.Spec.%s", koVar, subPK.Names.Camel, parentPK.Names.Camel), nil
+	}
+
 	// Hook code can reference a template path, and we can look up the template
 	// in any of our base paths...
 	controllerFuncMap["Hook"] = func(r *ackmodel.CRD, hookID string) (string, error) {
@@ -269,13 +368,44 @@ func Controller(
 		"tags.go.tpl",
 	}
 	for _, crd := range crds {
+		isSubRes := crd.Config().IsSubResource(crd.Names.Original)
+
+		// Determine output base path: sub-resources nest under parent
+		var outBase string
+		if isSubRes {
+			parentName := crd.Config().GetParentResourceName(crd.Names.Original)
+			parentSnake := names.New(parentName).Snake
+			outBase = filepath.Join("pkg/resource", parentSnake, crd.Names.Snake)
+		} else {
+			outBase = filepath.Join("pkg/resource", crd.Names.Snake)
+		}
+
 		for _, target := range targets {
 			// skip adding "tags.go.tpl" file if tagging is ignored for a crd
 			if target == "tags.go.tpl" && crd.Config().TagsAreIgnored(crd.Names.Original) {
 				continue
 			}
-			outPath := filepath.Join("pkg/resource", crd.Names.Snake, strings.TrimSuffix(target, ".tpl"))
+			// Sub-resources only need delta.go and sdk.go — the resource
+			// struct, resourceManager, and all other scaffolding are
+			// generated directly in the sub-resource manager file.
+			if isSubRes && target != "delta.go.tpl" && target != "sdk.go.tpl" {
+				continue
+			}
+			outPath := filepath.Join(outBase, strings.TrimSuffix(target, ".tpl"))
 			tplPath := filepath.Join("pkg/resource", target)
+			crdVars := &templateCRDVars{
+				metaVars,
+				m.SDKAPI,
+				crd,
+			}
+			if err = ts.Add(outPath, tplPath, crdVars); err != nil {
+				return nil, err
+			}
+		}
+		// Generate manager.go for all sub-resources
+		if isSubRes {
+			outPath := filepath.Join(outBase, "manager.go")
+			tplPath := filepath.Join("pkg/resource", "sub_resource_manager.go.tpl")
 			crdVars := &templateCRDVars{
 				metaVars,
 				m.SDKAPI,
@@ -306,6 +436,11 @@ func Controller(
 	// using Map to implement the Set
 	referencedServiceNamesMap := make(map[string]struct{})
 	for _, crd := range crds {
+		// Exclude sub-resource packages from main.go imports — they are
+		// imported by the parent resource's hooks, not by the main controller.
+		if crd.Config().IsSubResource(crd.Names.Original) {
+			continue
+		}
 		snakeCasedCRDNames = append(snakeCasedCRDNames, crd.Names.Snake)
 		for _, serviceName := range crd.ReferencedServiceNames() {
 			referencedServiceNamesMap[serviceName] = struct{}{}
@@ -354,4 +489,14 @@ type templateConfigVars struct {
 	templateset.MetaVars
 	GeneratorConfig    *ackgenconfig.Config
 	ServiceAccountName string
+}
+
+// SubResourceManagerInfo holds the information needed by templates to generate
+// sub-resource manager sync code in the parent resource's sdkUpdate function.
+type SubResourceManagerInfo struct {
+	// FieldPath is the parent spec field path (e.g. "Spec.Policies")
+	FieldPath string
+	// PackageName is the snake_case package name for the sub-resource manager
+	// (e.g. "role_policies")
+	PackageName string
 }

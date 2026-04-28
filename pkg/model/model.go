@@ -86,6 +86,11 @@ func (m *Model) crdNames() []string {
 
 	crds, _ := m.GetCRDs()
 	for _, crd := range crds {
+		// Sub-resources are internal implementation details and should not
+		// appear in CRD kustomization, RBAC, or any user-facing config.
+		if m.cfg.IsSubResource(crd.Names.Original) {
+			continue
+		}
 		crdConfigs = append(crdConfigs, strings.ToLower(crd.Plural))
 	}
 
@@ -472,6 +477,13 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 	sort.Slice(crds, func(i, j int) bool {
 		return crds[i].Names.Camel < crds[j].Names.Camel
 	})
+	// Inject each sub-resource's Spec type onto its parent CRD as a
+	// synthesized field. This happens after every CRD has been built so we
+	// can resolve the sub-resource's Kind, and before processFields so
+	// downstream validation can find the parent field.
+	if err := m.injectSubResourceSpecFields(crds); err != nil {
+		return nil, err
+	}
 	// This is the place that we build out the CRD.Fields map with
 	// `pkg/model.Field` objects that represent the non-top-level Spec and
 	// Status fields.
@@ -1054,6 +1066,12 @@ func (m *Model) processTopLevelField(
 	crd *CRD,
 	field *Field,
 ) error {
+	// Synthetic sub-resource spec fields carry a hand-built memberless
+	// shape — no nested-field walking to do, and the downstream helpers
+	// aren't designed for it.
+	if field.IsSubResourceSpec {
+		return nil
+	}
 	if field.ShapeRef == nil && !field.IsReference() && (field.FieldConfig == nil || !field.FieldConfig.IsAttribute) {
 		fmt.Printf(
 			"WARNING: Field %s:%s has nil ShapeRef and is not defined as an Attribute-based Field!\n",
@@ -1319,4 +1337,71 @@ func New(
 		return nil, err
 	}
 	return m, nil
+}
+
+// injectSubResourceSpecFields walks each configured sub-resource with a
+// manager and synthesizes a field on its parent CRD's Spec carrying the
+// sub-resource's Spec struct type. The field name is the sub-resource's
+// key under sub_resources, which is also the parent field name (Spec.<key>)
+// and what the mapper's "from" paths reference.
+//
+// User-declared parent fields always win: if the parent already has a
+// SpecField at the target key, this is a no-op for that sub-resource.
+func (m *Model) injectSubResourceSpecFields(crds []*CRD) error {
+	crdByName := make(map[string]*CRD, len(crds))
+	for _, crd := range crds {
+		crdByName[crd.Names.Original] = crd
+	}
+	for parentName, resCfg := range m.cfg.Resources {
+		if len(resCfg.SubResources) == 0 {
+			continue
+		}
+		parentCRD, ok := crdByName[parentName]
+		if !ok {
+			continue
+		}
+		for subResName, subResCfg := range resCfg.SubResources {
+			if subResCfg == nil {
+				continue
+			}
+			subResCRD, ok := crdByName[subResName]
+			if !ok {
+				continue
+			}
+			// Don't overwrite a field the user has already declared on
+			// the parent (either via `fields:` or via the SDK shape).
+			if _, exists := parentCRD.SpecFields[subResName]; exists {
+				continue
+			}
+			injectSubResourceSpecField(parentCRD, subResName, subResCRD)
+		}
+	}
+	return nil
+}
+
+// injectSubResourceSpecField stamps a synthetic parent-side field whose
+// Go type is *<SubResKind>Spec (singleton). The ShapeRef is hand-built and
+// carries just enough type info for downstream code while being ignored by
+// the nested-field walker.
+func injectSubResourceSpecField(parent *CRD, fieldKey string, subRes *CRD) {
+	fieldNames := names.New(fieldKey)
+	specShapeName := subRes.Kind + "Spec"
+	shape := &awssdkmodel.Shape{
+		ShapeName:  specShapeName,
+		Type:       "structure",
+		MemberRefs: map[string]*awssdkmodel.ShapeRef{},
+	}
+	shapeRef := &awssdkmodel.ShapeRef{ShapeName: specShapeName, Shape: shape}
+	f := &Field{
+		CRD:               parent,
+		Names:             fieldNames,
+		Path:              fieldNames.Camel,
+		ShapeRef:          shapeRef,
+		GoType:            "*" + specShapeName,
+		GoTypeElem:        specShapeName,
+		GoTypeWithPkgName: "*" + specShapeName,
+		IsSubResourceSpec: true,
+	}
+	parent.SpecFields[fieldNames.Original] = f
+	parent.Fields[fieldNames.Camel] = f
 }

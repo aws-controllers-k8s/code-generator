@@ -285,6 +285,11 @@ func (a *SDKAPI) CRDNames(cfg *ackgenconfig.Config) []names.Names {
 		if cfg.ResourceIsIgnored(crdName) {
 			continue
 		}
+		// Sub-resources are internal implementation details and should not
+		// appear in user-facing CRD type definitions.
+		if cfg.IsSubResource(crdName) {
+			continue
+		}
 		crdNames = append(crdNames, names.New(crdName))
 	}
 	return crdNames

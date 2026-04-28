@@ -122,6 +122,21 @@ type ResourceConfig struct {
 	// SDK implementation details that are auto-filled by the SDK middleware
 	// when nil and should not be exposed in the CRD.
 	IgnoreIdempotencyToken bool `json:"ignore_idempotency_token,omitempty"`
+	// SubResources maps sub-resource kind names to their configuration.
+	// Sub-resources defined here are internal implementation details that
+	// do not expose a CRD to the user. The key is used verbatim as the
+	// sub-resource's Kind and as the lookup name throughout the code
+	// generator — if multiple parents need distinct sub-resources that
+	// would otherwise collide in the apis/ package, qualify the key
+	// (e.g. "AccessPolicy" under one parent and "VaultAccessPolicy"
+	// under another).
+	SubResources map[string]*SubResourceConfig `json:"sub_resources,omitempty"`
+}
+
+// SubResourceConfig defines a sub-resource kind nested under a parent
+// resource's sub_resources field. It reuses ResourceConfig fields.
+type SubResourceConfig struct {
+	ResourceConfig `json:",inline"`
 }
 
 // TagConfig instructs the code  generator on how to generate functions that
@@ -443,8 +458,8 @@ func (c *Config) ResourceIsAdoptable(resourceName string) bool {
 	if c == nil {
 		return true
 	}
-	rConfig, ok := c.Resources[resourceName]
-	if !ok {
+	rConfig := c.GetResourceConfig(resourceName)
+	if rConfig == nil {
 		return true
 	}
 	if rConfig.IsAdoptable == nil {
@@ -481,8 +496,8 @@ func (c *Config) ResourceDisplaysAgeColumn(resourceName string) bool {
 	if c == nil {
 		return false
 	}
-	rConfig, ok := c.Resources[resourceName]
-	if !ok {
+	rConfig := c.GetResourceConfig(resourceName)
+	if rConfig == nil {
 		return false
 	}
 	if rConfig.Print != nil {
@@ -497,8 +512,8 @@ func (c *Config) ResourceDisplaysSyncedColumn(resourceName string) bool {
 	if c == nil {
 		return false
 	}
-	rConfig, ok := c.Resources[resourceName]
-	if !ok {
+	rConfig := c.GetResourceConfig(resourceName)
+	if rConfig == nil {
 		return false
 	}
 	if rConfig.Print != nil {
@@ -517,15 +532,18 @@ func (c *Config) ResourceSetsSingleAttribute(resourceName string) bool {
 	if c == nil {
 		return false
 	}
-	resGenConfig, found := c.Resources[resourceName]
-	if !found || resGenConfig.UnpackAttributesMapConfig == nil {
+	rConfig := c.GetResourceConfig(resourceName)
+	if rConfig == nil {
 		return false
 	}
-	return resGenConfig.UnpackAttributesMapConfig.SetAttributesSingleAttribute
+	if rConfig.UnpackAttributesMapConfig == nil {
+		return false
+	}
+	return rConfig.UnpackAttributesMapConfig.SetAttributesSingleAttribute
 }
 
 // GetResourceConfig returns the ResourceConfig for a given resource name,
-// searching case-insensitively.
+// searching case-insensitively. Also checks sub_resources maps as a fallback.
 func (c *Config) GetResourceConfig(resourceName string) *ResourceConfig {
 	if c == nil {
 		return nil
@@ -534,6 +552,16 @@ func (c *Config) GetResourceConfig(resourceName string) *ResourceConfig {
 	for resName, resCfg := range c.Resources {
 		if strings.EqualFold(resName, resourceName) {
 			return &resCfg
+		}
+	}
+	// Check sub_resources
+	for _, rConfig := range c.Resources {
+		if rConfig.SubResources != nil {
+			for subResName, subRes := range rConfig.SubResources {
+				if strings.EqualFold(subResName, resourceName) {
+					return &subRes.ResourceConfig
+				}
+			}
 		}
 	}
 	return nil
@@ -545,8 +573,8 @@ func (c *Config) GetCompareIgnoredFieldPaths(resourceName string) []string {
 	if c == nil {
 		return nil
 	}
-	rConfig, ok := c.Resources[resourceName]
-	if !ok {
+	rConfig := c.GetResourceConfig(resourceName)
+	if rConfig == nil {
 		return nil
 	}
 	if rConfig.Compare == nil {
@@ -565,8 +593,8 @@ func (c *Config) GetResourceFieldName(
 	if c == nil {
 		return origFieldName
 	}
-	rConfig, ok := c.Resources[resourceName]
-	if !ok {
+	rConfig := c.GetResourceConfig(resourceName)
+	if rConfig == nil {
 		return origFieldName
 	}
 	if rConfig.Renames == nil {
@@ -598,8 +626,8 @@ func (c *Config) GetOriginalMemberName(
 	if c == nil {
 		return fieldName
 	}
-	rConfig, ok := c.Resources[resourceName]
-	if !ok {
+	rConfig := c.GetResourceConfig(resourceName)
+	if rConfig == nil {
 		return fieldName
 	}
 	if rConfig.Renames == nil {
@@ -627,8 +655,8 @@ func (c *Config) GetResourceShortNames(resourceName string) []string {
 	if c == nil {
 		return nil
 	}
-	rConfig, ok := c.Resources[resourceName]
-	if !ok {
+	rConfig := c.GetResourceConfig(resourceName)
+	if rConfig == nil {
 		return nil
 	}
 	return rConfig.ShortNames
@@ -639,8 +667,8 @@ func (c *Config) GetResourcePrintOrderByName(resourceName string) string {
 	if c == nil {
 		return ""
 	}
-	rConfig, ok := c.Resources[resourceName]
-	if !ok {
+	rConfig := c.GetResourceConfig(resourceName)
+	if rConfig == nil {
 		return ""
 	}
 	if rConfig.Print != nil {
@@ -655,11 +683,11 @@ func (c *Config) GetUpdateConditionsCustomMethodName(resourceName string) string
 	if c == nil {
 		return ""
 	}
-	resGenConfig, found := c.Resources[resourceName]
-	if !found {
+	rConfig := c.GetResourceConfig(resourceName)
+	if rConfig == nil {
 		return ""
 	}
-	return resGenConfig.UpdateConditionsCustomMethodName
+	return rConfig.UpdateConditionsCustomMethodName
 }
 
 // GetReconcileRequeueOnSuccessSeconds returns the duration after which to requeue
@@ -668,15 +696,13 @@ func (c *Config) GetReconcileRequeueOnSuccessSeconds(resourceName string) int {
 	if c == nil {
 		return 0
 	}
-	resGenConfig, found := c.Resources[resourceName]
-	if !found {
+	rConfig := c.GetResourceConfig(resourceName)
+	if rConfig == nil {
 		return 0
 	}
-	reconcile := resGenConfig.Reconcile
-	if reconcile != nil {
-		return reconcile.RequeueOnSuccessSeconds
+	if rConfig.Reconcile != nil {
+		return rConfig.Reconcile.RequeueOnSuccessSeconds
 	}
-	// handles the default case
 	return 0
 }
 
@@ -687,11 +713,12 @@ func (c *Config) GetCustomUpdateMethodName(resourceName string) string {
 	if c == nil {
 		return ""
 	}
-	rConfig, found := c.Resources[resourceName]
-	if found {
-		if rConfig.UpdateOperation != nil {
-			return rConfig.UpdateOperation.CustomMethodName
-		}
+	rConfig := c.GetResourceConfig(resourceName)
+	if rConfig == nil {
+		return ""
+	}
+	if rConfig.UpdateOperation != nil {
+		return rConfig.UpdateOperation.CustomMethodName
 	}
 	return ""
 }
@@ -700,11 +727,12 @@ func (c *Config) GetCustomFindMethodName(resourceName string) string {
 	if c == nil {
 		return ""
 	}
-	rConfig, found := c.Resources[resourceName]
-	if found {
-		if rConfig.ReadOperation != nil {
-			return rConfig.ReadOperation.CustomMethodName
-		}
+	rConfig := c.GetResourceConfig(resourceName)
+	if rConfig == nil {
+		return ""
+	}
+	if rConfig.ReadOperation != nil {
+		return rConfig.ReadOperation.CustomMethodName
 	}
 	return ""
 }
@@ -713,11 +741,12 @@ func (c *Config) GetCustomDeleteMethodName(resourceName string) string {
 	if c == nil {
 		return ""
 	}
-	rConfig, found := c.Resources[resourceName]
-	if found {
-		if rConfig.DeleteOperation != nil {
-			return rConfig.DeleteOperation.CustomMethodName
-		}
+	rConfig := c.GetResourceConfig(resourceName)
+	if rConfig == nil {
+		return ""
+	}
+	if rConfig.DeleteOperation != nil {
+		return rConfig.DeleteOperation.CustomMethodName
 	}
 	return ""
 }
@@ -732,15 +761,15 @@ func (c *Config) GetAllRenames(
 	if c == nil {
 		return renames
 	}
-	resourceConfig, ok := c.Resources[resourceName]
-	if !ok {
+	rConfig := c.GetResourceConfig(resourceName)
+	if rConfig == nil {
 		return renames
 	}
-	if resourceConfig.Renames == nil || resourceConfig.Renames.Operations == nil {
+	if rConfig.Renames == nil || rConfig.Renames.Operations == nil {
 		return renames
 	}
 
-	opRenameConfigs := resourceConfig.Renames.Operations
+	opRenameConfigs := rConfig.Renames.Operations
 	for opName, opRenameConfigs := range opRenameConfigs {
 		for _, op := range operations {
 			if opName != op.ExportedName {
@@ -763,9 +792,12 @@ func (c *Config) GetTerminalExceptionCodes(resourceName string) []string {
 	if c == nil {
 		return nil
 	}
-	resGenConfig, found := c.Resources[resourceName]
-	if found && resGenConfig.Exceptions != nil {
-		return resGenConfig.Exceptions.TerminalCodes
+	rConfig := c.GetResourceConfig(resourceName)
+	if rConfig == nil {
+		return nil
+	}
+	if rConfig.Exceptions != nil {
+		return rConfig.Exceptions.TerminalCodes
 	}
 	return nil
 }
@@ -780,8 +812,8 @@ func (c *Config) GetListOpMatchFieldNames(
 	if c == nil {
 		return res
 	}
-	rConfig, found := c.Resources[resName]
-	if !found {
+	rConfig := c.GetResourceConfig(resName)
+	if rConfig == nil {
 		return res
 	}
 	if rConfig.ListOperation == nil {
@@ -791,11 +823,80 @@ func (c *Config) GetListOpMatchFieldNames(
 }
 
 // TagsAreIgnored returns whether ensuring controller tags should be ignored
-// for a resource or not.
+// for a resource or not. Tags are always ignored for sub-resources (they are
+// internal implementation details managed through their parent).
 func (c *Config) TagsAreIgnored(resName string) bool {
+	if c == nil {
+		return false
+	}
+	if c.IsSubResource(resName) {
+		return true
+	}
+	rConfig := c.GetResourceConfig(resName)
+	if rConfig == nil {
+		return false
+	}
+	if rConfig.TagConfig != nil {
+		return rConfig.TagConfig.Ignore
+	}
+	return false
+}
+
+// GetSubResources returns the sub_resources map for the given parent resource
+// name, or nil when absent. Nil-safe: returns nil when receiver is nil.
+func (c *Config) GetSubResources(resName string) map[string]*SubResourceConfig {
+	if c == nil {
+		return nil
+	}
 	if rConfig, found := c.Resources[resName]; found {
-		if tagConfig := rConfig.TagConfig; tagConfig != nil {
-			return tagConfig.Ignore
+		return rConfig.SubResources
+	}
+	return nil
+}
+
+// GetSubResourceConfig returns the specific SubResourceConfig for a
+// sub-resource under a given parent, or nil when absent. Nil-safe: returns nil
+// when receiver is nil.
+func (c *Config) GetSubResourceConfig(parentName, subResName string) *SubResourceConfig {
+	if c == nil {
+		return nil
+	}
+	if rConfig, found := c.Resources[parentName]; found {
+		if rConfig.SubResources != nil {
+			return rConfig.SubResources[subResName]
+		}
+	}
+	return nil
+}
+
+// GetParentResourceName searches all resources' sub_resources maps and returns
+// the parent resource name for the given sub-resource name, or empty string
+// when not found. Nil-safe: returns "" when receiver is nil.
+func (c *Config) GetParentResourceName(subResName string) string {
+	if c == nil {
+		return ""
+	}
+	for resName, rConfig := range c.Resources {
+		if rConfig.SubResources != nil {
+			if _, found := rConfig.SubResources[subResName]; found {
+				return resName
+			}
+		}
+	}
+	return ""
+}
+
+// IsSubResource returns true if the given resource name appears in any
+// parent's sub_resources map. Nil-safe: returns false when receiver is nil.
+func (c *Config) IsSubResource(resName string) bool {
+	if c == nil {
+		return false
+	}
+	for _, rConfig := range c.Resources {
+		if rConfig.SubResources != nil {
+			if _, found := rConfig.SubResources[resName]; found {
+				return true
+			}
 		}
 	}
 	return false
