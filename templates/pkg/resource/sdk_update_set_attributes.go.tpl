@@ -15,6 +15,7 @@ func (rm *resourceManager) sdkUpdate(
 {{- if $hookCode := Hook .CRD "sdk_update_pre_build_request" }}
 {{ $hookCode }}
 {{- end }}
+{{- GoCodeResourceIsUpdateable .CRD "latest" 1 }}
 	// If any required fields in the input shape are missing, AWS resource is
 	// not created yet. And sdkUpdate should never be called if this is the
 	// case, and it's an error in the generated code if it is...
