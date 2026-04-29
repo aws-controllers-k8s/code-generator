@@ -59,7 +59,9 @@ type GenerationMetadata struct {
 	// Last modification reason
 	LastModification lastModificationInfo `json:"last_modification"`
 	// AWS SDK Go version used generate the APIs
-	AWSSDKGoVersion string `json:"aws_sdk_go_version"`
+	AWSSDKGoVersion string `json:"aws_sdk_go_version,omitempty"`
+	// Per-service AWS SDK version used to fetch the model from a per-service tag
+	AWSServiceSDKVersion string `json:"aws_service_sdk_version,omitempty"`
 	// Information about the ack-generate binary used to generate the APIs
 	ACKGenerateInfo ackGenerateInfo `json:"ack_generate_info"`
 	// Information about the generator config file used to generate the APIs
@@ -86,6 +88,25 @@ type lastModificationInfo struct {
 	Reason UpdateReason `json:"reason"`
 }
 
+// LoadGenerationMetadata reads and parses an ack-generate-metadata.yaml file
+// from the given API version directory. Returns nil (not error) when the file
+// does not exist, since metadata may not yet have been generated.
+func LoadGenerationMetadata(apisPath string, apiVersion string) (*GenerationMetadata, error) {
+	metadataPath := filepath.Join(apisPath, apiVersion, outputFileName)
+	content, err := ioutil.ReadFile(metadataPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	gm := &GenerationMetadata{}
+	if err = yaml.Unmarshal(content, gm); err != nil {
+		return nil, err
+	}
+	return gm, nil
+}
+
 // CreateGenerationMetadata gathers information about the generated code and save
 // a yaml version in the API version directory
 func CreateGenerationMetadata(
@@ -93,6 +114,7 @@ func CreateGenerationMetadata(
 	apisPath string,
 	modificationReason UpdateReason,
 	awsSDKGo string,
+	awsServiceSDKVersion string,
 	generatorFileName string,
 ) error {
 	filesDirectory := filepath.Join(apisPath, apiVersion)
@@ -112,7 +134,8 @@ func CreateGenerationMetadata(
 		LastModification: lastModificationInfo{
 			Reason: modificationReason,
 		},
-		AWSSDKGoVersion: awsSDKGo,
+		AWSSDKGoVersion:      awsSDKGo,
+		AWSServiceSDKVersion: awsServiceSDKVersion,
 		ACKGenerateInfo: ackGenerateInfo{
 			Version:   version.Version,
 			BuildDate: version.BuildDate,

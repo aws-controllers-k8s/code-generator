@@ -64,7 +64,8 @@ func saveGeneratedMetadata(cmd *cobra.Command, args []string) error {
 		optGenVersion,
 		filepath.Join(optOutputPath, "apis"),
 		ackmetadata.UpdateReasonAPIGeneration,
-		optAWSSDKGoVersion,
+		sdkVersion,
+		svcSDKVersion,
 		optGeneratorConfigPath,
 	)
 	if err != nil {
