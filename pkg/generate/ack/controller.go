@@ -145,6 +145,15 @@ var (
 		"GoCodeCompare": func(r *ackmodel.CRD, deltaVarName string, sourceVarName string, targetVarName string, indentLevel int) (string, error) {
 			return code.CompareResource(r.Config(), r, deltaVarName, sourceVarName, targetVarName, indentLevel)
 		},
+		"GoCodeSetFieldGroupInput": func(r *ackmodel.CRD, fg *ackmodel.FieldGroupOperation, sourceVarName string, targetVarName string, indentLevel int) (string, error) {
+			return code.SetSDKFieldGroup(r.Config(), r, fg, sourceVarName, targetVarName, indentLevel)
+		},
+		"GoCodeSetFieldGroupOutput": func(r *ackmodel.CRD, fg *ackmodel.FieldGroupOperation, sourceVarName string, targetVarName string, indentLevel int) (string, error) {
+			return code.SetResourceFieldGroup(r.Config(), r, fg, sourceVarName, targetVarName, indentLevel)
+		},
+		"GoCodeFieldGroupDeltaCheck": func(r *ackmodel.CRD, fg *ackmodel.FieldGroupOperation, deltaVarName string) string {
+			return code.FieldGroupDeltaCheck(r.Config(), r, fg, deltaVarName)
+		},
 		"GoCodeIsSynced": func(r *ackmodel.CRD, resVarName string, indentLevel int) (string, error) {
 			return code.ResourceIsSynced(r.Config(), r, resVarName, indentLevel)
 		},

@@ -122,6 +122,18 @@ type ResourceConfig struct {
 	// SDK implementation details that are auto-filled by the SDK middleware
 	// when nil and should not be exposed in the CRD.
 	IgnoreIdempotencyToken bool `json:"ignore_idempotency_token,omitempty"`
+	// UpdateOperations defines per-field-group update API calls. When
+	// present, the generated sdkUpdate becomes an orchestrator that calls
+	// each operation only for its changed fields. When absent, the existing
+	// single-update behavior is preserved.
+	//
+	// Cannot be used together with update_operation.custom_method_name.
+	UpdateOperations []FieldGroupOperationConfig `json:"update_operations,omitempty"`
+	// ReadOperations defines per-field-group read API calls that supplement
+	// the primary ReadOne/ReadMany/GetAttributes operation. Each entry
+	// specifies an additional API call whose output populates a subset of
+	// the resource's fields.
+	ReadOperations []FieldGroupOperationConfig `json:"read_operations,omitempty"`
 }
 
 // TagConfig instructs the code  generator on how to generate functions that
@@ -814,4 +826,48 @@ func (rc *ResourceConfig) GetFieldConfig(subject string) *FieldConfig {
 		}
 	}
 	return nil
+}
+
+// GetUpdateFieldGroupOperations returns the list of per-field-group update
+// operation configs for a given resource, or nil if none are configured.
+func (c *Config) GetUpdateFieldGroupOperations(resourceName string) []FieldGroupOperationConfig {
+	if c == nil {
+		return nil
+	}
+	rConfig, found := c.Resources[resourceName]
+	if !found {
+		return nil
+	}
+	if len(rConfig.UpdateOperations) == 0 {
+		return nil
+	}
+	return rConfig.UpdateOperations
+}
+
+// GetReadFieldGroupOperations returns the list of per-field-group read
+// operation configs for a given resource, or nil if none are configured.
+func (c *Config) GetReadFieldGroupOperations(resourceName string) []FieldGroupOperationConfig {
+	if c == nil {
+		return nil
+	}
+	rConfig, found := c.Resources[resourceName]
+	if !found {
+		return nil
+	}
+	if len(rConfig.ReadOperations) == 0 {
+		return nil
+	}
+	return rConfig.ReadOperations
+}
+
+// HasFieldGroupUpdates returns true if the resource has per-field-group
+// update operations configured.
+func (c *Config) HasFieldGroupUpdates(resourceName string) bool {
+	return len(c.GetUpdateFieldGroupOperations(resourceName)) > 0
+}
+
+// HasFieldGroupReads returns true if the resource has per-field-group
+// read operations configured.
+func (c *Config) HasFieldGroupReads(resourceName string) bool {
+	return len(c.GetReadFieldGroupOperations(resourceName)) > 0
 }
