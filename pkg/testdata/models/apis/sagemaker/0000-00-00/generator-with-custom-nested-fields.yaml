@@ -1,0 +1,112 @@
+resources:
+  Domain:
+    fields:
+      DomainId:
+        is_read_only: true
+        print:
+          name: DOMAIN-ID
+        from:
+          operation: DescribeDomain
+          path: DomainId
+      Status:
+        is_read_only: true
+        print:
+          name: STATUS
+        from:
+          operation: DescribeDomain
+          path: Status
+  DataQualityJobDefinition:
+    exceptions:
+      errors:
+          404:
+            code: ResourceNotFound
+    fields:
+      JobDefinitionArn:
+        is_arn: true
+  TrainingJob:
+    exceptions:
+      errors:
+          404:
+            code: ValidationException
+            message_prefix: Requested resource not found
+  ModelPackageGroup:
+      exceptions:
+        errors:
+            404:
+              code: ValidationException
+              message_suffix: does not exist.
+  Endpoint:
+    reconcile:
+      requeue_on_success_seconds: 10
+  ModelPackage:
+    is_arn_primary_key: true
+  TrialComponent:
+    fields:
+      # Custom nested field injected into a map-of-struct shape
+      InputArtifacts.CustomTag:
+        type: "*string"
+ignore:
+    resource_names:
+      - Algorithm
+      - App
+      - AutoMLJob
+      - Action
+      - AppImageConfig
+      - Artifact
+      - CodeRepository
+      - CompilationJob
+      - Context
+      # - DataQualityJobDefinition
+      - DeviceFleet
+      - EdgePackagingJob
+      - EndpointConfig
+      # - Endpoint
+      - Experiment
+      - FeatureGroup
+      - FlowDefinition
+      - HumanTaskUi
+      - HyperParameterTuningJob
+      - Image
+      - ImageVersion
+      - LabelingJob
+      - Model
+      - ModelBiasJobDefinition
+      - ModelExplainabilityJobDefinition
+      # - ModelPackage
+      # ModelPackageGroup
+      - ModelQualityJobDefinition
+      - MonitoringSchedule
+      - NotebookInstanceLifecycleConfig
+      - NotebookInstance
+      - Pipeline
+      - PresignedDomainUrl
+      - PresignedNotebookInstanceUrl
+      - ProcessingJob
+      - Project
+      # TrainingJob
+      - TransformJob
+      #- TrialComponent
+      - Trial
+      - UserProfile
+      - Workforce
+      - Workteam
+    shape_names:
+      - RSessionAppSettings
+      - TagList
+      - ModelDataSource
+      - DefaultSpaceSettings
+      - CanvasAppSettings
+      - CodeRepositories
+      - ExecutionRoleIdentityConfig
+    field_paths:
+      - CreateDomainInput.TagPropagation
+      - CreateDomainInput.DomainSettings.AmazonQSettings
+      - CreateDomainInput.DefaultUserSettings.JupyterLabAppSettings.AppLifecycleManagement
+      - CreateDomainInput.DefaultUserSettings.JupyterLabAppSettings.BuiltInLifecycleConfigArn
+      - CreateDomainInput.DefaultUserSettings.JupyterLabAppSettings.EmrSettings
+      - CreateDomainInput.DefaultUserSettings.StudioWebPortalSettings
+      - CreateDomainInput.DefaultUserSettings.AutoMountHomeEFS
+      - CreateUserProfileInput.UserSettings.CodeEditorAppSettings.AppLifecycleManagement
+      - CreateUserProfileInput.UserSettings.CodeEditorAppSettings.BuiltInLifecycleConfigArn
+      - CreateUserProfileInput.UserSettings.CodeEditorAppSettings.CustomImages
+      - CreateDomainInput.DefaultUserSettings.JupyterLabAppSettings.EmrSettings
