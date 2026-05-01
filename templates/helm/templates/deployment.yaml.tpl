@@ -104,6 +104,8 @@ spec:
         - "$(FEATURE_GATES)"
 {{ "{{- end }}" }}
         - {{ "--enable-carm={{ .Values.enableCARM }}" }}
+        - {{ "--enable-cross-namespace={{ .Values.enableCrossNamespace }}" }}
+        - {{ "--enable-cross-namespace-references={{ .Values.enableCrossNamespaceReferences }}" }}
         image: {{ "{{ .Values.image.repository }}:{{ .Values.image.tag }}" }}
         imagePullPolicy: {{ "{{ .Values.image.pullPolicy }}" }}
         name: controller

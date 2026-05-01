@@ -180,6 +180,17 @@ leaderElection:
 # Enable Cross Account Resource Management (default = true). Set this to false to disable cross account resource management.
 enableCARM: true
 
+# Enable cross-namespace behavior including resource references, secret references,
+# and field exports (default = true). When false, the controller rejects any operation
+# that crosses namespace boundaries.
+enableCrossNamespace: true
+
+# Enables cross-namespace resolution of AWSResourceReference entries.
+# When false (default), the controller rejects any reference whose
+# Namespace field differs from the namespace of the resource containing
+# the reference.
+enableCrossNamespaceReferences: false
+
 # Configuration for feature gates.  These are optional controller features that
 # can be individually enabled ("true") or disabled ("false") by adding key/value
 # pairs below.
