@@ -15,6 +15,7 @@ import (
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
+	ackrt "github.com/aws-controllers-k8s/runtime/pkg/runtime"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	svcsdk "github.com/aws/aws-sdk-go-v2/service/{{ .ServicePackageName }}"
@@ -39,6 +40,7 @@ var (
 	_ = fmt.Sprintf("")
 	_ = &ackrequeue.NoRequeue{}
 	_ = &aws.Config{}
+	_ = ackrt.ValidateCrossNamespaceReferenceString
 )
 
 // sdkFind returns SDK-specific information about a supplied resource
@@ -336,3 +338,29 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 {{- if $hookCode := Hook .CRD "sdk_file_end" }}
 {{ $hookCode }}
 {{- end }}
+
+// setCrossNamespaceCondition sets the ACK.CrossNamespaceOptInRequired condition
+// on the resource to notify users that their cross-namespace usage will require
+// explicit opt-in in a future release.
+func setCrossNamespaceCondition(ko *svcapitypes.{{ .CRD.Names.Camel }}, message string) {
+	if ko.Status.Conditions == nil {
+		ko.Status.Conditions = []*ackv1alpha1.Condition{}
+	}
+	var crossNsCond *ackv1alpha1.Condition
+	for _, c := range ko.Status.Conditions {
+		if c.Type == ackv1alpha1.ConditionTypeCrossNamespaceOptInRequired {
+			crossNsCond = c
+			break
+		}
+	}
+	if crossNsCond == nil {
+		crossNsCond = &ackv1alpha1.Condition{
+			Type: ackv1alpha1.ConditionTypeCrossNamespaceOptInRequired,
+		}
+		ko.Status.Conditions = append(ko.Status.Conditions, crossNsCond)
+	}
+	now := metav1.Now()
+	crossNsCond.LastTransitionTime = &now
+	crossNsCond.Status = corev1.ConditionTrue
+	crossNsCond.Message = &message
+}
