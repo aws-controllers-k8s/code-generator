@@ -122,6 +122,25 @@ type ResourceConfig struct {
 	// SDK implementation details that are auto-filled by the SDK middleware
 	// when nil and should not be exposed in the CRD.
 	IgnoreIdempotencyToken bool `json:"ignore_idempotency_token,omitempty"`
+	// ManagedFields maps managed-field kind names to their configuration.
+	// Managed fields are internal implementation details that do not expose
+	// a CRD to the user. Each entry generates a separate field manager
+	// package under the parent resource. The key is used verbatim as the
+	// managed field's Kind and as the lookup name throughout the code
+	// generator.
+	//
+	// This map is populated automatically from field-level `manager` configs
+	// during normalization. Users should define managed fields via the
+	// `manager` key on individual fields in generator.yaml rather than
+	// populating this map directly.
+	ManagedFields map[string]*FieldManagerConfig `json:"managed_fields,omitempty"`
+}
+
+// FieldManagerConfig defines a managed field nested under a parent resource.
+// It reuses ResourceConfig fields to configure the generated field manager
+// package (hooks, renames, exceptions, custom operations, etc.).
+type FieldManagerConfig struct {
+	ResourceConfig `json:",inline"`
 }
 
 // TagConfig instructs the code  generator on how to generate functions that
@@ -443,8 +462,8 @@ func (c *Config) ResourceIsAdoptable(resourceName string) bool {
 	if c == nil {
 		return true
 	}
-	rConfig, ok := c.Resources[resourceName]
-	if !ok {
+	rConfig := c.GetResourceConfig(resourceName)
+	if rConfig == nil {
 		return true
 	}
 	if rConfig.IsAdoptable == nil {
@@ -481,8 +500,8 @@ func (c *Config) ResourceDisplaysAgeColumn(resourceName string) bool {
 	if c == nil {
 		return false
 	}
-	rConfig, ok := c.Resources[resourceName]
-	if !ok {
+	rConfig := c.GetResourceConfig(resourceName)
+	if rConfig == nil {
 		return false
 	}
 	if rConfig.Print != nil {
@@ -497,8 +516,8 @@ func (c *Config) ResourceDisplaysSyncedColumn(resourceName string) bool {
 	if c == nil {
 		return false
 	}
-	rConfig, ok := c.Resources[resourceName]
-	if !ok {
+	rConfig := c.GetResourceConfig(resourceName)
+	if rConfig == nil {
 		return false
 	}
 	if rConfig.Print != nil {
@@ -517,15 +536,18 @@ func (c *Config) ResourceSetsSingleAttribute(resourceName string) bool {
 	if c == nil {
 		return false
 	}
-	resGenConfig, found := c.Resources[resourceName]
-	if !found || resGenConfig.UnpackAttributesMapConfig == nil {
+	rConfig := c.GetResourceConfig(resourceName)
+	if rConfig == nil {
 		return false
 	}
-	return resGenConfig.UnpackAttributesMapConfig.SetAttributesSingleAttribute
+	if rConfig.UnpackAttributesMapConfig == nil {
+		return false
+	}
+	return rConfig.UnpackAttributesMapConfig.SetAttributesSingleAttribute
 }
 
 // GetResourceConfig returns the ResourceConfig for a given resource name,
-// searching case-insensitively.
+// searching case-insensitively. Also checks managed fields maps as a fallback.
 func (c *Config) GetResourceConfig(resourceName string) *ResourceConfig {
 	if c == nil {
 		return nil
@@ -534,6 +556,16 @@ func (c *Config) GetResourceConfig(resourceName string) *ResourceConfig {
 	for resName, resCfg := range c.Resources {
 		if strings.EqualFold(resName, resourceName) {
 			return &resCfg
+		}
+	}
+	// Check managed fields
+	for _, rConfig := range c.Resources {
+		if rConfig.ManagedFields != nil {
+			for mfName, mfCfg := range rConfig.ManagedFields {
+				if strings.EqualFold(mfName, resourceName) {
+					return &mfCfg.ResourceConfig
+				}
+			}
 		}
 	}
 	return nil
@@ -545,8 +577,8 @@ func (c *Config) GetCompareIgnoredFieldPaths(resourceName string) []string {
 	if c == nil {
 		return nil
 	}
-	rConfig, ok := c.Resources[resourceName]
-	if !ok {
+	rConfig := c.GetResourceConfig(resourceName)
+	if rConfig == nil {
 		return nil
 	}
 	if rConfig.Compare == nil {
@@ -565,8 +597,8 @@ func (c *Config) GetResourceFieldName(
 	if c == nil {
 		return origFieldName
 	}
-	rConfig, ok := c.Resources[resourceName]
-	if !ok {
+	rConfig := c.GetResourceConfig(resourceName)
+	if rConfig == nil {
 		return origFieldName
 	}
 	if rConfig.Renames == nil {
@@ -598,8 +630,8 @@ func (c *Config) GetOriginalMemberName(
 	if c == nil {
 		return fieldName
 	}
-	rConfig, ok := c.Resources[resourceName]
-	if !ok {
+	rConfig := c.GetResourceConfig(resourceName)
+	if rConfig == nil {
 		return fieldName
 	}
 	if rConfig.Renames == nil {
@@ -627,8 +659,8 @@ func (c *Config) GetResourceShortNames(resourceName string) []string {
 	if c == nil {
 		return nil
 	}
-	rConfig, ok := c.Resources[resourceName]
-	if !ok {
+	rConfig := c.GetResourceConfig(resourceName)
+	if rConfig == nil {
 		return nil
 	}
 	return rConfig.ShortNames
@@ -639,8 +671,8 @@ func (c *Config) GetResourcePrintOrderByName(resourceName string) string {
 	if c == nil {
 		return ""
 	}
-	rConfig, ok := c.Resources[resourceName]
-	if !ok {
+	rConfig := c.GetResourceConfig(resourceName)
+	if rConfig == nil {
 		return ""
 	}
 	if rConfig.Print != nil {
@@ -655,11 +687,11 @@ func (c *Config) GetUpdateConditionsCustomMethodName(resourceName string) string
 	if c == nil {
 		return ""
 	}
-	resGenConfig, found := c.Resources[resourceName]
-	if !found {
+	rConfig := c.GetResourceConfig(resourceName)
+	if rConfig == nil {
 		return ""
 	}
-	return resGenConfig.UpdateConditionsCustomMethodName
+	return rConfig.UpdateConditionsCustomMethodName
 }
 
 // GetReconcileRequeueOnSuccessSeconds returns the duration after which to requeue
@@ -668,15 +700,13 @@ func (c *Config) GetReconcileRequeueOnSuccessSeconds(resourceName string) int {
 	if c == nil {
 		return 0
 	}
-	resGenConfig, found := c.Resources[resourceName]
-	if !found {
+	rConfig := c.GetResourceConfig(resourceName)
+	if rConfig == nil {
 		return 0
 	}
-	reconcile := resGenConfig.Reconcile
-	if reconcile != nil {
-		return reconcile.RequeueOnSuccessSeconds
+	if rConfig.Reconcile != nil {
+		return rConfig.Reconcile.RequeueOnSuccessSeconds
 	}
-	// handles the default case
 	return 0
 }
 
@@ -687,11 +717,12 @@ func (c *Config) GetCustomUpdateMethodName(resourceName string) string {
 	if c == nil {
 		return ""
 	}
-	rConfig, found := c.Resources[resourceName]
-	if found {
-		if rConfig.UpdateOperation != nil {
-			return rConfig.UpdateOperation.CustomMethodName
-		}
+	rConfig := c.GetResourceConfig(resourceName)
+	if rConfig == nil {
+		return ""
+	}
+	if rConfig.UpdateOperation != nil {
+		return rConfig.UpdateOperation.CustomMethodName
 	}
 	return ""
 }
@@ -700,11 +731,12 @@ func (c *Config) GetCustomFindMethodName(resourceName string) string {
 	if c == nil {
 		return ""
 	}
-	rConfig, found := c.Resources[resourceName]
-	if found {
-		if rConfig.ReadOperation != nil {
-			return rConfig.ReadOperation.CustomMethodName
-		}
+	rConfig := c.GetResourceConfig(resourceName)
+	if rConfig == nil {
+		return ""
+	}
+	if rConfig.ReadOperation != nil {
+		return rConfig.ReadOperation.CustomMethodName
 	}
 	return ""
 }
@@ -713,11 +745,12 @@ func (c *Config) GetCustomDeleteMethodName(resourceName string) string {
 	if c == nil {
 		return ""
 	}
-	rConfig, found := c.Resources[resourceName]
-	if found {
-		if rConfig.DeleteOperation != nil {
-			return rConfig.DeleteOperation.CustomMethodName
-		}
+	rConfig := c.GetResourceConfig(resourceName)
+	if rConfig == nil {
+		return ""
+	}
+	if rConfig.DeleteOperation != nil {
+		return rConfig.DeleteOperation.CustomMethodName
 	}
 	return ""
 }
@@ -732,15 +765,15 @@ func (c *Config) GetAllRenames(
 	if c == nil {
 		return renames
 	}
-	resourceConfig, ok := c.Resources[resourceName]
-	if !ok {
+	rConfig := c.GetResourceConfig(resourceName)
+	if rConfig == nil {
 		return renames
 	}
-	if resourceConfig.Renames == nil || resourceConfig.Renames.Operations == nil {
+	if rConfig.Renames == nil || rConfig.Renames.Operations == nil {
 		return renames
 	}
 
-	opRenameConfigs := resourceConfig.Renames.Operations
+	opRenameConfigs := rConfig.Renames.Operations
 	for opName, opRenameConfigs := range opRenameConfigs {
 		for _, op := range operations {
 			if opName != op.ExportedName {
@@ -763,9 +796,12 @@ func (c *Config) GetTerminalExceptionCodes(resourceName string) []string {
 	if c == nil {
 		return nil
 	}
-	resGenConfig, found := c.Resources[resourceName]
-	if found && resGenConfig.Exceptions != nil {
-		return resGenConfig.Exceptions.TerminalCodes
+	rConfig := c.GetResourceConfig(resourceName)
+	if rConfig == nil {
+		return nil
+	}
+	if rConfig.Exceptions != nil {
+		return rConfig.Exceptions.TerminalCodes
 	}
 	return nil
 }
@@ -780,8 +816,8 @@ func (c *Config) GetListOpMatchFieldNames(
 	if c == nil {
 		return res
 	}
-	rConfig, found := c.Resources[resName]
-	if !found {
+	rConfig := c.GetResourceConfig(resName)
+	if rConfig == nil {
 		return res
 	}
 	if rConfig.ListOperation == nil {
@@ -791,11 +827,80 @@ func (c *Config) GetListOpMatchFieldNames(
 }
 
 // TagsAreIgnored returns whether ensuring controller tags should be ignored
-// for a resource or not.
+// for a resource or not. Tags are always ignored for managed fields (they are
+// internal implementation details managed through their parent).
 func (c *Config) TagsAreIgnored(resName string) bool {
+	if c == nil {
+		return false
+	}
+	if c.IsManagedField(resName) {
+		return true
+	}
+	rConfig := c.GetResourceConfig(resName)
+	if rConfig == nil {
+		return false
+	}
+	if rConfig.TagConfig != nil {
+		return rConfig.TagConfig.Ignore
+	}
+	return false
+}
+
+// GetManagedFields returns the managed fields map for the given parent
+// resource name, or nil when absent. Nil-safe: returns nil when receiver is nil.
+func (c *Config) GetManagedFields(resName string) map[string]*FieldManagerConfig {
+	if c == nil {
+		return nil
+	}
 	if rConfig, found := c.Resources[resName]; found {
-		if tagConfig := rConfig.TagConfig; tagConfig != nil {
-			return tagConfig.Ignore
+		return rConfig.ManagedFields
+	}
+	return nil
+}
+
+// GetFieldManagerConfig returns the specific FieldManagerConfig for a
+// managed field under a given parent, or nil when absent. Nil-safe: returns
+// nil when receiver is nil.
+func (c *Config) GetFieldManagerConfig(parentName, fieldName string) *FieldManagerConfig {
+	if c == nil {
+		return nil
+	}
+	if rConfig, found := c.Resources[parentName]; found {
+		if rConfig.ManagedFields != nil {
+			return rConfig.ManagedFields[fieldName]
+		}
+	}
+	return nil
+}
+
+// GetParentResourceName searches all resources' managed fields maps and
+// returns the parent resource name for the given managed field name, or empty
+// string when not found. Nil-safe: returns "" when receiver is nil.
+func (c *Config) GetParentResourceName(fieldName string) string {
+	if c == nil {
+		return ""
+	}
+	for resName, rConfig := range c.Resources {
+		if rConfig.ManagedFields != nil {
+			if _, found := rConfig.ManagedFields[fieldName]; found {
+				return resName
+			}
+		}
+	}
+	return ""
+}
+
+// IsManagedField returns true if the given resource name appears in any
+// parent's managed fields map. Nil-safe: returns false when receiver is nil.
+func (c *Config) IsManagedField(resName string) bool {
+	if c == nil {
+		return false
+	}
+	for _, rConfig := range c.Resources {
+		if rConfig.ManagedFields != nil {
+			if _, found := rConfig.ManagedFields[resName]; found {
+				return true
+			}
 		}
 	}
 	return false
@@ -814,4 +919,260 @@ func (rc *ResourceConfig) GetFieldConfig(subject string) *FieldConfig {
 		}
 	}
 	return nil
+}
+
+// InferManagedFieldOperations scans all resources' managed fields and, for
+// each one, attempts to find matching API operations in the SDK using naming
+// conventions. When a match is found and no explicit operations entry already
+// exists, it populates cfg.Operations with the inferred binding.
+//
+// Naming conventions tried (for parent "Foo" and managed field "Bar"):
+//
+//	Create: Put{Foo}{Bar}, Create{Foo}{Bar}, Set{Foo}{Bar}
+//	Delete: Delete{Foo}{Bar}, Remove{Foo}{Bar}
+//	Get:    Get{Foo}{Bar}, Describe{Foo}{Bar}
+//
+// This method is idempotent — explicit entries in cfg.Operations are never
+// overwritten.
+func (c *Config) InferManagedFieldOperations(sdkOperations map[string]struct{}) {
+	if c == nil {
+		return
+	}
+	if c.Operations == nil {
+		c.Operations = make(map[string]OperationConfig)
+	}
+
+	for parentName, resCfg := range c.Resources {
+		if len(resCfg.ManagedFields) == 0 {
+			continue
+		}
+		for mfName := range resCfg.ManagedFields {
+			c.inferManagedFieldOps(parentName, mfName, sdkOperations)
+		}
+	}
+}
+
+// inferManagedFieldOps infers create, delete, and get operation bindings for a
+// single managed field by probing the SDK operation set with common naming
+// patterns.
+func (c *Config) inferManagedFieldOps(parentName, fieldName string, sdkOps map[string]struct{}) {
+	suffix := parentName + fieldName
+
+	// Create operation candidates (order = preference)
+	createPrefixes := []string{"Put", "Create", "Set"}
+	for _, prefix := range createPrefixes {
+		candidate := prefix + suffix
+		if _, exists := sdkOps[candidate]; exists {
+			if !c.hasOperationBinding(candidate) {
+				c.Operations[candidate] = OperationConfig{
+					ResourceName:  StringArray{fieldName},
+					OperationType: StringArray{"create"},
+				}
+			}
+			break
+		}
+	}
+
+	// Delete operation candidates
+	deletePrefixes := []string{"Delete", "Remove"}
+	for _, prefix := range deletePrefixes {
+		candidate := prefix + suffix
+		if _, exists := sdkOps[candidate]; exists {
+			if !c.hasOperationBinding(candidate) {
+				c.Operations[candidate] = OperationConfig{
+					ResourceName:  StringArray{fieldName},
+					OperationType: StringArray{"delete"},
+				}
+			}
+			break
+		}
+	}
+
+	// Get operation candidates
+	getPrefixes := []string{"Get", "Describe"}
+	for _, prefix := range getPrefixes {
+		candidate := prefix + suffix
+		if _, exists := sdkOps[candidate]; exists {
+			if !c.hasOperationBinding(candidate) {
+				c.Operations[candidate] = OperationConfig{
+					ResourceName:  StringArray{fieldName},
+					OperationType: StringArray{"get"},
+				}
+			}
+			break
+		}
+	}
+}
+
+// hasOperationBinding returns true if the given operation ID already has an
+// entry in cfg.Operations with both resource_name and operation_type set.
+func (c *Config) hasOperationBinding(opID string) bool {
+	opCfg, exists := c.Operations[opID]
+	if !exists {
+		return false
+	}
+	return len(opCfg.ResourceName) > 0 && len(opCfg.OperationType) > 0
+}
+
+// InferManagedFieldPrimaryKeys examines each managed field and, if it does
+// not already have an explicit is_primary_key field, injects one derived from
+// the parent's primary key. The injected field carries:
+//
+//   - is_primary_key: true
+//   - go_tag: json:"-"          (hidden from JSON — value is copied from parent)
+//   - compare.is_ignored: true  (prevents spurious drift detection)
+//
+// The original SDK field name is resolved by reverse-looking up the parent's
+// renames. For example, if the parent BackupVault renames BackupVaultName →
+// Name, the managed field gets a field config keyed "BackupVaultName".
+//
+// When no explicit is_primary_key is set on the parent, the heuristic falls
+// back to {ParentName}Name and {ParentName}Id patterns.
+func (c *Config) InferManagedFieldPrimaryKeys() {
+	if c == nil {
+		return
+	}
+	for parentName, resCfg := range c.Resources {
+		if len(resCfg.ManagedFields) == 0 {
+			continue
+		}
+		for _, mfCfg := range resCfg.ManagedFields {
+			if mfCfg == nil {
+				continue
+			}
+			if managedFieldHasExplicitPrimaryKey(mfCfg) {
+				continue
+			}
+			origName := resolveParentPrimaryKeyOriginalName(parentName, &resCfg)
+			if origName == "" {
+				continue
+			}
+			injectManagedFieldPrimaryKey(mfCfg, origName)
+		}
+	}
+}
+
+// managedFieldHasExplicitPrimaryKey returns true if the managed field already
+// has a field with is_primary_key: true.
+func managedFieldHasExplicitPrimaryKey(mfCfg *FieldManagerConfig) bool {
+	for _, fc := range mfCfg.Fields {
+		if fc != nil && fc.IsPrimaryKey {
+			return true
+		}
+	}
+	return false
+}
+
+// resolveParentPrimaryKeyOriginalName determines the original SDK field name
+// for the parent resource's primary key. It first checks for an explicit
+// is_primary_key field and reverse-looks up renames to find the original name.
+// If no explicit primary key is configured, it falls back to common naming
+// patterns: {ParentName}Name, {ParentName}Id.
+func resolveParentPrimaryKeyOriginalName(parentName string, resCfg *ResourceConfig) string {
+	// 1. Look for an explicit is_primary_key field
+	var pkFieldName string
+	for fieldName, fc := range resCfg.Fields {
+		if fc != nil && fc.IsPrimaryKey {
+			pkFieldName = fieldName
+			break
+		}
+	}
+
+	if pkFieldName != "" {
+		// Reverse-lookup the original SDK name through renames
+		if resCfg.Renames != nil && resCfg.Renames.Operations != nil {
+			for _, opRenames := range resCfg.Renames.Operations {
+				for origName, renamedTo := range opRenames.InputFields {
+					if renamedTo == pkFieldName {
+						return origName
+					}
+				}
+			}
+		}
+		// No rename found — the field name IS the original SDK name
+		return pkFieldName
+	}
+
+	// 2. Heuristic fallback: common patterns
+	candidates := []string{
+		parentName + "Name",
+		parentName + "Id",
+	}
+	for _, candidate := range candidates {
+		// Check if this candidate appears as a renamed field on the parent
+		if resCfg.Renames != nil && resCfg.Renames.Operations != nil {
+			for _, opRenames := range resCfg.Renames.Operations {
+				for origName := range opRenames.InputFields {
+					if origName == candidate {
+						return candidate
+					}
+				}
+			}
+		}
+		// Also check if it's directly in the parent's fields (unrenamed)
+		for fieldName := range resCfg.Fields {
+			if strings.EqualFold(fieldName, candidate) {
+				return candidate
+			}
+		}
+	}
+
+	return ""
+}
+
+// injectManagedFieldPrimaryKey adds the primary key field config to the
+// managed field with the standard settings for a parent-derived primary key.
+func injectManagedFieldPrimaryKey(mfCfg *FieldManagerConfig, origFieldName string) {
+	if mfCfg.Fields == nil {
+		mfCfg.Fields = make(map[string]*FieldConfig)
+	}
+	goTag := `json:"-"`
+	mfCfg.Fields[origFieldName] = &FieldConfig{
+		IsPrimaryKey: true,
+		GoTag:        &goTag,
+		Compare: &CompareFieldConfig{
+			IsIgnored: true,
+		},
+	}
+}
+
+// NormalizeManagedFields walks all resources and promotes field-level
+// `manager` configs into the resource's ManagedFields map. This allows users
+// to define managed fields inline:
+//
+//	resources:
+//	  BackupVault:
+//	    fields:
+//	      AccessPolicy:
+//	        manager:
+//	          hooks: ...
+//
+// After normalization, the above is equivalent to:
+//
+//	resources:
+//	  BackupVault:
+//	    managed_fields:
+//	      AccessPolicy:
+//	        hooks: ...
+//
+// This method is idempotent and should be called before any code generation.
+func (c *Config) NormalizeManagedFields() {
+	if c == nil {
+		return
+	}
+	for resName, resCfg := range c.Resources {
+		for fieldName, fc := range resCfg.Fields {
+			if fc == nil || fc.Manager == nil {
+				continue
+			}
+			if resCfg.ManagedFields == nil {
+				resCfg.ManagedFields = make(map[string]*FieldManagerConfig)
+			}
+			resCfg.ManagedFields[fieldName] = fc.Manager
+			// Remove the field from the parent's Fields map — it will be
+			// re-injected as a synthesized spec field during model building.
+			delete(resCfg.Fields, fieldName)
+		}
+		c.Resources[resName] = resCfg
+	}
 }

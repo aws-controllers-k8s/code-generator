@@ -40,6 +40,9 @@ var (
 	apisCopyPaths = []string{}
 	apisFuncMap   = ttpl.FuncMap{
 		"Join": strings.Join,
+		"IsManagedField": func(r *ackmodel.CRD) bool {
+			return r.Config().IsManagedField(r.Names.Original)
+		},
 	}
 )
 

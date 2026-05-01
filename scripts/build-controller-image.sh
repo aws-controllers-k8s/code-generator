@@ -106,6 +106,7 @@ fi
 
 if ! docker build \
   --quiet="${QUIET}" \
+  --network=host \
   -t "${AWS_SERVICE_DOCKER_IMG}" \
   -f "${DOCKERFILE}" \
   --build-arg service_alias="${AWS_SERVICE}" \

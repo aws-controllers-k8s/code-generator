@@ -492,6 +492,15 @@ type FieldConfig struct {
 	//
 	// (See https://github.com/aws-controllers-k8s/pkg/blob/main/names/names.go)
 	GoTag *string `json:"go_tag,omitempty"`
+	// Manager, when set, instructs the code generator to create a separate
+	// field manager package for this field. The field becomes a managed field
+	// whose lifecycle (create/update/delete) is handled by dedicated API
+	// operations rather than the parent resource's CRUD operations.
+	//
+	// The FieldManagerConfig embedded here carries the same configuration
+	// options as a top-level resource (hooks, renames, exceptions, fields,
+	// find_operation, etc.) scoped to the managed field's own operations.
+	Manager *FieldManagerConfig `json:"manager,omitempty"`
 }
 
 // GetFieldConfigs returns all FieldConfigs for a given resource as a map.
@@ -500,11 +509,11 @@ func (c *Config) GetFieldConfigs(resourceName string) map[string]*FieldConfig {
 	if c == nil {
 		return map[string]*FieldConfig{}
 	}
-	resourceConfig, ok := c.Resources[resourceName]
-	if !ok {
+	rConfig := c.GetResourceConfig(resourceName)
+	if rConfig == nil {
 		return map[string]*FieldConfig{}
 	}
-	return resourceConfig.Fields
+	return rConfig.Fields
 }
 
 // GetFieldConfigByPath returns the FieldConfig provided a resource and path to associated field.

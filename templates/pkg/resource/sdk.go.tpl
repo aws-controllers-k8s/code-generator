@@ -24,6 +24,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	svcapitypes "github.com/aws-controllers-k8s/{{.ControllerName }}-controller/apis/{{ .APIVersion }}"
+{{- $mfInfos := FieldManagerInfos .CRD }}
+{{- range $info := $mfInfos }}
+	{{ $info.PackageName }} "github.com/aws-controllers-k8s/{{ $.ControllerName }}-controller/pkg/resource/{{ $.CRD.Names.Snake }}/{{ $info.PackageName }}"
+{{- end }}
 )
 
 // Hack to avoid import errors during build...
@@ -38,6 +42,10 @@ var (
 	_ = &reflect.Value{}
 	_ = fmt.Sprintf("")
 	_ = &ackrequeue.NoRequeue{}
+{{- $mfInfos := FieldManagerInfos .CRD }}
+{{- range $info := $mfInfos }}
+	_ = {{ $info.PackageName }}.NewManager
+{{- end }}
 	_ = &aws.Config{}
 )
 
@@ -111,6 +119,7 @@ func (rm *resourceManager) sdkCreate(
 {{- if $hookCode := Hook .CRD "sdk_create_post_set_output" }}
 {{ $hookCode }}
 {{- end }}
+{{ template "sdk_create_field_manager_requeue" . }}
 	return &resource{ko}, nil
 }
 
@@ -154,6 +163,7 @@ func (rm *resourceManager) sdkDelete(
 {{- if $hookCode := Hook .CRD "sdk_delete_pre_build_request" }}
 {{ $hookCode }}
 {{- end }}
+{{ template "sdk_delete_field_manager_sync" . }}
 {{- if $customMethod := .CRD.GetCustomImplementation .CRD.Ops.Delete }}
 	if err = rm.{{ $customMethod }}(ctx, r); err != nil {
 		return nil, err

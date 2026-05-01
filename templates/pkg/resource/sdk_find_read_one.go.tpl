@@ -59,6 +59,7 @@ func (rm *resourceManager) sdkFind(
 {{- if $hookCode := Hook .CRD "sdk_read_one_post_set_output" }}
 {{ $hookCode }}
 {{- end }}
+{{ template "sdk_find_field_manager_get" . }}
 	return &resource{ko}, nil
 }
 

@@ -1378,7 +1378,13 @@ func setSDKForSlice(
 	}
 	if targetShape.MemberRef.Shape.IsEnum() {
 		out += fmt.Sprintf("%s\t%s = string(*%s)\n", indent, elemVarName, iterVarName)
-		elemVarName = fmt.Sprintf("svcsdktypes.%s(%s)", targetShape.MemberRef.ShapeName, elemVarName)
+		// Use OriginalShapeName if available to avoid stutter-removal stripping
+		// the type prefix (e.g. "BackupVaultEvent" → "VaultEvent").
+		memberShapeName := targetShape.MemberRef.ShapeName
+		if targetShape.MemberRef.Shape.OriginalShapeName != "" {
+			memberShapeName = targetShape.MemberRef.Shape.OriginalShapeName
+		}
+		elemVarName = fmt.Sprintf("svcsdktypes.%s(%s)", memberShapeName, elemVarName)
 	} else {
 		containerOut, err := setSDKForContainer(
 			cfg, r,

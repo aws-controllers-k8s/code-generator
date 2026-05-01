@@ -14,6 +14,7 @@
 package ack
 
 import (
+	"fmt"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -28,6 +29,7 @@ import (
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
+	"github.com/aws-controllers-k8s/pkg/names"
 )
 
 var (
@@ -58,12 +60,57 @@ var (
 		"pkg/resource/sdk_update_custom.go.tpl",
 		"pkg/resource/sdk_update_set_attributes.go.tpl",
 		"pkg/resource/sdk_update_not_implemented.go.tpl",
+		"pkg/resource/sdk_update_field_manager_sync.go.tpl",
+		"pkg/resource/sdk_delete_field_manager_sync.go.tpl",
+		"pkg/resource/sdk_find_field_manager_get.go.tpl",
+		"pkg/resource/sdk_create_field_manager_requeue.go.tpl",
+		"pkg/resource/field_manager_singleton.go.tpl",
 	}
 	controllerCopyPaths = []string{}
 	controllerFuncMap   = ttpl.FuncMap{
 		"ToLower": strings.ToLower,
 		"TrimPrefix": func(s string, prefix string) string {
 			return strings.TrimPrefix(s, prefix)
+		},
+		"HasPrefix": func(s string, prefix string) bool {
+			return strings.HasPrefix(s, prefix)
+		},
+		// ManagedFieldPrimaryKeyField returns the camel-cased name of the
+		// field marked is_primary_key on the managed field CRD. Used by the
+		// key() function in the generated manager.
+		"ManagedFieldPrimaryKeyField": func(r *ackmodel.CRD) (string, error) {
+			f, err := r.GetPrimaryKeyField()
+			if err != nil {
+				return "", fmt.Errorf("managed field %s: %w", r.Names.Original, err)
+			}
+			if f == nil {
+				return "", fmt.Errorf("managed field %s has no is_primary_key field", r.Names.Original)
+			}
+			return f.Names.Camel, nil
+		},
+		"IsManagedField": func(r *ackmodel.CRD) bool {
+			return r.Config().IsManagedField(r.Names.Original)
+		},
+		// FieldManagerInfos returns a slice of FieldManagerInfo for each
+		// managed field defined under the given CRD. Returns nil if the CRD
+		// has no managed fields.
+		"FieldManagerInfos": func(r *ackmodel.CRD) []FieldManagerInfo {
+			managedFields := r.Config().GetManagedFields(r.Names.Original)
+			if len(managedFields) == 0 {
+				return nil
+			}
+			var infos []FieldManagerInfo
+			for mfName, mfCfg := range managedFields {
+				if mfCfg == nil {
+					continue
+				}
+				snakeName := names.New(mfName).Snake
+				infos = append(infos, FieldManagerInfo{
+					FieldPath:   "Spec." + mfName,
+					PackageName: snakeName,
+				})
+			}
+			return infos
 		},
 		"Dereference": func(s *string) string {
 			return *s
@@ -234,6 +281,74 @@ func Controller(
 	tplStart := time.Now()
 	metaVars := m.MetaVars()
 
+	// Build a lookup of CRDs by name so ParentKind/ParentPrimaryKeyAssign
+	// can resolve the parent CRD.
+	crdsByName := make(map[string]*ackmodel.CRD, len(crds))
+	for _, crd := range crds {
+		crdsByName[crd.Names.Original] = crd
+	}
+
+	// ParentKind returns the Go Kind name of the parent CRD for a
+	// managed field (e.g. "BackupVault" for "AccessPolicy").
+	controllerFuncMap["ParentKind"] = func(r *ackmodel.CRD) (string, error) {
+		parentName := r.Config().GetParentResourceName(r.Names.Original)
+		if parentName == "" {
+			return "", fmt.Errorf("ParentKind: no parent resource for %s", r.Names.Original)
+		}
+		parentCRD, ok := crdsByName[parentName]
+		if !ok {
+			return "", fmt.Errorf("ParentKind: parent CRD %s not found", parentName)
+		}
+		return parentCRD.Kind, nil
+	}
+
+	// ManagedFieldPath returns the dotted Spec path on the parent that
+	// holds this managed field's injected Spec (always "Spec.<FieldName>").
+	controllerFuncMap["ManagedFieldPath"] = func(r *ackmodel.CRD) string {
+		return "Spec." + r.Names.Original
+	}
+
+	// ParentPrimaryKeyAssign emits the Go assignment that copies the
+	// parent's primary key into the managed field's primary key field.
+	// Registered here (not in the static map) because it needs crdsByName.
+	//
+	// Special case: if the managed field's primary key field name contains
+	// "arn" (case-insensitive), the value is sourced from the parent's
+	// Status.ACKResourceMetadata.ARN rather than from the parent's spec
+	// primary key. This handles operations like TagResource/UntagResource
+	// that identify resources by ARN rather than by name.
+	controllerFuncMap["ParentPrimaryKeyAssign"] = func(r *ackmodel.CRD, parentKind string, koVar string) (string, error) {
+		subPK, err := r.GetPrimaryKeyField()
+		if err != nil {
+			return "", fmt.Errorf("sub-resource %s: %w", r.Names.Original, err)
+		}
+		if subPK == nil {
+			return "", fmt.Errorf("sub-resource %s has no is_primary_key field", r.Names.Original)
+		}
+		// If the sub-resource PK field name contains "arn", source the value
+		// from the parent's Status.ACKResourceMetadata.ARN.
+		if strings.Contains(strings.ToLower(subPK.Names.Original), "arn") {
+			return fmt.Sprintf(
+				"\tif parent.Status.ACKResourceMetadata != nil && parent.Status.ACKResourceMetadata.ARN != nil {\n"+
+					"\t\tarn := string(*parent.Status.ACKResourceMetadata.ARN)\n"+
+					"\t\t%s.Spec.%s = &arn\n"+
+					"\t}",
+				koVar, subPK.Names.Camel), nil
+		}
+		parentCRD, ok := crdsByName[parentKind]
+		if !ok {
+			return "", fmt.Errorf("ParentPrimaryKeyAssign: parent CRD %s not found", parentKind)
+		}
+		parentPK, err := parentCRD.GetPrimaryKeyField()
+		if err != nil {
+			return "", fmt.Errorf("parent %s: %w", parentKind, err)
+		}
+		if parentPK == nil {
+			return "", fmt.Errorf("parent %s has no is_primary_key field", parentKind)
+		}
+		return fmt.Sprintf("\t%s.Spec.%s = parent.Spec.%s", koVar, subPK.Names.Camel, parentPK.Names.Camel), nil
+	}
+
 	// Hook code can reference a template path, and we can look up the template
 	// in any of our base paths...
 	controllerFuncMap["Hook"] = func(r *ackmodel.CRD, hookID string) (string, error) {
@@ -269,13 +384,44 @@ func Controller(
 		"tags.go.tpl",
 	}
 	for _, crd := range crds {
+		isManagedField := crd.Config().IsManagedField(crd.Names.Original)
+
+		// Determine output base path: managed fields nest under parent
+		var outBase string
+		if isManagedField {
+			parentName := crd.Config().GetParentResourceName(crd.Names.Original)
+			parentSnake := names.New(parentName).Snake
+			outBase = filepath.Join("pkg/resource", parentSnake, crd.Names.Snake)
+		} else {
+			outBase = filepath.Join("pkg/resource", crd.Names.Snake)
+		}
+
 		for _, target := range targets {
 			// skip adding "tags.go.tpl" file if tagging is ignored for a crd
 			if target == "tags.go.tpl" && crd.Config().TagsAreIgnored(crd.Names.Original) {
 				continue
 			}
-			outPath := filepath.Join("pkg/resource", crd.Names.Snake, strings.TrimSuffix(target, ".tpl"))
+			// Managed fields only need delta.go and sdk.go — the resource
+			// struct, resourceManager, and all other scaffolding are
+			// generated directly in the field manager file.
+			if isManagedField && target != "delta.go.tpl" && target != "sdk.go.tpl" {
+				continue
+			}
+			outPath := filepath.Join(outBase, strings.TrimSuffix(target, ".tpl"))
 			tplPath := filepath.Join("pkg/resource", target)
+			crdVars := &templateCRDVars{
+				metaVars,
+				m.SDKAPI,
+				crd,
+			}
+			if err = ts.Add(outPath, tplPath, crdVars); err != nil {
+				return nil, err
+			}
+		}
+		// Generate manager.go for all managed fields
+		if isManagedField {
+			outPath := filepath.Join(outBase, "manager.go")
+			tplPath := filepath.Join("pkg/resource", "field_manager.go.tpl")
 			crdVars := &templateCRDVars{
 				metaVars,
 				m.SDKAPI,
@@ -306,6 +452,11 @@ func Controller(
 	// using Map to implement the Set
 	referencedServiceNamesMap := make(map[string]struct{})
 	for _, crd := range crds {
+		// Exclude managed field packages from main.go imports — they are
+		// imported by the parent resource's hooks, not by the main controller.
+		if crd.Config().IsManagedField(crd.Names.Original) {
+			continue
+		}
 		snakeCasedCRDNames = append(snakeCasedCRDNames, crd.Names.Snake)
 		for _, serviceName := range crd.ReferencedServiceNames() {
 			referencedServiceNamesMap[serviceName] = struct{}{}
@@ -354,4 +505,14 @@ type templateConfigVars struct {
 	templateset.MetaVars
 	GeneratorConfig    *ackgenconfig.Config
 	ServiceAccountName string
+}
+
+// FieldManagerInfo holds the information needed by templates to generate
+// field manager sync code in the parent resource's sdkUpdate function.
+type FieldManagerInfo struct {
+	// FieldPath is the parent spec field path (e.g. "Spec.Policies")
+	FieldPath string
+	// PackageName is the snake_case package name for the sub-resource manager
+	// (e.g. "role_policies")
+	PackageName string
 }

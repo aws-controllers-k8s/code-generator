@@ -62,6 +62,13 @@ type Field struct {
 	// MemberFields is a map, keyed by the *renamed, cleaned, camel-cased name* of
 	// member fields when this Field is a struct type.
 	MemberFields map[string]*Field
+
+	// IsManagedFieldSpec marks a Field that was synthesized by the code
+	// generator to expose a managed field's Spec struct on the parent
+	// resource. The Field's ShapeRef is a hand-built, memberless shape
+	// carrying only the source cardinality (structure/list/map), and
+	// downstream field-processing walks should skip it.
+	IsManagedFieldSpec bool
 }
 
 // GetDocumentation returns a string containing the field's

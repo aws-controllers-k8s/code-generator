@@ -22,7 +22,7 @@ ARG build_date
 # service controller code.
 ARG work_dir=/github.com/aws-controllers-k8s/$service_alias-controller
 WORKDIR $work_dir
-ENV GOPROXY=https://proxy.golang.org|direct
+ENV GOPROXY=direct
 ENV GO111MODULE=on
 ENV GOARCH=$target_arch
 ENV GOOS=linux
@@ -36,14 +36,18 @@ COPY $service_alias-controller/go.mod $work_dir/go.mod
 COPY $service_alias-controller/go.sum $work_dir/go.sum
 # cache deps before building and copying source so that we don't need to re-download as much
 # and so that source changes don't invalidate our downloaded layer
-RUN go mod download
+RUN --mount=type=cache,target=/go/pkg/mod \
+    for i in 1 2 3 4 5; do \
+      go mod download && break || \
+      echo "Attempt $i failed, retrying in 10s..." && sleep 10; \
+    done
 
 # Now copy the go source code for the controller...
 COPY $service_alias-controller/apis $work_dir/apis
 COPY $service_alias-controller/cmd $work_dir/cmd
 COPY $service_alias-controller/pkg $work_dir/pkg
 # Build
-RUN GIT_VERSION=$service_controller_git_version && \
+RUN --mount=type=cache,target=/go/pkg/mod GIT_VERSION=$service_controller_git_version && \
     GIT_COMMIT=$service_controller_git_commit && \
     BUILD_DATE=$build_date && \
     go build -ldflags="-X ${VERSION_PKG}.GitVersion=${GIT_VERSION} \

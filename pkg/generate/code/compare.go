@@ -189,6 +189,23 @@ func CompareResource(
 		case "blob":
 			// We already handled the case of blobs above, so we can skip it here.
 		case "structure":
+			// For sub-resource spec fields (synthetic injected types), delegate
+			// to the sub-resource package's NewSpecDelta instead of recursing
+			// into the struct — the struct has no SDK shape members so
+			// CompareStruct would produce an empty block.
+			if specField.IsManagedFieldSpec {
+				subPkgName := names.New(specField.Names.Original).Snake
+				out += fmt.Sprintf(
+					"%s\tif len(%s.NewSpecDelta(%s, %s).Differences) > 0 {\n",
+					indent, subPkgName, firstResAdaptedVarName, secondResAdaptedVarName,
+				)
+				out += fmt.Sprintf(
+					"%s\t\t%s.Add(\"%s\", %s, %s)\n",
+					indent, deltaVarName, fieldPath, firstResAdaptedVarName, secondResAdaptedVarName,
+				)
+				out += fmt.Sprintf("%s\t}\n", indent)
+				break
+			}
 			// Recurse through all the struct's fields and subfields, building
 			// nested conditionals and calls to `delta.Add()`...
 			structOut, err := CompareStruct(

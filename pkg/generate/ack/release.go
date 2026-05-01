@@ -117,6 +117,11 @@ func Release(
 
 	reconcileResources := make([]string, 0)
 	for _, crd := range crds {
+		// Managed fields are internal implementation details — exclude from
+		// Helm values reconcile list and all user-facing release artifacts.
+		if crd.Config().IsManagedField(crd.Names.Original) {
+			continue
+		}
 		reconcileResources = append(reconcileResources, crd.Kind)
 	}
 

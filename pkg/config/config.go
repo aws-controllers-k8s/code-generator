@@ -129,12 +129,14 @@ func (c *Config) GetAdditionalColumns(resourceName string) []*AdditionalColumnCo
 	if c == nil {
 		return nil
 	}
-
-	resourceConfig, ok := c.Resources[resourceName]
-	if !ok || resourceConfig.Print == nil || len(resourceConfig.Print.AdditionalColumns) == 0 {
+	rConfig := c.GetResourceConfig(resourceName)
+	if rConfig == nil {
 		return nil
 	}
-	return resourceConfig.Print.AdditionalColumns
+	if rConfig.Print == nil || len(rConfig.Print.AdditionalColumns) == 0 {
+		return nil
+	}
+	return rConfig.Print.AdditionalColumns
 }
 
 // GetCustomListFieldMembers finds all of the custom list fields that need to

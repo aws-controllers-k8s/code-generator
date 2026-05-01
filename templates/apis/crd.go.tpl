@@ -11,7 +11,9 @@ import (
 
 {{- end }}
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
+{{- if not (IsManagedField .CRD) }}
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+{{- end }}
 )
 
 {{ .CRD.Documentation }}
@@ -58,6 +60,7 @@ type {{ .CRD.Kind }}Status struct {
 }
 
 // {{ .CRD.Kind }} is the Schema for the {{ .CRD.Plural }} API
+{{- if not (IsManagedField .CRD) }}
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 {{- range $column := .CRD.AdditionalPrinterColumns }}
@@ -72,13 +75,17 @@ type {{ .CRD.Kind }}Status struct {
 {{- if .CRD.ShortNames }}
 // +kubebuilder:resource:shortName={{ Join .CRD.ShortNames ";" }}
 {{- end }}
+{{- end }}
 type {{ .CRD.Kind }} struct {
+{{- if not (IsManagedField .CRD) }}
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
+{{- end }}
 	Spec   {{ .CRD.Kind }}Spec   `json:"spec,omitempty"`
 	Status {{ .CRD.Kind }}Status `json:"status,omitempty"`
 }
 
+{{- if not (IsManagedField .CRD) }}
 // {{ .CRD.Kind }}List contains a list of {{ .CRD.Kind }}
 // +kubebuilder:object:root=true
 type {{ .CRD.Kind }}List struct {
@@ -90,3 +97,4 @@ type {{ .CRD.Kind }}List struct {
 func init() {
 	SchemeBuilder.Register(&{{ .CRD.Kind }}{}, &{{ .CRD.Kind }}List{})
 }
+{{- end }}

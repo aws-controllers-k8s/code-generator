@@ -83,6 +83,25 @@ func (a *SDKAPI) GetOperationMap(cfg *ackgenconfig.Config) (*OperationMap, error
 	if a.opMap != nil {
 		return a.opMap, nil
 	}
+
+	// Normalize field-level manager configs into the ManagedFields map
+	// before any inference runs.
+	cfg.NormalizeManagedFields()
+
+	// Auto-infer operation bindings for managed fields before building the
+	// operation map. This populates cfg.Operations entries for managed field
+	// CRUD operations that match SDK naming conventions, so the rest of the
+	// mapping logic picks them up naturally.
+	sdkOps := make(map[string]struct{}, len(a.API.Operations))
+	for opName := range a.API.Operations {
+		sdkOps[opName] = struct{}{}
+	}
+	cfg.InferManagedFieldOperations(sdkOps)
+
+	// Auto-infer primary key fields for managed fields from their parent's
+	// primary key. This avoids repetitive boilerplate in generator.yaml.
+	cfg.InferManagedFieldPrimaryKeys()
+
 	// create an index of Operations by operation types and resource name
 	opMap := OperationMap{}
 	opIDs := make([]string, 0, len(a.API.Operations))
@@ -283,6 +302,11 @@ func (a *SDKAPI) CRDNames(cfg *ackgenconfig.Config) []names.Names {
 	crdNames := []names.Names{}
 	for _, crdName := range crdNameKeys {
 		if cfg.ResourceIsIgnored(crdName) {
+			continue
+		}
+		// Managed fields are internal implementation details and should not
+		// appear in user-facing CRD type definitions.
+		if cfg.IsManagedField(crdName) {
 			continue
 		}
 		crdNames = append(crdNames, names.New(crdName))
