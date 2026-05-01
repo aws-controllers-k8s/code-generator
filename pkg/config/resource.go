@@ -954,52 +954,57 @@ func (c *Config) InferManagedFieldOperations(sdkOperations map[string]struct{}) 
 
 // inferManagedFieldOps infers create, delete, and get operation bindings for a
 // single managed field by probing the SDK operation set with common naming
-// patterns.
+// patterns. For each operation type, it tries suffixes in preference order:
+//
+//  1. {Parent}{Field}       e.g. BackupVaultLockConfiguration
+//  2. {Field}               e.g. LockConfiguration
+//  3. {Parent}{Singular}    e.g. BackupVaultTag
+//  4. {Singular}            e.g. Tag
+//  5. Resource              for generic ops like TagResource/UntagResource
 func (c *Config) inferManagedFieldOps(parentName, fieldName string, sdkOps map[string]struct{}) {
-	suffix := parentName + fieldName
+	withParent := parentName + fieldName
+	withoutParent := fieldName
+
+	suffixes := []string{withParent}
+	if withoutParent != withParent {
+		suffixes = append(suffixes, withoutParent)
+	}
+	singularField := strings.TrimSuffix(fieldName, "s")
+	if singularField != fieldName {
+		suffixes = append(suffixes, parentName+singularField, singularField)
+	}
+	// Generic "Resource" suffix for operations like TagResource/UntagResource
+	suffixes = append(suffixes, "Resource")
 
 	// Create operation candidates (order = preference)
-	createPrefixes := []string{"Put", "Create", "Set"}
-	for _, prefix := range createPrefixes {
-		candidate := prefix + suffix
-		if _, exists := sdkOps[candidate]; exists {
-			if !c.hasOperationBinding(candidate) {
-				c.Operations[candidate] = OperationConfig{
-					ResourceName:  StringArray{fieldName},
-					OperationType: StringArray{"create"},
-				}
-			}
-			break
-		}
-	}
+	createPrefixes := []string{"Put", "Create", "Set", "Tag"}
+	c.tryInferOp(createPrefixes, suffixes, fieldName, "create", sdkOps)
 
 	// Delete operation candidates
-	deletePrefixes := []string{"Delete", "Remove"}
-	for _, prefix := range deletePrefixes {
-		candidate := prefix + suffix
-		if _, exists := sdkOps[candidate]; exists {
-			if !c.hasOperationBinding(candidate) {
-				c.Operations[candidate] = OperationConfig{
-					ResourceName:  StringArray{fieldName},
-					OperationType: StringArray{"delete"},
-				}
-			}
-			break
-		}
-	}
+	deletePrefixes := []string{"Delete", "Remove", "Untag"}
+	c.tryInferOp(deletePrefixes, suffixes, fieldName, "delete", sdkOps)
 
 	// Get operation candidates
-	getPrefixes := []string{"Get", "Describe"}
-	for _, prefix := range getPrefixes {
-		candidate := prefix + suffix
-		if _, exists := sdkOps[candidate]; exists {
-			if !c.hasOperationBinding(candidate) {
-				c.Operations[candidate] = OperationConfig{
-					ResourceName:  StringArray{fieldName},
-					OperationType: StringArray{"get"},
+	getPrefixes := []string{"Get", "Describe", "List"}
+	c.tryInferOp(getPrefixes, suffixes, fieldName, "get", sdkOps)
+}
+
+// tryInferOp probes the SDK operation set with each combination of prefix and
+// suffix. The first match wins. If a binding already exists, it is not
+// overwritten.
+func (c *Config) tryInferOp(prefixes, suffixes []string, fieldName, opType string, sdkOps map[string]struct{}) {
+	for _, suffix := range suffixes {
+		for _, prefix := range prefixes {
+			candidate := prefix + suffix
+			if _, exists := sdkOps[candidate]; exists {
+				if !c.hasOperationBinding(candidate) {
+					c.Operations[candidate] = OperationConfig{
+						ResourceName:  StringArray{fieldName},
+						OperationType: StringArray{opType},
+					}
 				}
+				return
 			}
-			break
 		}
 	}
 }
