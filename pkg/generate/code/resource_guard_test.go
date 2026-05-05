@@ -31,7 +31,7 @@ func TestResourceIsUpdateable_SingleCondition(t *testing.T) {
 	crd := testutil.GetCRDByName(t, g, "Function")
 	require.NotNil(crd)
 
-	expected := `	if latest.ko.Status.State != nil {
+	expected := "\n" + `	if latest.ko.Status.State != nil {
 		if !ackutil.InStrings(*latest.ko.Status.State, []string{"Active"}) {
 			return nil, ackrequeue.NeededAfter(
 				fmt.Errorf("resource is in %s state, cannot be updated",
@@ -55,7 +55,7 @@ func TestResourceIsDeletable_SingleCondition(t *testing.T) {
 	crd := testutil.GetCRDByName(t, g, "Function")
 	require.NotNil(crd)
 
-	expected := `	if r.ko.Status.State != nil {
+	expected := "\n" + `	if r.ko.Status.State != nil {
 		if !ackutil.InStrings(*r.ko.Status.State, []string{"Active", "Failed"}) {
 			return nil, ackrequeue.NeededAfter(
 				fmt.Errorf("resource is in %s state, cannot be deleted",
@@ -82,7 +82,7 @@ func TestResourceIsUpdateable_MultipleConditions_CustomRequeue(t *testing.T) {
 	crd := testutil.GetCRDByName(t, g, "Function")
 	require.NotNil(crd)
 
-	expected := `	if latest.ko.Status.State != nil {
+	expected := "\n" + `	if latest.ko.Status.State != nil {
 		if !ackutil.InStrings(*latest.ko.Status.State, []string{"Active"}) {
 			return nil, ackrequeue.NeededAfter(
 				fmt.Errorf("resource is in %s state, cannot be updated",
@@ -180,7 +180,7 @@ func TestResourceIsDeletable_MultipleConditions_CustomRequeue(t *testing.T) {
 	crd := testutil.GetCRDByName(t, g, "Function")
 	require.NotNil(crd)
 
-	expected := `	if r.ko.Status.State != nil {
+	expected := "\n" + `	if r.ko.Status.State != nil {
 		if !ackutil.InStrings(*r.ko.Status.State, []string{"Active"}) {
 			return nil, ackrequeue.NeededAfter(
 				fmt.Errorf("resource is in %s state, cannot be deleted",
