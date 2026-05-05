@@ -126,6 +126,7 @@ func resourceIsGuarded(
 		return "", fmt.Errorf("unknown config key %q", configKey)
 	}
 
+	out += "\n"
 	for _, condCfg := range conditions {
 		if condCfg.Path == nil || *condCfg.Path == "" {
 			return "", fmt.Errorf(
