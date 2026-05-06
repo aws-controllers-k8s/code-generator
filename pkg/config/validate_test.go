@@ -238,6 +238,201 @@ func TestValidateConfig_ErrorMessageIncludesAvailable(t *testing.T) {
 	}
 }
 
+func TestValidateFieldGroupOperations_ValidUpdateOps(t *testing.T) {
+	sdkOps := map[string]struct{}{
+		"CreateRepository":               {},
+		"DeleteRepository":               {},
+		"PutImageScanningConfiguration":  {},
+		"PutImageTagMutability":          {},
+	}
+
+	cfg := &Config{
+		Resources: map[string]ResourceConfig{
+			"Repository": {
+				UpdateOperations: []FieldGroupOperationConfig{
+					{OperationID: "PutImageScanningConfiguration"},
+					{OperationID: "PutImageTagMutability"},
+				},
+			},
+		},
+	}
+
+	errs := validateFieldGroupOperations(cfg, sdkOps)
+	if len(errs) != 0 {
+		t.Errorf("expected 0 errors, got %d: %v", len(errs), errs)
+	}
+}
+
+func TestValidateFieldGroupOperations_InvalidOperationID(t *testing.T) {
+	sdkOps := map[string]struct{}{
+		"CreateRepository": {},
+	}
+
+	cfg := &Config{
+		Resources: map[string]ResourceConfig{
+			"Repository": {
+				UpdateOperations: []FieldGroupOperationConfig{
+					{OperationID: "NonExistentOperation"},
+				},
+			},
+		},
+	}
+
+	errs := validateFieldGroupOperations(cfg, sdkOps)
+	if len(errs) != 1 {
+		t.Fatalf("expected 1 error, got %d: %v", len(errs), errs)
+	}
+	if !strings.Contains(errs[0].Error(), "NonExistentOperation") {
+		t.Errorf("error should reference the bad operation, got: %s", errs[0].Error())
+	}
+}
+
+func TestValidateFieldGroupOperations_EmptyOperationID(t *testing.T) {
+	sdkOps := map[string]struct{}{}
+
+	cfg := &Config{
+		Resources: map[string]ResourceConfig{
+			"Repository": {
+				UpdateOperations: []FieldGroupOperationConfig{
+					{OperationID: ""},
+				},
+			},
+		},
+	}
+
+	errs := validateFieldGroupOperations(cfg, sdkOps)
+	if len(errs) != 1 {
+		t.Fatalf("expected 1 error, got %d: %v", len(errs), errs)
+	}
+	if !strings.Contains(errs[0].Error(), "must not be empty") {
+		t.Errorf("error should mention empty operation_id, got: %s", errs[0].Error())
+	}
+}
+
+func TestValidateFieldGroupOperations_DuplicateOperationID(t *testing.T) {
+	sdkOps := map[string]struct{}{
+		"PutImageScanningConfiguration": {},
+	}
+
+	cfg := &Config{
+		Resources: map[string]ResourceConfig{
+			"Repository": {
+				UpdateOperations: []FieldGroupOperationConfig{
+					{OperationID: "PutImageScanningConfiguration"},
+					{OperationID: "PutImageScanningConfiguration"},
+				},
+			},
+		},
+	}
+
+	errs := validateFieldGroupOperations(cfg, sdkOps)
+	if len(errs) != 1 {
+		t.Fatalf("expected 1 error, got %d: %v", len(errs), errs)
+	}
+	if !strings.Contains(errs[0].Error(), "duplicate") {
+		t.Errorf("error should mention duplicate, got: %s", errs[0].Error())
+	}
+}
+
+func TestValidateFieldGroupOperations_CustomMethodConflict(t *testing.T) {
+	sdkOps := map[string]struct{}{
+		"PutImageScanningConfiguration": {},
+	}
+
+	cfg := &Config{
+		Resources: map[string]ResourceConfig{
+			"Repository": {
+				UpdateOperation: &UpdateOperationConfig{
+					CustomMethodName: "customUpdate",
+				},
+				UpdateOperations: []FieldGroupOperationConfig{
+					{OperationID: "PutImageScanningConfiguration"},
+				},
+			},
+		},
+	}
+
+	errs := validateFieldGroupOperations(cfg, sdkOps)
+	if len(errs) != 1 {
+		t.Fatalf("expected 1 error, got %d: %v", len(errs), errs)
+	}
+	if !strings.Contains(errs[0].Error(), "custom_method_name") {
+		t.Errorf("error should mention custom_method_name conflict, got: %s", errs[0].Error())
+	}
+}
+
+func TestValidateFieldGroupOperations_UpdateOpWithoutCustomMethodAllowed(t *testing.T) {
+	sdkOps := map[string]struct{}{
+		"PutImageScanningConfiguration": {},
+	}
+
+	cfg := &Config{
+		Resources: map[string]ResourceConfig{
+			"Repository": {
+				UpdateOperation: &UpdateOperationConfig{
+					OmitUnchangedFields: true,
+				},
+				UpdateOperations: []FieldGroupOperationConfig{
+					{OperationID: "PutImageScanningConfiguration"},
+				},
+			},
+		},
+	}
+
+	errs := validateFieldGroupOperations(cfg, sdkOps)
+	if len(errs) != 0 {
+		t.Errorf("expected 0 errors when custom_method_name is empty, got %d: %v", len(errs), errs)
+	}
+}
+
+func TestValidateFieldGroupOperations_ReadOps(t *testing.T) {
+	sdkOps := map[string]struct{}{
+		"GetLifecyclePolicy":  {},
+		"GetRepositoryPolicy": {},
+	}
+
+	cfg := &Config{
+		Resources: map[string]ResourceConfig{
+			"Repository": {
+				ReadOperations: []FieldGroupOperationConfig{
+					{OperationID: "GetLifecyclePolicy"},
+					{OperationID: "GetRepositoryPolicy"},
+				},
+			},
+		},
+	}
+
+	errs := validateFieldGroupOperations(cfg, sdkOps)
+	if len(errs) != 0 {
+		t.Errorf("expected 0 errors, got %d: %v", len(errs), errs)
+	}
+}
+
+func TestValidateFieldGroupOperations_ReadOpsDuplicate(t *testing.T) {
+	sdkOps := map[string]struct{}{
+		"GetLifecyclePolicy": {},
+	}
+
+	cfg := &Config{
+		Resources: map[string]ResourceConfig{
+			"Repository": {
+				ReadOperations: []FieldGroupOperationConfig{
+					{OperationID: "GetLifecyclePolicy"},
+					{OperationID: "GetLifecyclePolicy"},
+				},
+			},
+		},
+	}
+
+	errs := validateFieldGroupOperations(cfg, sdkOps)
+	if len(errs) != 1 {
+		t.Fatalf("expected 1 error, got %d: %v", len(errs), errs)
+	}
+	if !strings.Contains(errs[0].Error(), "duplicate") {
+		t.Errorf("error should mention duplicate, got: %s", errs[0].Error())
+	}
+}
+
 func TestFormatAvailableTruncated(t *testing.T) {
 	items := []string{"A", "B", "C", "D", "E"}
 	got := formatAvailableTruncated(items, 3)
