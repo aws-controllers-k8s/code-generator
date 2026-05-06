@@ -1,0 +1,62 @@
+ignore:
+  resource_names: []
+  field_paths:
+    - CreateDataSetOutput.RequestId
+    - CreateDataSetOutput.Status
+resources:
+  DataSet:
+    exceptions:
+      errors:
+        404:
+          code: ResourceNotFoundException
+    fields:
+      DataSetId:
+        is_primary_key: true
+      ColumnGroups:
+        compare:
+          is_ignored: true
+      ColumnLevelPermissionRules:
+        compare:
+          is_ignored: true
+      DataPrepConfiguration:
+        compare:
+          is_ignored: true
+      DataSetUsageConfiguration:
+        compare:
+          is_ignored: true
+      DatasetParameters:
+        compare:
+          is_ignored: true
+      FieldFolders:
+        compare:
+          is_ignored: true
+      FolderArns:
+        compare:
+          is_ignored: true
+      LogicalTableMap:
+        compare:
+          is_ignored: true
+      Permissions:
+        compare:
+          is_ignored: true
+      PhysicalTableMap:
+        compare:
+          is_ignored: true
+      RowLevelPermissionDataSet:
+        compare:
+          is_ignored: true
+      SemanticModelConfiguration:
+        compare:
+          is_ignored: true
+      PerformanceConfiguration:
+        compare:
+          is_ignored: true
+      UseAs:
+        compare:
+          is_ignored: true
+      PhysicalTableMap.CustomSql.DataSourceArn:
+        references:
+          resource: DataSet
+          path: Status.ACKResourceMetadata.ARN
+    tags:
+      ignore: true

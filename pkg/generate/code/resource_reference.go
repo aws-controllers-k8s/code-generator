@@ -30,6 +30,14 @@ var (
 	// indexVarFmt stores the format string which takes an integer and creates
 	// the name of a variable used for the index part of a for-each loop
 	indexVarFmt = "f%didx"
+
+	// mapKeyVarFmt stores the format string which takes an integer and creates
+	// the name of a variable used for the key part of a map iteration
+	mapKeyVarFmt = "f%dkey"
+
+	// mapValueVarFmt stores the format string which takes an integer and creates
+	// the name of a variable used for the value part of a map iteration
+	mapValueVarFmt = "f%dvalue"
 )
 
 // ReferenceFieldsValidation returns the go code to validate reference field and
@@ -235,7 +243,7 @@ func ResolveReferencesForField(field *model.Field, sourceVarName string, indentL
 
 			outPrefix += getReferencedStateForField(field, innerIndentLevel)
 
-			concreteValueAccessor, err := buildIndexBasedFieldAccessor(field, sourceVarName, indexVarFmt)
+			concreteValueAccessor, err := buildIndexBasedFieldAccessor(field, sourceVarName)
 			if err != nil {
 				return "", err
 			}
@@ -285,7 +293,7 @@ func ClearResolvedReferencesForField(field *model.Field, targetVarName string, i
 			} else {
 				innerOut += fmt.Sprintf("%sif %s != nil {\n", innerIndent, fieldAccessPrefix)
 			}
-			concreteValueAccessor, err := buildIndexBasedFieldAccessor(field, targetVarName, indexVarFmt)
+			concreteValueAccessor, err := buildIndexBasedFieldAccessor(field, targetVarName)
 			if err != nil {
 				return "", err
 			}
@@ -355,10 +363,20 @@ func iterReferenceValues(
 
 		switch ref.Shape.Type {
 		case ("map"):
-			return "", fmt.Errorf(
-				"resource %q, field %q: references cannot be within a map",
-				r.Kind, field.Path,
+			keyVarName := fmt.Sprintf(mapKeyVarFmt, currentListDepth)
+			valueVarName := fmt.Sprintf(mapValueVarFmt, currentListDepth)
+
+			fieldAccessPrefix = fmt.Sprintf("%s.%s", fieldAccessPrefix, fp.At(fpDepth))
+
+			outPrefix += fmt.Sprintf("%sfor %s, %s := range %s {\n", indent,
+				lo.Ternary(shouldRenderIndexes, keyVarName, "_"),
+				valueVarName,
+				fieldAccessPrefix,
 			)
+			outSuffix = fmt.Sprintf("%s}\n%s", indent, outSuffix)
+
+			fieldAccessPrefix = valueVarName
+			currentListDepth++
 		case ("structure"):
 			fieldAccessPrefix = fmt.Sprintf("%s.%s", fieldAccessPrefix, fp.At(fpDepth))
 
@@ -396,17 +414,12 @@ func iterReferenceValues(
 }
 
 // buildNestedFieldAccessor generates Go code that accesses an inner struct,
-// using slice indexes where necessary.
-//
-// `indexVarFmt` should be a format string that takes a single integer and
-// returns the name of a variable which holds the index for the n-th parent
-// slice. For example, f%didx will be used to create f0idx, f1idx, etc. for the
-// parent slices in the accessors.
+// using slice indexes or map keys where necessary.
 //
 // By default, this method will iterate through every field in the field path.
 // Supplying a `parentOffset` will only iterate through the first `fp.Size() -
 // parentOffset` number of paths.
-func buildIndexBasedFieldAccessorWithOffset(field *model.Field, sourceVarName, indexVarFmt string, parentOffset int) (string, error) {
+func buildIndexBasedFieldAccessorWithOffset(field *model.Field, sourceVarName string, parentOffset int) (string, error) {
 	r := field.CRD
 	fp := fieldpath.FromString(field.Path)
 
@@ -425,7 +438,7 @@ func buildIndexBasedFieldAccessorWithOffset(field *model.Field, sourceVarName, i
 		fieldName := curFP.Pop()
 		indexList := ""
 
-		if cur.ShapeRef.Shape.Type == "list" {
+		if cur.ShapeRef.Shape.Type == "list" || cur.ShapeRef.Shape.Type == "map" {
 
 			// We want to access indexes when iterating through lists of
 			// structs. If we find a list at the end of the field path, then we
@@ -434,7 +447,12 @@ func buildIndexBasedFieldAccessorWithOffset(field *model.Field, sourceVarName, i
 			// This only applies for when there is no offset, since any offset >
 			// 0 will cut off the initial field from the path
 			if idx != (fp.Size()-1) && !isList {
-				indexList = fmt.Sprintf("[%s]", fmt.Sprintf(indexVarFmt, nestedFieldDepth))
+				// Use map-specific key format for maps, otherwise use list index format
+				varFmt := indexVarFmt
+				if cur.ShapeRef.Shape.Type == "map" {
+					varFmt = mapKeyVarFmt
+				}
+				indexList = fmt.Sprintf("[%s]", fmt.Sprintf(varFmt, nestedFieldDepth))
 				nestedFieldDepth++
 			}
 		}
@@ -447,8 +465,8 @@ func buildIndexBasedFieldAccessorWithOffset(field *model.Field, sourceVarName, i
 
 // buildIndexBasedFieldAccessor calls buildNestedFieldAccessorWithOffset with an
 // offset of 0.
-func buildIndexBasedFieldAccessor(field *model.Field, sourceVarName, indexVarFmt string) (string, error) {
-	return buildIndexBasedFieldAccessorWithOffset(field, sourceVarName, indexVarFmt, 0)
+func buildIndexBasedFieldAccessor(field *model.Field, sourceVarName string) (string, error) {
+	return buildIndexBasedFieldAccessorWithOffset(field, sourceVarName, 0)
 }
 
 // getReferencedStateForField returns Go code that makes a call to
