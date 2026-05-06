@@ -1,0 +1,19 @@
+resources:
+  Repository:
+    exceptions:
+      errors:
+        404:
+          code: RepositoryNotFoundException
+    list_operation:
+      match_fields:
+        - RepositoryName
+    update_operations:
+      - operation_id: PutImageScanningConfiguration
+        requeue_on_success: true
+      - operation_id: PutImageTagMutability
+    read_operations:
+      - operation_id: GetRepositoryPolicy
+ignore:
+  field_paths:
+  - CreateRepositoryOutput.Repository.EncryptionConfiguration
+  - CreateRepositoryInput.EncryptionConfiguration
