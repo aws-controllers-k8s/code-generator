@@ -1,0 +1,23 @@
+sdk_names:
+  model_name: s3files
+  package_name: s3files
+ignore:
+  resource_names: []
+resources:
+  AccessPoint:
+    fields:
+      ID:
+        is_primary_key: true
+    renames:
+      operations:
+        CreateAccessPoint:
+          output_fields:
+            AccessPointId: ID
+        GetAccessPoint:
+          input_fields:
+            AccessPointId: ID
+          output_fields:
+            AccessPointId: ID
+        DeleteAccessPoint:
+          input_fields:
+            AccessPointId: ID
