@@ -111,7 +111,11 @@ func (rm *resourceManager) sdkCreate(
 {{- if $hookCode := Hook .CRD "sdk_create_post_set_output" }}
 {{ $hookCode }}
 {{- end }}
+{{- if .CRD.HasFieldGroupUpdates }}
+	return &resource{ko}, ackrequeue.NeededAfter(nil, 0)
+{{- else }}
 	return &resource{ko}, nil
+{{- end }}
 }
 
 // newCreateRequestPayload returns an SDK-specific struct for the HTTP request
@@ -127,7 +131,9 @@ func (rm *resourceManager) newCreateRequestPayload(
 
 // sdkUpdate patches the supplied resource in the backend AWS service API and
 // returns a new resource with updated fields.
-{{ if .CRD.CustomUpdateMethodName }}
+{{ if .CRD.HasFieldGroupUpdates }}
+	{{- template "sdk_update_field_groups" . }}
+{{- else if .CRD.CustomUpdateMethodName }}
 	{{- template "sdk_update_custom" . }}
 {{- else if .CRD.Ops.Update }}
 	{{- template "sdk_update" . }}
@@ -335,6 +341,10 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 	return false
 {{- end }}
 }
+
+{{- if .CRD.HasFieldGroupReads }}
+{{ template "sdk_find_field_groups" . }}
+{{- end }}
 
 {{- if $hookCode := Hook .CRD "sdk_file_end" }}
 {{ $hookCode }}

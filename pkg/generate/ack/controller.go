@@ -50,12 +50,14 @@ var (
 		"pkg/resource/references_read_referenced_resource.go.tpl",
 		"pkg/resource/sdk_delete_custom.go.tpl",
 		"pkg/resource/sdk_find_custom.go.tpl",
+		"pkg/resource/sdk_find_field_groups.go.tpl",
 		"pkg/resource/sdk_find_read_one.go.tpl",
 		"pkg/resource/sdk_find_get_attributes.go.tpl",
 		"pkg/resource/sdk_find_read_many.go.tpl",
 		"pkg/resource/sdk_find_not_implemented.go.tpl",
 		"pkg/resource/sdk_update.go.tpl",
 		"pkg/resource/sdk_update_custom.go.tpl",
+		"pkg/resource/sdk_update_field_groups.go.tpl",
 		"pkg/resource/sdk_update_set_attributes.go.tpl",
 		"pkg/resource/sdk_update_not_implemented.go.tpl",
 	}
@@ -153,6 +155,24 @@ var (
 		},
 		"HasPreDeleteSync": func(r *ackmodel.CRD) bool {
 			return code.HasPreDeleteSync(r.Config(), r)
+		},
+		"GoCodeSetFieldGroupInput": func(r *ackmodel.CRD, fg *ackmodel.FieldGroupOperation, sourceVarName string, targetVarName string, indentLevel int) (string, error) {
+			return code.SetSDKFieldGroup(r.Config(), r, fg, sourceVarName, targetVarName, indentLevel)
+		},
+		"GoCodeSetFieldGroupOutput": func(r *ackmodel.CRD, fg *ackmodel.FieldGroupOperation, sourceVarName string, targetVarName string, indentLevel int) (string, error) {
+			return code.SetResourceFieldGroup(r.Config(), r, fg, sourceVarName, targetVarName, indentLevel)
+		},
+		"GoCodeFieldGroupDeltaCheck": func(r *ackmodel.CRD, fg *ackmodel.FieldGroupOperation, deltaVarName string) string {
+			return code.FieldGroupDeltaCheck(r.Config(), r, fg, deltaVarName)
+		},
+		"GoCodeSetSyncInput": func(r *ackmodel.CRD, fg *ackmodel.FieldGroupOperation, resourceVarName string, targetVarName string, itemVarName string, indentLevel int) string {
+			return code.SetSyncInput(r.Config(), r, fg, resourceVarName, targetVarName, itemVarName, indentLevel)
+		},
+		"GoCodeSetSyncMapAddInput": func(r *ackmodel.CRD, fg *ackmodel.FieldGroupOperation, resourceVarName string, targetVarName string, keyVarName string, valVarName string, indentLevel int) string {
+			return code.SetSyncMapAddInput(r.Config(), r, fg, resourceVarName, targetVarName, keyVarName, valVarName, indentLevel)
+		},
+		"GoCodeSetSyncMapRemoveInput": func(r *ackmodel.CRD, fg *ackmodel.FieldGroupOperation, resourceVarName string, targetVarName string, keyVarName string, indentLevel int) string {
+			return code.SetSyncMapRemoveInput(r.Config(), r, fg, resourceVarName, targetVarName, keyVarName, indentLevel)
 		},
 		"GoCodeIsSynced": func(r *ackmodel.CRD, resVarName string, indentLevel int) (string, error) {
 			return code.ResourceIsSynced(r.Config(), r, resVarName, indentLevel)
