@@ -69,13 +69,14 @@ func main() {
 	flag.Parse()
 	ackCfg.SetupLogger()
 
+	ctx := ctrlrt.SetupSignalHandler()
+
 	managerFactories := svcresource.GetManagerFactories()
 	resourceGVKs := make([]schema.GroupVersionKind, 0, len(managerFactories))
 	for _, mf := range managerFactories {
 		resourceGVKs = append(resourceGVKs, mf.ResourceDescriptor().GroupVersionKind())
 	}
 
-	ctx := context.Background()
 	if err := ackCfg.Validate(ctx, ackcfg.WithGVKs(resourceGVKs)); err != nil {
 		setupLog.Error(
 			err, "Unable to create controller manager",
@@ -144,8 +145,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	stopChan := ctrlrt.SetupSignalHandler()
-
 	setupLog.Info(
 		"initializing service controller",
 		"aws.service", awsServiceAlias,
@@ -177,7 +176,7 @@ func main() {
 		}
 	}
 
-	if err = sc.BindControllerManager(mgr, ackCfg); err != nil {
+	if err = sc.BindControllerManager(ctx, mgr, ackCfg); err != nil {
 		setupLog.Error(
 			err, "unable bind to controller manager to service controller",
 			"aws.service", awsServiceAlias,
@@ -204,7 +203,7 @@ func main() {
 		"starting manager",
 		"aws.service", awsServiceAlias,
 	)
-	if err := mgr.Start(stopChan); err != nil {
+	if err := mgr.Start(ctx); err != nil {
 		setupLog.Error(
 			err, "unable to start controller manager",
 			"aws.service", awsServiceAlias,
