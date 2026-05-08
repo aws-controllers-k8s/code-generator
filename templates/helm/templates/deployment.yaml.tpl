@@ -104,6 +104,11 @@ spec:
         - "$(FEATURE_GATES)"
 {{ "{{- end }}" }}
         - {{ "--enable-carm={{ .Values.enableCARM }}" }}
+        - {{ "--lazy-bind-reconcilers={{ .Values.lazyBindReconcilers }}" }}
+{{ "{{- if .Values.lazyBindReconcilers }}" }}
+        - --lazy-bind-retry-interval
+        - {{ "{{ .Values.lazyBindRetryInterval | quote }}" }}
+{{ "{{- end }}" }}
         image: {{ "{{ .Values.image.repository }}:{{ .Values.image.tag }}" }}
         imagePullPolicy: {{ "{{ .Values.image.pullPolicy }}" }}
         name: controller
