@@ -754,3 +754,63 @@ func TestCompareResource_QuickSight_DataSet(t *testing.T) {
 	require.NoError(err)
 	assert.Equal(expected, got)
 }
+
+// TestCompareResource_S3Files_AccessPoint verifies that the code generator
+// correctly handles the S3 Files AccessPoint resource, specifically the
+// PosixUser.SecondaryGids field which is a list of longs ([]*int64).
+// This was previously unsupported and caused "unsupported element type in
+// compareSlice: long" errors.
+func TestCompareResource_S3Files_AccessPoint(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "s3files")
+
+	crd := testutil.GetCRDByName(t, g, "AccessPoint")
+	require.NotNil(crd)
+
+	expected := `
+	if ackcompare.HasNilDifference(a.ko.Spec.FileSystemID, b.ko.Spec.FileSystemID) {
+		delta.Add("Spec.FileSystemID", a.ko.Spec.FileSystemID, b.ko.Spec.FileSystemID)
+	} else if a.ko.Spec.FileSystemID != nil && b.ko.Spec.FileSystemID != nil {
+		if *a.ko.Spec.FileSystemID != *b.ko.Spec.FileSystemID {
+			delta.Add("Spec.FileSystemID", a.ko.Spec.FileSystemID, b.ko.Spec.FileSystemID)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.PosixUser, b.ko.Spec.PosixUser) {
+		delta.Add("Spec.PosixUser", a.ko.Spec.PosixUser, b.ko.Spec.PosixUser)
+	} else if a.ko.Spec.PosixUser != nil && b.ko.Spec.PosixUser != nil {
+		if ackcompare.HasNilDifference(a.ko.Spec.PosixUser.GID, b.ko.Spec.PosixUser.GID) {
+			delta.Add("Spec.PosixUser.GID", a.ko.Spec.PosixUser.GID, b.ko.Spec.PosixUser.GID)
+		} else if a.ko.Spec.PosixUser.GID != nil && b.ko.Spec.PosixUser.GID != nil {
+			if *a.ko.Spec.PosixUser.GID != *b.ko.Spec.PosixUser.GID {
+				delta.Add("Spec.PosixUser.GID", a.ko.Spec.PosixUser.GID, b.ko.Spec.PosixUser.GID)
+			}
+		}
+		if len(a.ko.Spec.PosixUser.SecondaryGIDs) != len(b.ko.Spec.PosixUser.SecondaryGIDs) {
+			delta.Add("Spec.PosixUser.SecondaryGIDs", a.ko.Spec.PosixUser.SecondaryGIDs, b.ko.Spec.PosixUser.SecondaryGIDs)
+		} else if len(a.ko.Spec.PosixUser.SecondaryGIDs) > 0 {
+			if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.PosixUser.SecondaryGIDs, b.ko.Spec.PosixUser.SecondaryGIDs) {
+				delta.Add("Spec.PosixUser.SecondaryGIDs", a.ko.Spec.PosixUser.SecondaryGIDs, b.ko.Spec.PosixUser.SecondaryGIDs)
+			}
+		}
+		if ackcompare.HasNilDifference(a.ko.Spec.PosixUser.UID, b.ko.Spec.PosixUser.UID) {
+			delta.Add("Spec.PosixUser.UID", a.ko.Spec.PosixUser.UID, b.ko.Spec.PosixUser.UID)
+		} else if a.ko.Spec.PosixUser.UID != nil && b.ko.Spec.PosixUser.UID != nil {
+			if *a.ko.Spec.PosixUser.UID != *b.ko.Spec.PosixUser.UID {
+				delta.Add("Spec.PosixUser.UID", a.ko.Spec.PosixUser.UID, b.ko.Spec.PosixUser.UID)
+			}
+		}
+	}
+	desiredACKTags, _ := convertToOrderedACKTags(a.ko.Spec.Tags)
+	latestACKTags, _ := convertToOrderedACKTags(b.ko.Spec.Tags)
+	if !ackcompare.MapStringStringEqual(desiredACKTags, latestACKTags) {
+		delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
+	}
+`
+	got, err := code.CompareResource(
+		crd.Config(), crd, "delta", "a.ko", "b.ko", 1,
+	)
+	require.NoError(err)
+	assert.Equal(expected, got)
+}

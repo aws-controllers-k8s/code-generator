@@ -525,8 +525,9 @@ func compareSlice(
 			"%sif !equality.Semantic.Equalities.DeepEqual(%s, %s) {\n",
 			indent, firstResVarName, secondResVarName,
 		)
-	case "list", "map":
-		// For nested collection types (e.g. [][]*string or []map[string]*string),
+	case "list", "map", "long", "integer", "double", "float", "boolean":
+		// For nested collection types (e.g. [][]*string, []map[string]*string)
+		// and scalar pointer slices (e.g. []*int64, []*float64, []*bool),
 		// use DeepEqual since there's no simple element-wise comparison available.
 		out += fmt.Sprintf(
 			"%sif !equality.Semantic.Equalities.DeepEqual(%s, %s) {\n",
