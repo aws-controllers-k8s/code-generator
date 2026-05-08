@@ -1,0 +1,33 @@
+resources:
+  Topic:
+    is_arn_primary_key: true
+    unpack_attributes_map:
+      set_attributes_single_attribute: true
+    fields:
+      DeliveryPolicy:
+        is_attribute: true
+      DisplayName:
+        is_attribute: true
+        compare:
+          nil_equals_zero_value: true
+      Policy:
+        is_attribute: true
+      KmsMasterKeyId:
+        is_attribute: true
+      Owner:
+        is_attribute: true
+        is_read_only: true
+        is_owner_account_id: true
+      EffectiveDeliveryPolicy:
+        is_attribute: true
+        is_read_only: true
+      TopicArn:
+        is_attribute: true
+        is_read_only: true
+ignore:
+  resource_names:
+    - PlatformApplication
+    - Endpoint
+    - Subscription
+  field_paths:
+    - CreateTopicInput.DataProtectionPolicy
