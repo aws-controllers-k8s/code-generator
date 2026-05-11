@@ -301,6 +301,8 @@ func compareNil(
 	out := ""
 	indent := strings.Repeat("\t", indentLevel)
 
+	nilEqualsZeroValue := compareConfig != nil && compareConfig.NilEqualsZeroValue
+
 	switch shape.Type {
 	case "boolean", "string", "character", "byte", "short", "integer", "long",
 		"float", "double", "timestamp", "structure", "jsonvalue":
@@ -312,11 +314,32 @@ func compareNil(
 	default:
 		return "", fmt.Errorf("field %q: unsupported shape type in compareNil: %s", fieldPath, shape.Type)
 	}
-	//   delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
-	out += fmt.Sprintf(
-		"%s\t%s.Add(\"%s\", %s, %s)\n",
-		indent, deltaVarName, fieldPath, firstResVarName, secondResVarName,
-	)
+
+	if nilEqualsZeroValue {
+		// When nil_equals_zero_value is true, a nil pointer in the desired
+		// state (first resource) is considered equal to a pointer to the
+		// zero value in the latest state (second resource). We only add a
+		// delta if IsNilEqualsZero returns false.
+		out += fmt.Sprintf(
+			"%s\tif !ackcompare.IsNilEqualsZero(%s, %s) {\n",
+			indent, firstResVarName, secondResVarName,
+		)
+		//     delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
+		out += fmt.Sprintf(
+			"%s\t\t%s.Add(\"%s\", %s, %s)\n",
+			indent, deltaVarName, fieldPath, firstResVarName, secondResVarName,
+		)
+		//   }
+		out += fmt.Sprintf(
+			"%s\t}\n", indent,
+		)
+	} else {
+		//   delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
+		out += fmt.Sprintf(
+			"%s\t%s.Add(\"%s\", %s, %s)\n",
+			indent, deltaVarName, fieldPath, firstResVarName, secondResVarName,
+		)
+	}
 	// }
 	out += fmt.Sprintf(
 		"%s}", indent,
