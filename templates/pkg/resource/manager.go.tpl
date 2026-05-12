@@ -208,7 +208,11 @@ func (rm *resourceManager) LateInitialize(
 {{- if $hookCode := Hook .CRD "late_initialize_pre_read_one" }}
 {{ $hookCode }}
 {{- end }}
-	observed, err := rm.ReadOne(ctx, latestCopy)
+	// Pass a separate copy to ReadOne because it may mutate its input
+	// (e.g. mirrorAWSTags injects aws:* tags). We keep latestCopy clean
+	// so that lateInitializeFromReadOneOutput doesn't carry those tags
+	// into the resource that gets patched back to the CR.
+	observed, err := rm.ReadOne(ctx, latest.DeepCopy())
 	if err != nil {
 		lateInitConditionMessage = "Unable to complete Read operation required for late initialization"
 		lateInitConditionReason = "Late Initialization Failure"
