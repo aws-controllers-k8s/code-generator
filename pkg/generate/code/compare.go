@@ -166,6 +166,12 @@ func CompareResource(
 			continue
 		}
 
+		// Use semantic document comparison for fields marked as documents
+		if fieldConfig != nil && fieldConfig.IsDocument {
+			out += compareDocument(deltaVarName, firstResAdaptedVarName, secondResAdaptedVarName, fieldPath, indentLevel)
+			continue
+		}
+
 		memberShapeRef := specField.ShapeRef
 		memberShape := memberShapeRef.Shape
 
@@ -635,6 +641,67 @@ func compareIAMPolicy(
 	//     }
 	out += fmt.Sprintf("%s\t}\n", indent)
 	// }
+	out += fmt.Sprintf("%s}\n", indent)
+
+	return out
+}
+
+// compareDocument outputs Go code that compares two JSON or YAML document
+// strings using semantic comparison that handles differences in whitespace,
+// key ordering, and formatting.
+//
+// Output code will look something like this:
+//
+//	if ackcompare.HasNilDifference(a.ko.Spec.Configuration, b.ko.Spec.Configuration) {
+//	    delta.Add("Spec.Configuration", a.ko.Spec.Configuration, b.ko.Spec.Configuration)
+//	} else if a.ko.Spec.Configuration != nil && b.ko.Spec.Configuration != nil {
+//	    if equal, err := ackcompare.DocumentEqual(*a.ko.Spec.Configuration, *b.ko.Spec.Configuration); err != nil || !equal {
+//	        delta.Add("Spec.Configuration", a.ko.Spec.Configuration, b.ko.Spec.Configuration)
+//	    }
+//	}
+func compareDocument(
+	// String representing the name of the variable that is of type
+	// `*ackcompare.Delta`. We will generate Go code that calls the `Add()`
+	// method of this variable when differences between fields are detected.
+	deltaVarName string,
+	// String representing the name of the variable that represents the desired
+	// CR under comparison. This will typically be something like
+	// "a.ko.Spec.Configuration". See `templates/pkg/resource/delta.go.tpl`.
+	desiredResVarName string,
+	// String representing the name of the variable that represents the latest
+	// CR under comparison. This will typically be something like
+	// "b.ko.Spec.Configuration". See `templates/pkg/resource/delta.go.tpl`.
+	latestResVarName string,
+	// String indicating the current field path being evaluated, e.g.
+	// "Spec.Configuration".
+	fieldPath string,
+	// Number of levels of indentation to use
+	indentLevel int,
+) string {
+	out := ""
+	indent := strings.Repeat("\t", indentLevel)
+
+	out += fmt.Sprintf(
+		"%sif ackcompare.HasNilDifference(%s, %s) {\n",
+		indent, desiredResVarName, latestResVarName,
+	)
+	out += fmt.Sprintf(
+		"%s\t%s.Add(\"%s\", %s, %s)\n",
+		indent, deltaVarName, fieldPath, desiredResVarName, latestResVarName,
+	)
+	out += fmt.Sprintf(
+		"%s} else if %s != nil && %s != nil {\n",
+		indent, desiredResVarName, latestResVarName,
+	)
+	out += fmt.Sprintf(
+		"%s\tif equal, err := ackcompare.DocumentEqual(*%s, *%s); err != nil || !equal {\n",
+		indent, desiredResVarName, latestResVarName,
+	)
+	out += fmt.Sprintf(
+		"%s\t\t%s.Add(\"%s\", %s, %s)\n",
+		indent, deltaVarName, fieldPath, desiredResVarName, latestResVarName,
+	)
+	out += fmt.Sprintf("%s\t}\n", indent)
 	out += fmt.Sprintf("%s}\n", indent)
 
 	return out
