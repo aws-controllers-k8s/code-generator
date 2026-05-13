@@ -669,6 +669,91 @@ func TestCompareResource_IAM_Role_IAMPolicy(t *testing.T) {
 	assert.Equal(expected, got)
 }
 
+func TestCompareResource_SNS_Subscription_Document(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "sns", &testutil.TestingModelOptions{
+		GeneratorConfigFile: "generator-document.yaml",
+	})
+
+	crd := testutil.GetCRDByName(t, g, "Subscription")
+	require.NotNil(crd)
+
+	// The FilterPolicy field is marked as is_document: true so it should use
+	// DocumentEqual instead of string comparison (community#2872)
+	expected := `
+	if ackcompare.HasNilDifference(a.ko.Spec.DeliveryPolicy, b.ko.Spec.DeliveryPolicy) {
+		delta.Add("Spec.DeliveryPolicy", a.ko.Spec.DeliveryPolicy, b.ko.Spec.DeliveryPolicy)
+	} else if a.ko.Spec.DeliveryPolicy != nil && b.ko.Spec.DeliveryPolicy != nil {
+		if *a.ko.Spec.DeliveryPolicy != *b.ko.Spec.DeliveryPolicy {
+			delta.Add("Spec.DeliveryPolicy", a.ko.Spec.DeliveryPolicy, b.ko.Spec.DeliveryPolicy)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.Endpoint, b.ko.Spec.Endpoint) {
+		delta.Add("Spec.Endpoint", a.ko.Spec.Endpoint, b.ko.Spec.Endpoint)
+	} else if a.ko.Spec.Endpoint != nil && b.ko.Spec.Endpoint != nil {
+		if *a.ko.Spec.Endpoint != *b.ko.Spec.Endpoint {
+			delta.Add("Spec.Endpoint", a.ko.Spec.Endpoint, b.ko.Spec.Endpoint)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.FilterPolicy, b.ko.Spec.FilterPolicy) {
+		delta.Add("Spec.FilterPolicy", a.ko.Spec.FilterPolicy, b.ko.Spec.FilterPolicy)
+	} else if a.ko.Spec.FilterPolicy != nil && b.ko.Spec.FilterPolicy != nil {
+		if equal, err := ackcompare.DocumentEqual(*a.ko.Spec.FilterPolicy, *b.ko.Spec.FilterPolicy); err != nil || !equal {
+			delta.Add("Spec.FilterPolicy", a.ko.Spec.FilterPolicy, b.ko.Spec.FilterPolicy)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.FilterPolicyScope, b.ko.Spec.FilterPolicyScope) {
+		delta.Add("Spec.FilterPolicyScope", a.ko.Spec.FilterPolicyScope, b.ko.Spec.FilterPolicyScope)
+	} else if a.ko.Spec.FilterPolicyScope != nil && b.ko.Spec.FilterPolicyScope != nil {
+		if *a.ko.Spec.FilterPolicyScope != *b.ko.Spec.FilterPolicyScope {
+			delta.Add("Spec.FilterPolicyScope", a.ko.Spec.FilterPolicyScope, b.ko.Spec.FilterPolicyScope)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.Protocol, b.ko.Spec.Protocol) {
+		delta.Add("Spec.Protocol", a.ko.Spec.Protocol, b.ko.Spec.Protocol)
+	} else if a.ko.Spec.Protocol != nil && b.ko.Spec.Protocol != nil {
+		if *a.ko.Spec.Protocol != *b.ko.Spec.Protocol {
+			delta.Add("Spec.Protocol", a.ko.Spec.Protocol, b.ko.Spec.Protocol)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.RawMessageDelivery, b.ko.Spec.RawMessageDelivery) {
+		delta.Add("Spec.RawMessageDelivery", a.ko.Spec.RawMessageDelivery, b.ko.Spec.RawMessageDelivery)
+	} else if a.ko.Spec.RawMessageDelivery != nil && b.ko.Spec.RawMessageDelivery != nil {
+		if *a.ko.Spec.RawMessageDelivery != *b.ko.Spec.RawMessageDelivery {
+			delta.Add("Spec.RawMessageDelivery", a.ko.Spec.RawMessageDelivery, b.ko.Spec.RawMessageDelivery)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.RedrivePolicy, b.ko.Spec.RedrivePolicy) {
+		delta.Add("Spec.RedrivePolicy", a.ko.Spec.RedrivePolicy, b.ko.Spec.RedrivePolicy)
+	} else if a.ko.Spec.RedrivePolicy != nil && b.ko.Spec.RedrivePolicy != nil {
+		if *a.ko.Spec.RedrivePolicy != *b.ko.Spec.RedrivePolicy {
+			delta.Add("Spec.RedrivePolicy", a.ko.Spec.RedrivePolicy, b.ko.Spec.RedrivePolicy)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.SubscriptionRoleARN, b.ko.Spec.SubscriptionRoleARN) {
+		delta.Add("Spec.SubscriptionRoleARN", a.ko.Spec.SubscriptionRoleARN, b.ko.Spec.SubscriptionRoleARN)
+	} else if a.ko.Spec.SubscriptionRoleARN != nil && b.ko.Spec.SubscriptionRoleARN != nil {
+		if *a.ko.Spec.SubscriptionRoleARN != *b.ko.Spec.SubscriptionRoleARN {
+			delta.Add("Spec.SubscriptionRoleARN", a.ko.Spec.SubscriptionRoleARN, b.ko.Spec.SubscriptionRoleARN)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.TopicARN, b.ko.Spec.TopicARN) {
+		delta.Add("Spec.TopicARN", a.ko.Spec.TopicARN, b.ko.Spec.TopicARN)
+	} else if a.ko.Spec.TopicARN != nil && b.ko.Spec.TopicARN != nil {
+		if *a.ko.Spec.TopicARN != *b.ko.Spec.TopicARN {
+			delta.Add("Spec.TopicARN", a.ko.Spec.TopicARN, b.ko.Spec.TopicARN)
+		}
+	}
+`
+	got, err := code.CompareResource(
+		crd.Config(), crd, "delta", "a.ko", "b.ko", 1,
+	)
+	require.NoError(err)
+	assert.Equal(expected, got)
+}
+
 // TestCompareResource_QuickSight_DataSet tests that the delta code generation
 // correctly handles the QuickSight DataSet resource, specifically the
 // RowLevelPermissionTagConfiguration.TagRuleConfigurations field which is a

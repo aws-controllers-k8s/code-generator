@@ -428,6 +428,11 @@ type FieldConfig struct {
 	// string comparison. This handles IAM-specific semantics like statement
 	// ordering independence and Action/Resource as string vs array.
 	IsIAMPolicy bool `json:"is_iam_policy"`
+	// IsDocument indicates that the field contains a JSON or YAML document
+	// and should be compared using semantic document comparison rather than
+	// string comparison. This handles differences in whitespace, key ordering,
+	// and formatting that are semantically equivalent.
+	IsDocument bool `json:"is_document"`
 	// From instructs the code generator that the value of the field should
 	// be retrieved from the specified operation and member path
 	From *SourceFieldConfig `json:"from,omitempty"`
