@@ -270,6 +270,9 @@ type CompareFieldConfig struct {
 	// NilEqualsZeroValue indicates a nil pointer and zero-value pointed-to
 	// value should be considered equal for the purposes of comparison
 	NilEqualsZeroValue bool `json:"nil_equals_zero_value"`
+	// PreDeleteInclude indicates the field should be included in the
+	// pre-delete delta comparison even if IsIgnored is true
+	PreDeleteInclude bool `json:"pre_delete_include"`
 }
 
 // PrintFieldConfig instructs the code generator how to handle kubebuilder:printcolumn
