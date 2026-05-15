@@ -422,6 +422,16 @@ func (r *CRD) IsARNPrimaryKey() bool {
 	return resGenConfig.IsARNPrimaryKey
 }
 
+// CustomCELRules returns the custom CEL validation rules configured for this
+// resource's Spec struct, or nil if none are configured.
+func (r *CRD) CustomCELRules() []ackgenconfig.CELRule {
+	resGenConfig := r.cfg.GetResourceConfig(r.Names.Original)
+	if resGenConfig == nil {
+		return nil
+	}
+	return resGenConfig.CustomCELRules
+}
+
 // GetPrimaryKeyField returns the field designated as the primary key, nil if
 // none are specified or an error if multiple are designated.
 func (r *CRD) GetPrimaryKeyField() (*Field, error) {

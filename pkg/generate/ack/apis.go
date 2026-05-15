@@ -40,6 +40,12 @@ var (
 	apisCopyPaths = []string{}
 	apisFuncMap   = ttpl.FuncMap{
 		"Join": strings.Join,
+		"Deref": func(s *string) string {
+			if s == nil {
+				return ""
+			}
+			return *s
+		},
 	}
 )
 

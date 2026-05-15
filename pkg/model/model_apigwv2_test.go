@@ -251,6 +251,35 @@ func TestAPIGatewayV2_WithReference(t *testing.T) {
 	assert.Equal(2, len(referencedServiceNames))
 }
 
+func TestAPIGatewayV2_CustomCELRules_NestedField(t *testing.T) {
+	require := require.New(t)
+	assert := assert.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "apigatewayv2", &testutil.TestingModelOptions{
+		GeneratorConfigFile: "generator-with-cel-rules.yaml",
+	})
+
+	tds, err := g.GetTypeDefs()
+	require.Nil(err)
+	require.NotNil(tds)
+
+	var tdef *model.TypeDef
+	for _, td := range tds {
+		if td != nil && strings.EqualFold(td.Names.Original, "jwtConfiguration") {
+			tdef = td
+			break
+		}
+	}
+	require.NotNil(tdef, "JWTConfiguration TypeDef must exist — check SDK shape name casing if nil")
+
+	issuerAttr, ok := tdef.Attrs["Issuer"]
+	require.True(ok, "Issuer attr must exist in JWTConfiguration TypeDef")
+	require.Len(issuerAttr.CustomCELRules, 1)
+	assert.Equal("self.startsWith('https://')", issuerAttr.CustomCELRules[0].Rule)
+	require.NotNil(issuerAttr.CustomCELRules[0].Message)
+	assert.Equal("Issuer must be an HTTPS URL", *issuerAttr.CustomCELRules[0].Message)
+}
+
 func TestAPIGatewayV2_WithNestedReference(t *testing.T) {
 	_ = assert.New(t)
 	require := require.New(t)

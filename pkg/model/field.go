@@ -209,6 +209,15 @@ func (f *Field) IsImmutable() bool {
 	return false
 }
 
+// CustomCELRules returns the custom CEL validation rules configured for
+// this field, or nil if none are configured.
+func (f *Field) CustomCELRules() []ackgenconfig.CELRule {
+	if f.FieldConfig != nil {
+		return f.FieldConfig.CustomCELRules
+	}
+	return nil
+}
+
 // GetSetterConfig returns the SetFieldConfig object associated with this field
 // and a supplied operation type, or nil if none exists.
 func (f *Field) GetSetterConfig(opType OpType) *ackgenconfig.SetFieldConfig {
