@@ -172,6 +172,13 @@ if [ -z "$AWS_SDK_GO_VERSION" ]; then
     AWS_SDK_GO_VERSION=$(cat "$SERVICE_CONTROLLER_SOURCE_PATH/apis/$ACK_GENERATE_API_VERSION/ack-generate-metadata.yaml" | yq ".aws_sdk_go_version" -r)
 fi
 
+if [ -z "$AWS_SERVICE_SDK_VERSION" ]; then
+    AWS_SERVICE_SDK_VERSION=$(cat "$SERVICE_CONTROLLER_SOURCE_PATH/apis/$ACK_GENERATE_API_VERSION/ack-generate-metadata.yaml" | yq ".aws_service_sdk_version" -r)
+    if [ "$AWS_SERVICE_SDK_VERSION" = "null" ] || [ "$AWS_SERVICE_SDK_VERSION" = "" ]; then
+        AWS_SERVICE_SDK_VERSION=""
+    fi
+fi
+
 # If there's a generator.yaml in the service's directory and the caller hasn't
 # specified an override, use that.
 if [ -z "$ACK_GENERATE_CONFIG_PATH" ]; then
@@ -197,7 +204,13 @@ if [ -z "$ACK_DOCUMENTATION_CONFIG_PATH" ]; then
 fi
 
 helm_output_dir="$SERVICE_CONTROLLER_SOURCE_PATH/helm"
-ag_args=("$SERVICE" "$RELEASE_VERSION" -o "$SERVICE_CONTROLLER_SOURCE_PATH" --template-dirs "$TEMPLATES_DIR" --aws-sdk-go-version "$AWS_SDK_GO_VERSION")
+# When a per-service SDK version is set, it takes precedence — don't pass
+# --aws-sdk-go-version since the two flags are mutually exclusive.
+if [ -n "$AWS_SERVICE_SDK_VERSION" ]; then
+    ag_args=("$SERVICE" "$RELEASE_VERSION" -o "$SERVICE_CONTROLLER_SOURCE_PATH" --template-dirs "$TEMPLATES_DIR" --aws-service-sdk-version "$AWS_SERVICE_SDK_VERSION")
+else
+    ag_args=("$SERVICE" "$RELEASE_VERSION" -o "$SERVICE_CONTROLLER_SOURCE_PATH" --template-dirs "$TEMPLATES_DIR" --aws-sdk-go-version "$AWS_SDK_GO_VERSION")
+fi
 if [ -n "$ACK_GENERATE_CACHE_DIR" ]; then
     ag_args=("${ag_args[@]}" --cache-dir "$ACK_GENERATE_CACHE_DIR")
 fi
@@ -276,7 +289,13 @@ if [[ $ACK_GENERATE_OLM == "true" ]]; then
     DEFAULT_ACK_GENERATE_OLMCONFIG_PATH="$SERVICE_CONTROLLER_SOURCE_PATH/olm/olmconfig.yaml"
     ACK_GENERATE_OLMCONFIG_PATH=${ACK_GENERATE_OLMCONFIG_PATH:-$DEFAULT_ACK_GENERATE_OLMCONFIG_PATH}
 
-    ag_olm_args=("$SERVICE" "$RELEASE_VERSION" -o "$SERVICE_CONTROLLER_SOURCE_PATH" --template-dirs "$TEMPLATES_DIR" --olm-config "$ACK_GENERATE_OLMCONFIG_PATH" --aws-sdk-go-version "$AWS_SDK_GO_VERSION")
+    # When a per-service SDK version is set, it takes precedence — don't pass
+    # --aws-sdk-go-version since the two flags are mutually exclusive.
+    if [ -n "$AWS_SERVICE_SDK_VERSION" ]; then
+        ag_olm_args=("$SERVICE" "$RELEASE_VERSION" -o "$SERVICE_CONTROLLER_SOURCE_PATH" --template-dirs "$TEMPLATES_DIR" --olm-config "$ACK_GENERATE_OLMCONFIG_PATH" --aws-service-sdk-version "$AWS_SERVICE_SDK_VERSION")
+    else
+        ag_olm_args=("$SERVICE" "$RELEASE_VERSION" -o "$SERVICE_CONTROLLER_SOURCE_PATH" --template-dirs "$TEMPLATES_DIR" --olm-config "$ACK_GENERATE_OLMCONFIG_PATH" --aws-sdk-go-version "$AWS_SDK_GO_VERSION")
+    fi
 
     if [ -n "$ACK_GENERATE_CONFIG_PATH" ]; then
         ag_olm_args=("${ag_olm_args[@]}" --generator-config-path "$ACK_GENERATE_CONFIG_PATH")

@@ -93,7 +93,7 @@ func NewAPIVersionManager(
 		}
 		basePath, err := acksdk.EnsureModel(
 			context.Background(), sdkCacheDir,
-			acksdk.EnsureSemverPrefix(apiInfo.AWSSDKVersion), modelName,
+			acksdk.EnsureSemverPrefix(apiInfo.AWSSDKVersion), modelName, "",
 		)
 		if err != nil {
 			return nil, err
