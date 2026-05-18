@@ -18,8 +18,8 @@ GO_LDFLAGS=-ldflags "-X $(IMPORT_PATH)/pkg/version.Version=$(VERSION) \
 # aws-sdk-go/private/model/api package is gated behind a build tag "codegen"...
 GO_CMD_FLAGS=-tags codegen
 
-.PHONY: all build-ack-generate test \
-	build-controller build-controller-image \
+.PHONY: all build-ack-generate build-controller test \
+	build-controller-image \
 	local-build-controller-image lint-shell \
 	check-crd-compatibility
 
@@ -30,12 +30,12 @@ build-ack-generate:	## Build ack-generate binary
 	@go build ${GO_CMD_FLAGS} ${GO_LDFLAGS} -o bin/ack-generate cmd/ack-generate/main.go
 	@echo "ok."
 
-build-controller: build-ack-generate ## Generate controller code for SERVICE
-	@./scripts/install-controller-gen.sh
-	@echo "==== building $(AWS_SERVICE)-controller ===="
-	@./scripts/build-controller.sh $(AWS_SERVICE)
-	@echo "==== building $(AWS_SERVICE)-controller release artifacts ===="
-	@./scripts/build-controller-release.sh $(AWS_SERVICE)
+CONTROLLER_PATH ?= ../$(AWS_SERVICE)-controller
+RELEASE_VERSION ?= $(shell cd $(CONTROLLER_PATH) && git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0-non-release-version")
+
+build-controller: build-ack-generate	## Generate a service controller (SERVICE=s3)
+	@$(CURDIR)/bin/ack-generate controller $(AWS_SERVICE) -o $(CONTROLLER_PATH)
+	@$(CURDIR)/bin/ack-generate release $(AWS_SERVICE) $(RELEASE_VERSION) -o $(CONTROLLER_PATH)
 
 build-controller-image: export LOCAL_MODULES = false
 build-controller-image:	## Build container image for SERVICE
