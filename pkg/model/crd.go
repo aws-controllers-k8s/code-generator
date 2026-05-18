@@ -881,9 +881,13 @@ func (r *CRD) GetIdentifiers() []string {
 	}
 	identifierLookup := []string{
 		"Id",
+		"ID",
 		"Ids",
+		"IDs",
 		r.Names.Original + "Id",
+		r.Names.Original + "ID",
 		r.Names.Original + "Ids",
+		r.Names.Original + "IDs",
 		"Name",
 		"Names",
 		r.Names.Original + "Name",
