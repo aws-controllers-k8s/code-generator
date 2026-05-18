@@ -22,6 +22,7 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
 
+	ackgenerate "github.com/aws-controllers-k8s/code-generator/pkg/generate/ack"
 	olmgenerate "github.com/aws-controllers-k8s/code-generator/pkg/generate/olm"
 	ackmetadata "github.com/aws-controllers-k8s/code-generator/pkg/metadata"
 	"github.com/aws-controllers-k8s/code-generator/pkg/sdk"
@@ -82,6 +83,15 @@ func generateOLMAssets(cmd *cobra.Command, args []string) error {
 
 	version := args[1]
 
+	// Resolve config paths from the controller repo when not explicitly provided
+	resolved := ackgenerate.ResolveConfigPaths(optOutputPath)
+	if optGeneratorConfigPath == "" {
+		optGeneratorConfigPath = resolved.GeneratorConfigPath
+	}
+	if optMetadataConfigPath == "" {
+		optMetadataConfigPath = resolved.MetadataConfigPath
+	}
+
 	// Load generator config to resolve model name before fetching
 	cfg, err := setupGenerator(svcAlias)
 	if err != nil {
@@ -127,7 +137,7 @@ func generateOLMAssets(cmd *cobra.Command, args []string) error {
 	}
 
 	// generate templates
-	ts, err := olmgenerate.BundleAssets(m, commonMeta, svcConf, version, optImageRepository, optTemplateDirs)
+	ts, err := olmgenerate.BundleAssets(m, commonMeta, svcConf, version, optImageRepository, optTemplateDirs, embeddedTemplatesFS)
 	if err != nil {
 		return err
 	}

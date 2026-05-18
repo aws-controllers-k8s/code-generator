@@ -75,13 +75,12 @@ func EnsureDir(fp string) (bool, error) {
 // isDirWriteable returns true if the supplied directory path is writeable,
 // false otherwise
 func isDirWriteable(fp string) bool {
-	testPath := filepath.Join(fp, "test")
-	f, err := os.Create(testPath)
+	f, err := os.CreateTemp(fp, ".ack-writeable-check-*")
 	if err != nil {
 		return false
 	}
 	f.Close()
-	os.Remove(testPath)
+	os.Remove(f.Name())
 	return true
 }
 

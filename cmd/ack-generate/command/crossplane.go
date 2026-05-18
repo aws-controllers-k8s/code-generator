@@ -29,6 +29,8 @@ import (
 	"github.com/aws-controllers-k8s/code-generator/pkg/sdk"
 )
 
+var optGenVersion string
+
 // crossplaneCmd is the command that generates Crossplane API types
 var crossplaneCmd = &cobra.Command{
 	Use:   "crossplane <service>",
@@ -37,6 +39,9 @@ var crossplaneCmd = &cobra.Command{
 }
 
 func init() {
+	crossplaneCmd.PersistentFlags().StringVar(
+		&optGenVersion, "version", "v1alpha1", "the resource API Version to use when generating API infrastructure and type definitions",
+	)
 	rootCmd.AddCommand(crossplaneCmd)
 }
 
