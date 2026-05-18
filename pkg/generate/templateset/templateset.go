@@ -16,7 +16,7 @@ package templateset
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io/fs"
 	"os"
 	"path/filepath"
 	ttpl "text/template"
@@ -57,6 +57,9 @@ type TemplateSet struct {
 	templates       map[string]templateWithVars
 	funcMap         ttpl.FuncMap
 	executed        map[string]*bytes.Buffer
+	// fallbackFS is an optional embedded filesystem used when a template is
+	// not found in any of the baseSearchPaths on disk.
+	fallbackFS fs.FS
 }
 
 // New returns a pointer to a TemplateSet
@@ -76,30 +79,24 @@ func New(
 	}
 }
 
+// WithFallbackFS sets an embedded filesystem to use as a fallback when
+// templates are not found on disk. Returns the TemplateSet for chaining.
+func (ts *TemplateSet) WithFallbackFS(fsys fs.FS) *TemplateSet {
+	ts.fallbackFS = fsys
+	return ts
+}
+
 // Add constructs a named template from a path and variables
 func (ts *TemplateSet) Add(
 	outPath string,
 	templatePath string,
 	vars interface{},
 ) error {
-	var foundPath string
-	for _, basePath := range ts.baseSearchPaths {
-		path := filepath.Join(basePath, templatePath)
-		if ackutil.FileExists(path) {
-			foundPath = path
-			break
-		}
-	}
-
-	if foundPath == "" {
-		return errTemplateNotFound(templatePath)
-	}
-
-	tplContents, err := ioutil.ReadFile(foundPath)
+	tplContents, tplName, err := ts.readTemplate(templatePath)
 	if err != nil {
 		return err
 	}
-	t := ttpl.New(foundPath)
+	t := ttpl.New(tplName)
 	t = t.Funcs(ts.funcMap)
 	t, err = t.Parse(string(tplContents))
 	if err != nil {
@@ -112,16 +109,55 @@ func (ts *TemplateSet) Add(
 	return nil
 }
 
+// readTemplate searches for a template file first on disk (baseSearchPaths),
+// then in the fallback embedded FS. Returns the file contents, a name for the
+// template, and any error.
+func (ts *TemplateSet) readTemplate(templatePath string) ([]byte, string, error) {
+	for _, basePath := range ts.baseSearchPaths {
+		path := filepath.Join(basePath, templatePath)
+		if ackutil.FileExists(path) {
+			contents, err := os.ReadFile(path)
+			if err != nil {
+				return nil, "", err
+			}
+			return contents, path, nil
+		}
+	}
+	if ts.fallbackFS != nil {
+		contents, err := fs.ReadFile(ts.fallbackFS, filepath.ToSlash(templatePath))
+		if err == nil {
+			return contents, templatePath, nil
+		}
+	}
+	return nil, "", errTemplateNotFound(templatePath)
+}
+
 // joinIncludes adds all include templates to the supplied template
 func (ts *TemplateSet) joinIncludes(t *ttpl.Template) error {
 	var err error
+	found := make(map[string]bool)
 	for _, basePath := range ts.baseSearchPaths {
 		for _, includePath := range ts.includePaths {
 			tplPath := filepath.Join(basePath, includePath)
 			if !ackutil.FileExists(tplPath) {
 				continue
 			}
+			found[includePath] = true
 			if t, err = includeTemplate(t, tplPath); err != nil {
+				return err
+			}
+		}
+	}
+	if ts.fallbackFS != nil {
+		for _, includePath := range ts.includePaths {
+			if found[includePath] {
+				continue
+			}
+			contents, err := fs.ReadFile(ts.fallbackFS, filepath.ToSlash(includePath))
+			if err != nil {
+				continue
+			}
+			if t, err = t.Parse(string(contents)); err != nil {
 				return err
 			}
 		}
@@ -152,6 +188,18 @@ func (ts *TemplateSet) Execute() error {
 				return err
 			}
 			ts.executed[path] = b
+		}
+	}
+	if ts.fallbackFS != nil {
+		for _, path := range ts.copyPaths {
+			if _, exists := ts.executed[path]; exists {
+				continue
+			}
+			data, err := fs.ReadFile(ts.fallbackFS, filepath.ToSlash(path))
+			if err != nil {
+				continue
+			}
+			ts.executed[path] = bytes.NewBuffer(data)
 		}
 	}
 	return nil
@@ -187,7 +235,7 @@ func byteBufferFromFile(path string) (*bytes.Buffer, error) {
 
 // includeTemplate includes a template into a supplied Template struct
 func includeTemplate(t *ttpl.Template, tplPath string) (*ttpl.Template, error) {
-	tplContents, err := ioutil.ReadFile(tplPath)
+	tplContents, err := os.ReadFile(tplPath)
 	if err != nil {
 		return nil, err
 	}
