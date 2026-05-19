@@ -179,7 +179,6 @@ func checkRequiredFieldsMissingFromShapeReadMany(
 	result := fmt.Sprintf("%sreturn false", indent)
 
 	reqIdentifier, _ := FindPluralizedIdentifiersInShape(r, shape, op)
-
 	resVarPath, err := r.GetSanitizedMemberPath(reqIdentifier, op, koVarName)
 	if err != nil {
 		return result

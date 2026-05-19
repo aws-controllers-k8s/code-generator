@@ -43,9 +43,13 @@ func FindIdentifiersInShape(
 
 	identifierLookup := []string{
 		"Id",
+		"ID",
 		"Ids",
+		"IDs",
 		r.Names.Original + "Id",
+		r.Names.Original + "ID",
 		r.Names.Original + "Ids",
+		r.Names.Original + "IDs",
 		"Name",
 		"Names",
 		r.Names.Original + "Name",
@@ -132,7 +136,8 @@ func FindPluralizedIdentifiersInShape(
 					// 'Id' identifier. Checking 'Id' to determine resource
 					// creation should be safe as the field is usually
 					// present in CR.Status.
-					if !strings.Contains(crField, "Id") {
+					// Renames may produce "Id" or "ID" variants
+					if !strings.Contains(strings.ToLower(crField), "id") {
 						crField = ci
 						shapeField = si
 					}

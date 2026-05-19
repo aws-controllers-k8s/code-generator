@@ -44,6 +44,64 @@ func TestFindIdentifiersInShape_EC2_VPC_ReadMany(t *testing.T) {
 	)
 }
 
+func TestFindIdentifiersInShape_EC2_EgressOnlyIGW_ReadMany(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "ec2", &testutil.TestingModelOptions{GeneratorConfigFile: "generator-with-egress.yaml"})
+
+	crd := testutil.GetCRDByName(t, g, "EgressOnlyInternetGateway")
+	require.NotNil(crd)
+
+	// The rename maps EgressOnlyInternetGatewayIds → ID, and the function
+	// returns the post-rename name when it matches the lookup list.
+	expIdentifier := "ID"
+	op := crd.Ops.ReadMany
+	actualIdentifiers := code.FindIdentifiersInShape(crd, op.InputRef.Shape, op)
+	assert.Len(actualIdentifiers, 1)
+	assert.Equal(
+		strings.TrimSpace(expIdentifier),
+		strings.TrimSpace(actualIdentifiers[0]),
+	)
+}
+
+func TestGetIdentifiers_EC2_EgressOnlyIGW(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "ec2", &testutil.TestingModelOptions{GeneratorConfigFile: "generator-with-egress.yaml"})
+
+	crd := testutil.GetCRDByName(t, g, "EgressOnlyInternetGateway")
+	require.NotNil(crd)
+
+	expIdentifier := "ID"
+	actualIdentifiers := crd.GetIdentifiers()
+	assert.Len(actualIdentifiers, 1)
+	assert.Equal(
+		strings.TrimSpace(expIdentifier),
+		strings.TrimSpace(actualIdentifiers[0]),
+	)
+}
+
+func TestFindPluralizedIdentifiersInShape_EC2_EgressOnlyIGW_ReadMany(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "ec2", &testutil.TestingModelOptions{GeneratorConfigFile: "generator-with-egress.yaml"})
+
+	crd := testutil.GetCRDByName(t, g, "EgressOnlyInternetGateway")
+	require.NotNil(crd)
+
+	expModelIdentifier := "ID"
+	expShapeIdentifier := "ID"
+	op := crd.Ops.ReadMany
+	crIdentifier, shapeIdentifier := code.FindPluralizedIdentifiersInShape(crd,
+		op.InputRef.Shape, op)
+
+	assert.Equal(expModelIdentifier, crIdentifier)
+	assert.Equal(expShapeIdentifier, shapeIdentifier)
+}
+
 func TestFindIdentifiersInCRD_S3_Bucket_ReadMany_Empty(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
