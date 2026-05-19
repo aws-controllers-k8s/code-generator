@@ -1208,7 +1208,7 @@ func SetSDKForStruct(
 		var setCfg *ackgenconfig.SetFieldConfig
 		f, ok := r.Fields[sourceFieldPath]
 		if ok {
-			mf, ok := f.MemberFields[memberName]
+			mf, ok := f.MemberFields[names.New(memberName).Camel]
 			if ok {
 				setCfg = mf.GetSetterConfig(op)
 				if setCfg != nil && setCfg.IgnoreSDKSetter() {
