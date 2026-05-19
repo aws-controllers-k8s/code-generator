@@ -6806,3 +6806,157 @@ func TestSetSDK_BedrockAgentCoreControl_Memory_InputSuffixUnion(t *testing.T) {
 	assert.NotContains(got, "TriggerConditionInput_",
 		"Should use original SDK shape name TriggerConditionInput, not renamed version")
 }
+
+func TestSetSDK_EKS_Nodegroup_Create(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "eks")
+	crd := testutil.GetCRDByName(t, g, "Nodegroup")
+	require.NotNil(crd)
+
+	expected := `
+	if r.ko.Spec.AMIType != nil {
+		res.AmiType = svcsdktypes.AMITypes(*r.ko.Spec.AMIType)
+	}
+	if r.ko.Spec.CapacityType != nil {
+		res.CapacityType = svcsdktypes.CapacityTypes(*r.ko.Spec.CapacityType)
+	}
+	if r.ko.Spec.ClientRequestToken != nil {
+		res.ClientRequestToken = r.ko.Spec.ClientRequestToken
+	}
+	if r.ko.Spec.ClusterName != nil {
+		res.ClusterName = r.ko.Spec.ClusterName
+	}
+	if r.ko.Spec.DiskSize != nil {
+		diskSizeCopy0 := *r.ko.Spec.DiskSize
+		if diskSizeCopy0 > math.MaxInt32 || diskSizeCopy0 < math.MinInt32 {
+			return nil, fmt.Errorf("error: field diskSize is of type int32")
+		}
+		diskSizeCopy := int32(diskSizeCopy0)
+		res.DiskSize = &diskSizeCopy
+	}
+	if r.ko.Spec.InstanceTypes != nil {
+		res.InstanceTypes = aws.ToStringSlice(r.ko.Spec.InstanceTypes)
+	}
+	if r.ko.Spec.Labels != nil {
+		res.Labels = aws.ToStringMap(r.ko.Spec.Labels)
+	}
+	if r.ko.Spec.LaunchTemplate != nil {
+		f7 := &svcsdktypes.LaunchTemplateSpecification{}
+		if r.ko.Spec.LaunchTemplate.ID != nil {
+			f7.Id = r.ko.Spec.LaunchTemplate.ID
+		}
+		if r.ko.Spec.LaunchTemplate.Name != nil {
+			f7.Name = r.ko.Spec.LaunchTemplate.Name
+		}
+		if r.ko.Spec.LaunchTemplate.Version != nil {
+			f7.Version = r.ko.Spec.LaunchTemplate.Version
+		}
+		res.LaunchTemplate = f7
+	}
+	if r.ko.Spec.NodeRepairConfig != nil {
+		f8 := &svcsdktypes.NodeRepairConfig{}
+		if r.ko.Spec.NodeRepairConfig.Enabled != nil {
+			f8.Enabled = r.ko.Spec.NodeRepairConfig.Enabled
+		}
+		res.NodeRepairConfig = f8
+	}
+	if r.ko.Spec.NodeRole != nil {
+		res.NodeRole = r.ko.Spec.NodeRole
+	}
+	if r.ko.Spec.Name != nil {
+		res.NodegroupName = r.ko.Spec.Name
+	}
+	if r.ko.Spec.ReleaseVersion != nil {
+		res.ReleaseVersion = r.ko.Spec.ReleaseVersion
+	}
+	if r.ko.Spec.RemoteAccess != nil {
+		f12 := &svcsdktypes.RemoteAccessConfig{}
+		if r.ko.Spec.RemoteAccess.EC2SshKey != nil {
+			f12.Ec2SshKey = r.ko.Spec.RemoteAccess.EC2SshKey
+		}
+		if r.ko.Spec.RemoteAccess.SourceSecurityGroups != nil {
+			f12.SourceSecurityGroups = aws.ToStringSlice(r.ko.Spec.RemoteAccess.SourceSecurityGroups)
+		}
+		res.RemoteAccess = f12
+	}
+	if r.ko.Spec.ScalingConfig != nil {
+		f13 := &svcsdktypes.NodegroupScalingConfig{}
+		if r.ko.Spec.ScalingConfig.DesiredSize != nil {
+			desiredSizeCopy0 := *r.ko.Spec.ScalingConfig.DesiredSize
+			if desiredSizeCopy0 > math.MaxInt32 || desiredSizeCopy0 < math.MinInt32 {
+				return nil, fmt.Errorf("error: field desiredSize is of type int32")
+			}
+			desiredSizeCopy := int32(desiredSizeCopy0)
+			f13.DesiredSize = &desiredSizeCopy
+		}
+		if r.ko.Spec.ScalingConfig.MaxSize != nil {
+			maxSizeCopy0 := *r.ko.Spec.ScalingConfig.MaxSize
+			if maxSizeCopy0 > math.MaxInt32 || maxSizeCopy0 < math.MinInt32 {
+				return nil, fmt.Errorf("error: field maxSize is of type int32")
+			}
+			maxSizeCopy := int32(maxSizeCopy0)
+			f13.MaxSize = &maxSizeCopy
+		}
+		if r.ko.Spec.ScalingConfig.MinSize != nil {
+			minSizeCopy0 := *r.ko.Spec.ScalingConfig.MinSize
+			if minSizeCopy0 > math.MaxInt32 || minSizeCopy0 < math.MinInt32 {
+				return nil, fmt.Errorf("error: field minSize is of type int32")
+			}
+			minSizeCopy := int32(minSizeCopy0)
+			f13.MinSize = &minSizeCopy
+		}
+		res.ScalingConfig = f13
+	}
+	if r.ko.Spec.Subnets != nil {
+		res.Subnets = aws.ToStringSlice(r.ko.Spec.Subnets)
+	}
+	if r.ko.Spec.Tags != nil {
+		res.Tags = aws.ToStringMap(r.ko.Spec.Tags)
+	}
+	if r.ko.Spec.Taints != nil {
+		f16 := []svcsdktypes.Taint{}
+		for _, f16iter := range r.ko.Spec.Taints {
+			f16elem := &svcsdktypes.Taint{}
+			if f16iter.Effect != nil {
+				f16elem.Effect = svcsdktypes.TaintEffect(*f16iter.Effect)
+			}
+			if f16iter.Key != nil {
+				f16elem.Key = f16iter.Key
+			}
+			if f16iter.Value != nil {
+				f16elem.Value = f16iter.Value
+			}
+			f16 = append(f16, *f16elem)
+		}
+		res.Taints = f16
+	}
+	if r.ko.Spec.UpdateConfig != nil {
+		f17 := &svcsdktypes.NodegroupUpdateConfig{}
+		if r.ko.Spec.UpdateConfig.MaxUnavailable != nil {
+			maxUnavailableCopy0 := *r.ko.Spec.UpdateConfig.MaxUnavailable
+			if maxUnavailableCopy0 > math.MaxInt32 || maxUnavailableCopy0 < math.MinInt32 {
+				return nil, fmt.Errorf("error: field maxUnavailable is of type int32")
+			}
+			maxUnavailableCopy := int32(maxUnavailableCopy0)
+			f17.MaxUnavailable = &maxUnavailableCopy
+		}
+		if r.ko.Spec.UpdateConfig.MaxUnavailablePercentage != nil {
+			maxUnavailablePercentageCopy0 := *r.ko.Spec.UpdateConfig.MaxUnavailablePercentage
+			if maxUnavailablePercentageCopy0 > math.MaxInt32 || maxUnavailablePercentageCopy0 < math.MinInt32 {
+				return nil, fmt.Errorf("error: field maxUnavailablePercentage is of type int32")
+			}
+			maxUnavailablePercentageCopy := int32(maxUnavailablePercentageCopy0)
+			f17.MaxUnavailablePercentage = &maxUnavailablePercentageCopy
+		}
+		res.UpdateConfig = f17
+	}
+	if r.ko.Spec.Version != nil {
+		res.Version = r.ko.Spec.Version
+	}
+`
+	got, err := code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
+}
