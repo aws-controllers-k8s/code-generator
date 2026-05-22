@@ -237,6 +237,9 @@ func SetResource(
 		if setCfg != nil && setCfg.IgnoreResourceSetter() {
 			continue
 		}
+        if inSpec && f.FieldConfig != nil && f.FieldConfig.IsSecret {
+            continue
+        }
 
 		onlySetChangedFieldsOnUpdate := op == r.Ops.Update && r.OnlySetChangedFieldsOnUpdate()
 		if onlySetChangedFieldsOnUpdate && inSpec {
@@ -670,6 +673,9 @@ func setResourceReadMany(
 		if setCfg != nil && setCfg.IgnoreResourceSetter() {
 			continue
 		}
+        if inSpec && f.FieldConfig != nil && f.FieldConfig.IsSecret {
+            continue
+        }
 
 		targetMemberShapeRef = f.ShapeRef
 		if sourceMemberShapeRef.Shape.RealType == "union" {
@@ -1809,12 +1815,15 @@ func SetResourceForStruct(
 		var setCfg *ackgenconfig.SetFieldConfig
 		f, ok := r.Fields[targetFieldPath]
 		if ok {
-			mf, ok := f.MemberFields[targetMemberName]
+			mf, ok := f.MemberFields[names.New(targetMemberName).Camel]
 			if ok {
 				setCfg = mf.GetSetterConfig(op)
 				if setCfg != nil && setCfg.IgnoreResourceSetter() {
 					continue
 				}
+                if mf.FieldConfig != nil && mf.FieldConfig.IsSecret {
+                    continue
+                }
 			}
 		}
 
@@ -2471,6 +2480,9 @@ func setResourceForUnion(
 				if setCfg != nil && setCfg.IgnoreResourceSetter() {
 					continue
 				}
+                if mf.FieldConfig != nil && mf.FieldConfig.IsSecret {
+                    continue
+                }
 			}
 		}
 

@@ -1016,7 +1016,7 @@ func replaceSecretAttrGoType(
 	}
 	// Now we modify the parent type def's Attr that corresponds to
 	// the secret field...
-	attr, found := parentTypeDef.Attrs[field.Names.Camel]
+	attr, found := parentTypeDef.Attrs[field.Names.Original]
 	if !found {
 		return fmt.Errorf(
 			"unable to find attr %s in TypeDef %s at path %s",
