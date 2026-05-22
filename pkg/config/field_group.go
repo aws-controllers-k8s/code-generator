@@ -48,4 +48,20 @@ type FieldGroupOperationConfig struct {
 	// does not contain the updated field values, requiring a subsequent
 	// ReadOne to refresh state.
 	RequeueOnSuccess bool `json:"requeue_on_success,omitempty"`
+	// Exceptions configures per-operation error handling. Currently
+	// supports a 404 error code mapping, identical in meaning to the
+	// resource-level exceptions.errors.404.code: when the operation
+	// returns this error code, treat it as "no data" rather than a
+	// failure (set the field to nil and continue).
+	Exceptions *FieldGroupExceptionsConfig `json:"exceptions,omitempty"`
+}
+
+// FieldGroupExceptionsConfig holds per-operation exception mappings.
+type FieldGroupExceptionsConfig struct {
+	Errors map[int]FieldGroupErrorConfig `json:"errors,omitempty"`
+}
+
+// FieldGroupErrorConfig maps an HTTP status to an AWS error code.
+type FieldGroupErrorConfig struct {
+	Code string `json:"code"`
 }

@@ -122,6 +122,11 @@ func (r *CRD) GetStorageVersion(defaultVersion string) (string, error) {
 		r.Names.Original)
 }
 
+// GetSDKAPI returns the SDKAPI pointer for this CRD's service.
+func (r *CRD) GetSDKAPI() *SDKAPI {
+	return r.sdkAPI
+}
+
 // SDKAPIPackageName returns the aws-sdk-go package name used for this
 // resource's API
 func (r *CRD) SDKAPIPackageName() string {

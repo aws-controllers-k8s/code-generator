@@ -39,9 +39,15 @@ func (rm *resourceManager) sdkFind{{ $fg.OperationID }}(
 	rm.metrics.RecordAPICall("READ_ONE", "{{ $fg.OperationID }}", err)
 	if err != nil {
 		var awsErr smithy.APIError
+{{- if $fg.ExceptionCode404 }}
+		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "{{ $fg.ExceptionCode404 }}" {
+			return ko, nil
+		}
+{{- else }}
 		if errors.As(err, &awsErr) && awsErr.ErrorCode() == "{{ ResourceExceptionCode $.CRD 404 }}" {
 			return ko, nil
 		}
+{{- end }}
 		return ko, err
 	}
 {{- if $hookCode := Hook $.CRD (print "sdk_read_" $fg.Names.Snake "_pre_set_output") }}

@@ -298,10 +298,10 @@ func TestValidateMutuallyExclusiveIdentifiers(t *testing.T) {
 
 func TestValidateFieldGroupOperations_ValidUpdateOps(t *testing.T) {
 	sdkOps := map[string]struct{}{
-		"CreateRepository":               {},
-		"DeleteRepository":               {},
-		"PutImageScanningConfiguration":  {},
-		"PutImageTagMutability":          {},
+		"CreateRepository":              {},
+		"DeleteRepository":              {},
+		"PutImageScanningConfiguration": {},
+		"PutImageTagMutability":         {},
 	}
 
 	cfg := &Config{

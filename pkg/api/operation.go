@@ -1,4 +1,3 @@
-
 package api
 
 import (
@@ -12,10 +11,10 @@ import (
 
 // An Operation defines a specific API Operation.
 type Operation struct {
-	API                 *API `json:"-"`
-	ExportedName        string
-	Name                string
-	Documentation       string `json:"-"`
+	API           *API `json:"-"`
+	ExportedName  string
+	Name          string
+	Documentation string `json:"-"`
 	// HTTP                HTTPInfo
 	Host                string     `json:"host"`
 	InputRef            ShapeRef   `json:"input"`
