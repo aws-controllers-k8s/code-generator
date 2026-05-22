@@ -1,5 +1,3 @@
-
-
 package api
 
 // ServiceName returns the SDK's naming of the service. Has

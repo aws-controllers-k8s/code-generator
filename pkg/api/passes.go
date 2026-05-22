@@ -538,7 +538,6 @@ func createAPIParamShape(a *API, opName string, ref *ShapeRef, shapeName string,
 		return
 	}
 
-
 	if s, ok := a.Shapes[shapeName]; ok {
 		panic(fmt.Sprintf(
 			"attempting to create duplicate API parameter shape, %v, %v, %v, %v\n",

@@ -362,6 +362,19 @@ func (r *CRD) resolveExplicitFields(
 	return identifierFields, payloadFields
 }
 
+// ExceptionCode404 returns the AWS error code to treat as "not found" (nil
+// field) for this specific operation. Returns empty string if not configured,
+// in which case the template falls back to the resource-level 404 code.
+func (fg *FieldGroupOperation) ExceptionCode404() string {
+	if fg.Config.Exceptions == nil {
+		return ""
+	}
+	if errCfg, ok := fg.Config.Exceptions.Errors[404]; ok {
+		return errCfg.Code
+	}
+	return ""
+}
+
 // IsDirect returns true if this is a standard direct field-group operation.
 func (fg *FieldGroupOperation) IsDirect() bool {
 	return fg.Kind == FieldGroupKindDirect
