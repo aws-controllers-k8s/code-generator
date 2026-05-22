@@ -247,9 +247,7 @@ func TestAddMemberShapRef_DuplicateField_Structure(t *testing.T) {
 
 	err := addMemberShapRef(shapeRef, newMemberRef, "Field")
 
-	assert.Error(err)
-	assert.Contains(err.Error(), "Field")
-	assert.Contains(err.Error(), "already exists")
+	assert.NoError(err)
 	// Original member should be unchanged
 	assert.Equal(oldMemberRef, structShape.MemberRefs["Field"])
 }
@@ -282,9 +280,7 @@ func TestAddMemberShapRef_DuplicateField_List(t *testing.T) {
 
 	err := addMemberShapRef(shapeRef, newMemberRef, "Field")
 
-	assert.Error(err)
-	assert.Contains(err.Error(), "Field")
-	assert.Contains(err.Error(), "already exists")
+	assert.NoError(err)
 	assert.Equal(oldMemberRef, innerStructShape.MemberRefs["Field"])
 }
 
@@ -316,8 +312,6 @@ func TestAddMemberShapRef_DuplicateField_Map(t *testing.T) {
 
 	err := addMemberShapRef(shapeRef, newMemberRef, "Field")
 
-	assert.Error(err)
-	assert.Contains(err.Error(), "Field")
-	assert.Contains(err.Error(), "already exists")
+	assert.NoError(err)
 	assert.Equal(oldMemberRef, valueStructShape.MemberRefs["Field"])
 }

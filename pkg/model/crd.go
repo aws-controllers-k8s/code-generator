@@ -825,7 +825,10 @@ func addMemberShapRef(shapeRef, memberShapeRef *awssdkmodel.ShapeRef, fieldName 
 		return fmt.Errorf("unsupported shape type %q for adding member %q", shapeRef.Shape.Type, fieldName)
 	}
 	if _, exists := memberRefs[fieldName]; exists {
-		return fmt.Errorf("member %q already exists in shape of type %q", fieldName, shapeRef.Shape.Type)
+		// Multiple resources may reference the same underlying SDK shape (e.g.
+		// WAFv2 Statement is shared between WebACL and RuleGroup). When a custom
+		// nested field has already been injected by another resource, skip silently.
+		return nil
 	}
 	memberRefs[fieldName] = memberShapeRef
 	return nil

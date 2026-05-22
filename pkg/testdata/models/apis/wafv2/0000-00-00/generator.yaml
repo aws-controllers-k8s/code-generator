@@ -5,6 +5,11 @@ ignore:
     - RuleGroup.Rules.Statement.NotStatement
     - RuleGroup.Rules.Statement.ManagedRuleGroupStatement.ScopeDownStatement
     - RuleGroup.Rules.Statement.RateBasedStatement.ScopeDownStatement
+    - WebACL.Rules.Statement.AndStatement
+    - WebACL.Rules.Statement.OrStatement
+    - WebACL.Rules.Statement.NotStatement
+    - WebACL.Rules.Statement.ManagedRuleGroupStatement.ScopeDownStatement
+    - WebACL.Rules.Statement.RateBasedStatement.ScopeDownStatement
 empty_shapes:
   - All
   - Method
@@ -18,9 +23,39 @@ empty_shapes:
 operations:
   GetRuleGroup:
     output_wrapper_field_path: RuleGroup
+  GetWebACL:
+    output_wrapper_field_path: WebACL
 resources:
   RuleGroup:
     fields:
+      Name:
+        is_primary_key: true
+        is_immutable: true
+      Rules.Statement.AndStatement:
+        type: string
+        set:
+          - ignore: "all"
+      Rules.Statement.OrStatement:
+        type: string
+        set:
+          - ignore: "all"
+      Rules.Statement.NotStatement:
+        type: string
+        set:
+          - ignore: "all"
+      Rules.Statement.ManagedRuleGroupStatement.ScopeDownStatement:
+        type: string
+        set:
+          - ignore: "all"
+      Rules.Statement.RateBasedStatement.ScopeDownStatement:
+        type: string
+        set:
+          - ignore: "all"
+  WebACL:
+    fields:
+      Name:
+        is_primary_key: true
+        is_immutable: true
       Rules.Statement.AndStatement:
         type: string
         set:
