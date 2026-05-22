@@ -831,8 +831,8 @@ func addMemberShapRef(shapeRef, memberShapeRef *awssdkmodel.ShapeRef, fieldName 
 				fieldName, shapeRef.ShapeName, existing.Shape.Type, memberShapeRef.Shape.Type,
 			)
 		}
-		fmt.Printf(
-			"WARNING: member %q already injected into shared shape %q, skipping duplicate\n",
+		util.Warnf(
+			"member %q already injected into shared shape %q, skipping duplicate\n",
 			fieldName, shapeRef.ShapeName,
 		)
 		return nil
