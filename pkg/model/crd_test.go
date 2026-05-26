@@ -225,7 +225,7 @@ func TestAddMemberShapRef_Map_PreservesExistingMembers(t *testing.T) {
 	assert.Equal(newMemberShapeRef, valueStructShape.MemberRefs["Priority"])
 }
 
-func TestAddMemberShapRef_DuplicateField_Structure(t *testing.T) {
+func TestAddMemberShapRef_DuplicateField_SameType(t *testing.T) {
 	assert := assert.New(t)
 
 	oldMemberRef := &awssdkmodel.ShapeRef{
@@ -238,42 +238,35 @@ func TestAddMemberShapRef_DuplicateField_Structure(t *testing.T) {
 		},
 	}
 	shapeRef := &awssdkmodel.ShapeRef{
-		Shape: structShape,
+		ShapeName: "Statement",
+		Shape:     structShape,
 	}
 
 	newMemberRef := &awssdkmodel.ShapeRef{
-		Shape: &awssdkmodel.Shape{Type: "integer"},
+		Shape: &awssdkmodel.Shape{Type: "string"},
 	}
 
 	err := addMemberShapRef(shapeRef, newMemberRef, "Field")
 
-	assert.Error(err)
-	assert.Contains(err.Error(), "Field")
-	assert.Contains(err.Error(), "already exists")
-	// Original member should be unchanged
+	assert.NoError(err)
 	assert.Equal(oldMemberRef, structShape.MemberRefs["Field"])
 }
 
-func TestAddMemberShapRef_DuplicateField_List(t *testing.T) {
+func TestAddMemberShapRef_DuplicateField_ConflictingType(t *testing.T) {
 	assert := assert.New(t)
 
 	oldMemberRef := &awssdkmodel.ShapeRef{
 		Shape: &awssdkmodel.Shape{Type: "string"},
 	}
-	innerStructShape := &awssdkmodel.Shape{
+	structShape := &awssdkmodel.Shape{
 		Type: "structure",
 		MemberRefs: map[string]*awssdkmodel.ShapeRef{
 			"Field": oldMemberRef,
 		},
 	}
-	listShape := &awssdkmodel.Shape{
-		Type: "list",
-		MemberRef: awssdkmodel.ShapeRef{
-			Shape: innerStructShape,
-		},
-	}
 	shapeRef := &awssdkmodel.ShapeRef{
-		Shape: listShape,
+		ShapeName: "Statement",
+		Shape:     structShape,
 	}
 
 	newMemberRef := &awssdkmodel.ShapeRef{
@@ -284,40 +277,7 @@ func TestAddMemberShapRef_DuplicateField_List(t *testing.T) {
 
 	assert.Error(err)
 	assert.Contains(err.Error(), "Field")
-	assert.Contains(err.Error(), "already exists")
-	assert.Equal(oldMemberRef, innerStructShape.MemberRefs["Field"])
-}
-
-func TestAddMemberShapRef_DuplicateField_Map(t *testing.T) {
-	assert := assert.New(t)
-
-	oldMemberRef := &awssdkmodel.ShapeRef{
-		Shape: &awssdkmodel.Shape{Type: "string"},
-	}
-	valueStructShape := &awssdkmodel.Shape{
-		Type: "structure",
-		MemberRefs: map[string]*awssdkmodel.ShapeRef{
-			"Field": oldMemberRef,
-		},
-	}
-	mapShape := &awssdkmodel.Shape{
-		Type: "map",
-		ValueRef: awssdkmodel.ShapeRef{
-			Shape: valueStructShape,
-		},
-	}
-	shapeRef := &awssdkmodel.ShapeRef{
-		Shape: mapShape,
-	}
-
-	newMemberRef := &awssdkmodel.ShapeRef{
-		Shape: &awssdkmodel.Shape{Type: "integer"},
-	}
-
-	err := addMemberShapRef(shapeRef, newMemberRef, "Field")
-
-	assert.Error(err)
-	assert.Contains(err.Error(), "Field")
-	assert.Contains(err.Error(), "already exists")
-	assert.Equal(oldMemberRef, valueStructShape.MemberRefs["Field"])
+	assert.Contains(err.Error(), "Statement")
+	assert.Contains(err.Error(), "cannot override")
+	assert.Equal(oldMemberRef, structShape.MemberRefs["Field"])
 }

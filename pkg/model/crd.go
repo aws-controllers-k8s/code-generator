@@ -811,7 +811,7 @@ func (crd *CRD) addCustomNestedFields(customNestedFields map[string]*ackgenconfi
 
 // addMemberShapRef injects a new member shape into the specified shape.
 // It returns an error if the shape type is unsupported or if a member with
-// the given field name already exists.
+// the given field name already exists with a conflicting type.
 func addMemberShapRef(shapeRef, memberShapeRef *awssdkmodel.ShapeRef, fieldName string) error {
 	var memberRefs map[string]*awssdkmodel.ShapeRef
 	switch shapeRef.Shape.Type {
@@ -824,8 +824,18 @@ func addMemberShapRef(shapeRef, memberShapeRef *awssdkmodel.ShapeRef, fieldName 
 	default:
 		return fmt.Errorf("unsupported shape type %q for adding member %q", shapeRef.Shape.Type, fieldName)
 	}
-	if _, exists := memberRefs[fieldName]; exists {
-		return fmt.Errorf("member %q already exists in shape of type %q", fieldName, shapeRef.Shape.Type)
+	if existing, exists := memberRefs[fieldName]; exists {
+		if existing.Shape.Type != memberShapeRef.Shape.Type {
+			return fmt.Errorf(
+				"member %q already exists in shape %q with type %q, cannot override with type %q",
+				fieldName, shapeRef.ShapeName, existing.Shape.Type, memberShapeRef.Shape.Type,
+			)
+		}
+		util.Warnf(
+			"member %q already injected into shared shape %q, skipping duplicate\n",
+			fieldName, shapeRef.ShapeName,
+		)
+		return nil
 	}
 	memberRefs[fieldName] = memberShapeRef
 	return nil

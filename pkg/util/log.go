@@ -9,10 +9,11 @@ import (
 type logLevel int
 
 const (
-	levelNone  logLevel = iota
-	levelInfo           // LOG_LEVEL=info
-	levelDebug          // LOG_LEVEL=debug
-	levelTrace          // LOG_LEVEL=trace (most verbose)
+	levelNone  logLevel = iota // suppress all
+	levelWarn                  // LOG_LEVEL=warn
+	levelInfo                  // LOG_LEVEL=info
+	levelDebug                 // LOG_LEVEL=debug
+	levelTrace                 // LOG_LEVEL=trace (most verbose)
 )
 
 var currentLevel = parseLogLevel(os.Getenv("LOG_LEVEL"))
@@ -25,6 +26,8 @@ func parseLogLevel(s string) logLevel {
 		return levelDebug
 	case "info":
 		return levelInfo
+	case "warn":
+		return levelWarn
 	default:
 		return levelNone
 	}
@@ -34,6 +37,11 @@ func logf(level logLevel, prefix, format string, args ...interface{}) {
 	if currentLevel >= level {
 		fmt.Fprintf(os.Stderr, prefix+format, args...)
 	}
+}
+
+// Warnf prints to stderr when LOG_LEVEL=warn or higher.
+func Warnf(format string, args ...interface{}) {
+	logf(levelWarn, "[warn] ", format, args...)
 }
 
 // Infof prints to stderr when LOG_LEVEL=info or higher.
