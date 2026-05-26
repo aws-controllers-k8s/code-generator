@@ -233,3 +233,36 @@ func Test_IncompleteLateInitialization(t *testing.T) {
 	return false`
 	assert.Equal(expected, code.IncompleteLateInitialization(crd.Config(), crd, "latest", 1))
 }
+
+func Test_FindLateInitializedFieldNames_UnpackedAttributeField(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "sqs", &testutil.TestingModelOptions{GeneratorConfigFile: "generator-with-late-initialize.yaml"})
+
+	crd := testutil.GetCRDByName(t, g, "Queue")
+	require.NotNil(crd)
+	assert.NotNil(crd.Config().GetFieldConfigs(crd.Names.Original)["SqsManagedSseEnabled"].LateInitialize)
+	expected :=
+		`	var lateInitializeFieldNames = []string{"SQSManagedSSEEnabled",}
+`
+	assert.Equal(expected, code.FindLateInitializedFieldNames(crd.Config(), crd, "lateInitializeFieldNames", 1))
+}
+
+func Test_LateInitializeFromReadOne_UnpackedAttributeField(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "sqs", &testutil.TestingModelOptions{GeneratorConfigFile: "generator-with-late-initialize.yaml"})
+
+	crd := testutil.GetCRDByName(t, g, "Queue")
+	require.NotNil(crd)
+	expected :=
+		`	observedKo := rm.concreteResource(observed).ko.DeepCopy()
+	latestKo := rm.concreteResource(latest).ko.DeepCopy()
+	if observedKo.Spec.SQSManagedSSEEnabled != nil && latestKo.Spec.SQSManagedSSEEnabled == nil {
+		latestKo.Spec.SQSManagedSSEEnabled = observedKo.Spec.SQSManagedSSEEnabled
+	}
+	return &resource{latestKo}`
+	assert.Equal(expected, code.LateInitializeFromReadOne(crd.Config(), crd, "observed", "latest", 1))
+}
