@@ -122,6 +122,11 @@ func ReferenceFieldsValidation(
 // are related to the given concrete field, determining whether its in a valid
 // condition and updating the concrete field with the referenced value.
 //
+// The generated code calls ackrt.ValidateCrossNamespaceReference to check
+// whether the reference targets a different namespace. If the cross-namespace
+// flag is disabled, the helper returns an error. If enabled and cross-namespace,
+// a warning is logged and a condition is set on the resource.
+//
 // Sample output (resolving a singular reference):
 //
 //	if ko.Spec.APIRef != nil && ko.Spec.APIRef.From != nil {
@@ -129,6 +134,19 @@ func ReferenceFieldsValidation(
 //		arr := ko.Spec.APIRef.From
 //		if arr.Name == nil || *arr.Name == "" {
 //			return hasReferences, fmt.Errorf("provided resource reference is nil or empty: APIRef")
+//		}
+//		namespace, isCrossNs, err := ackrt.ValidateCrossNamespaceReference(
+//			rm.cfg.EnableCrossNamespace,
+//			ko.ObjectMeta.GetNamespace(),
+//			arr.Namespace,
+//			*arr.Name,
+//		)
+//		if err != nil {
+//			return hasReferences, err
+//		}
+//		if isCrossNs {
+//			ackrtlog.FromContext(ctx).Info("cross-namespace resource reference detected; ...")
+//			setCrossNamespaceCondition(ko, crossNsMsg)
 //		}
 //		obj := &svcapitypes.API{}
 //		if err := getReferencedResourceState_API(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
@@ -146,6 +164,16 @@ func ReferenceFieldsValidation(
 //			if arr.Name == nil || *arr.Name == "" {
 //				return hasReferences, fmt.Errorf("provided resource reference is nil or empty: SecurityGroupRefs")
 //			}
+//			namespace, isCrossNs, err := ackrt.ValidateCrossNamespaceReference(
+//				rm.cfg.EnableCrossNamespace,
+//				ko.ObjectMeta.GetNamespace(),
+//				arr.Namespace,
+//				*arr.Name,
+//			)
+//			if err != nil {
+//				return hasReferences, err
+//			}
+//			if isCrossNs { ... }
 //			obj := &ec2apitypes.SecurityGroup{}
 //			if err := getReferencedResourceState_SecurityGroup(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
 //				return hasReferences, err
@@ -154,31 +182,6 @@ func ReferenceFieldsValidation(
 //				ko.Spec.SecurityGroupIDs = make([]*string, 0, 1)
 //			}
 //			ko.Spec.SecurityGroupIDs = append(ko.Spec.SecurityGroupIDs, (*string)(obj.Status.ID))
-//		}
-//	}
-//
-// Sample output (resolving nested lists of structs containing references):
-//
-//	if ko.Spec.Notification != nil {
-//		for f0idx, f0iter := range ko.Spec.Notification.LambdaFunctionConfigurations {
-//			if f0iter.Filter != nil {
-//				if f0iter.Filter.Key != nil {
-//					for f1idx, f1iter := range f0iter.Filter.Key.FilterRules {
-//						if f1iter.ValueRef != nil && f1iter.ValueRef.From != nil {
-//							hasReferences = true
-//							arr := f1iter.ValueRef.From
-//							if arr.Name == nil || *arr.Name == "" {
-//								return hasReferences, fmt.Errorf("provided resource reference is nil or empty: Notification.LambdaFunctionConfigurations.Filter.Key.FilterRules.ValueRef")
-//							}
-//							obj := &svcapitypes.Bucket{}
-//							if err := getReferencedResourceState_Bucket(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
-//								return hasReferences, err
-//							}
-//							ko.Spec.Notification.LambdaFunctionConfigurations[f0idx].Filter.Key.FilterRules[f1idx].Value = (*string)(obj.Spec.Name)
-//						}
-//					}
-//				}
-//			}
 //		}
 //	}
 func ResolveReferencesForField(field *model.Field, sourceVarName string, indentLevel int) (string, error) {
