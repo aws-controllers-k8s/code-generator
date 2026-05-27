@@ -11,3 +11,15 @@ resources:
         DeleteFargateProfile:
           input_fields:
             FargateProfileName: Name
+  Nodegroup:
+    renames:
+      operations:
+        CreateNodegroup:
+          input_fields:
+            NodegroupName: Name
+        DescribeNodegroup:
+          input_fields:
+            NodegroupName: Name
+        DeleteNodegroup:
+          input_fields:
+            NodegroupName: Name
