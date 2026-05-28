@@ -125,7 +125,8 @@ func ReferenceFieldsValidation(
 // The generated code calls ackrt.ValidateCrossNamespaceReference to check
 // whether the reference targets a different namespace. If the cross-namespace
 // flag is disabled, the helper returns an error. If enabled and cross-namespace,
-// a warning is logged and a condition is set on the resource.
+// ackrt.HandleCrossNamespaceReference logs a deprecation warning and sets the
+// ACK.CrossNamespaceOptInRequired condition on the resource.
 //
 // Sample output (resolving a singular reference):
 //
@@ -145,8 +146,11 @@ func ReferenceFieldsValidation(
 //			return hasReferences, err
 //		}
 //		if isCrossNs {
-//			ackrtlog.FromContext(ctx).Info("cross-namespace resource reference detected; ...")
-//			setCrossNamespaceCondition(ko, crossNsMsg)
+//			ko.Status.Conditions = ackrt.HandleCrossNamespaceReference(
+//				ctx, ko.Status.Conditions,
+//				ackrt.CrossNamespaceRefKindResource,
+//				ko.ObjectMeta.GetNamespace(), *arr.Namespace, *arr.Name,
+//			)
 //		}
 //		obj := &svcapitypes.API{}
 //		if err := getReferencedResourceState_API(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
@@ -182,6 +186,34 @@ func ReferenceFieldsValidation(
 //				ko.Spec.SecurityGroupIDs = make([]*string, 0, 1)
 //			}
 //			ko.Spec.SecurityGroupIDs = append(ko.Spec.SecurityGroupIDs, (*string)(obj.Status.ID))
+//		}
+//	}
+//
+// Sample output (resolving nested lists of structs containing references):
+//
+//	if ko.Spec.Notification != nil {
+//		for f0idx, f0iter := range ko.Spec.Notification.LambdaFunctionConfigurations {
+//			if f0iter.Filter != nil {
+//				if f0iter.Filter.Key != nil {
+//					for f1idx, f1iter := range f0iter.Filter.Key.FilterRules {
+//						if f1iter.ValueRef != nil && f1iter.ValueRef.From != nil {
+//							hasReferences = true
+//							arr := f1iter.ValueRef.From
+//							if arr.Name == nil || *arr.Name == "" {
+//								return hasReferences, fmt.Errorf("provided resource reference is nil or empty: Notification.LambdaFunctionConfigurations.Filter.Key.FilterRules.ValueRef")
+//							}
+//							namespace, isCrossNs, err := ackrt.ValidateCrossNamespaceReference( ... )
+//							if err != nil { return hasReferences, err }
+//							if isCrossNs { ... }
+//							obj := &svcapitypes.Bucket{}
+//							if err := getReferencedResourceState_Bucket(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
+//								return hasReferences, err
+//							}
+//							ko.Spec.Notification.LambdaFunctionConfigurations[f0idx].Filter.Key.FilterRules[f1idx].Value = (*string)(obj.Spec.Name)
+//						}
+//					}
+//				}
+//			}
 //		}
 //	}
 func ResolveReferencesForField(field *model.Field, sourceVarName string, indentLevel int) (string, error) {
@@ -241,19 +273,11 @@ func ResolveReferencesForField(field *model.Field, sourceVarName string, indentL
 			outPrefix += fmt.Sprintf("%s\treturn hasReferences, err\n", innerIndent)
 			outPrefix += fmt.Sprintf("%s}\n", innerIndent)
 			outPrefix += fmt.Sprintf("%sif isCrossNs {\n", innerIndent)
-			outPrefix += fmt.Sprintf("%s\tackrtlog.FromContext(ctx).Info(\"cross-namespace resource reference detected; \"+\n", innerIndent)
-			outPrefix += fmt.Sprintf("%s\t\t\"this behavior will be disabled by default in a future release. \"+\n", innerIndent)
-			outPrefix += fmt.Sprintf("%s\t\t\"Set --enable-cross-namespace to preserve this behavior.\",\n", innerIndent)
-			outPrefix += fmt.Sprintf("%s\t\t\"ownerNamespace\", ko.ObjectMeta.GetNamespace(),\n", innerIndent)
-			outPrefix += fmt.Sprintf("%s\t\t\"targetNamespace\", *arr.Namespace,\n", innerIndent)
-			outPrefix += fmt.Sprintf("%s\t\t\"referenceName\", *arr.Name,\n", innerIndent)
+			outPrefix += fmt.Sprintf("%s\tko.Status.Conditions = ackrt.HandleCrossNamespaceReference(\n", innerIndent)
+			outPrefix += fmt.Sprintf("%s\t\tctx, ko.Status.Conditions,\n", innerIndent)
+			outPrefix += fmt.Sprintf("%s\t\tackrt.CrossNamespaceRefKindResource,\n", innerIndent)
+			outPrefix += fmt.Sprintf("%s\t\tko.ObjectMeta.GetNamespace(), *arr.Namespace, *arr.Name,\n", innerIndent)
 			outPrefix += fmt.Sprintf("%s\t)\n", innerIndent)
-			outPrefix += fmt.Sprintf("%s\tcrossNsMsg := fmt.Sprintf(\"Cross-namespace resource reference detected: \"+\n", innerIndent)
-			outPrefix += fmt.Sprintf("%s\t\t\"resource in namespace %%q references %%q in namespace %%q. \"+\n", innerIndent)
-			outPrefix += fmt.Sprintf("%s\t\t\"Cross-namespace behavior will be disabled by default in a future release. \"+\n", innerIndent)
-			outPrefix += fmt.Sprintf("%s\t\t\"Set --enable-cross-namespace=true to preserve this behavior.\",\n", innerIndent)
-			outPrefix += fmt.Sprintf("%s\t\tko.ObjectMeta.GetNamespace(), *arr.Name, *arr.Namespace)\n", innerIndent)
-			outPrefix += fmt.Sprintf("%s\tsetCrossNamespaceCondition(ko, crossNsMsg)\n", innerIndent)
 			outPrefix += fmt.Sprintf("%s}\n", innerIndent)
 
 			outPrefix += getReferencedStateForField(field, innerIndentLevel)

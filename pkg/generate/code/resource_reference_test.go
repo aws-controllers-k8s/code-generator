@@ -154,19 +154,11 @@ func Test_ResolveReferencesForField_SingleReference(t *testing.T) {
 			return hasReferences, err
 		}
 		if isCrossNs {
-			ackrtlog.FromContext(ctx).Info("cross-namespace resource reference detected; "+
-				"this behavior will be disabled by default in a future release. "+
-				"Set --enable-cross-namespace to preserve this behavior.",
-				"ownerNamespace", ko.ObjectMeta.GetNamespace(),
-				"targetNamespace", *arr.Namespace,
-				"referenceName", *arr.Name,
+			ko.Status.Conditions = ackrt.HandleCrossNamespaceReference(
+				ctx, ko.Status.Conditions,
+				ackrt.CrossNamespaceRefKindResource,
+				ko.ObjectMeta.GetNamespace(), *arr.Namespace, *arr.Name,
 			)
-			crossNsMsg := fmt.Sprintf("Cross-namespace resource reference detected: "+
-				"resource in namespace %q references %q in namespace %q. "+
-				"Cross-namespace behavior will be disabled by default in a future release. "+
-				"Set --enable-cross-namespace=true to preserve this behavior.",
-				ko.ObjectMeta.GetNamespace(), *arr.Name, *arr.Namespace)
-			setCrossNamespaceCondition(ko, crossNsMsg)
 		}
 		obj := &svcapitypes.API{}
 		if err := getReferencedResourceState_API(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
@@ -210,19 +202,11 @@ func Test_ResolveReferencesForField_ReferencingARN(t *testing.T) {
 			return hasReferences, err
 		}
 		if isCrossNs {
-			ackrtlog.FromContext(ctx).Info("cross-namespace resource reference detected; "+
-				"this behavior will be disabled by default in a future release. "+
-				"Set --enable-cross-namespace to preserve this behavior.",
-				"ownerNamespace", ko.ObjectMeta.GetNamespace(),
-				"targetNamespace", *arr.Namespace,
-				"referenceName", *arr.Name,
+			ko.Status.Conditions = ackrt.HandleCrossNamespaceReference(
+				ctx, ko.Status.Conditions,
+				ackrt.CrossNamespaceRefKindResource,
+				ko.ObjectMeta.GetNamespace(), *arr.Namespace, *arr.Name,
 			)
-			crossNsMsg := fmt.Sprintf("Cross-namespace resource reference detected: "+
-				"resource in namespace %q references %q in namespace %q. "+
-				"Cross-namespace behavior will be disabled by default in a future release. "+
-				"Set --enable-cross-namespace=true to preserve this behavior.",
-				ko.ObjectMeta.GetNamespace(), *arr.Name, *arr.Namespace)
-			setCrossNamespaceCondition(ko, crossNsMsg)
 		}
 		obj := &svcapitypes.Policy{}
 		if err := getReferencedResourceState_Policy(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
@@ -267,19 +251,11 @@ func Test_ResolveReferencesForField_SliceOfReferences(t *testing.T) {
 				return hasReferences, err
 			}
 			if isCrossNs {
-				ackrtlog.FromContext(ctx).Info("cross-namespace resource reference detected; "+
-					"this behavior will be disabled by default in a future release. "+
-					"Set --enable-cross-namespace to preserve this behavior.",
-					"ownerNamespace", ko.ObjectMeta.GetNamespace(),
-					"targetNamespace", *arr.Namespace,
-					"referenceName", *arr.Name,
+				ko.Status.Conditions = ackrt.HandleCrossNamespaceReference(
+					ctx, ko.Status.Conditions,
+					ackrt.CrossNamespaceRefKindResource,
+					ko.ObjectMeta.GetNamespace(), *arr.Namespace, *arr.Name,
 				)
-				crossNsMsg := fmt.Sprintf("Cross-namespace resource reference detected: "+
-					"resource in namespace %q references %q in namespace %q. "+
-					"Cross-namespace behavior will be disabled by default in a future release. "+
-					"Set --enable-cross-namespace=true to preserve this behavior.",
-					ko.ObjectMeta.GetNamespace(), *arr.Name, *arr.Namespace)
-				setCrossNamespaceCondition(ko, crossNsMsg)
 			}
 			obj := &ec2apitypes.SecurityGroup{}
 			if err := getReferencedResourceState_SecurityGroup(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
@@ -328,19 +304,11 @@ func Test_ResolveReferencesForField_NestedSingleReference(t *testing.T) {
 				return hasReferences, err
 			}
 			if isCrossNs {
-				ackrtlog.FromContext(ctx).Info("cross-namespace resource reference detected; "+
-					"this behavior will be disabled by default in a future release. "+
-					"Set --enable-cross-namespace to preserve this behavior.",
-					"ownerNamespace", ko.ObjectMeta.GetNamespace(),
-					"targetNamespace", *arr.Namespace,
-					"referenceName", *arr.Name,
+				ko.Status.Conditions = ackrt.HandleCrossNamespaceReference(
+					ctx, ko.Status.Conditions,
+					ackrt.CrossNamespaceRefKindResource,
+					ko.ObjectMeta.GetNamespace(), *arr.Namespace, *arr.Name,
 				)
-				crossNsMsg := fmt.Sprintf("Cross-namespace resource reference detected: "+
-					"resource in namespace %q references %q in namespace %q. "+
-					"Cross-namespace behavior will be disabled by default in a future release. "+
-					"Set --enable-cross-namespace=true to preserve this behavior.",
-					ko.ObjectMeta.GetNamespace(), *arr.Name, *arr.Namespace)
-				setCrossNamespaceCondition(ko, crossNsMsg)
 			}
 			obj := &svcapitypes.API{}
 			if err := getReferencedResourceState_API(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
@@ -389,19 +357,11 @@ func Test_ResolveReferencesForField_SingleReference_DeeplyNested(t *testing.T) {
 					return hasReferences, err
 				}
 				if isCrossNs {
-					ackrtlog.FromContext(ctx).Info("cross-namespace resource reference detected; "+
-						"this behavior will be disabled by default in a future release. "+
-						"Set --enable-cross-namespace to preserve this behavior.",
-						"ownerNamespace", ko.ObjectMeta.GetNamespace(),
-						"targetNamespace", *arr.Namespace,
-						"referenceName", *arr.Name,
+					ko.Status.Conditions = ackrt.HandleCrossNamespaceReference(
+						ctx, ko.Status.Conditions,
+						ackrt.CrossNamespaceRefKindResource,
+						ko.ObjectMeta.GetNamespace(), *arr.Namespace, *arr.Name,
 					)
-					crossNsMsg := fmt.Sprintf("Cross-namespace resource reference detected: "+
-						"resource in namespace %q references %q in namespace %q. "+
-						"Cross-namespace behavior will be disabled by default in a future release. "+
-						"Set --enable-cross-namespace=true to preserve this behavior.",
-						ko.ObjectMeta.GetNamespace(), *arr.Name, *arr.Namespace)
-					setCrossNamespaceCondition(ko, crossNsMsg)
 				}
 				obj := &svcapitypes.Bucket{}
 				if err := getReferencedResourceState_Bucket(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
@@ -450,19 +410,11 @@ func Test_ResolveReferencesForField_SingleReference_WithinSlice(t *testing.T) {
 				return hasReferences, err
 			}
 			if isCrossNs {
-				ackrtlog.FromContext(ctx).Info("cross-namespace resource reference detected; "+
-					"this behavior will be disabled by default in a future release. "+
-					"Set --enable-cross-namespace to preserve this behavior.",
-					"ownerNamespace", ko.ObjectMeta.GetNamespace(),
-					"targetNamespace", *arr.Namespace,
-					"referenceName", *arr.Name,
+				ko.Status.Conditions = ackrt.HandleCrossNamespaceReference(
+					ctx, ko.Status.Conditions,
+					ackrt.CrossNamespaceRefKindResource,
+					ko.ObjectMeta.GetNamespace(), *arr.Namespace, *arr.Name,
 				)
-				crossNsMsg := fmt.Sprintf("Cross-namespace resource reference detected: "+
-					"resource in namespace %q references %q in namespace %q. "+
-					"Cross-namespace behavior will be disabled by default in a future release. "+
-					"Set --enable-cross-namespace=true to preserve this behavior.",
-					ko.ObjectMeta.GetNamespace(), *arr.Name, *arr.Namespace)
-				setCrossNamespaceCondition(ko, crossNsMsg)
 			}
 			obj := &svcapitypes.InternetGateway{}
 			if err := getReferencedResourceState_InternetGateway(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
@@ -514,19 +466,11 @@ func Test_ResolveReferencesForField_SingleReference_WithinMultipleSlices(t *test
 								return hasReferences, err
 							}
 							if isCrossNs {
-								ackrtlog.FromContext(ctx).Info("cross-namespace resource reference detected; "+
-									"this behavior will be disabled by default in a future release. "+
-									"Set --enable-cross-namespace to preserve this behavior.",
-									"ownerNamespace", ko.ObjectMeta.GetNamespace(),
-									"targetNamespace", *arr.Namespace,
-									"referenceName", *arr.Name,
+								ko.Status.Conditions = ackrt.HandleCrossNamespaceReference(
+									ctx, ko.Status.Conditions,
+									ackrt.CrossNamespaceRefKindResource,
+									ko.ObjectMeta.GetNamespace(), *arr.Namespace, *arr.Name,
 								)
-								crossNsMsg := fmt.Sprintf("Cross-namespace resource reference detected: "+
-									"resource in namespace %q references %q in namespace %q. "+
-									"Cross-namespace behavior will be disabled by default in a future release. "+
-									"Set --enable-cross-namespace=true to preserve this behavior.",
-									ko.ObjectMeta.GetNamespace(), *arr.Name, *arr.Namespace)
-								setCrossNamespaceCondition(ko, crossNsMsg)
 							}
 							obj := &svcapitypes.Bucket{}
 							if err := getReferencedResourceState_Bucket(ctx, apiReader, obj, *arr.Name, namespace); err != nil {

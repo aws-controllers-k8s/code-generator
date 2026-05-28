@@ -115,19 +115,11 @@ func TestSetSDK_MemoryDB_User_Create(t *testing.T) {
 						return nil, err
 					}
 					if isCrossNs {
-						ackrtlog.FromContext(ctx).Info("cross-namespace secret reference detected; "+
-							"this behavior will be disabled by default in a future release. "+
-							"Set --enable-cross-namespace to preserve this behavior.",
-							"ownerNamespace", r.ko.ObjectMeta.GetNamespace(),
-							"secretNamespace", f1f0iter.Namespace,
-							"secretName", f1f0iter.Name,
+						r.ko.Status.Conditions = ackrt.HandleCrossNamespaceReference(
+							ctx, r.ko.Status.Conditions,
+							ackrt.CrossNamespaceRefKindSecret,
+							r.ko.ObjectMeta.GetNamespace(), f1f0iter.Namespace, f1f0iter.Name,
 						)
-						crossNsMsg := fmt.Sprintf("Cross-namespace secret reference detected: "+
-							"resource in namespace %q references secret %q in namespace %q. "+
-							"Cross-namespace behavior will be disabled by default in a future release. "+
-							"Set --enable-cross-namespace=true to preserve this behavior.",
-							r.ko.ObjectMeta.GetNamespace(), f1f0iter.Name, f1f0iter.Namespace)
-						setCrossNamespaceCondition(r.ko, crossNsMsg)
 					}
 					f1f0iter.Namespace = secretNamespace
 					tmpSecret, err := rm.rr.SecretValueFromReference(ctx, f1f0iter)
@@ -243,19 +235,11 @@ func TestSetSDK_OpenSearch_Domain_Create(t *testing.T) {
 					return nil, err
 				}
 				if isCrossNs {
-					ackrtlog.FromContext(ctx).Info("cross-namespace secret reference detected; "+
-						"this behavior will be disabled by default in a future release. "+
-						"Set --enable-cross-namespace to preserve this behavior.",
-						"ownerNamespace", r.ko.ObjectMeta.GetNamespace(),
-						"secretNamespace", r.ko.Spec.AdvancedSecurityOptions.MasterUserOptions.MasterUserPassword.Namespace,
-						"secretName", r.ko.Spec.AdvancedSecurityOptions.MasterUserOptions.MasterUserPassword.Name,
+					r.ko.Status.Conditions = ackrt.HandleCrossNamespaceReference(
+						ctx, r.ko.Status.Conditions,
+						ackrt.CrossNamespaceRefKindSecret,
+						r.ko.ObjectMeta.GetNamespace(), r.ko.Spec.AdvancedSecurityOptions.MasterUserOptions.MasterUserPassword.Namespace, r.ko.Spec.AdvancedSecurityOptions.MasterUserOptions.MasterUserPassword.Name,
 					)
-					crossNsMsg := fmt.Sprintf("Cross-namespace secret reference detected: "+
-						"resource in namespace %q references secret %q in namespace %q. "+
-						"Cross-namespace behavior will be disabled by default in a future release. "+
-						"Set --enable-cross-namespace=true to preserve this behavior.",
-						r.ko.ObjectMeta.GetNamespace(), r.ko.Spec.AdvancedSecurityOptions.MasterUserOptions.MasterUserPassword.Name, r.ko.Spec.AdvancedSecurityOptions.MasterUserOptions.MasterUserPassword.Namespace)
-					setCrossNamespaceCondition(r.ko, crossNsMsg)
 				}
 				r.ko.Spec.AdvancedSecurityOptions.MasterUserOptions.MasterUserPassword.Namespace = secretNamespace
 				tmpSecret, err := rm.rr.SecretValueFromReference(ctx, r.ko.Spec.AdvancedSecurityOptions.MasterUserOptions.MasterUserPassword)
@@ -1549,19 +1533,11 @@ func TestSetSDK_RDS_DBInstance_Create(t *testing.T) {
 			return nil, err
 		}
 		if isCrossNs {
-			ackrtlog.FromContext(ctx).Info("cross-namespace secret reference detected; "+
-				"this behavior will be disabled by default in a future release. "+
-				"Set --enable-cross-namespace to preserve this behavior.",
-				"ownerNamespace", r.ko.ObjectMeta.GetNamespace(),
-				"secretNamespace", r.ko.Spec.MasterUserPassword.Namespace,
-				"secretName", r.ko.Spec.MasterUserPassword.Name,
+			r.ko.Status.Conditions = ackrt.HandleCrossNamespaceReference(
+				ctx, r.ko.Status.Conditions,
+				ackrt.CrossNamespaceRefKindSecret,
+				r.ko.ObjectMeta.GetNamespace(), r.ko.Spec.MasterUserPassword.Namespace, r.ko.Spec.MasterUserPassword.Name,
 			)
-			crossNsMsg := fmt.Sprintf("Cross-namespace secret reference detected: "+
-				"resource in namespace %q references secret %q in namespace %q. "+
-				"Cross-namespace behavior will be disabled by default in a future release. "+
-				"Set --enable-cross-namespace=true to preserve this behavior.",
-				r.ko.ObjectMeta.GetNamespace(), r.ko.Spec.MasterUserPassword.Name, r.ko.Spec.MasterUserPassword.Namespace)
-			setCrossNamespaceCondition(r.ko, crossNsMsg)
 		}
 		r.ko.Spec.MasterUserPassword.Namespace = secretNamespace
 		tmpSecret, err := rm.rr.SecretValueFromReference(ctx, r.ko.Spec.MasterUserPassword)
@@ -1864,19 +1840,11 @@ func TestSetSDK_RDS_DBInstance_Update(t *testing.T) {
 				return nil, err
 			}
 			if isCrossNs {
-				ackrtlog.FromContext(ctx).Info("cross-namespace secret reference detected; "+
-					"this behavior will be disabled by default in a future release. "+
-					"Set --enable-cross-namespace to preserve this behavior.",
-					"ownerNamespace", r.ko.ObjectMeta.GetNamespace(),
-					"secretNamespace", r.ko.Spec.MasterUserPassword.Namespace,
-					"secretName", r.ko.Spec.MasterUserPassword.Name,
+				r.ko.Status.Conditions = ackrt.HandleCrossNamespaceReference(
+					ctx, r.ko.Status.Conditions,
+					ackrt.CrossNamespaceRefKindSecret,
+					r.ko.ObjectMeta.GetNamespace(), r.ko.Spec.MasterUserPassword.Namespace, r.ko.Spec.MasterUserPassword.Name,
 				)
-				crossNsMsg := fmt.Sprintf("Cross-namespace secret reference detected: "+
-					"resource in namespace %q references secret %q in namespace %q. "+
-					"Cross-namespace behavior will be disabled by default in a future release. "+
-					"Set --enable-cross-namespace=true to preserve this behavior.",
-					r.ko.ObjectMeta.GetNamespace(), r.ko.Spec.MasterUserPassword.Name, r.ko.Spec.MasterUserPassword.Namespace)
-				setCrossNamespaceCondition(r.ko, crossNsMsg)
 			}
 			r.ko.Spec.MasterUserPassword.Namespace = secretNamespace
 			tmpSecret, err := rm.rr.SecretValueFromReference(ctx, r.ko.Spec.MasterUserPassword)
@@ -2428,19 +2396,11 @@ func TestSetSDK_MQ_Broker_Create(t *testing.T) {
 					return nil, err
 				}
 				if isCrossNs {
-					ackrtlog.FromContext(ctx).Info("cross-namespace secret reference detected; "+
-						"this behavior will be disabled by default in a future release. "+
-						"Set --enable-cross-namespace to preserve this behavior.",
-						"ownerNamespace", r.ko.ObjectMeta.GetNamespace(),
-						"secretNamespace", f18iter.Password.Namespace,
-						"secretName", f18iter.Password.Name,
+					r.ko.Status.Conditions = ackrt.HandleCrossNamespaceReference(
+						ctx, r.ko.Status.Conditions,
+						ackrt.CrossNamespaceRefKindSecret,
+						r.ko.ObjectMeta.GetNamespace(), f18iter.Password.Namespace, f18iter.Password.Name,
 					)
-					crossNsMsg := fmt.Sprintf("Cross-namespace secret reference detected: "+
-						"resource in namespace %q references secret %q in namespace %q. "+
-						"Cross-namespace behavior will be disabled by default in a future release. "+
-						"Set --enable-cross-namespace=true to preserve this behavior.",
-						r.ko.ObjectMeta.GetNamespace(), f18iter.Password.Name, f18iter.Password.Namespace)
-					setCrossNamespaceCondition(r.ko, crossNsMsg)
 				}
 				f18iter.Password.Namespace = secretNamespace
 				tmpSecret, err := rm.rr.SecretValueFromReference(ctx, f18iter.Password)
@@ -4804,19 +4764,11 @@ func TestSetSDK_Lambda_Function_EnvironmentVariable_MapOfSecrets_Create(t *testi
 						return nil, err
 					}
 					if isCrossNs {
-						ackrtlog.FromContext(ctx).Info("cross-namespace secret reference detected; "+
-							"this behavior will be disabled by default in a future release. "+
-							"Set --enable-cross-namespace to preserve this behavior.",
-							"ownerNamespace", r.ko.ObjectMeta.GetNamespace(),
-							"secretNamespace", f4f0valiter.Namespace,
-							"secretName", f4f0valiter.Name,
+						r.ko.Status.Conditions = ackrt.HandleCrossNamespaceReference(
+							ctx, r.ko.Status.Conditions,
+							ackrt.CrossNamespaceRefKindSecret,
+							r.ko.ObjectMeta.GetNamespace(), f4f0valiter.Namespace, f4f0valiter.Name,
 						)
-						crossNsMsg := fmt.Sprintf("Cross-namespace secret reference detected: "+
-							"resource in namespace %q references secret %q in namespace %q. "+
-							"Cross-namespace behavior will be disabled by default in a future release. "+
-							"Set --enable-cross-namespace=true to preserve this behavior.",
-							r.ko.ObjectMeta.GetNamespace(), f4f0valiter.Name, f4f0valiter.Namespace)
-						setCrossNamespaceCondition(r.ko, crossNsMsg)
 					}
 					f4f0valiter.Namespace = secretNamespace
 					tmpSecret, err := rm.rr.SecretValueFromReference(ctx, f4f0valiter)
@@ -4966,19 +4918,11 @@ func TestSetSDK_Lambda_Function_EnvironmentVariable_MapOfSecrets_Update(t *testi
 						return nil, err
 					}
 					if isCrossNs {
-						ackrtlog.FromContext(ctx).Info("cross-namespace secret reference detected; "+
-							"this behavior will be disabled by default in a future release. "+
-							"Set --enable-cross-namespace to preserve this behavior.",
-							"ownerNamespace", r.ko.ObjectMeta.GetNamespace(),
-							"secretNamespace", f2f0valiter.Namespace,
-							"secretName", f2f0valiter.Name,
+						r.ko.Status.Conditions = ackrt.HandleCrossNamespaceReference(
+							ctx, r.ko.Status.Conditions,
+							ackrt.CrossNamespaceRefKindSecret,
+							r.ko.ObjectMeta.GetNamespace(), f2f0valiter.Namespace, f2f0valiter.Name,
 						)
-						crossNsMsg := fmt.Sprintf("Cross-namespace secret reference detected: "+
-							"resource in namespace %q references secret %q in namespace %q. "+
-							"Cross-namespace behavior will be disabled by default in a future release. "+
-							"Set --enable-cross-namespace=true to preserve this behavior.",
-							r.ko.ObjectMeta.GetNamespace(), f2f0valiter.Name, f2f0valiter.Namespace)
-						setCrossNamespaceCondition(r.ko, crossNsMsg)
 					}
 					f2f0valiter.Namespace = secretNamespace
 					tmpSecret, err := rm.rr.SecretValueFromReference(ctx, f2f0valiter)

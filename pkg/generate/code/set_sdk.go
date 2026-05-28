@@ -1114,7 +1114,13 @@ func setSDKForContainer(
 //         return nil, err
 //     }
 //     if isCrossNs {
-//         // log warning and set condition
+//         r.ko.Status.Conditions = ackrt.HandleCrossNamespaceReference(
+//             ctx, r.ko.Status.Conditions,
+//             ackrt.CrossNamespaceRefKindSecret,
+//             r.ko.ObjectMeta.GetNamespace(),
+//             ko.Spec.MasterUserPassword.Namespace,
+//             ko.Spec.MasterUserPassword.Name,
+//         )
 //     }
 //     ko.Spec.MasterUserPassword.Namespace = secretNamespace
 //     tmpSecret, err := rm.rr.SecretValueFromReference(ctx, ko.Spec.MasterUserPassword)
@@ -1164,19 +1170,11 @@ func setSDKForSecret(
 	out += fmt.Sprintf("%s\t\treturn nil, err\n", indent)
 	out += fmt.Sprintf("%s\t}\n", indent)
 	out += fmt.Sprintf("%s\tif isCrossNs {\n", indent)
-	out += fmt.Sprintf("%s\t\tackrtlog.FromContext(ctx).Info(\"cross-namespace secret reference detected; \"+\n", indent)
-	out += fmt.Sprintf("%s\t\t\t\"this behavior will be disabled by default in a future release. \"+\n", indent)
-	out += fmt.Sprintf("%s\t\t\t\"Set --enable-cross-namespace to preserve this behavior.\",\n", indent)
-	out += fmt.Sprintf("%s\t\t\t\"ownerNamespace\", r.ko.ObjectMeta.GetNamespace(),\n", indent)
-	out += fmt.Sprintf("%s\t\t\t\"secretNamespace\", %s.Namespace,\n", indent, sourceVarName)
-	out += fmt.Sprintf("%s\t\t\t\"secretName\", %s.Name,\n", indent, sourceVarName)
+	out += fmt.Sprintf("%s\t\tr.ko.Status.Conditions = ackrt.HandleCrossNamespaceReference(\n", indent)
+	out += fmt.Sprintf("%s\t\t\tctx, r.ko.Status.Conditions,\n", indent)
+	out += fmt.Sprintf("%s\t\t\tackrt.CrossNamespaceRefKindSecret,\n", indent)
+	out += fmt.Sprintf("%s\t\t\tr.ko.ObjectMeta.GetNamespace(), %s.Namespace, %s.Name,\n", indent, sourceVarName, sourceVarName)
 	out += fmt.Sprintf("%s\t\t)\n", indent)
-	out += fmt.Sprintf("%s\t\tcrossNsMsg := fmt.Sprintf(\"Cross-namespace secret reference detected: \"+\n", indent)
-	out += fmt.Sprintf("%s\t\t\t\"resource in namespace %%q references secret %%q in namespace %%q. \"+\n", indent)
-	out += fmt.Sprintf("%s\t\t\t\"Cross-namespace behavior will be disabled by default in a future release. \"+\n", indent)
-	out += fmt.Sprintf("%s\t\t\t\"Set --enable-cross-namespace=true to preserve this behavior.\",\n", indent)
-	out += fmt.Sprintf("%s\t\t\tr.ko.ObjectMeta.GetNamespace(), %s.Name, %s.Namespace)\n", indent, sourceVarName, sourceVarName)
-	out += fmt.Sprintf("%s\t\tsetCrossNamespaceCondition(r.ko, crossNsMsg)\n", indent)
 	out += fmt.Sprintf("%s\t}\n", indent)
 	// Override the secret reference namespace with the validated namespace
 	out += fmt.Sprintf("%s\t%s.Namespace = secretNamespace\n", indent, sourceVarName)

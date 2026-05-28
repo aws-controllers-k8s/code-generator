@@ -16,7 +16,6 @@ import (
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrt "github.com/aws-controllers-k8s/runtime/pkg/runtime"
-	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 {{ end -}}
 	acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
 {{ $servicePackageName := .ServicePackageName -}}
@@ -33,11 +32,6 @@ import (
 )
 
 {{ if .CRD.HasReferenceFields -}}
-// Hack to avoid import errors during build...
-var (
-	_ = &ackrtlog.ResourceLogger{}
-)
-
 {{ range $fieldName := .CRD.SortedFieldNames -}}
 {{ $field := (index $.CRD.Fields $fieldName) -}}
 {{ if and $field.HasReference (not (eq $field.ReferencedServiceName $servicePackageName)) -}}
@@ -140,7 +134,3 @@ func (rm *resourceManager) resolveReferenceFor{{ $field.FieldPathWithUnderscore 
 {{ end -}}
 {{ end -}}
 {{ end -}}
-
-{{ if .CRD.HasReferenceFields -}}
-{{ end -}}
-

@@ -341,29 +341,3 @@ func (rm *resourceManager) terminalAWSError(err error) bool {
 {{- if $hookCode := Hook .CRD "sdk_file_end" }}
 {{ $hookCode }}
 {{- end }}
-
-// setCrossNamespaceCondition sets the ACK.CrossNamespaceOptInRequired condition
-// on the resource to notify users that their cross-namespace usage will require
-// explicit opt-in in a future release.
-func setCrossNamespaceCondition(ko *svcapitypes.{{ .CRD.Names.Camel }}, message string) {
-	if ko.Status.Conditions == nil {
-		ko.Status.Conditions = []*ackv1alpha1.Condition{}
-	}
-	var crossNsCond *ackv1alpha1.Condition
-	for _, c := range ko.Status.Conditions {
-		if c.Type == ackv1alpha1.ConditionTypeCrossNamespaceOptInRequired {
-			crossNsCond = c
-			break
-		}
-	}
-	if crossNsCond == nil {
-		crossNsCond = &ackv1alpha1.Condition{
-			Type: ackv1alpha1.ConditionTypeCrossNamespaceOptInRequired,
-		}
-		ko.Status.Conditions = append(ko.Status.Conditions, crossNsCond)
-	}
-	now := metav1.Now()
-	crossNsCond.LastTransitionTime = &now
-	crossNsCond.Status = corev1.ConditionTrue
-	crossNsCond.Message = &message
-}
