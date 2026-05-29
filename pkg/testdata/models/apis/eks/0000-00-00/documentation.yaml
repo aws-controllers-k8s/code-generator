@@ -1,5 +1,8 @@
 resources:
   Cluster:
+    note: |
+      This resource does not support direct updates to the Kubernetes version.
+      Use the UpdateClusterVersion API to upgrade.
     fields:
       RoleARN:
         append: |
