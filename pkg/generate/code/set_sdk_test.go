@@ -105,21 +105,17 @@ func TestSetSDK_MemoryDB_User_Create(t *testing.T) {
 			for _, f1f0iter := range r.ko.Spec.AuthenticationMode.Passwords {
 				var f1f0elem string
 				if f1f0iter != nil {
-					secretNamespace, isCrossNs, err := ackrt.ValidateCrossNamespaceReferenceString(
+					secretNamespace, err := ackrt.ResolveCrossNamespaceReferenceString(
+						ctx,
 						rm.cfg.EnableCrossNamespace,
+						&r.ko.Status.Conditions,
+						ackrt.CrossNamespaceRefKindSecret,
 						r.ko.ObjectMeta.GetNamespace(),
 						f1f0iter.Namespace,
 						f1f0iter.Name,
 					)
 					if err != nil {
 						return nil, err
-					}
-					if isCrossNs {
-						r.ko.Status.Conditions = ackrt.HandleCrossNamespaceReference(
-							ctx, r.ko.Status.Conditions,
-							ackrt.CrossNamespaceRefKindSecret,
-							r.ko.ObjectMeta.GetNamespace(), f1f0iter.Namespace, f1f0iter.Name,
-						)
 					}
 					f1f0iter.Namespace = secretNamespace
 					tmpSecret, err := rm.rr.SecretValueFromReference(ctx, f1f0iter)
@@ -225,21 +221,17 @@ func TestSetSDK_OpenSearch_Domain_Create(t *testing.T) {
 				f3f4.MasterUserName = r.ko.Spec.AdvancedSecurityOptions.MasterUserOptions.MasterUserName
 			}
 			if r.ko.Spec.AdvancedSecurityOptions.MasterUserOptions.MasterUserPassword != nil {
-				secretNamespace, isCrossNs, err := ackrt.ValidateCrossNamespaceReferenceString(
+				secretNamespace, err := ackrt.ResolveCrossNamespaceReferenceString(
+					ctx,
 					rm.cfg.EnableCrossNamespace,
+					&r.ko.Status.Conditions,
+					ackrt.CrossNamespaceRefKindSecret,
 					r.ko.ObjectMeta.GetNamespace(),
 					r.ko.Spec.AdvancedSecurityOptions.MasterUserOptions.MasterUserPassword.Namespace,
 					r.ko.Spec.AdvancedSecurityOptions.MasterUserOptions.MasterUserPassword.Name,
 				)
 				if err != nil {
 					return nil, err
-				}
-				if isCrossNs {
-					r.ko.Status.Conditions = ackrt.HandleCrossNamespaceReference(
-						ctx, r.ko.Status.Conditions,
-						ackrt.CrossNamespaceRefKindSecret,
-						r.ko.ObjectMeta.GetNamespace(), r.ko.Spec.AdvancedSecurityOptions.MasterUserOptions.MasterUserPassword.Namespace, r.ko.Spec.AdvancedSecurityOptions.MasterUserOptions.MasterUserPassword.Name,
-					)
 				}
 				r.ko.Spec.AdvancedSecurityOptions.MasterUserOptions.MasterUserPassword.Namespace = secretNamespace
 				tmpSecret, err := rm.rr.SecretValueFromReference(ctx, r.ko.Spec.AdvancedSecurityOptions.MasterUserOptions.MasterUserPassword)
@@ -1523,21 +1515,17 @@ func TestSetSDK_RDS_DBInstance_Create(t *testing.T) {
 		res.ManageMasterUserPassword = r.ko.Spec.ManageMasterUserPassword
 	}
 	if r.ko.Spec.MasterUserPassword != nil {
-		secretNamespace, isCrossNs, err := ackrt.ValidateCrossNamespaceReferenceString(
+		secretNamespace, err := ackrt.ResolveCrossNamespaceReferenceString(
+			ctx,
 			rm.cfg.EnableCrossNamespace,
+			&r.ko.Status.Conditions,
+			ackrt.CrossNamespaceRefKindSecret,
 			r.ko.ObjectMeta.GetNamespace(),
 			r.ko.Spec.MasterUserPassword.Namespace,
 			r.ko.Spec.MasterUserPassword.Name,
 		)
 		if err != nil {
 			return nil, err
-		}
-		if isCrossNs {
-			r.ko.Status.Conditions = ackrt.HandleCrossNamespaceReference(
-				ctx, r.ko.Status.Conditions,
-				ackrt.CrossNamespaceRefKindSecret,
-				r.ko.ObjectMeta.GetNamespace(), r.ko.Spec.MasterUserPassword.Namespace, r.ko.Spec.MasterUserPassword.Name,
-			)
 		}
 		r.ko.Spec.MasterUserPassword.Namespace = secretNamespace
 		tmpSecret, err := rm.rr.SecretValueFromReference(ctx, r.ko.Spec.MasterUserPassword)
@@ -1830,21 +1818,17 @@ func TestSetSDK_RDS_DBInstance_Update(t *testing.T) {
 	}
 	if delta.DifferentAt("Spec.MasterUserPassword") {
 		if r.ko.Spec.MasterUserPassword != nil {
-			secretNamespace, isCrossNs, err := ackrt.ValidateCrossNamespaceReferenceString(
+			secretNamespace, err := ackrt.ResolveCrossNamespaceReferenceString(
+				ctx,
 				rm.cfg.EnableCrossNamespace,
+				&r.ko.Status.Conditions,
+				ackrt.CrossNamespaceRefKindSecret,
 				r.ko.ObjectMeta.GetNamespace(),
 				r.ko.Spec.MasterUserPassword.Namespace,
 				r.ko.Spec.MasterUserPassword.Name,
 			)
 			if err != nil {
 				return nil, err
-			}
-			if isCrossNs {
-				r.ko.Status.Conditions = ackrt.HandleCrossNamespaceReference(
-					ctx, r.ko.Status.Conditions,
-					ackrt.CrossNamespaceRefKindSecret,
-					r.ko.ObjectMeta.GetNamespace(), r.ko.Spec.MasterUserPassword.Namespace, r.ko.Spec.MasterUserPassword.Name,
-				)
 			}
 			r.ko.Spec.MasterUserPassword.Namespace = secretNamespace
 			tmpSecret, err := rm.rr.SecretValueFromReference(ctx, r.ko.Spec.MasterUserPassword)
@@ -2386,21 +2370,17 @@ func TestSetSDK_MQ_Broker_Create(t *testing.T) {
 				f18elem.Groups = aws.ToStringSlice(f18iter.Groups)
 			}
 			if f18iter.Password != nil {
-				secretNamespace, isCrossNs, err := ackrt.ValidateCrossNamespaceReferenceString(
+				secretNamespace, err := ackrt.ResolveCrossNamespaceReferenceString(
+					ctx,
 					rm.cfg.EnableCrossNamespace,
+					&r.ko.Status.Conditions,
+					ackrt.CrossNamespaceRefKindSecret,
 					r.ko.ObjectMeta.GetNamespace(),
 					f18iter.Password.Namespace,
 					f18iter.Password.Name,
 				)
 				if err != nil {
 					return nil, err
-				}
-				if isCrossNs {
-					r.ko.Status.Conditions = ackrt.HandleCrossNamespaceReference(
-						ctx, r.ko.Status.Conditions,
-						ackrt.CrossNamespaceRefKindSecret,
-						r.ko.ObjectMeta.GetNamespace(), f18iter.Password.Namespace, f18iter.Password.Name,
-					)
 				}
 				f18iter.Password.Namespace = secretNamespace
 				tmpSecret, err := rm.rr.SecretValueFromReference(ctx, f18iter.Password)
@@ -4754,21 +4734,17 @@ func TestSetSDK_Lambda_Function_EnvironmentVariable_MapOfSecrets_Create(t *testi
 			for f4f0key, f4f0valiter := range r.ko.Spec.Environment.Variables {
 				var f4f0val string
 				if f4f0valiter != nil {
-					secretNamespace, isCrossNs, err := ackrt.ValidateCrossNamespaceReferenceString(
+					secretNamespace, err := ackrt.ResolveCrossNamespaceReferenceString(
+						ctx,
 						rm.cfg.EnableCrossNamespace,
+						&r.ko.Status.Conditions,
+						ackrt.CrossNamespaceRefKindSecret,
 						r.ko.ObjectMeta.GetNamespace(),
 						f4f0valiter.Namespace,
 						f4f0valiter.Name,
 					)
 					if err != nil {
 						return nil, err
-					}
-					if isCrossNs {
-						r.ko.Status.Conditions = ackrt.HandleCrossNamespaceReference(
-							ctx, r.ko.Status.Conditions,
-							ackrt.CrossNamespaceRefKindSecret,
-							r.ko.ObjectMeta.GetNamespace(), f4f0valiter.Namespace, f4f0valiter.Name,
-						)
 					}
 					f4f0valiter.Namespace = secretNamespace
 					tmpSecret, err := rm.rr.SecretValueFromReference(ctx, f4f0valiter)
@@ -4908,21 +4884,17 @@ func TestSetSDK_Lambda_Function_EnvironmentVariable_MapOfSecrets_Update(t *testi
 			for f2f0key, f2f0valiter := range r.ko.Spec.Environment.Variables {
 				var f2f0val string
 				if f2f0valiter != nil {
-					secretNamespace, isCrossNs, err := ackrt.ValidateCrossNamespaceReferenceString(
+					secretNamespace, err := ackrt.ResolveCrossNamespaceReferenceString(
+						ctx,
 						rm.cfg.EnableCrossNamespace,
+						&r.ko.Status.Conditions,
+						ackrt.CrossNamespaceRefKindSecret,
 						r.ko.ObjectMeta.GetNamespace(),
 						f2f0valiter.Namespace,
 						f2f0valiter.Name,
 					)
 					if err != nil {
 						return nil, err
-					}
-					if isCrossNs {
-						r.ko.Status.Conditions = ackrt.HandleCrossNamespaceReference(
-							ctx, r.ko.Status.Conditions,
-							ackrt.CrossNamespaceRefKindSecret,
-							r.ko.ObjectMeta.GetNamespace(), f2f0valiter.Namespace, f2f0valiter.Name,
-						)
 					}
 					f2f0valiter.Namespace = secretNamespace
 					tmpSecret, err := rm.rr.SecretValueFromReference(ctx, f2f0valiter)

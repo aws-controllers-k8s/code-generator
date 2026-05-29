@@ -144,21 +144,17 @@ func Test_ResolveReferencesForField_SingleReference(t *testing.T) {
 		if arr.Name == nil || *arr.Name == "" {
 			return hasReferences, fmt.Errorf("provided resource reference is nil or empty: APIRef")
 		}
-		namespace, isCrossNs, err := ackrt.ValidateCrossNamespaceReference(
+		namespace, err := ackrt.ResolveCrossNamespaceReference(
+			ctx,
 			rm.cfg.EnableCrossNamespace,
+			&ko.Status.Conditions,
+			ackrt.CrossNamespaceRefKindResource,
 			ko.ObjectMeta.GetNamespace(),
 			arr.Namespace,
 			*arr.Name,
 		)
 		if err != nil {
 			return hasReferences, err
-		}
-		if isCrossNs {
-			ko.Status.Conditions = ackrt.HandleCrossNamespaceReference(
-				ctx, ko.Status.Conditions,
-				ackrt.CrossNamespaceRefKindResource,
-				ko.ObjectMeta.GetNamespace(), *arr.Namespace, *arr.Name,
-			)
 		}
 		obj := &svcapitypes.API{}
 		if err := getReferencedResourceState_API(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
@@ -192,21 +188,17 @@ func Test_ResolveReferencesForField_ReferencingARN(t *testing.T) {
 		if arr.Name == nil || *arr.Name == "" {
 			return hasReferences, fmt.Errorf("provided resource reference is nil or empty: PermissionsBoundaryRef")
 		}
-		namespace, isCrossNs, err := ackrt.ValidateCrossNamespaceReference(
+		namespace, err := ackrt.ResolveCrossNamespaceReference(
+			ctx,
 			rm.cfg.EnableCrossNamespace,
+			&ko.Status.Conditions,
+			ackrt.CrossNamespaceRefKindResource,
 			ko.ObjectMeta.GetNamespace(),
 			arr.Namespace,
 			*arr.Name,
 		)
 		if err != nil {
 			return hasReferences, err
-		}
-		if isCrossNs {
-			ko.Status.Conditions = ackrt.HandleCrossNamespaceReference(
-				ctx, ko.Status.Conditions,
-				ackrt.CrossNamespaceRefKindResource,
-				ko.ObjectMeta.GetNamespace(), *arr.Namespace, *arr.Name,
-			)
 		}
 		obj := &svcapitypes.Policy{}
 		if err := getReferencedResourceState_Policy(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
@@ -241,21 +233,17 @@ func Test_ResolveReferencesForField_SliceOfReferences(t *testing.T) {
 			if arr.Name == nil || *arr.Name == "" {
 				return hasReferences, fmt.Errorf("provided resource reference is nil or empty: SecurityGroupRefs")
 			}
-			namespace, isCrossNs, err := ackrt.ValidateCrossNamespaceReference(
+			namespace, err := ackrt.ResolveCrossNamespaceReference(
+				ctx,
 				rm.cfg.EnableCrossNamespace,
+				&ko.Status.Conditions,
+				ackrt.CrossNamespaceRefKindResource,
 				ko.ObjectMeta.GetNamespace(),
 				arr.Namespace,
 				*arr.Name,
 			)
 			if err != nil {
 				return hasReferences, err
-			}
-			if isCrossNs {
-				ko.Status.Conditions = ackrt.HandleCrossNamespaceReference(
-					ctx, ko.Status.Conditions,
-					ackrt.CrossNamespaceRefKindResource,
-					ko.ObjectMeta.GetNamespace(), *arr.Namespace, *arr.Name,
-				)
 			}
 			obj := &ec2apitypes.SecurityGroup{}
 			if err := getReferencedResourceState_SecurityGroup(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
@@ -294,21 +282,17 @@ func Test_ResolveReferencesForField_NestedSingleReference(t *testing.T) {
 			if arr.Name == nil || *arr.Name == "" {
 				return hasReferences, fmt.Errorf("provided resource reference is nil or empty: JWTConfiguration.IssuerRef")
 			}
-			namespace, isCrossNs, err := ackrt.ValidateCrossNamespaceReference(
+			namespace, err := ackrt.ResolveCrossNamespaceReference(
+				ctx,
 				rm.cfg.EnableCrossNamespace,
+				&ko.Status.Conditions,
+				ackrt.CrossNamespaceRefKindResource,
 				ko.ObjectMeta.GetNamespace(),
 				arr.Namespace,
 				*arr.Name,
 			)
 			if err != nil {
 				return hasReferences, err
-			}
-			if isCrossNs {
-				ko.Status.Conditions = ackrt.HandleCrossNamespaceReference(
-					ctx, ko.Status.Conditions,
-					ackrt.CrossNamespaceRefKindResource,
-					ko.ObjectMeta.GetNamespace(), *arr.Namespace, *arr.Name,
-				)
 			}
 			obj := &svcapitypes.API{}
 			if err := getReferencedResourceState_API(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
@@ -347,21 +331,17 @@ func Test_ResolveReferencesForField_SingleReference_DeeplyNested(t *testing.T) {
 				if arr.Name == nil || *arr.Name == "" {
 					return hasReferences, fmt.Errorf("provided resource reference is nil or empty: Logging.LoggingEnabled.TargetBucketRef")
 				}
-				namespace, isCrossNs, err := ackrt.ValidateCrossNamespaceReference(
+				namespace, err := ackrt.ResolveCrossNamespaceReference(
+					ctx,
 					rm.cfg.EnableCrossNamespace,
+					&ko.Status.Conditions,
+					ackrt.CrossNamespaceRefKindResource,
 					ko.ObjectMeta.GetNamespace(),
 					arr.Namespace,
 					*arr.Name,
 				)
 				if err != nil {
 					return hasReferences, err
-				}
-				if isCrossNs {
-					ko.Status.Conditions = ackrt.HandleCrossNamespaceReference(
-						ctx, ko.Status.Conditions,
-						ackrt.CrossNamespaceRefKindResource,
-						ko.ObjectMeta.GetNamespace(), *arr.Namespace, *arr.Name,
-					)
 				}
 				obj := &svcapitypes.Bucket{}
 				if err := getReferencedResourceState_Bucket(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
@@ -400,21 +380,17 @@ func Test_ResolveReferencesForField_SingleReference_WithinSlice(t *testing.T) {
 			if arr.Name == nil || *arr.Name == "" {
 				return hasReferences, fmt.Errorf("provided resource reference is nil or empty: Routes.GatewayRef")
 			}
-			namespace, isCrossNs, err := ackrt.ValidateCrossNamespaceReference(
+			namespace, err := ackrt.ResolveCrossNamespaceReference(
+				ctx,
 				rm.cfg.EnableCrossNamespace,
+				&ko.Status.Conditions,
+				ackrt.CrossNamespaceRefKindResource,
 				ko.ObjectMeta.GetNamespace(),
 				arr.Namespace,
 				*arr.Name,
 			)
 			if err != nil {
 				return hasReferences, err
-			}
-			if isCrossNs {
-				ko.Status.Conditions = ackrt.HandleCrossNamespaceReference(
-					ctx, ko.Status.Conditions,
-					ackrt.CrossNamespaceRefKindResource,
-					ko.ObjectMeta.GetNamespace(), *arr.Namespace, *arr.Name,
-				)
 			}
 			obj := &svcapitypes.InternetGateway{}
 			if err := getReferencedResourceState_InternetGateway(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
@@ -456,21 +432,17 @@ func Test_ResolveReferencesForField_SingleReference_WithinMultipleSlices(t *test
 							if arr.Name == nil || *arr.Name == "" {
 								return hasReferences, fmt.Errorf("provided resource reference is nil or empty: Notification.LambdaFunctionConfigurations.Filter.Key.FilterRules.ValueRef")
 							}
-							namespace, isCrossNs, err := ackrt.ValidateCrossNamespaceReference(
+							namespace, err := ackrt.ResolveCrossNamespaceReference(
+								ctx,
 								rm.cfg.EnableCrossNamespace,
+								&ko.Status.Conditions,
+								ackrt.CrossNamespaceRefKindResource,
 								ko.ObjectMeta.GetNamespace(),
 								arr.Namespace,
 								*arr.Name,
 							)
 							if err != nil {
 								return hasReferences, err
-							}
-							if isCrossNs {
-								ko.Status.Conditions = ackrt.HandleCrossNamespaceReference(
-									ctx, ko.Status.Conditions,
-									ackrt.CrossNamespaceRefKindResource,
-									ko.ObjectMeta.GetNamespace(), *arr.Namespace, *arr.Name,
-								)
 							}
 							obj := &svcapitypes.Bucket{}
 							if err := getReferencedResourceState_Bucket(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
