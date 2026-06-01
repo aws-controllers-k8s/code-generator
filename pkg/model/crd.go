@@ -140,6 +140,19 @@ func (r *CRD) Documentation() string {
 	return docString
 }
 
+// Note returns the resource-level documentation note if one is configured,
+// otherwise returns an empty string.
+func (r *CRD) Note() string {
+	if r.docCfg == nil {
+		return ""
+	}
+	resourceConfig, exists := r.docCfg.Resources[r.Names.Camel]
+	if !exists || resourceConfig.Note == nil {
+		return ""
+	}
+	return *resourceConfig.Note
+}
+
 // HasShapeAsMember returns true if the supplied Shape name appears in *any*
 // payload shape of *any* Operation for the resource. It recurses down through
 // the resource's Operation Input and Output shapes and their member shapes

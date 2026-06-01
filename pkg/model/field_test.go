@@ -73,6 +73,33 @@ func TestFieldDocumentation(t *testing.T) {
 
 }
 
+func TestResourceNote(t *testing.T) {
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "eks",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile:     "generator.yaml",
+			DocumentationConfigFile: "documentation.yaml",
+		},
+	)
+
+	crds, err := g.GetCRDs()
+	require.Nil(err)
+
+	crd := getCRDByName("Cluster", crds)
+	require.NotNil(crd)
+
+	require.Equal(
+		"This resource does not support direct updates to the Kubernetes version.\nUse the UpdateClusterVersion API to upgrade.\n",
+		crd.Note(),
+	)
+
+	// A resource without a note should return empty string
+	addonCRD := getCRDByName("AddOn", crds)
+	require.NotNil(addonCRD)
+	require.Equal("", addonCRD.Note())
+}
+
 func TestMemberFields(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
