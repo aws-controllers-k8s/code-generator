@@ -147,6 +147,12 @@ func compareResourceFields(
 			continue
 		}
 
+		// Use secret data comparison for fields marked as secrets
+		if fieldConfig != nil && fieldConfig.IsSecret {
+			out += compareSecret(deltaVarName, firstResVarName, secondResVarName, firstResAdaptedVarName, secondResAdaptedVarName, fieldPath, indentLevel)
+			continue
+		}
+
 		memberShapeRef := specField.ShapeRef
 		memberShape := memberShapeRef.Shape
 
@@ -755,6 +761,91 @@ func compareDocument(
 		indent, deltaVarName, fieldPath, desiredResVarName, latestResVarName,
 	)
 	out += fmt.Sprintf("%s\t}\n", indent)
+	out += fmt.Sprintf("%s}\n", indent)
+
+	return out
+}
+
+// compareSecret outputs Go code that compares two SecretKeyReference fields.
+// It first checks if the reference itself changed (name/namespace/key), and
+// additionally checks whether the underlying secret data changed by comparing
+// the resource version stored in the annotation.
+//
+// Output code will look something like this:
+//
+//	if ackcompare.HasNilDifference(a.ko.Spec.SecretString, b.ko.Spec.SecretString) {
+//	    delta.Add("Spec.SecretString", a.ko.Spec.SecretString, b.ko.Spec.SecretString)
+//	} else if a.ko.Spec.SecretString != nil && b.ko.Spec.SecretString != nil {
+//	    if !ackcompare.SecretKeyReferenceEqual(a.ko.Spec.SecretString, b.ko.Spec.SecretString) {
+//	        delta.Add("Spec.SecretString", a.ko.Spec.SecretString, b.ko.Spec.SecretString)
+//	    } else if ackcompare.SecretDataChanged(a.ko.GetAnnotations(), b.ko.GetAnnotations(), acksecret.IndexKey(a.ko.Spec.SecretString, a.ko.GetNamespace())) {
+//	        delta.Add("Spec.SecretString", a.ko.Spec.SecretString, b.ko.Spec.SecretString)
+//	    }
+//	}
+func compareSecret(
+	// String representing the name of the variable that is of type
+	// `*ackcompare.Delta`. We will generate Go code that calls the `Add()`
+	// method of this variable when differences between fields are detected.
+	deltaVarName string,
+	// String representing the name of the root resource variable for the
+	// desired CR. This will typically be something like "a.ko".
+	desiredRootVarName string,
+	// String representing the name of the root resource variable for the
+	// latest CR. This will typically be something like "b.ko".
+	latestRootVarName string,
+	// String representing the name of the variable that represents the desired
+	// CR field. This will typically be something like "a.ko.Spec.SecretString".
+	desiredResVarName string,
+	// String representing the name of the variable that represents the latest
+	// CR field. This will typically be something like "b.ko.Spec.SecretString".
+	latestResVarName string,
+	// String indicating the current field path being evaluated, e.g.
+	// "Spec.SecretString".
+	fieldPath string,
+	// Number of levels of indentation to use
+	indentLevel int,
+) string {
+	out := ""
+	indent := strings.Repeat("\t", indentLevel)
+
+	// if ackcompare.HasNilDifference(a.ko.Spec.SecretString, b.ko.Spec.SecretString) {
+	out += fmt.Sprintf(
+		"%sif ackcompare.HasNilDifference(%s, %s) {\n",
+		indent, desiredResVarName, latestResVarName,
+	)
+	//     delta.Add("Spec.SecretString", a.ko.Spec.SecretString, b.ko.Spec.SecretString)
+	out += fmt.Sprintf(
+		"%s\t%s.Add(\"%s\", %s, %s)\n",
+		indent, deltaVarName, fieldPath, desiredResVarName, latestResVarName,
+	)
+	// } else if a.ko.Spec.SecretString != nil && b.ko.Spec.SecretString != nil {
+	out += fmt.Sprintf(
+		"%s} else if %s != nil && %s != nil {\n",
+		indent, desiredResVarName, latestResVarName,
+	)
+	//     if !ackcompare.SecretKeyReferenceEqual(a.ko.Spec.SecretString, b.ko.Spec.SecretString) {
+	out += fmt.Sprintf(
+		"%s\tif !ackcompare.SecretKeyReferenceEqual(%s, %s) {\n",
+		indent, desiredResVarName, latestResVarName,
+	)
+	//         delta.Add("Spec.SecretString", a.ko.Spec.SecretString, b.ko.Spec.SecretString)
+	out += fmt.Sprintf(
+		"%s\t\t%s.Add(\"%s\", %s, %s)\n",
+		indent, deltaVarName, fieldPath, desiredResVarName, latestResVarName,
+	)
+	//     } else if ackcompare.SecretDataChanged(a.ko.GetAnnotations(), b.ko.GetAnnotations(), acksecret.IndexKey(a.ko.Spec.SecretString, a.ko.GetNamespace())) {
+	out += fmt.Sprintf(
+		"%s\t} else if ackcompare.SecretDataChanged(%s.GetAnnotations(), %s.GetAnnotations(), acksecret.IndexKey(%s, %s.GetNamespace())) {\n",
+		indent, desiredRootVarName, latestRootVarName, desiredResVarName, desiredRootVarName,
+	)
+	//         delta.Add("Spec.SecretString", a.ko.Spec.SecretString, b.ko.Spec.SecretString)
+	out += fmt.Sprintf(
+		"%s\t\t%s.Add(\"%s\", %s, %s)\n",
+		indent, deltaVarName, fieldPath, desiredResVarName, latestResVarName,
+	)
+	//     }
+	out += fmt.Sprintf("%s\t}\n", indent)
+	// }
 	out += fmt.Sprintf("%s}\n", indent)
 
 	return out

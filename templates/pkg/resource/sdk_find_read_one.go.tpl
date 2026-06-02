@@ -59,6 +59,9 @@ func (rm *resourceManager) sdkFind(
 {{- if $hookCode := Hook .CRD "sdk_read_one_post_set_output" }}
 {{ $hookCode }}
 {{- end }}
+{{- if HasSecretFields .CRD }}
+	acksecret.SetResourceVersionsAnnotation(ctx, (&resource{ko}).SecretReferences(), ko, rm.rr.SecretResourceVersion)
+{{- end }}
 	return &resource{ko}, nil
 }
 
