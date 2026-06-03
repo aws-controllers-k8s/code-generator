@@ -31,6 +31,8 @@ type ShapeRef struct {
 	Shape         *Shape `json:"-"`
 	Documentation string `json:"-"`
 	DefaultValue  string `json:"-"`
+	AddedDefault  bool   `json:"-"`
+	ClientOptional bool  `json:"-"`
 	ShapeName     string `json:"shape"`
 	Location      string
 	LocationName  string
@@ -1093,6 +1095,11 @@ func (s *Shape) HasDefaultValue() bool {
 // or from the target shape (Shape.DefaultValue).
 func (s *ShapeRef) IsNonPointerInSDK() bool {
 	if s.DefaultValue == "<nil>" {
+		return false
+	}
+	// @addedDefault and @clientOptional force the SDK to keep the field as a
+	// pointer regardless of the default value. See NullableIndex in smithy-go.
+	if s.AddedDefault || s.ClientOptional {
 		return false
 	}
 	// Determine the effective default value: prefer the ref, fall back to shape
