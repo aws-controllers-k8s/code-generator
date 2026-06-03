@@ -1059,13 +1059,68 @@ func (s *Shape) IsEnum() bool {
 	return s.Type == "string" && len(s.Enum) > 0
 }
 
-// HasDefaultValue returns whether this shape has a default value
+// HasDefaultValue returns whether this shape has a default value.
+// A ShapeRef has a default value if either the ref itself carries an explicit
+// default (set from the member's "smithy.api#default" trait) or the underlying
+// Shape carries one (e.g. the injected PrimitiveBoolean shape). The sentinel
+// value "<nil>" means a previously-assigned default was explicitly cleared.
 func (s *ShapeRef) HasDefaultValue() bool {
-	return s.DefaultValue != "<nil>" && s.Shape.HasDefaultValue()
+	if s.DefaultValue == "<nil>" {
+		return false
+	}
+	return s.DefaultValue != "" || s.Shape.HasDefaultValue()
 }
 
 func (s *Shape) HasDefaultValue() bool {
 	return s.DefaultValue != ""
+}
+
+// IsNonPointerInSDK returns true if AWS SDK Go v2 generates this member
+// as a value type (non-pointer) rather than a pointer.
+//
+// The smithy-go codegen (GoPointableIndex -> NullableIndex) treats a member as
+// non-nullable (value type) only when its @default equals the Go zero value
+// for the target type:
+//   - false for boolean
+//   - 0 for numeric types (integer, long, float, double, byte, short)
+//   - "" for string
+//
+// When the default is non-zero (e.g. @default(true) or @default(100)), the
+// SDK keeps the field as a pointer because serialization needs nil to
+// distinguish "not set" from "explicitly set to zero."
+//
+// The @default can come from the member reference itself (ShapeRef.DefaultValue)
+// or from the target shape (Shape.DefaultValue).
+func (s *ShapeRef) IsNonPointerInSDK() bool {
+	if s.DefaultValue == "<nil>" {
+		return false
+	}
+	// Determine the effective default value: prefer the ref, fall back to shape
+	defaultVal := s.DefaultValue
+	if defaultVal == "" {
+		defaultVal = s.Shape.DefaultValue
+	}
+	if defaultVal == "" {
+		return false // no default at all
+	}
+	// Check if the default equals the Go zero value for this type
+	return isDefaultZeroValue(defaultVal, s.Shape.Type)
+}
+
+// isDefaultZeroValue returns true if the given default value string equals the
+// Go zero value for the given Smithy shape type. This mirrors the logic in the
+// smithy-go codegen's NullableIndex.isDefaultZeroValueOfTypeInV1().
+func isDefaultZeroValue(defaultVal string, shapeType string) bool {
+	switch shapeType {
+	case "boolean":
+		return defaultVal == "false"
+	case "integer", "long", "float", "double", "byte", "short":
+		return defaultVal == "0"
+	case "string":
+		return defaultVal == ""
+	default:
+		return false
+	}
 }
 
 // IsRequired returns if member is a required field. Required fields are fields
