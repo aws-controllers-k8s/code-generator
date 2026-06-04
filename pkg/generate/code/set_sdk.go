@@ -1099,25 +1099,15 @@ func setSDKForContainer(
 
 // setSDKForSecret returns a string of Go code that sets a target variable to
 // the value of a Secret when the type of the source variable is a
-// SecretKeyReference. It first calls ResolveCrossNamespaceReferenceString to
-// validate cross-namespace access (and emit a deprecation warning + condition
-// when the reference is cross-namespace), then fetches the secret value.
+// SecretKeyReference.
+//
+// Cross-namespace validation (and the Phase 1 deprecation warning) is
+// performed inside the runtime's SecretValueFromReference, so it is not
+// emitted here. This ensures every caller is covered, including custom
+// update functions and hooks that call SecretValueFromReference directly.
 //
 // The Go code output from this function looks like this:
 //
-//     secretNamespace, err := ackrt.ResolveCrossNamespaceReferenceString(
-//         ctx,
-//         rm.cfg.EnableCrossNamespace,
-//         &r.ko.Status.Conditions,
-//         ackrt.CrossNamespaceRefKindSecret,
-//         r.ko.ObjectMeta.GetNamespace(),
-//         ko.Spec.MasterUserPassword.Namespace,
-//         ko.Spec.MasterUserPassword.Name,
-//     )
-//     if err != nil {
-//         return nil, err
-//     }
-//     ko.Spec.MasterUserPassword.Namespace = secretNamespace
 //     tmpSecret, err := rm.rr.SecretValueFromReference(ctx, ko.Spec.MasterUserPassword)
 //     if err != nil {
 //         return nil, ackrequeue.Needed(err)
@@ -1145,33 +1135,10 @@ func setSDKForSecret(
 	indent := strings.Repeat("\t", indentLevel)
 	secVar := "tmpSecret"
 
-	// Resolve cross-namespace access before fetching the secret
-	//     secretNamespace, err := ackrt.ResolveCrossNamespaceReferenceString(
-	//         ctx,
-	//         rm.cfg.EnableCrossNamespace,
-	//         &r.ko.Status.Conditions,
-	//         ackrt.CrossNamespaceRefKindSecret,
-	//         r.ko.ObjectMeta.GetNamespace(),
-	//         sourceVarName.Namespace,
-	//         sourceVarName.Name,
-	//     )
-	out += fmt.Sprintf(
-		"%s\tsecretNamespace, err := ackrt.ResolveCrossNamespaceReferenceString(\n",
-		indent,
-	)
-	out += fmt.Sprintf("%s\t\tctx,\n", indent)
-	out += fmt.Sprintf("%s\t\trm.cfg.EnableCrossNamespace,\n", indent)
-	out += fmt.Sprintf("%s\t\t&r.ko.Status.Conditions,\n", indent)
-	out += fmt.Sprintf("%s\t\tackrt.CrossNamespaceRefKindSecret,\n", indent)
-	out += fmt.Sprintf("%s\t\tr.ko.ObjectMeta.GetNamespace(),\n", indent)
-	out += fmt.Sprintf("%s\t\t%s.Namespace,\n", indent, sourceVarName)
-	out += fmt.Sprintf("%s\t\t%s.Name,\n", indent, sourceVarName)
-	out += fmt.Sprintf("%s\t)\n", indent)
-	out += fmt.Sprintf("%s\tif err != nil {\n", indent)
-	out += fmt.Sprintf("%s\t\treturn nil, err\n", indent)
-	out += fmt.Sprintf("%s\t}\n", indent)
-	// Override the secret reference namespace with the resolved namespace
-	out += fmt.Sprintf("%s\t%s.Namespace = secretNamespace\n", indent, sourceVarName)
+	// Cross-namespace validation for the secret reference is performed inside
+	// the runtime's SecretValueFromReference, so that every call site is
+	// covered (including custom update functions and hooks). No per-call
+	// validation is generated here.
 
 	//     tmpSecret, err := rm.rr.SecretValueFromReference(ctx, ko.Spec.MasterUserPassword)
 	out += fmt.Sprintf(

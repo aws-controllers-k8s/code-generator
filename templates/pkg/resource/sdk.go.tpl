@@ -15,7 +15,6 @@ import (
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
 	ackrequeue "github.com/aws-controllers-k8s/runtime/pkg/requeue"
-	ackrt "github.com/aws-controllers-k8s/runtime/pkg/runtime"
 	ackrtlog "github.com/aws-controllers-k8s/runtime/pkg/runtime/log"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	svcsdk "github.com/aws/aws-sdk-go-v2/service/{{ .ServicePackageName }}"
@@ -40,7 +39,6 @@ var (
 	_ = fmt.Sprintf("")
 	_ = &ackrequeue.NoRequeue{}
 	_ = &aws.Config{}
-	_ = ackrt.ValidateCrossNamespaceReferenceString
 )
 
 // sdkFind returns SDK-specific information about a supplied resource
