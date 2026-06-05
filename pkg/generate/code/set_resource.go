@@ -341,7 +341,7 @@ func SetResource(
 			out += fmt.Sprintf(
 				"%sif %s != \"\" {\n", indent, sourceAdaptedVarName,
 			)
-		} else if !sourceMemberShapeRef.HasDefaultValue() {
+		} else if !sourceMemberShapeRef.IsNonPointerInSDK() {
 			// The fields that have a default value (boolean and integer)
 			// are not pointers, so we won't need to check if they are nil
 			out += fmt.Sprintf(
@@ -417,7 +417,7 @@ func SetResource(
 		if sourceMemberShapeRef.Shape.RealType == "union" {
 			sourceMemberShapeRef.Shape.Type = "structure"
 		}
-		if sourceMemberShapeRef.Shape.IsEnum() || !sourceMemberShapeRef.HasDefaultValue() {
+		if sourceMemberShapeRef.Shape.IsEnum() || !sourceMemberShapeRef.IsNonPointerInSDK() {
 			out += fmt.Sprintf(
 				"%s} else {\n", indent,
 			)
@@ -689,7 +689,7 @@ func setResourceReadMany(
 			out += fmt.Sprintf(
 				"%sif %s != \"\" {\n", innerForIndent, sourceAdaptedVarName,
 			)
-		} else if !sourceMemberShapeRef.HasDefaultValue() {
+		} else if !sourceMemberShapeRef.IsNonPointerInSDK() {
 			out += fmt.Sprintf(
 				"%sif %s != nil {\n", innerForIndent, sourceAdaptedVarName,
 			)
@@ -788,7 +788,7 @@ func setResourceReadMany(
 		if sourceMemberShapeRef.Shape.RealType == "union" {
 			sourceMemberShapeRef.Shape.Type = "structure"
 		}
-		if sourceMemberShapeRef.Shape.IsEnum() || !sourceMemberShapeRef.HasDefaultValue() {
+		if sourceMemberShapeRef.Shape.IsEnum() || !sourceMemberShapeRef.IsNonPointerInSDK() {
 			out += fmt.Sprintf(
 				"%s} else {\n", innerForIndent,
 			)
@@ -1857,7 +1857,7 @@ func SetResourceForStruct(
 			out += fmt.Sprintf(
 				"%sif %s != \"\" {\n", indent, sourceAdaptedVarName,
 			)
-		} else if !sourceMemberShapeRef.HasDefaultValue() {
+		} else if !sourceMemberShapeRef.IsNonPointerInSDK() {
 			// The fields that have a default value (boolean and integer)
 			// are not pointers, so we won't need to check if they are nil
 			out += fmt.Sprintf(
@@ -1928,7 +1928,7 @@ func SetResourceForStruct(
 		if sourceMemberShapeRef.Shape.RealType == "union" {
 			sourceMemberShapeRef.Shape.Type = "structure"
 		}
-		if sourceMemberShape.IsEnum() || !sourceMemberShapeRef.HasDefaultValue() {
+		if sourceMemberShape.IsEnum() || !sourceMemberShapeRef.IsNonPointerInSDK() {
 			out += fmt.Sprintf(
 				"%s}\n", indent,
 			)
@@ -1970,7 +1970,7 @@ func SetResourceForStruct(
 						out += fmt.Sprintf(
 							"%sif %s != \"\" {\n", indent, sourceAdaptedVarName,
 						)
-					} else if !sourceShapeRef.HasDefaultValue() {
+					} else if !sourceShapeRef.IsNonPointerInSDK() {
 						// The fields that have a default value (boolean and integer)
 						// are not pointers, so we won't need to check if they are nil
 						out += fmt.Sprintf(
@@ -1983,7 +1983,7 @@ func SetResourceForStruct(
 
 					// Use setResourceForScalar and dereference sourceAdaptedVarName
 					// because primitives are being set.
-					if !sourceMemberShapeRef.HasDefaultValue() {
+					if !sourceMemberShapeRef.IsNonPointerInSDK() {
 						sourceAdaptedVarName = "*" + sourceAdaptedVarName
 					}
 					out += setResourceForScalar(
@@ -1994,7 +1994,7 @@ func SetResourceForStruct(
 						false,
 						false,
 					)
-					if sourceShape.IsEnum() || !sourceShapeRef.HasDefaultValue() {
+					if sourceShape.IsEnum() || !sourceShapeRef.IsNonPointerInSDK() {
 						out += fmt.Sprintf(
 							"%s}\n", indent,
 						)
@@ -2296,7 +2296,7 @@ func setResourceForScalar(
 
 	targetVar = strings.TrimPrefix(targetVar, ".")
 	if actualType, ok := intOrFloat[shape.Type]; ok {
-		if !shapeRef.HasDefaultValue() && !isList {
+		if !shapeRef.IsNonPointerInSDK() && !isList {
 			setTo = "*" + setTo
 		}
 		ogMemberName := names.New(shapeRef.OriginalMemberName)
@@ -2307,7 +2307,7 @@ func setResourceForScalar(
 		out += fmt.Sprintf("%s%s = &%sCopy\n", indent, targetVar, ogMemberName.CamelLower)
 	} else if shape.IsEnum() {
 		out += fmt.Sprintf("%s%s = aws.String(string(%s))\n", indent, targetVar, strings.TrimPrefix(setTo, "*"))
-	} else if shapeRef.HasDefaultValue() {
+	} else if shapeRef.IsNonPointerInSDK() {
 		out += fmt.Sprintf("%s%s = &%s\n", indent, targetVar, setTo)
 	} else {
 		out += fmt.Sprintf("%s%s = %s%s\n", indent, targetVar, address, strings.TrimPrefix(setTo, "*"))

@@ -1500,7 +1500,7 @@ func setSDKForMap(
 	}
 
 	dereference := "*"
-	if !targetShapeRef.HasDefaultValue() && targetShape.ValueRef.Shape.Type != "structure" {
+	if !targetShapeRef.IsNonPointerInSDK() && targetShape.ValueRef.Shape.Type != "structure" {
 		dereference = ""
 	}
 	// Union types are interfaces, not pointers — no dereference needed
@@ -1740,13 +1740,13 @@ func setSDKForScalar(
 		out += fmt.Sprintf("%s}\n", indent)
 		tempVar := ogShapeName.CamelLower + "Copy"
 		out += fmt.Sprintf("%s%s := %s32(%s)\n", indent, tempVar, actualType[2], dereferencedVal)
-		if !shapeRef.HasDefaultValue() && !isListMember {
+		if !shapeRef.IsNonPointerInSDK() && !isListMember {
 			tempVar = "&" + tempVar
 		}
 		out += fmt.Sprintf("%s%s = %s\n", indent, targetVarPath, tempVar)
 	} else if shape.IsEnum() {
 		out += fmt.Sprintf("%s%s = svcsdktypes.%s(%s)\n", indent, targetVarPath, shape.ShapeName, setTo)
-	} else if shapeRef.HasDefaultValue() {
+	} else if shapeRef.IsNonPointerInSDK() {
 		out += fmt.Sprintf("%s%s = %s\n", indent, targetVarPath, setTo)
 
 	} else if targetVarType == "structure" && shape.Type == "boolean" {
