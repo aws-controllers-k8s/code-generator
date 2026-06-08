@@ -990,6 +990,29 @@ func (r *CRD) HasReferenceFields() bool {
 	return false
 }
 
+// HasSecretFields returns true if any field in this CRD is marked as a
+// SecretKeyReference.
+func (r *CRD) HasSecretFields() bool {
+	for _, field := range r.Fields {
+		if field.FieldConfig != nil && field.FieldConfig.IsSecret {
+			return true
+		}
+	}
+	return false
+}
+
+// SecretFieldPaths returns the field paths of all fields in this CRD that are
+// marked as SecretKeyReference.
+func (r *CRD) SecretFieldPaths() []string {
+	var paths []string
+	for path, field := range r.Fields {
+		if field.FieldConfig != nil && field.FieldConfig.IsSecret {
+			paths = append(paths, path)
+		}
+	}
+	return paths
+}
+
 // ReferencedServiceNames returns the set of service names for ACK controllers
 // whose resources are referenced inside the CRD. The service name is
 // the go package name for the AWS service inside aws-sdk-go.
