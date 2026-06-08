@@ -122,6 +122,12 @@ func ReferenceFieldsValidation(
 // are related to the given concrete field, determining whether its in a valid
 // condition and updating the concrete field with the referenced value.
 //
+// The generated code calls ackrt.ResolveCrossNamespaceReference to validate
+// the reference and, when the reference targets a different namespace and
+// the cross-namespace flag is enabled, emit a deprecation warning and set
+// the ACK.CrossNamespaceOptInRequired condition on the resource. When the
+// flag is disabled, the helper returns a terminal error.
+//
 // Sample output (resolving a singular reference):
 //
 //	if ko.Spec.APIRef != nil && ko.Spec.APIRef.From != nil {
@@ -129,6 +135,18 @@ func ReferenceFieldsValidation(
 //		arr := ko.Spec.APIRef.From
 //		if arr.Name == nil || *arr.Name == "" {
 //			return hasReferences, fmt.Errorf("provided resource reference is nil or empty: APIRef")
+//		}
+//		namespace, err := ackrt.ResolveCrossNamespaceReference(
+//			ctx,
+//			rm.cfg.EnableCrossNamespace,
+//			&ko.Status.Conditions,
+//			ackrt.CrossNamespaceRefKindResource,
+//			ko.ObjectMeta.GetNamespace(),
+//			arr.Namespace,
+//			*arr.Name,
+//		)
+//		if err != nil {
+//			return hasReferences, err
 //		}
 //		obj := &svcapitypes.API{}
 //		if err := getReferencedResourceState_API(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
@@ -145,6 +163,10 @@ func ReferenceFieldsValidation(
 //			arr := f0iter.From
 //			if arr.Name == nil || *arr.Name == "" {
 //				return hasReferences, fmt.Errorf("provided resource reference is nil or empty: SecurityGroupRefs")
+//			}
+//			namespace, err := ackrt.ResolveCrossNamespaceReference( ... )
+//			if err != nil {
+//				return hasReferences, err
 //			}
 //			obj := &ec2apitypes.SecurityGroup{}
 //			if err := getReferencedResourceState_SecurityGroup(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
@@ -169,6 +191,10 @@ func ReferenceFieldsValidation(
 //							arr := f1iter.ValueRef.From
 //							if arr.Name == nil || *arr.Name == "" {
 //								return hasReferences, fmt.Errorf("provided resource reference is nil or empty: Notification.LambdaFunctionConfigurations.Filter.Key.FilterRules.ValueRef")
+//							}
+//							namespace, err := ackrt.ResolveCrossNamespaceReference( ... )
+//							if err != nil {
+//								return hasReferences, err
 //							}
 //							obj := &svcapitypes.Bucket{}
 //							if err := getReferencedResourceState_Bucket(ctx, apiReader, obj, *arr.Name, namespace); err != nil {
@@ -228,9 +254,17 @@ func ResolveReferencesForField(field *model.Field, sourceVarName string, indentL
 			outPrefix += fmt.Sprintf("%s\treturn hasReferences, fmt.Errorf(\"provided resource reference is nil or empty: %s\")\n", innerIndent, refFieldPath)
 			outPrefix += fmt.Sprintf("%s}\n", innerIndent)
 
-			outPrefix += fmt.Sprintf("%snamespace := ko.ObjectMeta.GetNamespace()\n", innerIndent)
-			outPrefix += fmt.Sprintf("%sif arr.Namespace != nil && *arr.Namespace != \"\" {\n", innerIndent)
-			outPrefix += fmt.Sprintf("%s\tnamespace = *arr.Namespace\n", innerIndent)
+			outPrefix += fmt.Sprintf("%snamespace, err := ackrt.ResolveCrossNamespaceReference(\n", innerIndent)
+			outPrefix += fmt.Sprintf("%s\tctx,\n", innerIndent)
+			outPrefix += fmt.Sprintf("%s\trm.cfg.EnableCrossNamespace,\n", innerIndent)
+			outPrefix += fmt.Sprintf("%s\t&ko.Status.Conditions,\n", innerIndent)
+			outPrefix += fmt.Sprintf("%s\tackrt.CrossNamespaceRefKindResource,\n", innerIndent)
+			outPrefix += fmt.Sprintf("%s\tko.ObjectMeta.GetNamespace(),\n", innerIndent)
+			outPrefix += fmt.Sprintf("%s\tarr.Namespace,\n", innerIndent)
+			outPrefix += fmt.Sprintf("%s\t*arr.Name,\n", innerIndent)
+			outPrefix += fmt.Sprintf("%s)\n", innerIndent)
+			outPrefix += fmt.Sprintf("%sif err != nil {\n", innerIndent)
+			outPrefix += fmt.Sprintf("%s\treturn hasReferences, err\n", innerIndent)
 			outPrefix += fmt.Sprintf("%s}\n", innerIndent)
 
 			outPrefix += getReferencedStateForField(field, innerIndentLevel)

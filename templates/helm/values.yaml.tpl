@@ -180,6 +180,11 @@ leaderElection:
 # Enable Cross Account Resource Management (default = true). Set this to false to disable cross account resource management.
 enableCARM: true
 
+# Enable cross-namespace behavior including resource references, secret references,
+# and field exports (default = true). When false, the controller rejects any operation
+# that crosses namespace boundaries.
+enableCrossNamespace: true
+
 # Configuration for feature gates.  These are optional controller features that
 # can be individually enabled ("true") or disabled ("false") by adding key/value
 # pairs below.

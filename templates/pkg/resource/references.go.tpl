@@ -15,6 +15,7 @@ import (
 {{ if .CRD.HasReferenceFields -}}
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
 	ackerr "github.com/aws-controllers-k8s/runtime/pkg/errors"
+	ackrt "github.com/aws-controllers-k8s/runtime/pkg/runtime"
 {{ end -}}
 	acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
 {{ $servicePackageName := .ServicePackageName -}}
@@ -133,4 +134,3 @@ func (rm *resourceManager) resolveReferenceFor{{ $field.FieldPathWithUnderscore 
 {{ end -}}
 {{ end -}}
 {{ end -}}
-

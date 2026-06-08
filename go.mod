@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	github.com/aws-controllers-k8s/pkg v0.0.23
-	github.com/aws-controllers-k8s/runtime v0.59.1
+	github.com/aws-controllers-k8s/runtime v0.59.2-0.20260603224255-14be98880374
 	github.com/aws/aws-sdk-go v1.49.0
 	github.com/aws/aws-sdk-go-v2 v1.32.7
 	github.com/dlclark/regexp2 v1.10.0 // indirect
@@ -103,3 +103,5 @@ require (
 	sigs.k8s.io/randfill v1.0.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v6 v6.3.0 // indirect
 )
+
+replace github.com/aws-controllers-k8s/runtime => github.com/sapphirew/ack-runtime v0.0.0-20260608212517-9bb3e738fe97

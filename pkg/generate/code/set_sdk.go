@@ -1101,6 +1101,11 @@ func setSDKForContainer(
 // the value of a Secret when the type of the source variable is a
 // SecretKeyReference.
 //
+// Cross-namespace validation (and the Phase 1 deprecation warning) is
+// performed inside the runtime's SecretValueFromReference, so it is not
+// emitted here. This ensures every caller is covered, including custom
+// update functions and hooks that call SecretValueFromReference directly.
+//
 // The Go code output from this function looks like this:
 //
 //     tmpSecret, err := rm.rr.SecretValueFromReference(ctx, ko.Spec.MasterUserPassword)
@@ -1109,16 +1114,6 @@ func setSDKForContainer(
 //     }
 //     if tmpSecret != "" {
 //         res.SetMasterUserPassword(tmpSecret)
-//     }
-//
-//     or:
-//
-//     tmpSecret, err := rm.rr.SecretValueFromReference(ctx, f3iter)
-//     if err != nil {
-//         return nil, ackrequeue.Needed(err)
-//     }
-//     if tmpSecret != "" {
-//         f3elem = tmpSecret
 //     }
 //
 // The second case is used when the SecretKeyReference field
@@ -1139,6 +1134,11 @@ func setSDKForSecret(
 	out := ""
 	indent := strings.Repeat("\t", indentLevel)
 	secVar := "tmpSecret"
+
+	// Cross-namespace validation for the secret reference is performed inside
+	// the runtime's SecretValueFromReference, so that every call site is
+	// covered (including custom update functions and hooks). No per-call
+	// validation is generated here.
 
 	//     tmpSecret, err := rm.rr.SecretValueFromReference(ctx, ko.Spec.MasterUserPassword)
 	out += fmt.Sprintf(
