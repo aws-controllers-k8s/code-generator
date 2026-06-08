@@ -119,16 +119,6 @@ func SetSDK(
 	out := "\n"
 	indent := strings.Repeat("\t", indentLevel)
 
-	// The owning resource variable, used so secret fields can pass it to the
-	// runtime's SecretValueFromReference (which sets the cross-namespace
-	// deprecation ACK.Advisory condition on it). It is the leading token of
-	// the source variable path (e.g. "r" from "r.ko"); the generated
-	// *resource type implements acktypes.ConditionManager.
-	resourceVarName := sourceVarName
-	if dot := strings.IndexByte(resourceVarName, '.'); dot != -1 {
-		resourceVarName = resourceVarName[:dot]
-	}
-
 	// Check if there's an input wrapper field path configured. If so, we need
 	// to create a wrapper struct and populate its fields from the CRD spec,
 	// then assign the wrapper to the input shape's wrapper field.
@@ -412,7 +402,6 @@ func SetSDK(
 				)
 				containerOut, err := setSDKForContainer(
 					cfg, r,
-					resourceVarName,
 					memberName,
 					memberVarName,
 					sourceFieldPath,
@@ -441,7 +430,6 @@ func SetSDK(
 			if r.IsSecretField(memberName) {
 				out += setSDKForSecret(
 					cfg, r,
-					resourceVarName,
 					memberName,
 					targetVarName,
 					sourceAdaptedVarName,
@@ -1017,10 +1005,6 @@ func setSDKReadMany(
 func setSDKForContainer(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,
-	// The name of the variable holding the owning resource (a *resource,
-	// which implements acktypes.ConditionManager). Threaded down so secret
-	// fields nested in collections can pass it to SecretValueFromReference.
-	resourceVarName string,
 	// The name of the SDK Input shape member we're outputting for
 	targetFieldName string,
 	// The variable name that we want to set a value to
@@ -1039,7 +1023,6 @@ func setSDKForContainer(
 	case "structure":
 		return SetSDKForStruct(
 			cfg, r,
-			resourceVarName,
 			targetFieldName,
 			targetVarName,
 			targetShapeRef,
@@ -1051,7 +1034,6 @@ func setSDKForContainer(
 	case "list":
 		return setSDKForSlice(
 			cfg, r,
-			resourceVarName,
 			targetFieldName,
 			targetVarName,
 			targetShapeRef,
@@ -1063,7 +1045,6 @@ func setSDKForContainer(
 	case "map":
 		return setSDKForMap(
 			cfg, r,
-			resourceVarName,
 			targetFieldName,
 			targetVarName,
 			targetShapeRef,
@@ -1075,7 +1056,6 @@ func setSDKForContainer(
 	case "union":
 		return setSDKForUnion(
 			cfg, r,
-			resourceVarName,
 			targetFieldName,
 			targetVarName,
 			targetShapeRef,
@@ -1094,7 +1074,6 @@ func setSDKForContainer(
 			)
 			out += setSDKForSecret(
 				cfg, r,
-				resourceVarName,
 				"",
 				targetVarName,
 				sourceVarName,
@@ -1122,17 +1101,14 @@ func setSDKForContainer(
 // the value of a Secret when the type of the source variable is a
 // SecretKeyReference.
 //
-// Cross-namespace validation (and the Phase 1 deprecation notice) is performed
-// inside the runtime's SecretValueFromReference, so it is not emitted here.
-// This ensures every caller is covered, including custom update functions and
-// hooks that call SecretValueFromReference directly. The owning resource is
-// passed as the second argument so the runtime can set the cross-namespace
-// deprecation ACK.Advisory condition on it; it is derived from the source
-// variable (e.g. "r" from "r.ko.Spec.MasterUserPassword").
+// Cross-namespace validation (and the Phase 1 deprecation warning) is
+// performed inside the runtime's SecretValueFromReference, so it is not
+// emitted here. This ensures every caller is covered, including custom
+// update functions and hooks that call SecretValueFromReference directly.
 //
 // The Go code output from this function looks like this:
 //
-//     tmpSecret, err := rm.rr.SecretValueFromReference(ctx, r, r.ko.Spec.MasterUserPassword)
+//     tmpSecret, err := rm.rr.SecretValueFromReference(ctx, ko.Spec.MasterUserPassword)
 //     if err != nil {
 //         return nil, ackrequeue.Needed(err)
 //     }
@@ -1146,11 +1122,6 @@ func setSDKForContainer(
 func setSDKForSecret(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,
-	// The name of the variable holding the owning resource (a
-	// *resource, which implements acktypes.ConditionManager). It is passed to
-	// SecretValueFromReference so the runtime can set the cross-namespace
-	// deprecation ACK.Advisory condition on it. Typically "r" or "desired".
-	resourceVarName string,
 	// The name of the SDK Shape field we're setting
 	targetFieldName string,
 	// The variable name that we want to set a value on
@@ -1167,14 +1138,12 @@ func setSDKForSecret(
 	// Cross-namespace validation for the secret reference is performed inside
 	// the runtime's SecretValueFromReference, so that every call site is
 	// covered (including custom update functions and hooks). No per-call
-	// validation is generated here. The owning resource is passed so the
-	// runtime can set the cross-namespace deprecation ACK.Advisory condition
-	// on it.
+	// validation is generated here.
 
-	//     tmpSecret, err := rm.rr.SecretValueFromReference(ctx, r, r.ko.Spec.MasterUserPassword)
+	//     tmpSecret, err := rm.rr.SecretValueFromReference(ctx, ko.Spec.MasterUserPassword)
 	out += fmt.Sprintf(
-		"%s\t%s, err := rm.rr.SecretValueFromReference(ctx, %s, %s)\n",
-		indent, secVar, resourceVarName, sourceVarName,
+		"%s\t%s, err := rm.rr.SecretValueFromReference(ctx, %s)\n",
+		indent, secVar, sourceVarName,
 	)
 	//     if err != nil {
 	//         return nil, ackrequeue.Needed(err)
@@ -1206,12 +1175,6 @@ func setSDKForSecret(
 func SetSDKForStruct(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,
-	// The name of the variable holding the owning resource (a *resource,
-	// which implements acktypes.ConditionManager). Threaded down so secret
-	// fields nested in this struct can pass it to SecretValueFromReference.
-	// When this is the entry point (e.g. the GoCodeSetSDKForStruct template
-	// helper), it is derived from the leading token of sourceVarName.
-	resourceVarName string,
 	// The name of the CR field we're outputting for
 	targetFieldName string,
 	// The variable name that we want to set a value to
@@ -1228,16 +1191,6 @@ func SetSDKForStruct(
 	out := ""
 	indent := strings.Repeat("\t", indentLevel)
 	targetShape := targetShapeRef.Shape
-	// When SetSDKForStruct is invoked as a top-level entry point (rather than
-	// recursively via setSDKForContainer), resourceVarName is not supplied by
-	// the caller. Fall back to the leading token of the source variable path
-	// (e.g. "r" from "r.ko.Spec.Foo"), which names the owning *resource.
-	if resourceVarName == "" {
-		resourceVarName = sourceVarName
-		if dot := strings.IndexByte(resourceVarName, '.'); dot != -1 {
-			resourceVarName = resourceVarName[:dot]
-		}
-	}
 
 	for memberIndex, memberName := range targetShape.MemberNames() {
 		memberShapeRef := targetShape.MemberRefs[memberName]
@@ -1295,7 +1248,6 @@ func SetSDKForStruct(
 				)
 				containerOut, err := setSDKForContainer(
 					cfg, r,
-					resourceVarName,
 					memberName,
 					memberVarName,
 					memberFieldPath,
@@ -1324,7 +1276,6 @@ func SetSDKForStruct(
 			if r.IsSecretField(memberFieldPath) {
 				out += setSDKForSecret(
 					cfg, r,
-					resourceVarName,
 					memberName,
 					targetVarName,
 					sourceAdaptedVarName,
@@ -1359,10 +1310,6 @@ func SetSDKForStruct(
 func setSDKForSlice(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,
-	// The name of the variable holding the owning resource (a *resource,
-	// which implements acktypes.ConditionManager). Threaded down so secret
-	// fields nested in this slice can pass it to SecretValueFromReference.
-	resourceVarName string,
 	// The name of the CR field we're outputting for
 	targetFieldName string,
 	// The variable name that we want to set a value to
@@ -1435,7 +1382,6 @@ func setSDKForSlice(
 	} else {
 		containerOut, err := setSDKForContainer(
 			cfg, r,
-			resourceVarName,
 			containerFieldName,
 			elemVarName,
 			sourceFieldPath,
@@ -1468,10 +1414,6 @@ func setSDKForSlice(
 func setSDKForMap(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,
-	// The name of the variable holding the owning resource (a *resource,
-	// which implements acktypes.ConditionManager). Threaded down so secret
-	// fields nested in this map can pass it to SecretValueFromReference.
-	resourceVarName string,
 	// The name of the CR field we're outputting for
 	targetFieldName string,
 	// The variable name that we want to set a value to
@@ -1539,7 +1481,6 @@ func setSDKForMap(
 	} else {
 		containerOut, err := setSDKForContainer(
 			cfg, r,
-			resourceVarName,
 			containerFieldName,
 			valVarName,
 			sourceFieldPath,
@@ -1903,10 +1844,6 @@ func resolveAWSMapValueType(valueType string) string {
 func setSDKForUnion(
 	cfg *ackgenconfig.Config,
 	r *model.CRD,
-	// The name of the variable holding the owning resource (a *resource,
-	// which implements acktypes.ConditionManager). Threaded down so secret
-	// fields nested in this union can pass it to SecretValueFromReference.
-	resourceVarName string,
 	// The name of the CR field we're outputting for
 	targetFieldName string,
 	// The variable name that we want to set a value to
@@ -1992,7 +1929,6 @@ func setSDKForUnion(
 				)
 				containerOut, err := setSDKForContainer(
 					cfg, r,
-					resourceVarName,
 					memberName,
 					indexedVarName,
 					memberFieldPath,

@@ -105,7 +105,7 @@ func TestSetSDK_MemoryDB_User_Create(t *testing.T) {
 			for _, f1f0iter := range r.ko.Spec.AuthenticationMode.Passwords {
 				var f1f0elem string
 				if f1f0iter != nil {
-					tmpSecret, err := rm.rr.SecretValueFromReference(ctx, r, f1f0iter)
+					tmpSecret, err := rm.rr.SecretValueFromReference(ctx, f1f0iter)
 					if err != nil {
 						return nil, ackrequeue.Needed(err)
 					}
@@ -208,7 +208,7 @@ func TestSetSDK_OpenSearch_Domain_Create(t *testing.T) {
 				f3f4.MasterUserName = r.ko.Spec.AdvancedSecurityOptions.MasterUserOptions.MasterUserName
 			}
 			if r.ko.Spec.AdvancedSecurityOptions.MasterUserOptions.MasterUserPassword != nil {
-				tmpSecret, err := rm.rr.SecretValueFromReference(ctx, r, r.ko.Spec.AdvancedSecurityOptions.MasterUserOptions.MasterUserPassword)
+				tmpSecret, err := rm.rr.SecretValueFromReference(ctx, r.ko.Spec.AdvancedSecurityOptions.MasterUserOptions.MasterUserPassword)
 				if err != nil {
 					return nil, ackrequeue.Needed(err)
 				}
@@ -841,7 +841,7 @@ func TestSetSDK_ECR_Repository_Create(t *testing.T) {
 // 		res.SetAtRestEncryptionEnabled(*r.ko.Spec.AtRestEncryptionEnabled)
 // 	}
 // 	if r.ko.Spec.AuthToken != nil {
-// 		tmpSecret, err := rm.rr.SecretValueFromReference(ctx, r, r.ko.Spec.AuthToken)
+// 		tmpSecret, err := rm.rr.SecretValueFromReference(ctx, r.ko.Spec.AuthToken)
 // 		if err != nil {
 // 			return nil, ackrequeue.Needed(err)
 // 		}
@@ -1096,7 +1096,7 @@ func TestSetSDK_ECR_Repository_Create(t *testing.T) {
 // 	expected := `
 // 	res.SetApplyImmediately(true)
 // 	if r.ko.Spec.AuthToken != nil {
-// 		tmpSecret, err := rm.rr.SecretValueFromReference(ctx, r, r.ko.Spec.AuthToken)
+// 		tmpSecret, err := rm.rr.SecretValueFromReference(ctx, r.ko.Spec.AuthToken)
 // 		if err != nil {
 // 			return nil, ackrequeue.Needed(err)
 // 		}
@@ -1218,7 +1218,7 @@ func TestSetSDK_ECR_Repository_Create(t *testing.T) {
 // 		for _, f3iter := range r.ko.Spec.Passwords {
 // 			var f3elem string
 // 			if f3iter != nil {
-// 				tmpSecret, err := rm.rr.SecretValueFromReference(ctx, r, f3iter)
+// 				tmpSecret, err := rm.rr.SecretValueFromReference(ctx, f3iter)
 // 				if err != nil {
 // 					return nil, ackrequeue.Needed(err)
 // 				}
@@ -1489,7 +1489,7 @@ func TestSetSDK_RDS_DBInstance_Create(t *testing.T) {
 		res.ManageMasterUserPassword = r.ko.Spec.ManageMasterUserPassword
 	}
 	if r.ko.Spec.MasterUserPassword != nil {
-		tmpSecret, err := rm.rr.SecretValueFromReference(ctx, r, r.ko.Spec.MasterUserPassword)
+		tmpSecret, err := rm.rr.SecretValueFromReference(ctx, r.ko.Spec.MasterUserPassword)
 		if err != nil {
 			return nil, ackrequeue.Needed(err)
 		}
@@ -1779,7 +1779,7 @@ func TestSetSDK_RDS_DBInstance_Update(t *testing.T) {
 	}
 	if delta.DifferentAt("Spec.MasterUserPassword") {
 		if r.ko.Spec.MasterUserPassword != nil {
-			tmpSecret, err := rm.rr.SecretValueFromReference(ctx, r, r.ko.Spec.MasterUserPassword)
+			tmpSecret, err := rm.rr.SecretValueFromReference(ctx, r.ko.Spec.MasterUserPassword)
 			if err != nil {
 				return nil, ackrequeue.Needed(err)
 			}
@@ -2318,7 +2318,7 @@ func TestSetSDK_MQ_Broker_Create(t *testing.T) {
 				f18elem.Groups = aws.ToStringSlice(f18iter.Groups)
 			}
 			if f18iter.Password != nil {
-				tmpSecret, err := rm.rr.SecretValueFromReference(ctx, r, f18iter.Password)
+				tmpSecret, err := rm.rr.SecretValueFromReference(ctx, f18iter.Password)
 				if err != nil {
 					return nil, ackrequeue.Needed(err)
 				}
@@ -4669,7 +4669,7 @@ func TestSetSDK_Lambda_Function_EnvironmentVariable_MapOfSecrets_Create(t *testi
 			for f4f0key, f4f0valiter := range r.ko.Spec.Environment.Variables {
 				var f4f0val string
 				if f4f0valiter != nil {
-					tmpSecret, err := rm.rr.SecretValueFromReference(ctx, r, f4f0valiter)
+					tmpSecret, err := rm.rr.SecretValueFromReference(ctx, f4f0valiter)
 					if err != nil {
 						return nil, ackrequeue.Needed(err)
 					}
@@ -4806,7 +4806,7 @@ func TestSetSDK_Lambda_Function_EnvironmentVariable_MapOfSecrets_Update(t *testi
 			for f2f0key, f2f0valiter := range r.ko.Spec.Environment.Variables {
 				var f2f0val string
 				if f2f0valiter != nil {
-					tmpSecret, err := rm.rr.SecretValueFromReference(ctx, r, f2f0valiter)
+					tmpSecret, err := rm.rr.SecretValueFromReference(ctx, f2f0valiter)
 					if err != nil {
 						return nil, ackrequeue.Needed(err)
 					}
