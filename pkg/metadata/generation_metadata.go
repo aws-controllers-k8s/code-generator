@@ -86,6 +86,21 @@ type lastModificationInfo struct {
 	Reason UpdateReason `json:"reason"`
 }
 
+// ReadGenerationMetadata reads the ack-generate-metadata.yaml file from the
+// given API version directory and returns the parsed metadata.
+func ReadGenerationMetadata(apisPath string, apiVersion string) (*GenerationMetadata, error) {
+	metaPath := filepath.Join(apisPath, apiVersion, outputFileName)
+	data, err := os.ReadFile(metaPath)
+	if err != nil {
+		return nil, err
+	}
+	var meta GenerationMetadata
+	if err := yaml.Unmarshal(data, &meta); err != nil {
+		return nil, err
+	}
+	return &meta, nil
+}
+
 // CreateGenerationMetadata gathers information about the generated code and save
 // a yaml version in the API version directory
 func CreateGenerationMetadata(

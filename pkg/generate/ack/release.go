@@ -15,6 +15,7 @@ package ack
 
 import (
 	"fmt"
+	"io/fs"
 	"strings"
 	ttpl "text/template"
 
@@ -96,13 +97,14 @@ func Release(
 	imageRepository string,
 	// serviceAccountName is the name of the ServiceAccount used in the Helm chart
 	serviceAccountName string,
+	fallbackFS fs.FS,
 ) (*templateset.TemplateSet, error) {
 	ts := templateset.New(
 		templateBasePaths,
 		releaseIncludePaths,
 		releaseCopyPaths,
 		releaseFuncMap(m.MetaVars().ControllerName),
-	)
+	).WithFallbackFS(fallbackFS)
 	metaVars := m.MetaVars()
 	// Using GetCRDs() directly gives us the proper CamelCase format
 	// that matches the Kubernetes API resource kinds. The previous approach using

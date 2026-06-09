@@ -14,11 +14,10 @@
 package command
 
 import (
+	"context"
 	"fmt"
-	"io/ioutil"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/spf13/cobra"
 
@@ -28,85 +27,81 @@ import (
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
 )
 
-var (
-	cmdControllerPath string
-	pkgResourcePath   string
-	latestAPIVersion  string
-)
-
 var controllerCmd = &cobra.Command{
 	Use:   "controller <service>",
-	Short: "Generates Go files containing service controller implementation for a given service",
-	RunE:  generateController,
+	Short: "Generates a fully-built service controller from the current directory",
+	Long: `Runs the full generation pipeline for a controller repo. By default uses
+the current working directory; use -o to specify the controller path.
+This includes APIs, deepcopy, CRDs, controller code, RBAC, formatting,
+and boilerplate file copying.
+
+Usage:
+  ack-generate controller s3 -o /path/to/s3-controller
+  # or from within the controller repo:
+  ack-generate controller s3`,
+	RunE: generateController,
 }
 
 func init() {
 	rootCmd.AddCommand(controllerCmd)
 }
 
-// generateController generates the Go files for a service controller
 func generateController(cmd *cobra.Command, args []string) error {
-	cmdStart := time.Now()
 	if len(args) != 1 {
 		return fmt.Errorf("please specify the service alias for the AWS service API to generate")
 	}
 	svcAlias := strings.ToLower(args[0])
-	if optOutputPath == "" {
-		optOutputPath = filepath.Join(optServicesDir, svcAlias)
-	}
 
-	// Load generator config to resolve model name before fetching
-	cfg, err := setupGenerator(svcAlias)
+	ctx, cancel := sdk.ContextWithSigterm(context.Background())
+	defer cancel()
+
+	controllerCtx, err := resolveControllerContext(svcAlias)
 	if err != nil {
 		return err
 	}
 
-	modelStart := time.Now()
-	metadata, err := ackmetadata.NewServiceMetadata(optMetadataConfigPath)
+	pipelineOpts := ackgenerate.BuildControllerOptions{
+		SvcAlias:             controllerCtx.SvcAlias,
+		ControllerSourcePath: controllerCtx.ControllerPath,
+		APIVersion:           controllerCtx.APIVersion,
+		RBACRoleName:         controllerCtx.RBACRoleName,
+		RuntimeVersion:       controllerCtx.RuntimeVersion,
+		ControllerGenVersion: optControllerGenVersion,
+		CacheDir:             optCacheDir,
+		BoilerplateFS:        embeddedBoilerplateFS,
+		TemplatesFS:          embeddedTemplatesFS,
+	}
+
+	// Step 1: Generate and write all templates (APIs + controller code)
+	fmt.Printf("Building service controller for %s\n", svcAlias)
+	ts, err := ackgenerate.Controller(
+		controllerCtx.Model, optTemplateDirs, optServiceAccountName,
+		controllerCtx.APIVersion, embeddedTemplatesFS,
+	)
 	if err != nil {
 		return err
 	}
-	m, err := loadModelWithLatestAPIVersion(svcAlias, metadata, cfg)
-	if err != nil {
-		return err
-	}
-	util.Tracef("loadModel: %s\n", time.Since(modelStart))
-
-	serviceAccountName, err := getServiceAccountName()
-	if err != nil {
+	if err := writeTemplateSet(ts, optOutputPath); err != nil {
 		return err
 	}
 
-	ctrlStart := time.Now()
-	ts, err := ackgenerate.Controller(m, optTemplateDirs, serviceAccountName)
-	if err != nil {
+	// Save generation metadata and copy generator.yaml
+	apisPath := filepath.Join(optOutputPath, "apis")
+	if err := ackmetadata.CreateGenerationMetadata(
+		controllerCtx.APIVersion, apisPath, ackmetadata.UpdateReasonAPIGeneration,
+		sdkVersion, optGeneratorConfigPath,
+	); err != nil {
+		return fmt.Errorf("creating generation metadata: %w", err)
+	}
+	if err := util.CopyFile(optGeneratorConfigPath, filepath.Join(apisPath, controllerCtx.APIVersion, "generator.yaml")); err != nil {
+		return fmt.Errorf("copying generator.yaml: %w", err)
+	}
+
+	// Step 2: Pre-codegen pipeline (runtime CRDs, deepcopy, CRDs)
+	if err := ackgenerate.BuildControllerPreCodegen(ctx, pipelineOpts); err != nil {
 		return err
 	}
-	util.Tracef("Controller() template setup: %s\n", time.Since(ctrlStart))
 
-	execStart := time.Now()
-	if err = ts.Execute(); err != nil {
-		return err
-	}
-	util.Tracef("template execution: %s\n", time.Since(execStart))
-
-	writeStart := time.Now()
-	for path, contents := range ts.Executed() {
-		if optDryRun {
-			fmt.Printf("============================= %s ======================================\n", path)
-			fmt.Println(strings.TrimSpace(contents.String()))
-			continue
-		}
-		outPath := filepath.Join(optOutputPath, path)
-		outDir := filepath.Dir(outPath)
-		if _, err := sdk.EnsureDir(outDir); err != nil {
-			return err
-		}
-		if err = ioutil.WriteFile(outPath, contents.Bytes(), 0666); err != nil {
-			return err
-		}
-	}
-	util.Tracef("file writing (%d files): %s\n", len(ts.Executed()), time.Since(writeStart))
-	util.Tracef("generateController total: %s\n", time.Since(cmdStart))
-	return nil
+	// Step 3: Post-codegen pipeline (go mod tidy, RBAC, formatting, boilerplate)
+	return ackgenerate.BuildControllerPostCodegen(pipelineOpts)
 }

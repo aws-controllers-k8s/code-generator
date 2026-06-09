@@ -14,15 +14,11 @@
 package ack
 
 import (
-	"path/filepath"
 	"strings"
 	ttpl "text/template"
-	"time"
 
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate/templateset"
 	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
-	"github.com/aws-controllers-k8s/code-generator/pkg/util"
-	"github.com/iancoleman/strcase"
 )
 
 var (
@@ -37,77 +33,10 @@ var (
 		"apis/enum_def.go.tpl",
 		"apis/type_def.go.tpl",
 	}
-	apisCopyPaths = []string{}
-	apisFuncMap   = ttpl.FuncMap{
+	apisFuncMap = ttpl.FuncMap{
 		"Join": strings.Join,
 	}
 )
-
-// APIs returns a pointer to a TemplateSet containing all the templates for
-// generating ACK service controller's apis/ contents
-func APIs(
-	m *ackmodel.Model,
-	templateBasePaths []string,
-) (*templateset.TemplateSet, error) {
-	totalStart := time.Now()
-
-	enumStart := time.Now()
-	enumDefs, err := m.GetEnumDefs()
-	if err != nil {
-		return nil, err
-	}
-	util.Tracef("GetEnumDefs (%d enums): %s\n", len(enumDefs), time.Since(enumStart))
-
-	typeStart := time.Now()
-	typeDefs, err := m.GetTypeDefs()
-	if err != nil {
-		return nil, err
-	}
-	util.Tracef("GetTypeDefs (%d types): %s\n", len(typeDefs), time.Since(typeStart))
-
-	crdStart := time.Now()
-	crds, err := m.GetCRDs()
-	if err != nil {
-		return nil, err
-	}
-	util.Tracef("GetCRDs (%d CRDs): %s\n", len(crds), time.Since(crdStart))
-
-	tplStart := time.Now()
-	ts := templateset.New(
-		templateBasePaths,
-		apisIncludePaths,
-		apisCopyPaths,
-		apisFuncMap,
-	)
-
-	metaVars := m.MetaVars()
-	apiVars := &templateAPIVars{
-		metaVars,
-		enumDefs,
-		typeDefs,
-	}
-	for _, path := range apisTemplatePaths {
-		outPath := strings.TrimSuffix(filepath.Base(path), ".tpl")
-		if err = ts.Add(outPath, path, apiVars); err != nil {
-			return nil, err
-		}
-	}
-
-	for _, crd := range crds {
-		crdFileName := strcase.ToSnake(crd.Kind) + ".go"
-		crdVars := &templateCRDVars{
-			metaVars,
-			m.SDKAPI,
-			crd,
-		}
-		if err = ts.Add(crdFileName, "apis/crd.go.tpl", crdVars); err != nil {
-			return nil, err
-		}
-	}
-	util.Tracef("template setup: %s\n", time.Since(tplStart))
-	util.Tracef("APIs() total: %s\n", time.Since(totalStart))
-	return ts, nil
-}
 
 // templateAPIVars contains template variables for templates that output Go
 // code in the /services/$SERVICE/apis/$API_VERSION directory
