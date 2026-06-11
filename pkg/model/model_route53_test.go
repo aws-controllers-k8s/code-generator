@@ -83,4 +83,40 @@ func TestRoute53_RecordSet(t *testing.T) {
 		"SubmittedAt",
 	}
 	assert.Equal(expStatusFieldCamel, attrCamelNames(statusFields))
+
+	// A resource without custom_cel_rules configured returns nil
+	assert.Nil(crd.CustomCELRules())
+}
+
+func TestRoute53_CELRules(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	m := testutil.NewModelForService(t, "route53")
+
+	crds, err := m.GetCRDs()
+	require.Nil(err)
+
+	// Test resource-level CEL rules on HostedZone
+	crd := getCRDByName("HostedZone", crds)
+	require.NotNil(crd)
+
+	require.Len(crd.CustomCELRules(), 2)
+	assert.Equal("!has(self.hostedZoneConfig) || !self.hostedZoneConfig.privateZone || has(self.vpc)", crd.CustomCELRules()[0].Rule)
+	assert.NotNil(crd.CustomCELRules()[0].Message)
+	assert.Equal("spec.vpc is required for private hosted zones", *crd.CustomCELRules()[0].Message)
+	assert.Equal("size(self.name) > 0", crd.CustomCELRules()[1].Rule)
+	assert.Nil(crd.CustomCELRules()[1].Message)
+
+	// Test field-level CEL rules on RecordSet.Name
+	recordSetCRD := getCRDByName("RecordSet", crds)
+	require.NotNil(recordSetCRD)
+
+	nameField := recordSetCRD.SpecFields["Name"]
+	require.NotNil(nameField)
+
+	require.Len(nameField.CustomCELRules(), 1)
+	assert.Equal("self.endsWith('.')", nameField.CustomCELRules()[0].Rule)
+	assert.NotNil(nameField.CustomCELRules()[0].Message)
+	assert.Equal("DNS name must end with a dot", *nameField.CustomCELRules()[0].Message)
 }
