@@ -180,6 +180,15 @@ leaderElection:
 # Enable Cross Account Resource Management (default = true). Set this to false to disable cross account resource management.
 enableCARM: true
 
+# Enable Lazy Bind Reconcilers (default = false). When enabled, defers reconciler
+# binding for missing CRDs until they become available, allowing the controller to
+# start serving installed CRDs immediately instead of crash-looping.
+lazyBindReconcilers: false
+
+# The interval in seconds between retry attempts when polling the discovery API
+# for missing CRDs (only used when lazyBindReconcilers is true).
+lazyBindRetryInterval: 10
+
 # Configuration for feature gates.  These are optional controller features that
 # can be individually enabled ("true") or disabled ("false") by adding key/value
 # pairs below.
