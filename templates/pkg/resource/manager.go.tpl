@@ -98,6 +98,12 @@ func (rm *resourceManager) ReadOne(
 		}
 		return rm.onError(r, err)
 	}
+{{- if .CRD.HasFieldGroupReads }}
+	observed, err = rm.sdkFindFieldGroups(ctx, r, observed)
+	if err != nil {
+		return rm.onError(observed, err)
+	}
+{{- end }}
 	return rm.onSuccess(observed)
 }
 

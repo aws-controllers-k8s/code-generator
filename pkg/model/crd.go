@@ -91,6 +91,12 @@ type CRD struct {
 	// ShortNames represent the CRD list of aliases. Short names allow shorter
 	// strings to match a CR on the CLI.
 	ShortNames []string
+	// UpdateFieldGroups holds resolved field-group update operations. Each
+	// entry maps an SDK operation to the subset of CRD fields it manages.
+	UpdateFieldGroups []*FieldGroupOperation
+	// ReadFieldGroups holds resolved field-group read operations (supplementary
+	// reads called after the primary ReadOne/ReadMany).
+	ReadFieldGroups []*FieldGroupOperation
 }
 
 // Config returns a pointer to the generator config
@@ -114,6 +120,11 @@ func (r *CRD) GetStorageVersion(defaultVersion string) (string, error) {
 	}
 	return "", fmt.Errorf("exactly one configured version must be marked as the storage version for the %q CRD",
 		r.Names.Original)
+}
+
+// GetSDKAPI returns the SDKAPI pointer for this CRD's service.
+func (r *CRD) GetSDKAPI() *SDKAPI {
+	return r.sdkAPI
 }
 
 // SDKAPIPackageName returns the aws-sdk-go package name used for this

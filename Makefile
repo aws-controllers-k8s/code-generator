@@ -21,7 +21,7 @@ GO_CMD_FLAGS=-tags codegen
 .PHONY: all build-ack-generate test \
 	build-controller build-controller-image \
 	local-build-controller-image lint-shell \
-	check-crd-compatibility
+	check-crd-compatibility build-e2e-tests
 
 all: test
 
@@ -50,6 +50,10 @@ CRD_PATHS ?= config/crd/bases,helm/crds
 
 check-crd-compatibility: build-ack-generate	## Check CRDs for breaking changes against BASE_REF
 	@bin/ack-generate crd-compat-check --base-ref=$(BASE_REF) --crd-paths=$(CRD_PATHS)
+
+build-e2e-tests: build-ack-generate ## Generate e2e test scaffolds for SERVICE
+	@echo "==== generating e2e tests for $(AWS_SERVICE)-controller ===="
+	@./scripts/build-e2e-tests.sh $(AWS_SERVICE)
 
 test: 				## Run code tests
 	go test ${GO_CMD_FLAGS} ./...

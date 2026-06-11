@@ -187,7 +187,7 @@ var legacyIOSuffixed = IoSuffix{
 		"DatabaseInput":            struct{}{},
 		"PartitionInput":           struct{}{},
 		"ConnectionInput":          struct{}{},
-		"DQTransformOutput":          struct{}{},
+		"DQTransformOutput":        struct{}{},
 	},
 
 	"Glacier": {

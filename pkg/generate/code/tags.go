@@ -23,23 +23,21 @@ import (
 // GoCodeToACKTags returns Go code that converts Resource Tags
 // to ACK Tags. If Resource Tags field is of type list, we
 // also maintain and return the order of the list as a []string
-// 
-//
 //
 // Sample output:
 //
-//	 for _, k := range keyOrder {
-//	 	v, ok := tags[k]
-//	 	if ok {
-//	 		tag := svcapitypes.Tag{Key: &k, Value: &v}
-//	 		result = append(result, &tag)
-//	 		delete(tags, k)
-//	 	}
-//	 }
-//	 for k, v := range tags {
-//	 	tag := svcapitypes.Tag{Key: &k, Value: &v}
-//	 	result = append(result, &tag)
-//	 }
+//	for _, k := range keyOrder {
+//		v, ok := tags[k]
+//		if ok {
+//			tag := svcapitypes.Tag{Key: &k, Value: &v}
+//			result = append(result, &tag)
+//			delete(tags, k)
+//		}
+//	}
+//	for k, v := range tags {
+//		tag := svcapitypes.Tag{Key: &k, Value: &v}
+//		result = append(result, &tag)
+//	}
 func GoCodeConvertToACKTags(r *model.CRD, sourceVarName string, targetVarName string, keyOrderVarName string, indentLevel int) (string, error) {
 
 	out := "\n"
@@ -92,25 +90,23 @@ func GoCodeConvertToACKTags(r *model.CRD, sourceVarName string, targetVarName st
 // GoCodeFromACKTags returns Go code that converts ACKTags
 // to the Resource Tag shape type. Tag fields can only be
 // maps or lists of Tag Go type. If Tag field is a list,
-// when converting from ACK Tags, we try to preserve the 
+// when converting from ACK Tags, we try to preserve the
 // original order
-// 
-//
 //
 // Sample output:
 //
-//	 for _, k := range keyOrder {
-//	 	v, ok := tags[k]
-//	 	if ok {
-//	 		tag := svcapitypes.Tag{Key: &k, Value: &v}
-//	 		result = append(result, &tag)
-//	 		delete(tags, k)
-//	 	}
-//	 }
-//	 for k, v := range tags {
-//	 	tag := svcapitypes.Tag{Key: &k, Value: &v}
-//	 	result = append(result, &tag)
-//	 }
+//	for _, k := range keyOrder {
+//		v, ok := tags[k]
+//		if ok {
+//			tag := svcapitypes.Tag{Key: &k, Value: &v}
+//			result = append(result, &tag)
+//			delete(tags, k)
+//		}
+//	}
+//	for k, v := range tags {
+//		tag := svcapitypes.Tag{Key: &k, Value: &v}
+//		result = append(result, &tag)
+//	}
 func GoCodeFromACKTags(r *model.CRD, tagsSourceVarName string, orderVarName string, targetVarName string, indentLevel int) (string, error) {
 	out := "\n"
 	indent := strings.Repeat("\t", indentLevel)
