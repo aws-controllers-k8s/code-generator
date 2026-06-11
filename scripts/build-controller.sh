@@ -66,6 +66,9 @@ Environment variables:
   AWS_SDK_GO_VERSION:                   Overrides the version of github.com/aws/aws-sdk-go used
                                         by 'ack-generate' to fetch the service API Specifications.
                                         Default: Version of aws/aws-sdk-go in service go.mod
+  AWS_SERVICE_SDK_VERSION:              Overrides the per-service SDK version used by 'ack-generate'
+                                        to fetch the service API model from a per-service tag.
+                                        Default: Value of aws_service_sdk_version in ack-generate-metadata.yaml
   TEMPLATE_DIRS:                        Overrides the list of directories containing ack-generate
                                         templates.
                                         Default: $TEMPLATE_DIRS
@@ -141,6 +144,13 @@ if [ -z "$AWS_SDK_GO_VERSION" ]; then
     AWS_SDK_GO_VERSION=$(cat "$SERVICE_CONTROLLER_SOURCE_PATH/apis/$ACK_GENERATE_API_VERSION/ack-generate-metadata.yaml" | yq ".aws_sdk_go_version" -r)
 fi
 
+if [ -z "$AWS_SERVICE_SDK_VERSION" ]; then
+    AWS_SERVICE_SDK_VERSION=$(cat "$SERVICE_CONTROLLER_SOURCE_PATH/apis/$ACK_GENERATE_API_VERSION/ack-generate-metadata.yaml" | yq ".aws_service_sdk_version" -r)
+    if [ "$AWS_SERVICE_SDK_VERSION" = "null" ] || [ "$AWS_SERVICE_SDK_VERSION" = "" ]; then
+        AWS_SERVICE_SDK_VERSION=""
+    fi
+fi
+
 # If there's a generator.yaml in the service's directory and the caller hasn't
 # specified an override, use that.
 if [ -z "$ACK_GENERATE_CONFIG_PATH" ]; then
@@ -190,9 +200,19 @@ if [ -n "$ACK_DOCUMENTATION_CONFIG_PATH" ]; then
     apis_args=("${apis_args[@]}" --documentation-config-path "$ACK_DOCUMENTATION_CONFIG_PATH")
 fi
 
-if [ -n "$AWS_SDK_GO_VERSION" ]; then
+# When a per-service SDK version is set, it takes precedence for model
+# fetching. Don't pass --aws-sdk-go-version to ack-generate in that case
+# since the two flags are mutually exclusive. The core version is still
+# resolved internally from metadata/go.mod for other purposes.
+if [ -n "$AWS_SERVICE_SDK_VERSION" ]; then
+    ag_args=("${ag_args[@]}" --aws-service-sdk-version "$AWS_SERVICE_SDK_VERSION")
+    apis_args=("${apis_args[@]}" --aws-service-sdk-version "$AWS_SERVICE_SDK_VERSION")
+elif [ -n "$AWS_SDK_GO_VERSION" ]; then
     ag_args=("${ag_args[@]}" --aws-sdk-go-version "$AWS_SDK_GO_VERSION")
     apis_args=("${apis_args[@]}" --aws-sdk-go-version "$AWS_SDK_GO_VERSION")
+else
+    echo "ERROR: at least one of AWS_SDK_GO_VERSION or AWS_SERVICE_SDK_VERSION must be set" 1>&2
+    exit 1
 fi
 
 if [ -n "$ACK_GENERATE_SERVICE_ACCOUNT_NAME" ]; then
