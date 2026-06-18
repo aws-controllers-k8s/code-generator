@@ -206,14 +206,28 @@ func createApiOperation(shape Shape, name, serviceAlias string) *awssdkmodel.Ope
 // from the apiv2 Shape.
 func createApiShape(shape Shape) (*awssdkmodel.Shape, error) {
 	isException := shape.isException()
+
+	// Smithy `intEnum` shapes are non-pointer value fields in aws-sdk-go-v2, so
+	// normalize them to `integer` and tag a DefaultValue. HasDefaultValue() then
+	// routes them through the existing value-type (non-pointer) SDK field path.
+	shapeType := shape.Type
+	isIntEnum := shapeType == "intEnum"
+	if isIntEnum {
+		shapeType = "integer"
+	}
+
 	apiShape := &awssdkmodel.Shape{
-		Type:       shape.Type,
+		Type:       shapeType,
 		Exception:  isException,
 		MemberRefs: make(map[string]*awssdkmodel.ShapeRef),
 		MemberRef:  awssdkmodel.ShapeRef{},
 		KeyRef:     awssdkmodel.ShapeRef{},
 		ValueRef:   awssdkmodel.ShapeRef{},
 		Required:   []string{},
+	}
+
+	if isIntEnum {
+		apiShape.DefaultValue = "0"
 	}
 
 	if isException {

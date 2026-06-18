@@ -434,7 +434,7 @@ func goType(s *Shape, withPkgName bool) string {
 		return "*string"
 	case "blob":
 		return "[]byte"
-	case "byte", "short", "integer", "long", "primitiveInteger":
+	case "byte", "short", "integer", "long", "primitiveInteger", "intEnum":
 		return "*int64"
 	case "float", "double":
 		return "*float64"
