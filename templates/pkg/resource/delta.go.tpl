@@ -7,6 +7,8 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
+	"github.com/aws-controllers-k8s/runtime/pkg/featuregate"
+	ackrt "github.com/aws-controllers-k8s/runtime/pkg/runtime"
 	acktags "github.com/aws-controllers-k8s/runtime/pkg/tags"
 )
 
@@ -36,6 +38,15 @@ func newResourceDelta(
 {{- if $hookCode := Hook .CRD "delta_post_compare" }}
 {{ $hookCode }}
 {{- end }}
+	// Selective reconciliation: when the SelectiveReconciliation feature gate
+	// is enabled and the desired resource carries the
+	// services.k8s.aws/ignore-field-drift annotation, remove any difference
+	// under an ignored field path so that drift on those fields never marks the
+	// resource out-of-sync. This is a no-op for resources that do not use the
+	// feature.
+	if a != nil {
+		ackrt.FilterIgnoredDeltaDifferences(delta, a, featuregate.GetGlobalFeatureGates())
+	}
 	return delta
 }
 
