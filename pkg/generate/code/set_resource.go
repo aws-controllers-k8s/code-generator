@@ -237,9 +237,9 @@ func SetResource(
 		if setCfg != nil && setCfg.IgnoreResourceSetter() {
 			continue
 		}
-        if inSpec && f.FieldConfig != nil && f.FieldConfig.IsSecret {
-            continue
-        }
+		if inSpec && f.FieldConfig != nil && f.FieldConfig.IsSecret {
+			continue
+		}
 
 		onlySetChangedFieldsOnUpdate := op == r.Ops.Update && r.OnlySetChangedFieldsOnUpdate()
 		if onlySetChangedFieldsOnUpdate && inSpec {
@@ -336,7 +336,13 @@ func SetResource(
 		// Enum types are just strings at the end of the day
 		// so we want to check if they are empty before deciding
 		// to assign them to the resource field
-		if sourceMemberShapeRef.Shape.IsEnum() {
+		if sourceMemberShapeRef.Shape.IsIntEnum() {
+			// intEnum SDK fields are int32 value types, so guard against the
+			// integer zero value rather than the empty string.
+			out += fmt.Sprintf(
+				"%sif %s != 0 {\n", indent, sourceAdaptedVarName,
+			)
+		} else if sourceMemberShapeRef.Shape.IsEnum() {
 
 			out += fmt.Sprintf(
 				"%sif %s != \"\" {\n", indent, sourceAdaptedVarName,
@@ -673,9 +679,9 @@ func setResourceReadMany(
 		if setCfg != nil && setCfg.IgnoreResourceSetter() {
 			continue
 		}
-        if inSpec && f.FieldConfig != nil && f.FieldConfig.IsSecret {
-            continue
-        }
+		if inSpec && f.FieldConfig != nil && f.FieldConfig.IsSecret {
+			continue
+		}
 
 		targetMemberShapeRef = f.ShapeRef
 		if sourceMemberShapeRef.Shape.RealType == "union" {
@@ -685,7 +691,13 @@ func setResourceReadMany(
 		// Enum types are just strings at the end of the day
 		// so we want to check if they are empty before deciding
 		// to assign them to the resource field
-		if sourceMemberShapeRef.Shape.IsEnum() {
+		if sourceMemberShapeRef.Shape.IsIntEnum() {
+			// intEnum SDK fields are int32 value types, so guard against the
+			// integer zero value rather than the empty string.
+			out += fmt.Sprintf(
+				"%sif %s != 0 {\n", innerForIndent, sourceAdaptedVarName,
+			)
+		} else if sourceMemberShapeRef.Shape.IsEnum() {
 			out += fmt.Sprintf(
 				"%sif %s != \"\" {\n", innerForIndent, sourceAdaptedVarName,
 			)
@@ -1821,9 +1833,9 @@ func SetResourceForStruct(
 				if setCfg != nil && setCfg.IgnoreResourceSetter() {
 					continue
 				}
-                if mf.FieldConfig != nil && mf.FieldConfig.IsSecret {
-                    continue
-                }
+				if mf.FieldConfig != nil && mf.FieldConfig.IsSecret {
+					continue
+				}
 			}
 		}
 
@@ -1853,7 +1865,13 @@ func SetResourceForStruct(
 		// Enum types are just strings at the end of the day
 		// so we want to check if they are empty before deciding
 		// to assign them to the resource field
-		if sourceMemberShape.IsEnum() {
+		if sourceMemberShape.IsIntEnum() {
+			// intEnum SDK fields are int32 value types, so guard against the
+			// integer zero value rather than the empty string.
+			out += fmt.Sprintf(
+				"%sif %s != 0 {\n", indent, sourceAdaptedVarName,
+			)
+		} else if sourceMemberShape.IsEnum() {
 			out += fmt.Sprintf(
 				"%sif %s != \"\" {\n", indent, sourceAdaptedVarName,
 			)
@@ -1966,7 +1984,13 @@ func SetResourceForStruct(
 						sourceMemberShapeRef = sourceShape.MemberRefs[memberNames[0]]
 					}
 					sourceAdaptedVarName = sourceVarName + "." + name.Camel
-					if sourceShape.IsEnum() {
+					if sourceShape.IsIntEnum() {
+						// intEnum SDK fields are int32 value types, so guard
+						// against the integer zero value, not the empty string.
+						out += fmt.Sprintf(
+							"%sif %s != 0 {\n", indent, sourceAdaptedVarName,
+						)
+					} else if sourceShape.IsEnum() {
 						out += fmt.Sprintf(
 							"%sif %s != \"\" {\n", indent, sourceAdaptedVarName,
 						)
@@ -2305,6 +2329,21 @@ func setResourceForScalar(
 		}
 		out += fmt.Sprintf("%s%sCopy := %s64(%s)\n", indent, ogMemberName.CamelLower, actualType, setTo)
 		out += fmt.Sprintf("%s%s = &%sCopy\n", indent, targetVar, ogMemberName.CamelLower)
+	} else if shape.IsIntEnum() {
+		// intEnum: the SDK field is an int32 alias, while the ACK field is the
+		// human-friendly string name. Map int value -> name.
+		ogMemberName := names.New(shapeRef.OriginalMemberName)
+		if isList {
+			ogMemberName = names.New(shapeRef.OrigShapeName)
+		}
+		nameVar := ogMemberName.CamelLower + "Name"
+		out += fmt.Sprintf("%sswitch %s {\n", indent, strings.TrimPrefix(setTo, "*"))
+		for _, name := range shape.Enum {
+			out += fmt.Sprintf("%scase %d:\n", indent, shape.IntEnumValues[name])
+			out += fmt.Sprintf("%s\t%s := %q\n", indent, nameVar, name)
+			out += fmt.Sprintf("%s\t%s = &%s\n", indent, targetVar, nameVar)
+		}
+		out += fmt.Sprintf("%s}\n", indent)
 	} else if shape.IsEnum() {
 		out += fmt.Sprintf("%s%s = aws.String(string(%s))\n", indent, targetVar, strings.TrimPrefix(setTo, "*"))
 	} else if shapeRef.IsNonPointerInSDK() {
@@ -2480,9 +2519,9 @@ func setResourceForUnion(
 				if setCfg != nil && setCfg.IgnoreResourceSetter() {
 					continue
 				}
-                if mf.FieldConfig != nil && mf.FieldConfig.IsSecret {
-                    continue
-                }
+				if mf.FieldConfig != nil && mf.FieldConfig.IsSecret {
+					continue
+				}
 			}
 		}
 

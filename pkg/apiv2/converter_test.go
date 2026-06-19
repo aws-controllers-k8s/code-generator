@@ -110,10 +110,10 @@ func TestBuildAPI_UnionMemberTargetingUnit(t *testing.T) {
 	assert.Empty(t, allPorts.Shape.MemberRefs, "resolved Unit shape should be an empty structure")
 }
 
-// TestCreateApiShape_IntEnum verifies a Smithy `intEnum` shape is normalized to
-// `integer` and marked with a DefaultValue so downstream treats the SDK field
-// as a non-pointer value type.
-func TestCreateApiShape_IntEnum(t *testing.T) {
+// TestIntEnum verifies a Smithy `intEnum` shape is surfaced as a named string
+// enum (member name as the value) with its integer values captured in
+// IntEnumValues, mirroring how buildAPI handles the `intEnum` switch case.
+func TestIntEnum(t *testing.T) {
 	assert := assert.New(t)
 
 	intEnumShape := Shape{
@@ -125,23 +125,40 @@ func TestCreateApiShape_IntEnum(t *testing.T) {
 					"smithy.api#enumValue": float64(1),
 				},
 			},
+			"TWO": {
+				ShapeName: "smithy.api#Unit",
+				Traits: map[string]interface{}{
+					"smithy.api#enumValue": float64(2),
+				},
+			},
 		},
 	}
 
+	// createApiShape leaves the type as-is; the normalization happens in the
+	// buildAPI switch (Type -> "string" + addIntEnumRef), which we replicate.
 	apiShape, err := createApiShape(intEnumShape)
 	assert.NoError(err)
-	// intEnum is normalized to integer so it flows through the existing
-	// integer Go-type path (*int64 on the ACK side).
-	assert.Equal("integer", apiShape.Type)
-	// A DefaultValue marks the SDK field as a non-pointer value type, reusing
-	// the existing value-type SDK field assignment path.
-	assert.Equal("0", apiShape.DefaultValue)
-	assert.True(apiShape.HasDefaultValue())
+	assert.Equal("intEnum", apiShape.Type)
+
+	apiShape.Type = "string"
+	addIntEnumRef(apiShape, intEnumShape)
+
+	// Surfaced as a string enum whose values are the human-friendly names.
+	assert.Equal("string", apiShape.Type)
+	assert.Equal([]string{"ONE", "TWO"}, apiShape.Enum)
+	assert.True(apiShape.IsEnum())
+	assert.True(apiShape.IsIntEnum())
+	// Integer values are captured for the SDK-boundary name<->int conversion.
+	assert.Equal(int64(1), apiShape.IntEnumValues["ONE"])
+	assert.Equal(int64(2), apiShape.IntEnumValues["TWO"])
+	// intEnum must not be treated as a non-pointer/default integer anymore.
+	assert.Equal("", apiShape.DefaultValue)
+	assert.False(apiShape.HasDefaultValue())
 }
 
 // TestCreateApiShape_Integer verifies a plain integer shape is unaffected by
-// the intEnum normalization (no spurious DefaultValue is injected, so it stays
-// a pointer SDK field).
+// the intEnum handling (no spurious DefaultValue is injected, so it stays a
+// pointer SDK field, and it is not flagged as an int enum).
 func TestCreateApiShape_Integer(t *testing.T) {
 	assert := assert.New(t)
 
@@ -150,4 +167,5 @@ func TestCreateApiShape_Integer(t *testing.T) {
 	assert.Equal("integer", apiShape.Type)
 	assert.Equal("", apiShape.DefaultValue)
 	assert.False(apiShape.HasDefaultValue())
+	assert.False(apiShape.IsIntEnum())
 }

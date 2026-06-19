@@ -5629,3 +5629,142 @@ func TestSetResource_LambdaMicrovms_MicrovmImage_Create_ValidateField(t *testing
 	assert.Contains(got, "f10f1.Validate = aws.String(string(resp.Hooks.MicrovmImageHooks.Validate))")
 	assert.NotContains(got, "Validate_")
 }
+
+func TestSetResource_MWAAServerless_Workflow_ReadOne(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "mwaaserverless")
+
+	crd := testutil.GetCRDByName(t, g, "Workflow")
+	require.NotNil(crd)
+
+	// EngineVersion is a Smithy intEnum. On the ACK side it is surfaced as a
+	// named string enum (*string), while the SDK field is an int32 alias
+	// (type EngineVersion = int32). The generated read code must guard against
+	// the integer zero value (not the empty string) and map the integer value
+	// back to its human-friendly name via a switch.
+	expected := `
+	if resp.CreatedAt != nil {
+		ko.Status.CreatedAt = &metav1.Time{*resp.CreatedAt}
+	} else {
+		ko.Status.CreatedAt = nil
+	}
+	if resp.DefinitionS3Location != nil {
+		f1 := &svcapitypes.DefinitionS3Location{}
+		if resp.DefinitionS3Location.Bucket != nil {
+			f1.Bucket = resp.DefinitionS3Location.Bucket
+		}
+		if resp.DefinitionS3Location.ObjectKey != nil {
+			f1.ObjectKey = resp.DefinitionS3Location.ObjectKey
+		}
+		if resp.DefinitionS3Location.VersionId != nil {
+			f1.VersionID = resp.DefinitionS3Location.VersionId
+		}
+		ko.Spec.DefinitionS3Location = f1
+	} else {
+		ko.Spec.DefinitionS3Location = nil
+	}
+	if resp.Description != nil {
+		ko.Spec.Description = resp.Description
+	} else {
+		ko.Spec.Description = nil
+	}
+	if resp.EncryptionConfiguration != nil {
+		f3 := &svcapitypes.EncryptionConfiguration{}
+		if resp.EncryptionConfiguration.KmsKeyId != nil {
+			f3.KMSKeyID = resp.EncryptionConfiguration.KmsKeyId
+		}
+		if resp.EncryptionConfiguration.Type != "" {
+			f3.Type = aws.String(string(resp.EncryptionConfiguration.Type))
+		}
+		ko.Spec.EncryptionConfiguration = f3
+	} else {
+		ko.Spec.EncryptionConfiguration = nil
+	}
+	if resp.EngineVersion != 0 {
+		switch resp.EngineVersion {
+		case 1:
+			engineVersionName := "ONE"
+			ko.Spec.EngineVersion = &engineVersionName
+		}
+	} else {
+		ko.Spec.EngineVersion = nil
+	}
+	if resp.LoggingConfiguration != nil {
+		f5 := &svcapitypes.LoggingConfiguration{}
+		if resp.LoggingConfiguration.LogGroupName != nil {
+			f5.LogGroupName = resp.LoggingConfiguration.LogGroupName
+		}
+		ko.Spec.LoggingConfiguration = f5
+	} else {
+		ko.Spec.LoggingConfiguration = nil
+	}
+	if resp.ModifiedAt != nil {
+		ko.Status.ModifiedAt = &metav1.Time{*resp.ModifiedAt}
+	} else {
+		ko.Status.ModifiedAt = nil
+	}
+	if resp.Name != nil {
+		ko.Spec.Name = resp.Name
+	} else {
+		ko.Spec.Name = nil
+	}
+	if resp.NetworkConfiguration != nil {
+		f8 := &svcapitypes.NetworkConfiguration{}
+		if resp.NetworkConfiguration.SecurityGroupIds != nil {
+			f8.SecurityGroupIDs = aws.StringSlice(resp.NetworkConfiguration.SecurityGroupIds)
+		}
+		if resp.NetworkConfiguration.SubnetIds != nil {
+			f8.SubnetIDs = aws.StringSlice(resp.NetworkConfiguration.SubnetIds)
+		}
+		ko.Spec.NetworkConfiguration = f8
+	} else {
+		ko.Spec.NetworkConfiguration = nil
+	}
+	if resp.RoleArn != nil {
+		ko.Spec.RoleARN = resp.RoleArn
+	} else {
+		ko.Spec.RoleARN = nil
+	}
+	if resp.ScheduleConfiguration != nil {
+		f10 := &svcapitypes.ScheduleConfiguration{}
+		if resp.ScheduleConfiguration.CronExpression != nil {
+			f10.CronExpression = resp.ScheduleConfiguration.CronExpression
+		}
+		ko.Status.ScheduleConfiguration = f10
+	} else {
+		ko.Status.ScheduleConfiguration = nil
+	}
+	if resp.TriggerMode != nil {
+		ko.Spec.TriggerMode = resp.TriggerMode
+	} else {
+		ko.Spec.TriggerMode = nil
+	}
+	if ko.Status.ACKResourceMetadata == nil {
+		ko.Status.ACKResourceMetadata = &ackv1alpha1.ResourceMetadata{}
+	}
+	if resp.WorkflowArn != nil {
+		arn := ackv1alpha1.AWSResourceName(*resp.WorkflowArn)
+		ko.Status.ACKResourceMetadata.ARN = &arn
+	}
+	if resp.WorkflowDefinition != nil {
+		ko.Status.WorkflowDefinition = resp.WorkflowDefinition
+	} else {
+		ko.Status.WorkflowDefinition = nil
+	}
+	if resp.WorkflowStatus != "" {
+		ko.Status.WorkflowStatus = aws.String(string(resp.WorkflowStatus))
+	} else {
+		ko.Status.WorkflowStatus = nil
+	}
+	if resp.WorkflowVersion != nil {
+		ko.Status.WorkflowVersion = resp.WorkflowVersion
+	} else {
+		ko.Status.WorkflowVersion = nil
+	}
+`
+	got, err := code.SetResource(crd.Config(), crd, model.OpTypeGet, "resp", "ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
+}

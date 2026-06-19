@@ -6987,3 +6987,84 @@ func TestSetSDK_LambdaMicrovms_MicrovmImage_Create_ValidateField(t *testing.T) {
 	assert.Contains(got, "f10f1.Validate = svcsdktypes.HookState(*r.ko.Spec.Hooks.MicrovmImageHooks.Validate)")
 	assert.NotContains(got, "Validate_")
 }
+
+func TestSetSDK_MWAAServerless_Workflow_Create(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "mwaaserverless")
+
+	crd := testutil.GetCRDByName(t, g, "Workflow")
+	require.NotNil(crd)
+
+	// EngineVersion is a Smithy intEnum. On the ACK side it is surfaced as a
+	// named string enum (*string), while the SDK field is an int32 alias
+	// (type EngineVersion = int32). The generated input code must therefore
+	// map the human-friendly name to its integer value via a switch.
+	expected := `
+	if r.ko.Spec.DefinitionS3Location != nil {
+		f1 := &svcsdktypes.DefinitionS3Location{}
+		if r.ko.Spec.DefinitionS3Location.Bucket != nil {
+			f1.Bucket = r.ko.Spec.DefinitionS3Location.Bucket
+		}
+		if r.ko.Spec.DefinitionS3Location.ObjectKey != nil {
+			f1.ObjectKey = r.ko.Spec.DefinitionS3Location.ObjectKey
+		}
+		if r.ko.Spec.DefinitionS3Location.VersionID != nil {
+			f1.VersionId = r.ko.Spec.DefinitionS3Location.VersionID
+		}
+		res.DefinitionS3Location = f1
+	}
+	if r.ko.Spec.Description != nil {
+		res.Description = r.ko.Spec.Description
+	}
+	if r.ko.Spec.EncryptionConfiguration != nil {
+		f3 := &svcsdktypes.EncryptionConfiguration{}
+		if r.ko.Spec.EncryptionConfiguration.KMSKeyID != nil {
+			f3.KmsKeyId = r.ko.Spec.EncryptionConfiguration.KMSKeyID
+		}
+		if r.ko.Spec.EncryptionConfiguration.Type != nil {
+			f3.Type = svcsdktypes.EncryptionType(*r.ko.Spec.EncryptionConfiguration.Type)
+		}
+		res.EncryptionConfiguration = f3
+	}
+	if r.ko.Spec.EngineVersion != nil {
+		switch *r.ko.Spec.EngineVersion {
+		case "ONE":
+			res.EngineVersion = svcsdktypes.EngineVersion(1)
+		}
+	}
+	if r.ko.Spec.LoggingConfiguration != nil {
+		f5 := &svcsdktypes.LoggingConfiguration{}
+		if r.ko.Spec.LoggingConfiguration.LogGroupName != nil {
+			f5.LogGroupName = r.ko.Spec.LoggingConfiguration.LogGroupName
+		}
+		res.LoggingConfiguration = f5
+	}
+	if r.ko.Spec.Name != nil {
+		res.Name = r.ko.Spec.Name
+	}
+	if r.ko.Spec.NetworkConfiguration != nil {
+		f7 := &svcsdktypes.NetworkConfiguration{}
+		if r.ko.Spec.NetworkConfiguration.SecurityGroupIDs != nil {
+			f7.SecurityGroupIds = aws.ToStringSlice(r.ko.Spec.NetworkConfiguration.SecurityGroupIDs)
+		}
+		if r.ko.Spec.NetworkConfiguration.SubnetIDs != nil {
+			f7.SubnetIds = aws.ToStringSlice(r.ko.Spec.NetworkConfiguration.SubnetIDs)
+		}
+		res.NetworkConfiguration = f7
+	}
+	if r.ko.Spec.RoleARN != nil {
+		res.RoleArn = r.ko.Spec.RoleARN
+	}
+	if r.ko.Spec.Tags != nil {
+		res.Tags = aws.ToStringMap(r.ko.Spec.Tags)
+	}
+	if r.ko.Spec.TriggerMode != nil {
+		res.TriggerMode = r.ko.Spec.TriggerMode
+	}
+`
+	got, err := code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
+}

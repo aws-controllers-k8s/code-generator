@@ -1,0 +1,30 @@
+sdk_names:
+  model_name: mwaaserverless
+ignore:
+  field_paths:
+    - CreateWorkflowOutput.Warnings
+    - CreateWorkflowOutput.RevisionId
+    - CreateWorkflowOutput.IsLatestVersion
+    - UpdateWorkflowOutput.Warnings
+resources:
+  Workflow:
+    is_arn_primary_key: true
+    ignore_idempotency_token: true
+    fields:
+      Name:
+        is_immutable: true
+      ScheduleConfiguration:
+        is_read_only: true
+        from:
+          operation: GetWorkflow
+          path: ScheduleConfiguration
+      WorkflowDefinition:
+        is_read_only: true
+        from:
+          operation: GetWorkflow
+          path: WorkflowDefinition
+      ModifiedAt:
+        is_read_only: true
+        from:
+          operation: GetWorkflow
+          path: ModifiedAt

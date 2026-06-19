@@ -1744,6 +1744,15 @@ func setSDKForScalar(
 			tempVar = "&" + tempVar
 		}
 		out += fmt.Sprintf("%s%s = %s\n", indent, targetVarPath, tempVar)
+	} else if shape.IsIntEnum() {
+		// intEnum: the ACK field is the human-friendly string name, while the
+		// SDK field is an int32 alias. Map name -> int value.
+		out += fmt.Sprintf("%sswitch %s {\n", indent, setTo)
+		for _, name := range shape.Enum {
+			out += fmt.Sprintf("%scase %q:\n", indent, name)
+			out += fmt.Sprintf("%s\t%s = svcsdktypes.%s(%d)\n", indent, targetVarPath, shape.ShapeName, shape.IntEnumValues[name])
+		}
+		out += fmt.Sprintf("%s}\n", indent)
 	} else if shape.IsEnum() {
 		out += fmt.Sprintf("%s%s = svcsdktypes.%s(%s)\n", indent, targetVarPath, shape.ShapeName, setTo)
 	} else if shapeRef.IsNonPointerInSDK() {

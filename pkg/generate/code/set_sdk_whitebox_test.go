@@ -93,10 +93,10 @@ func TestSetSDKForScalar(t *testing.T) {
 `,
 		},
 		{
-			// An intEnum (DefaultValue set) is a non-pointer value SDK field, so
-			// the write path must assign a value, not a pointer:
-			// `res.EngineVersion = engineVersionCopy` (no leading &).
-			name:            "intEnum scalar (value-type SDK field)",
+			// An intEnum is surfaced on the ACK side as a named string enum,
+			// while the SDK field is an int32 alias. The write path emits a
+			// switch mapping each human-friendly name to its integer value.
+			name:            "intEnum scalar (name -> int value)",
 			targetFieldName: "EngineVersion",
 			targetVarName:   "res",
 			targetVarType:   "structure",
@@ -105,21 +105,20 @@ func TestSetSDKForScalar(t *testing.T) {
 			isListMember:    false,
 			shapeRef: &awssdkmodel.ShapeRef{
 				Shape: &awssdkmodel.Shape{
-					Type:         "integer",
-					DefaultValue: "0",
+					Type:          "string",
+					ShapeName:     "EngineVersion",
+					Enum:          []string{"ONE", "TWO"},
+					IntEnumValues: map[string]int64{"ONE": 1, "TWO": 2},
 				},
-				// member ref carries no default trait, so its own DefaultValue
-				// is empty (not "<nil>") and HasDefaultValue() defers to the
-				// shape's DefaultValue.
 				OriginalMemberName: "EngineVersion",
 			},
 			indentLevel: 1,
-			expected: `	engineVersionCopy0 := *ko.Spec.EngineVersion
-	if engineVersionCopy0 > math.MaxInt32 || engineVersionCopy0 < math.MinInt32 {
-		return nil, fmt.Errorf("error: field EngineVersion is of type int32")
+			expected: `	switch *ko.Spec.EngineVersion {
+	case "ONE":
+		res.EngineVersion = svcsdktypes.EngineVersion(1)
+	case "TWO":
+		res.EngineVersion = svcsdktypes.EngineVersion(2)
 	}
-	engineVersionCopy := int32(engineVersionCopy0)
-	res.EngineVersion = engineVersionCopy
 `,
 		},
 		{
@@ -259,21 +258,31 @@ func TestSetResourceForScalar(t *testing.T) {
 			expected: "\tmaxKeysCopy := int64(*resp.MaxKeys)\n\tko.Spec.MaxKeys = &maxKeysCopy\n",
 		},
 		{
-			// An intEnum (DefaultValue set) is a non-pointer value SDK field, so
-			// the read path must NOT dereference the source:
-			// `int64(resp.EngineVersion)` (no leading *).
-			name:        "intEnum scalar (value-type SDK field)",
+			// An intEnum's SDK field is an int32 alias while the ACK field is a
+			// human-friendly string name. The read path emits a switch mapping
+			// each integer value back to its name.
+			name:        "intEnum scalar (int value -> name)",
 			targetVar:   "ko.Spec.EngineVersion",
 			sourceVar:   "resp.EngineVersion",
 			indentLevel: 1,
 			shapeRef: &awssdkmodel.ShapeRef{
 				Shape: &awssdkmodel.Shape{
-					Type:         "integer",
-					DefaultValue: "0",
+					Type:          "string",
+					ShapeName:     "EngineVersion",
+					Enum:          []string{"ONE", "TWO"},
+					IntEnumValues: map[string]int64{"ONE": 1, "TWO": 2},
 				},
 				OriginalMemberName: "EngineVersion",
 			},
-			expected: "\tengineVersionCopy := int64(resp.EngineVersion)\n\tko.Spec.EngineVersion = &engineVersionCopy\n",
+			expected: `	switch resp.EngineVersion {
+	case 1:
+		engineVersionName := "ONE"
+		ko.Spec.EngineVersion = &engineVersionName
+	case 2:
+		engineVersionName := "TWO"
+		ko.Spec.EngineVersion = &engineVersionName
+	}
+`,
 		},
 	}
 

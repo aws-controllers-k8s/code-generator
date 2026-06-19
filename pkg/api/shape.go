@@ -27,19 +27,19 @@ type XMLInfo struct {
 
 // A ShapeRef defines the usage of a shape within the API.
 type ShapeRef struct {
-	API           *API   `json:"-"`
-	Shape         *Shape `json:"-"`
-	Documentation string `json:"-"`
-	DefaultValue  string `json:"-"`
-	AddedDefault  bool   `json:"-"`
-	ClientOptional bool  `json:"-"`
-	ShapeName     string `json:"shape"`
-	Location      string
-	LocationName  string
-	QueryName     string
-	Flattened     bool
-	Streaming     bool
-	XMLAttribute  bool
+	API            *API   `json:"-"`
+	Shape          *Shape `json:"-"`
+	Documentation  string `json:"-"`
+	DefaultValue   string `json:"-"`
+	AddedDefault   bool   `json:"-"`
+	ClientOptional bool   `json:"-"`
+	ShapeName      string `json:"shape"`
+	Location       string
+	LocationName   string
+	QueryName      string
+	Flattened      bool
+	Streaming      bool
+	XMLAttribute   bool
 
 	// References of struct members will include their originally modeled
 	// member name for cross references.
@@ -102,9 +102,13 @@ type Shape struct {
 	Type       string
 	// this is being added for type union specifically. We want to generate
 	//  api as struct and handle setSDK and setResource differently
-	RealType         string
-	Exception        bool
-	Enum             []string
+	RealType  string
+	Exception bool
+	Enum      []string
+	// IntEnumValues maps each Smithy intEnum member name to its integer value
+	// (from the smithy.api#enumValue trait). Non-empty only for intEnum shapes,
+	// which are otherwise represented as string enums on the ACK side.
+	IntEnumValues    map[string]int64 `json:"-"`
 	EnumConsts       []string
 	Flattened        bool
 	Streaming        bool
@@ -434,7 +438,7 @@ func goType(s *Shape, withPkgName bool) string {
 		return "*string"
 	case "blob":
 		return "[]byte"
-	case "byte", "short", "integer", "long", "primitiveInteger", "intEnum":
+	case "byte", "short", "integer", "long", "primitiveInteger":
 		return "*int64"
 	case "float", "double":
 		return "*float64"
@@ -1059,6 +1063,12 @@ func (s *Shape) GoCode() string {
 // IsEnum returns whether this shape is an enum list
 func (s *Shape) IsEnum() bool {
 	return s.Type == "string" && len(s.Enum) > 0
+}
+
+// IsIntEnum reports whether this (string-typed) enum shape originated from a
+// Smithy intEnum and therefore needs name<->int conversion at the SDK boundary.
+func (s *Shape) IsIntEnum() bool {
+	return len(s.IntEnumValues) > 0
 }
 
 // HasDefaultValue returns whether this shape has a default value.
