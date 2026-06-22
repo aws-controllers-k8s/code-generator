@@ -258,9 +258,11 @@ func TestSetResourceForScalar(t *testing.T) {
 			expected: "\tmaxKeysCopy := int64(*resp.MaxKeys)\n\tko.Spec.MaxKeys = &maxKeysCopy\n",
 		},
 		{
-			// An intEnum's SDK field is an int32 alias while the ACK field is a
-			// human-friendly string name. The read path emits a switch mapping
-			// each integer value back to its name.
+			// An intEnum's SDK field is a non-pointer int32 alias while the ACK
+			// field is a human-friendly string name. The read path emits a
+			// self-contained switch mapping each integer value back to its name,
+			// with a default that clears the field to nil. There is no outer
+			// "!= 0" guard, since zero can be a legitimate intEnum member.
 			name:        "intEnum scalar (int value -> name)",
 			targetVar:   "ko.Spec.EngineVersion",
 			sourceVar:   "resp.EngineVersion",
@@ -281,6 +283,39 @@ func TestSetResourceForScalar(t *testing.T) {
 	case 2:
 		engineVersionName := "TWO"
 		ko.Spec.EngineVersion = &engineVersionName
+	default:
+		ko.Spec.EngineVersion = nil
+	}
+`,
+		},
+		{
+			// Regression: a zero-valued intEnum member must produce a real
+			// `case 0:` arm and must NOT be swallowed by a `!= 0` guard. Since
+			// the SDK field is a non-pointer int32, zero is indistinguishable
+			// from "unset", so the only safe behavior is to map it to its name
+			// like any other member.
+			name:        "intEnum scalar with zero-valued member",
+			targetVar:   "ko.Spec.EngineVersion",
+			sourceVar:   "resp.EngineVersion",
+			indentLevel: 1,
+			shapeRef: &awssdkmodel.ShapeRef{
+				Shape: &awssdkmodel.Shape{
+					Type:          "string",
+					ShapeName:     "EngineVersion",
+					Enum:          []string{"ZERO", "ONE"},
+					IntEnumValues: map[string]int64{"ZERO": 0, "ONE": 1},
+				},
+				OriginalMemberName: "EngineVersion",
+			},
+			expected: `	switch resp.EngineVersion {
+	case 0:
+		engineVersionName := "ZERO"
+		ko.Spec.EngineVersion = &engineVersionName
+	case 1:
+		engineVersionName := "ONE"
+		ko.Spec.EngineVersion = &engineVersionName
+	default:
+		ko.Spec.EngineVersion = nil
 	}
 `,
 		},

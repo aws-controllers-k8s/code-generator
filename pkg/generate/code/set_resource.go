@@ -336,13 +336,12 @@ func SetResource(
 		// Enum types are just strings at the end of the day
 		// so we want to check if they are empty before deciding
 		// to assign them to the resource field
-		if sourceMemberShapeRef.Shape.IsIntEnum() {
-			// intEnum SDK fields are int32 value types, so guard against the
-			// integer zero value rather than the empty string.
-			out += fmt.Sprintf(
-				"%sif %s != 0 {\n", indent, sourceAdaptedVarName,
-			)
-		} else if sourceMemberShapeRef.Shape.IsEnum() {
+		// intEnum members are non-pointer int32 values in the SDK and are
+		// surfaced as named string enums on the ACK side; the int<->name switch
+		// in setResourceForScalar (with its default: -> nil) handles the zero
+		// value, so no outer empty/nil guard is emitted (IsNonPointerInSDK is
+		// true for intEnum).
+		if sourceMemberShapeRef.Shape.IsEnum() {
 
 			out += fmt.Sprintf(
 				"%sif %s != \"\" {\n", indent, sourceAdaptedVarName,
@@ -691,13 +690,10 @@ func setResourceReadMany(
 		// Enum types are just strings at the end of the day
 		// so we want to check if they are empty before deciding
 		// to assign them to the resource field
-		if sourceMemberShapeRef.Shape.IsIntEnum() {
-			// intEnum SDK fields are int32 value types, so guard against the
-			// integer zero value rather than the empty string.
-			out += fmt.Sprintf(
-				"%sif %s != 0 {\n", innerForIndent, sourceAdaptedVarName,
-			)
-		} else if sourceMemberShapeRef.Shape.IsEnum() {
+		// intEnum members are non-pointer int32 values surfaced as named string
+		// enums; the int<->name switch in setResourceForScalar handles the zero
+		// value, so no outer guard is emitted (IsNonPointerInSDK is true).
+		if sourceMemberShapeRef.Shape.IsEnum() {
 			out += fmt.Sprintf(
 				"%sif %s != \"\" {\n", innerForIndent, sourceAdaptedVarName,
 			)
@@ -1865,13 +1861,10 @@ func SetResourceForStruct(
 		// Enum types are just strings at the end of the day
 		// so we want to check if they are empty before deciding
 		// to assign them to the resource field
-		if sourceMemberShape.IsIntEnum() {
-			// intEnum SDK fields are int32 value types, so guard against the
-			// integer zero value rather than the empty string.
-			out += fmt.Sprintf(
-				"%sif %s != 0 {\n", indent, sourceAdaptedVarName,
-			)
-		} else if sourceMemberShape.IsEnum() {
+		// intEnum members are non-pointer int32 values surfaced as named string
+		// enums; the int<->name switch in setResourceForScalar handles the zero
+		// value, so no outer guard is emitted (IsNonPointerInSDK is true).
+		if sourceMemberShape.IsEnum() {
 			out += fmt.Sprintf(
 				"%sif %s != \"\" {\n", indent, sourceAdaptedVarName,
 			)
@@ -1984,13 +1977,11 @@ func SetResourceForStruct(
 						sourceMemberShapeRef = sourceShape.MemberRefs[memberNames[0]]
 					}
 					sourceAdaptedVarName = sourceVarName + "." + name.Camel
-					if sourceShape.IsIntEnum() {
-						// intEnum SDK fields are int32 value types, so guard
-						// against the integer zero value, not the empty string.
-						out += fmt.Sprintf(
-							"%sif %s != 0 {\n", indent, sourceAdaptedVarName,
-						)
-					} else if sourceShape.IsEnum() {
+					// intEnum members are non-pointer int32 values surfaced as
+					// named string enums; the int<->name switch in
+					// setResourceForScalar handles the zero value, so no outer
+					// guard is emitted (IsNonPointerInSDK is true).
+					if sourceShape.IsEnum() {
 						out += fmt.Sprintf(
 							"%sif %s != \"\" {\n", indent, sourceAdaptedVarName,
 						)
@@ -2059,6 +2050,12 @@ func setResourceForSlice(
 
 	sourceShape := sourceShapeRef.Shape
 	targetShape := targetShapeRef.Shape
+	if sourceShape.MemberRef.Shape.IsIntEnum() {
+		// intEnum within a list requires per-element name<->int conversion that
+		// is not yet implemented. No AWS service model currently nests an
+		// intEnum in a list; fail loudly rather than emit code that won't build.
+		panic(fmt.Sprintf("intEnum list member %q is not supported", sourceShape.MemberRef.ShapeName))
+	}
 	iterVarName := fmt.Sprintf("%siter", targetVarName)
 	elemVarName := fmt.Sprintf("%selem", targetVarName)
 	// for _, f0iter0 := range resp.TagSpecifications {
@@ -2201,6 +2198,12 @@ func setResourceForMap(
 	indent := strings.Repeat("\t", indentLevel)
 	sourceShape := sourceShapeRef.Shape
 	targetShape := targetShapeRef.Shape
+	if sourceShape.ValueRef.Shape.IsIntEnum() {
+		// intEnum as a map value requires per-value name<->int conversion that
+		// is not yet implemented. No AWS service model currently nests an
+		// intEnum in a map; fail loudly rather than emit code that won't build.
+		panic(fmt.Sprintf("intEnum map value %q is not supported", sourceShape.ValueRef.ShapeName))
+	}
 
 	valIterVarName := fmt.Sprintf("%svaliter", targetVarName)
 	keyVarName := fmt.Sprintf("%skey", targetVarName)
@@ -2330,12 +2333,12 @@ func setResourceForScalar(
 		out += fmt.Sprintf("%s%sCopy := %s64(%s)\n", indent, ogMemberName.CamelLower, actualType, setTo)
 		out += fmt.Sprintf("%s%s = &%sCopy\n", indent, targetVar, ogMemberName.CamelLower)
 	} else if shape.IsIntEnum() {
-		// intEnum: the SDK field is an int32 alias, while the ACK field is the
-		// human-friendly string name. Map int value -> name.
+		// intEnum: the SDK field is a non-pointer int32 alias, while the ACK
+		// field is the human-friendly string name (*string). Map int -> name.
+		// The switch is self-contained: there is no outer "!= 0" guard (a zero
+		// value can be a legitimate intEnum member), and the default clears the
+		// target to nil for any unrecognized value.
 		ogMemberName := names.New(shapeRef.OriginalMemberName)
-		if isList {
-			ogMemberName = names.New(shapeRef.OrigShapeName)
-		}
 		nameVar := ogMemberName.CamelLower + "Name"
 		out += fmt.Sprintf("%sswitch %s {\n", indent, strings.TrimPrefix(setTo, "*"))
 		for _, name := range shape.Enum {
@@ -2343,6 +2346,8 @@ func setResourceForScalar(
 			out += fmt.Sprintf("%s\t%s := %q\n", indent, nameVar, name)
 			out += fmt.Sprintf("%s\t%s = &%s\n", indent, targetVar, nameVar)
 		}
+		out += fmt.Sprintf("%sdefault:\n", indent)
+		out += fmt.Sprintf("%s\t%s = nil\n", indent, targetVar)
 		out += fmt.Sprintf("%s}\n", indent)
 	} else if shape.IsEnum() {
 		out += fmt.Sprintf("%s%s = aws.String(string(%s))\n", indent, targetVar, strings.TrimPrefix(setTo, "*"))

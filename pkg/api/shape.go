@@ -574,9 +574,9 @@ func (ref *ShapeRef) GoTags(toplevel bool, isRequired bool) string {
 	if isRequired {
 		tags = append(tags, ShapeTag{"required", "true"})
 	}
-	if ref.Shape.IsEnum() {
+	if ref.Shape.IsEnum() || ref.Shape.IsIntEnum() {
 		tags = append(tags, ShapeTag{"enum", ref.ShapeName})
-	} else if ref.Shape.Type == "list" && ref.Shape.MemberRef.Shape.IsEnum() {
+	} else if ref.Shape.Type == "list" && (ref.Shape.MemberRef.Shape.IsEnum() || ref.Shape.MemberRef.Shape.IsIntEnum()) {
 		tags = append(tags, ShapeTag{"enum", ref.Shape.MemberRef.ShapeName})
 	}
 
@@ -1045,7 +1045,7 @@ func (s *Shape) GoCode() string {
 					s.ShapeName, err),
 			)
 		}
-	case s.IsEnum():
+	case s.IsEnum() || s.IsIntEnum():
 		if err := enumShapeTmpl.Execute(w, s); err != nil {
 			panic(
 				fmt.Sprintf(
@@ -1060,9 +1060,13 @@ func (s *Shape) GoCode() string {
 	return w.String()
 }
 
-// IsEnum returns whether this shape is an enum list
+// IsEnum returns whether this shape is a (string) enum. Smithy intEnum shapes
+// are deliberately excluded here even though they are also surfaced as
+// string-typed enums on the ACK side: they require name<->int conversion at the
+// SDK boundary, so callers must branch on IsIntEnum() explicitly. Type
+// generation that wants to treat both alike should test IsEnum() || IsIntEnum().
 func (s *Shape) IsEnum() bool {
-	return s.Type == "string" && len(s.Enum) > 0
+	return s.Type == "string" && len(s.Enum) > 0 && len(s.IntEnumValues) == 0
 }
 
 // IsIntEnum reports whether this (string-typed) enum shape originated from a
@@ -1104,6 +1108,12 @@ func (s *Shape) HasDefaultValue() bool {
 // The @default can come from the member reference itself (ShapeRef.DefaultValue)
 // or from the target shape (Shape.DefaultValue).
 func (s *ShapeRef) IsNonPointerInSDK() bool {
+	// Smithy intEnum members are surfaced by AWS SDK Go v2 as a value-typed
+	// int32 alias (e.g. `EngineVersion types.EngineVersion`), never a pointer,
+	// so they are always non-pointer in the SDK regardless of any default.
+	if s.Shape != nil && s.Shape.IsIntEnum() {
+		return true
+	}
 	if s.DefaultValue == "<nil>" {
 		return false
 	}

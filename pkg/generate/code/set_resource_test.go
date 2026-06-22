@@ -5640,10 +5640,12 @@ func TestSetResource_MWAAServerless_Workflow_ReadOne(t *testing.T) {
 	require.NotNil(crd)
 
 	// EngineVersion is a Smithy intEnum. On the ACK side it is surfaced as a
-	// named string enum (*string), while the SDK field is an int32 alias
-	// (type EngineVersion = int32). The generated read code must guard against
-	// the integer zero value (not the empty string) and map the integer value
-	// back to its human-friendly name via a switch.
+	// named string enum (*string), while the SDK field is a non-pointer int32
+	// alias (type EngineVersion = int32). The generated read code maps the
+	// integer value back to its human-friendly name via a self-contained
+	// switch whose default clears the field to nil. There is intentionally no
+	// outer "!= 0" guard: zero can be a legitimate intEnum member, so guarding
+	// on it would silently drop a valid value.
 	expected := `
 	if resp.CreatedAt != nil {
 		ko.Status.CreatedAt = &metav1.Time{*resp.CreatedAt}
@@ -5682,13 +5684,11 @@ func TestSetResource_MWAAServerless_Workflow_ReadOne(t *testing.T) {
 	} else {
 		ko.Spec.EncryptionConfiguration = nil
 	}
-	if resp.EngineVersion != 0 {
-		switch resp.EngineVersion {
-		case 1:
-			engineVersionName := "ONE"
-			ko.Spec.EngineVersion = &engineVersionName
-		}
-	} else {
+	switch resp.EngineVersion {
+	case 1:
+		engineVersionName := "ONE"
+		ko.Spec.EngineVersion = &engineVersionName
+	default:
 		ko.Spec.EngineVersion = nil
 	}
 	if resp.LoggingConfiguration != nil {

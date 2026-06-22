@@ -1326,6 +1326,12 @@ func setSDKForSlice(
 	out := ""
 	indent := strings.Repeat("\t", indentLevel)
 	targetShape := targetShapeRef.Shape
+	if targetShape.MemberRef.Shape.IsIntEnum() {
+		// intEnum within a list requires per-element name<->int conversion that
+		// is not yet implemented. No AWS service model currently nests an
+		// intEnum in a list; fail loudly rather than emit code that won't build.
+		panic(fmt.Sprintf("intEnum list member %q is not supported", targetShape.MemberRef.ShapeName))
+	}
 	if targetShape.MemberRef.Shape.Type == "string" && !targetShape.MemberRef.Shape.IsEnum() && !r.IsSecretField(sourceFieldPath) {
 		out += fmt.Sprintf("%s%s = aws.ToStringSlice(%s)\n", indent, targetVarName, sourceVarName)
 		return out, nil
@@ -1430,6 +1436,12 @@ func setSDKForMap(
 	out := ""
 	indent := strings.Repeat("\t", indentLevel)
 	targetShape := targetShapeRef.Shape
+	if targetShape.ValueRef.Shape.IsIntEnum() {
+		// intEnum as a map value requires per-value name<->int conversion that
+		// is not yet implemented. No AWS service model currently nests an
+		// intEnum in a map; fail loudly rather than emit code that won't build.
+		panic(fmt.Sprintf("intEnum map value %q is not supported", targetShape.ValueRef.ShapeName))
+	}
 
 	valIterVarName := fmt.Sprintf("%svaliter", targetVarName)
 	keyVarName := fmt.Sprintf("%skey", targetVarName)

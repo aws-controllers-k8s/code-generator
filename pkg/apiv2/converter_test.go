@@ -143,10 +143,15 @@ func TestIntEnum(t *testing.T) {
 	apiShape.Type = "string"
 	addIntEnumRef(apiShape, intEnumShape)
 
-	// Surfaced as a string enum whose values are the human-friendly names.
+	// Surfaced as a string-typed enum whose values are the human-friendly
+	// names. IsEnum() and IsIntEnum() are mutually exclusive: an intEnum
+	// reports IsIntEnum()==true and IsEnum()==false, so SDK-boundary code is
+	// forced to branch on IsIntEnum() (which needs name<->int conversion)
+	// rather than falling into the plain string-enum path. Type generation that
+	// treats both alike tests IsEnum() || IsIntEnum().
 	assert.Equal("string", apiShape.Type)
 	assert.Equal([]string{"ONE", "TWO"}, apiShape.Enum)
-	assert.True(apiShape.IsEnum())
+	assert.False(apiShape.IsEnum())
 	assert.True(apiShape.IsIntEnum())
 	// Integer values are captured for the SDK-boundary name<->int conversion.
 	assert.Equal(int64(1), apiShape.IntEnumValues["ONE"])
