@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	sdkModelURLTemplate    = "https://raw.githubusercontent.com/aws/aws-sdk-go-v2/%s/codegen/sdk-codegen/aws-models/%s.json"
+	sdkModelURLTemplate     = "https://raw.githubusercontent.com/aws/aws-sdk-go-v2/%s/codegen/sdk-codegen/aws-models/%s.json"
 	defaultHTTPFetchTimeout = 60 * time.Second
 )
 

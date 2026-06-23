@@ -520,6 +520,15 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 		return nil, fmt.Errorf("generator.yaml validation failed:\n  %s", strings.Join(fieldErrs, "\n  "))
 	}
 
+	// Resolve field-group operations (update_operations, read_operations).
+	// This must happen after processFields so that CRD.SpecFields is fully
+	// populated for identifier/payload partitioning.
+	for _, crd := range crds {
+		if err := crd.resolveFieldGroupOperations(); err != nil {
+			return nil, err
+		}
+	}
+
 	m.crds = crds
 	return crds, nil
 }

@@ -44,6 +44,7 @@ func ValidateConfig(
 
 	errs = append(errs, validateRenameOperations(cfg, sdkOperations)...)
 	errs = append(errs, validateIgnoredOperations(cfg, sdkOperations)...)
+	errs = append(errs, validateFieldGroupOperations(cfg, sdkOperations)...)
 
 	return errs
 }
@@ -97,6 +98,76 @@ func sortedKeys(m map[string]struct{}) []string {
 	}
 	sort.Strings(keys)
 	return keys
+}
+
+// validateFieldGroupOperations checks that field group operation configs
+// (update_operations and read_operations) reference valid SDK operations and
+// are not misconfigured.
+func validateFieldGroupOperations(
+	cfg *Config,
+	sdkOperations map[string]struct{},
+) []error {
+	var errs []error
+	for resName, resCfg := range cfg.Resources {
+		// Check update_operations
+		seen := make(map[string]bool)
+		for i, fgCfg := range resCfg.UpdateOperations {
+			if fgCfg.OperationID == "" {
+				errs = append(errs, fmt.Errorf(
+					"resources.%s.update_operations[%d]: operation_id must not be empty",
+					resName, i,
+				))
+				continue
+			}
+			if _, ok := sdkOperations[fgCfg.OperationID]; !ok {
+				errs = append(errs, fmt.Errorf(
+					"resources.%s.update_operations[%d]: operation %q not found in SDK. available: %s",
+					resName, i, fgCfg.OperationID, formatAvailableTruncated(sortedKeys(sdkOperations), 10),
+				))
+			}
+			if seen[fgCfg.OperationID] {
+				errs = append(errs, fmt.Errorf(
+					"resources.%s.update_operations[%d]: duplicate operation_id %q",
+					resName, i, fgCfg.OperationID,
+				))
+			}
+			seen[fgCfg.OperationID] = true
+		}
+
+		// Mutual exclusivity: custom_method_name + update_operations
+		if len(resCfg.UpdateOperations) > 0 && resCfg.UpdateOperation != nil && resCfg.UpdateOperation.CustomMethodName != "" {
+			errs = append(errs, fmt.Errorf(
+				"resources.%s: update_operations cannot be used together with update_operation.custom_method_name",
+				resName,
+			))
+		}
+
+		// Check read_operations
+		seen = make(map[string]bool)
+		for i, fgCfg := range resCfg.ReadOperations {
+			if fgCfg.OperationID == "" {
+				errs = append(errs, fmt.Errorf(
+					"resources.%s.read_operations[%d]: operation_id must not be empty",
+					resName, i,
+				))
+				continue
+			}
+			if _, ok := sdkOperations[fgCfg.OperationID]; !ok {
+				errs = append(errs, fmt.Errorf(
+					"resources.%s.read_operations[%d]: operation %q not found in SDK. available: %s",
+					resName, i, fgCfg.OperationID, formatAvailableTruncated(sortedKeys(sdkOperations), 10),
+				))
+			}
+			if seen[fgCfg.OperationID] {
+				errs = append(errs, fmt.Errorf(
+					"resources.%s.read_operations[%d]: duplicate operation_id %q",
+					resName, i, fgCfg.OperationID,
+				))
+			}
+			seen[fgCfg.OperationID] = true
+		}
+	}
+	return errs
 }
 
 // formatAvailableTruncated formats a sorted slice, showing at most maxItems
