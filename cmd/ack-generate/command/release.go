@@ -14,92 +14,75 @@
 package command
 
 import (
+	"context"
 	"fmt"
-	"io/ioutil"
-	"path/filepath"
 	"strings"
 
 	"github.com/spf13/cobra"
 
 	ackgenerate "github.com/aws-controllers-k8s/code-generator/pkg/generate/ack"
-	ackmetadata "github.com/aws-controllers-k8s/code-generator/pkg/metadata"
 	"github.com/aws-controllers-k8s/code-generator/pkg/sdk"
 )
-
-var optReleaseOutputPath string
 
 var releaseCmd = &cobra.Command{
 	Use:   "release <service> <release_version>",
 	Short: "Generates release artifacts for a specific service controller and release version",
-	RunE:  generateRelease,
+	Long: `Runs the full release pipeline for a controller repo. By default uses
+the current working directory; use -o to specify the controller path.
+This includes template generation, CRDs, RBAC, and Helm template
+post-processing.
+
+Usage:
+  ack-generate release s3 v1.2.3 -o /path/to/s3-controller
+  # or from within the controller repo:
+  ack-generate release s3 v1.2.3`,
+	RunE: generateRelease,
 }
 
 func init() {
-	releaseCmd.PersistentFlags().StringVarP(
-		&optReleaseOutputPath, "output", "o", "", "path to root directory to create generated files. Defaults to "+optServicesDir+"/$service",
-	)
 	rootCmd.AddCommand(releaseCmd)
 }
 
-// generateRelease generates the Helm charts and other release artifacts for a
-// service controller and release version
 func generateRelease(cmd *cobra.Command, args []string) error {
 	if len(args) != 2 {
 		return fmt.Errorf("please specify the service alias and the release version to generate release artifacts for")
 	}
 	svcAlias := strings.ToLower(args[0])
-	if optReleaseOutputPath == "" {
-		optReleaseOutputPath = filepath.Join(optServicesDir, svcAlias)
+	releaseVersion := strings.ToLower(args[1])
+
+	ctx, cancel := sdk.ContextWithSigterm(context.Background())
+	defer cancel()
+
+	controllerCtx, err := resolveControllerContext(svcAlias)
+	if err != nil {
+		return err
 	}
+
 	if optImageRepository == "" {
 		optImageRepository = fmt.Sprintf("public.ecr.aws/aws-controllers-k8s/%s-controller", svcAlias)
 	}
-	// TODO(jaypipes): We could do some git-fu here to verify that the release
-	// version supplied hasn't been used (as a Git tag) before...
-	releaseVersion := strings.ToLower(args[1])
 
-	// Load generator config to resolve model name before fetching
-	cfg, err := setupGenerator(svcAlias)
-	if err != nil {
-		return err
-	}
-
-	m, err := loadModel(svcAlias, "", "", cfg)
-	if err != nil {
-		return err
-	}
-
-	metadata, err := ackmetadata.NewServiceMetadata(optMetadataConfigPath)
-	if err != nil {
-		return err
-	}
-
+	fmt.Printf("Building release artifacts for %s-%s\n", svcAlias, releaseVersion)
 	ts, err := ackgenerate.Release(
-		m, metadata, optTemplateDirs,
+		controllerCtx.Model, controllerCtx.Metadata, optTemplateDirs,
 		releaseVersion, optImageRepository, optServiceAccountName,
+		embeddedTemplatesFS,
 	)
 	if err != nil {
 		return err
 	}
-
-	if err = ts.Execute(); err != nil {
+	if err := writeTemplateSet(ts, optOutputPath); err != nil {
 		return err
 	}
 
-	for path, contents := range ts.Executed() {
-		if optDryRun {
-			fmt.Printf("============================= %s ======================================\n", path)
-			fmt.Println(strings.TrimSpace(contents.String()))
-			continue
-		}
-		outPath := filepath.Join(optReleaseOutputPath, path)
-		outDir := filepath.Dir(outPath)
-		if _, err := sdk.EnsureDir(outDir); err != nil {
-			return err
-		}
-		if err = ioutil.WriteFile(outPath, contents.Bytes(), 0666); err != nil {
-			return err
-		}
+	releaseOpts := ackgenerate.BuildReleaseOptions{
+		SvcAlias:             controllerCtx.SvcAlias,
+		ControllerSourcePath: controllerCtx.ControllerPath,
+		APIVersion:           controllerCtx.APIVersion,
+		RBACRoleName:         controllerCtx.RBACRoleName,
+		RuntimeVersion:       controllerCtx.RuntimeVersion,
+		ControllerGenVersion: optControllerGenVersion,
+		CacheDir:             optCacheDir,
 	}
-	return nil
+	return ackgenerate.BuildRelease(ctx, releaseOpts)
 }

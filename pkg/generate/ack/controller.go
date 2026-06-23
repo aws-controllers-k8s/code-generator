@@ -14,11 +14,14 @@
 package ack
 
 import (
+	"io/fs"
 	"path/filepath"
 	"sort"
 	"strings"
 	ttpl "text/template"
 	"time"
+
+	"github.com/iancoleman/strcase"
 
 	awssdkmodel "github.com/aws-controllers-k8s/code-generator/pkg/api"
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/config"
@@ -230,14 +233,30 @@ var (
 )
 
 // Controller returns a pointer to a TemplateSet containing all the templates
-// for generating ACK service controller implementations
+// for generating ACK service controller implementations, including the
+// Kubernetes API types (apis/ directory).
 func Controller(
 	m *ackmodel.Model,
 	templateBasePaths []string,
-	// serviceAccountName is the name of the ServiceAccount used in the Helm chart
 	serviceAccountName string,
+	apiVersion string,
+	fallbackFS fs.FS,
 ) (*templateset.TemplateSet, error) {
 	totalStart := time.Now()
+
+	enumStart := time.Now()
+	enumDefs, err := m.GetEnumDefs()
+	if err != nil {
+		return nil, err
+	}
+	util.Tracef("GetEnumDefs (%d enums): %s\n", len(enumDefs), time.Since(enumStart))
+
+	typeStart := time.Now()
+	typeDefs, err := m.GetTypeDefs()
+	if err != nil {
+		return nil, err
+	}
+	util.Tracef("GetTypeDefs (%d types): %s\n", len(typeDefs), time.Since(typeStart))
 
 	crdStart := time.Now()
 	crds, err := m.GetCRDs()
@@ -257,21 +276,60 @@ func Controller(
 			m.SDKAPI,
 			r,
 		}
-		code, err := ResourceHookCode(templateBasePaths, r, hookID, crdVars, controllerFuncMap)
+		code, err := ResourceHookCode(templateBasePaths, r, hookID, crdVars, controllerFuncMap, fallbackFS)
 		if err != nil {
 			return "", err
 		}
 		return code, nil
 	}
 
+	// Merge include paths from both APIs and controller templates
+	allIncludePaths := make([]string, 0, len(apisIncludePaths)+len(controllerIncludePaths))
+	allIncludePaths = append(allIncludePaths, apisIncludePaths...)
+	allIncludePaths = append(allIncludePaths, controllerIncludePaths...)
+
+	// Also merge the func maps
+	mergedFuncMap := ttpl.FuncMap{}
+	for k, v := range apisFuncMap {
+		mergedFuncMap[k] = v
+	}
+	for k, v := range controllerFuncMap {
+		mergedFuncMap[k] = v
+	}
+
 	ts := templateset.New(
 		templateBasePaths,
-		controllerIncludePaths,
+		allIncludePaths,
 		controllerCopyPaths,
-		controllerFuncMap,
-	)
+		mergedFuncMap,
+	).WithFallbackFS(fallbackFS)
 
-	// First add all the CRD pkg/resource templates
+	// --- APIs templates (apis/{apiVersion}/) ---
+	apiVars := &templateAPIVars{
+		metaVars,
+		enumDefs,
+		typeDefs,
+	}
+	apisPrefix := filepath.Join("apis", apiVersion)
+	for _, path := range apisTemplatePaths {
+		outPath := filepath.Join(apisPrefix, strings.TrimSuffix(filepath.Base(path), ".tpl"))
+		if err = ts.Add(outPath, path, apiVars); err != nil {
+			return nil, err
+		}
+	}
+	for _, crd := range crds {
+		crdFileName := strcase.ToSnake(crd.Kind) + ".go"
+		crdVars := &templateCRDVars{
+			metaVars,
+			m.SDKAPI,
+			crd,
+		}
+		if err = ts.Add(filepath.Join(apisPrefix, crdFileName), "apis/crd.go.tpl", crdVars); err != nil {
+			return nil, err
+		}
+	}
+
+	// --- Controller templates (pkg/resource/) ---
 	targets := []string{
 		"delta.go.tpl",
 		"descriptor.go.tpl",
@@ -285,7 +343,6 @@ func Controller(
 	}
 	for _, crd := range crds {
 		for _, target := range targets {
-			// skip adding "tags.go.tpl" file if tagging is ignored for a crd
 			if target == "tags.go.tpl" && crd.Config().TagsAreIgnored(crd.Names.Original) {
 				continue
 			}
@@ -311,14 +368,12 @@ func Controller(
 		return nil, err
 	}
 
-	// Next add the template for pkg/version/version.go file
 	if err = ts.Add("pkg/version/version.go", "pkg/version/version.go.tpl", nil); err != nil {
 		return nil, err
 	}
 
-	// Next add the template for the main.go file
+	// main.go
 	snakeCasedCRDNames := make([]string, 0)
-	// using Map to implement the Set
 	referencedServiceNamesMap := make(map[string]struct{})
 	for _, crd := range crds {
 		snakeCasedCRDNames = append(snakeCasedCRDNames, crd.Names.Snake)
@@ -340,14 +395,17 @@ func Controller(
 		return nil, err
 	}
 
-	// Finally, add the configuration YAML file templates
+	if err = ts.Add("Makefile", "Makefile.tpl", metaVars); err != nil {
+		return nil, err
+	}
+
 	for _, path := range controllerConfigTemplatePaths {
 		outPath := strings.TrimSuffix(path, ".tpl")
 		if err = ts.Add(outPath, path, configVars); err != nil {
 			return nil, err
 		}
 	}
-	util.Tracef("template setup (%d templates): %s\n", len(ts.Executed())+len(controllerConfigTemplatePaths), time.Since(tplStart))
+	util.Tracef("template setup: %s\n", time.Since(tplStart))
 	util.Tracef("Controller() total: %s\n", time.Since(totalStart))
 	return ts, nil
 }

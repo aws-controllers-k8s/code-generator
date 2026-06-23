@@ -15,10 +15,13 @@ package command
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 
 	"github.com/spf13/cobra"
+
+	codegenerator "github.com/aws-controllers-k8s/code-generator"
 )
 
 const (
@@ -46,6 +49,9 @@ var (
 	optOutputPath              string
 	optServiceAccountName      string
 	optImageRepository         string
+	optControllerGenVersion    string
+	embeddedTemplatesFS        fs.FS
+	embeddedBoilerplateFS      fs.FS
 )
 
 var rootCmd = &cobra.Command{
@@ -68,6 +74,14 @@ func init() {
 		os.Exit(1)
 	}
 	defaultCacheDir = filepath.Join(hd, ".cache", appName)
+
+	sub, fsErr := fs.Sub(codegenerator.TemplateFS, "templates")
+	if fsErr != nil {
+		fmt.Printf("unable to load embedded templates: %s\n", fsErr)
+		os.Exit(1)
+	}
+	embeddedTemplatesFS = sub
+	embeddedBoilerplateFS = codegenerator.BoilerplateFiles
 
 	// try to determine a default template and services directory. If the call
 	// is executing `ack-generate` via a checked-out ACK source repository,
@@ -129,6 +143,9 @@ func init() {
 	)
 	rootCmd.PersistentFlags().StringVar(
 		&optImageRepository, "image-repository", "", "the Docker image repository to use in release artifacts. Defaults to 'public.ecr.aws/aws-controllers-k8s/$service-controller'",
+	)
+	rootCmd.PersistentFlags().StringVar(
+		&optControllerGenVersion, "controller-gen-version", "v0.19.0", "Required version of controller-gen (sigs.k8s.io/controller-tools)",
 	)
 }
 

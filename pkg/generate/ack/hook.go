@@ -16,6 +16,7 @@ package ack
 import (
 	"bytes"
 	"fmt"
+	"io/fs"
 	"io/ioutil"
 	"path/filepath"
 	ttpl "text/template"
@@ -161,6 +162,7 @@ func ResourceHookCode(
 	hookID string,
 	vars interface{},
 	funcMap ttpl.FuncMap,
+	fallbackFS fs.FS,
 ) (string, error) {
 	resourceName := r.Names.Original
 	if resourceName == "" || hookID == "" {
@@ -221,6 +223,28 @@ func ResourceHookCode(
 			return "", err
 		}
 		return b.String(), nil
+	}
+	if fallbackFS != nil {
+		tplContents, fsErr := fs.ReadFile(fallbackFS, filepath.ToSlash(*hook.TemplatePath))
+		if fsErr == nil {
+			t := ttpl.New(*hook.TemplatePath)
+			t = t.Funcs(funcMap)
+			if t, err := t.Parse(string(tplContents)); err != nil {
+				return "", fmt.Errorf(
+					"resource %s hook config for %s is invalid: error parsing %s: %s",
+					resourceName, hookID, *hook.TemplatePath, err,
+				)
+			} else {
+				var b bytes.Buffer
+				if err := t.Execute(&b, vars); err != nil {
+					return "", fmt.Errorf(
+						"resource %s hook config for %s is invalid: error executing %s: %s",
+						resourceName, hookID, *hook.TemplatePath, err,
+					)
+				}
+				return b.String(), nil
+			}
+		}
 	}
 	err := fmt.Errorf(
 		"resource %s hook config for %s is invalid: template_path %s not found",

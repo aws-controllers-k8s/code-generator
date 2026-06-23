@@ -2,6 +2,7 @@ package olm
 
 import (
 	"fmt"
+	"io/fs"
 	"strings"
 	ttpl "text/template"
 	"time"
@@ -45,6 +46,7 @@ func BundleAssets(
 	releaseVersion string,
 	imageRepository string,
 	templateBasePaths []string,
+	fallbackFS fs.FS,
 ) (*templateset.TemplateSet, error) {
 
 	ts := templateset.New(
@@ -52,7 +54,7 @@ func BundleAssets(
 		csvIncludePaths,
 		csvCopyPaths,
 		csvFuncMap,
-	)
+	).WithFallbackFS(fallbackFS)
 
 	crds, err := m.GetCRDs()
 	if err != nil {
