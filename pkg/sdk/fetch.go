@@ -42,19 +42,25 @@ const (
 //     URL. On 404, suggest --aws-service-sdk-version. On other non-200, return
 //     an error with the URL and status code.
 //
+// svcPackageName is the aws-sdk-go-v2 service package directory name (e.g.
+// "route53"), used as the per-service tag path segment. It can differ from
+// modelName, which identifies the model JSON file (e.g. "route-53"). It is only
+// consulted on the per-service path.
+//
 // The returned string is the base path to use with NewHelper — it mirrors the
 // SDK repo directory structure so that ModelAndDocsPath works unchanged.
 func EnsureModel(
 	ctx context.Context,
 	cacheDir string,
 	sdkVersion string,
+	svcPackageName string,
 	modelName string,
 	serviceSDKVersion string,
 ) (string, error) {
 	totalStart := time.Now()
 
 	if serviceSDKVersion != "" {
-		return ensureModelPerService(ctx, cacheDir, modelName, serviceSDKVersion, totalStart)
+		return ensureModelPerService(ctx, cacheDir, svcPackageName, modelName, serviceSDKVersion, totalStart)
 	}
 	return ensureModelCore(ctx, cacheDir, sdkVersion, modelName, totalStart)
 }
@@ -62,21 +68,30 @@ func EnsureModel(
 // ensureModelPerService handles the per-service-only fetch path.
 // It checks the per-service cache first, then fetches from the per-service tag
 // URL. It never falls back to the core SDK tag.
+//
+// The per-service tag is named after the aws-sdk-go-v2 service package
+// (svcPackageName, e.g. "route53"), which can differ from the model file name
+// (modelName, e.g. "route-53"). When svcPackageName is empty we fall back to
+// modelName so existing callers keep working.
 func ensureModelPerService(
 	ctx context.Context,
 	cacheDir string,
+	svcPackageName string,
 	modelName string,
 	serviceSDKVersion string,
 	totalStart time.Time,
 ) (string, error) {
+	if svcPackageName == "" {
+		svcPackageName = modelName
+	}
 	normalizedSvcVer := EnsureSemverPrefix(serviceSDKVersion)
-	basePath := filepath.Join(cacheDir, "models", "service", modelName, normalizedSvcVer)
+	basePath := filepath.Join(cacheDir, "models", "service", svcPackageName, normalizedSvcVer)
 	modelDir := filepath.Join(basePath, "codegen", "sdk-codegen", "aws-models")
 	modelPath := filepath.Join(modelDir, fmt.Sprintf("%s.json", modelName))
 
 	// Check per-service cache
 	if _, err := os.Stat(modelPath); err == nil {
-		util.Tracef("EnsureModel: per-service cache hit for %s@%s\n", modelName, normalizedSvcVer)
+		util.Tracef("EnsureModel: per-service cache hit for %s@%s\n", svcPackageName, normalizedSvcVer)
 		return basePath, nil
 	}
 
@@ -86,7 +101,7 @@ func ensureModelPerService(
 	}
 
 	// Fetch from GitHub (per-service tag)
-	perSvcURL := fmt.Sprintf(perServiceModelURLTemplate, modelName, normalizedSvcVer, modelName)
+	perSvcURL := fmt.Sprintf(perServiceModelURLTemplate, svcPackageName, normalizedSvcVer, modelName)
 	util.Tracef("EnsureModel: fetching %s\n", perSvcURL)
 
 	fetchStart := time.Now()

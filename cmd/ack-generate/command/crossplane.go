@@ -67,9 +67,10 @@ func generateCrossplane(_ *cobra.Command, args []string) error {
 	resolvedVersion = sdk.EnsureSemverPrefix(resolvedVersion)
 
 	modelName := resolveModelName(svcAlias, cfg)
+	svcPackageName := resolveServicePackageName(svcAlias, cfg)
 	ctx, cancel := sdk.ContextWithSigterm(context.Background())
 	defer cancel()
-	basePath, err := sdk.EnsureModel(ctx, optCacheDir, resolvedVersion, modelName, "")
+	basePath, err := sdk.EnsureModel(ctx, optCacheDir, resolvedVersion, svcPackageName, modelName, "")
 	if err != nil {
 		return err
 	}

@@ -46,6 +46,19 @@ func resolveModelName(svcAlias string, cfg ackgenconfig.Config) string {
 	return modelName
 }
 
+// resolveServicePackageName returns the aws-sdk-go-v2 service package directory
+// name for a service. This is used as the per-service tag path segment, which
+// can differ from the model file name (e.g. route53's model is `route-53` but
+// its service package is `route53`). It checks the generator config's
+// package_name override and falls back to the service alias.
+func resolveServicePackageName(svcAlias string, cfg ackgenconfig.Config) string {
+	pkgName := strings.ToLower(cfg.SDKNames.Package)
+	if pkgName == "" {
+		pkgName = svcAlias
+	}
+	return pkgName
+}
+
 // loadModelWithLatestAPIVersion finds the AWS SDK for a given service alias and
 // creates a new model with the latest API version.
 func loadModelWithLatestAPIVersion(svcAlias string, metadata *ackmetadata.ServiceMetadata, cfg ackgenconfig.Config) (*ackmodel.Model, error) {
@@ -157,28 +170,26 @@ func setupGenerator(svcAlias string) (ackgenconfig.Config, error) {
 	// Resolve SDK version and fetch the model file
 	fetchStart := time.Now()
 
-	// When a per-service SDK version is set, the core version is still needed
-	// for the sdkVersion variable (used by metadata saving and other callers),
-	// but it is resolved from metadata/go.mod as a fallback — not as the
-	// primary fetch source. A resolution failure is non-fatal when the
-	// per-service version drives the EnsureModel fetch strategy.
-	resolvedVersion, err := sdk.GetSDKVersion(optAWSSDKGoVersion, metadataCoreSDKVersion, optOutputPath)
-	if err != nil {
-		if svcSDKVersion == "" {
+	// Exactly one version field is recorded in the generation metadata,
+	// matching whichever tag the model was fetched from. When a per-service
+	// SDK version drives the fetch, the core version is neither resolved nor
+	// recorded (EnsureModel ignores it on the per-service path); otherwise we
+	// resolve the core version and a resolution failure is fatal.
+	var resolvedVersion string
+	if svcSDKVersion == "" {
+		resolvedVersion, err = sdk.GetSDKVersion(optAWSSDKGoVersion, metadataCoreSDKVersion, optOutputPath)
+		if err != nil {
 			return cfg, err
 		}
-		// Per-service version is set; core version is best-effort.
-		resolvedVersion = ""
-	}
-	if resolvedVersion != "" {
 		resolvedVersion = sdk.EnsureSemverPrefix(resolvedVersion)
 	}
 
 	modelName := resolveModelName(svcAlias, cfg)
+	svcPackageName := resolveServicePackageName(svcAlias, cfg)
 
 	ctx, cancel := sdk.ContextWithSigterm(context.Background())
 	defer cancel()
-	basePath, err := sdk.EnsureModel(ctx, optCacheDir, resolvedVersion, modelName, svcSDKVersion)
+	basePath, err := sdk.EnsureModel(ctx, optCacheDir, resolvedVersion, svcPackageName, modelName, svcSDKVersion)
 	if err != nil {
 		return cfg, err
 	}

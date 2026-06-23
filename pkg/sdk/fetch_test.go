@@ -112,7 +112,7 @@ func TestEnsureModel_CoreSuccess(t *testing.T) {
 
 	cacheDir := t.TempDir()
 	// Pass empty serviceSDKVersion to exercise the core-only branch
-	basePath, err := sdk.EnsureModel(context.Background(), cacheDir, "v1.41.5", "s3files", "")
+	basePath, err := sdk.EnsureModel(context.Background(), cacheDir, "v1.41.5", "s3files", "s3files", "")
 	require.NoError(t, err)
 
 	// Verify cached at core path
@@ -154,7 +154,7 @@ func TestEnsureModel_PerServiceSuccess(t *testing.T) {
 	defer cleanup()
 
 	cacheDir := t.TempDir()
-	basePath, err := sdk.EnsureModel(context.Background(), cacheDir, "v1.41.5", "s3files", "v1.0.0")
+	basePath, err := sdk.EnsureModel(context.Background(), cacheDir, "v1.41.5", "s3files", "s3files", "v1.0.0")
 	require.NoError(t, err)
 
 	// Verify no core request was made — per-service is the sole path
@@ -194,7 +194,7 @@ func TestEnsureModel_PerServiceFailure(t *testing.T) {
 	defer cleanup()
 
 	cacheDir := t.TempDir()
-	_, err := sdk.EnsureModel(context.Background(), cacheDir, "v1.41.5", "s3files", "v1.0.0")
+	_, err := sdk.EnsureModel(context.Background(), cacheDir, "v1.41.5", "s3files", "s3files", "v1.0.0")
 	require.Error(t, err)
 
 	// Verify no core fallback was attempted
@@ -224,7 +224,7 @@ func TestEnsureModel_NoServiceVersionOn404(t *testing.T) {
 	defer cleanup()
 
 	cacheDir := t.TempDir()
-	_, err := sdk.EnsureModel(context.Background(), cacheDir, "v1.41.5", "s3files", "")
+	_, err := sdk.EnsureModel(context.Background(), cacheDir, "v1.41.5", "s3files", "s3files", "")
 	require.Error(t, err)
 
 	errMsg := err.Error()
@@ -285,28 +285,51 @@ func TestEnsureModel_CachePathSeparation(t *testing.T) {
 func TestEnsureModel_PerServiceURLConstruction(t *testing.T) {
 	tests := []struct {
 		name           string
+		svcPackageName string
 		modelName      string
 		serviceVersion string
 		expectedPath   string
 	}{
 		{
 			name:           "basic service",
+			svcPackageName: "s3files",
 			modelName:      "s3files",
 			serviceVersion: "v1.0.0",
 			expectedPath:   "/aws/aws-sdk-go-v2/service/s3files/v1.0.0/codegen/sdk-codegen/aws-models/s3files.json",
 		},
 		{
 			name:           "model name override",
+			svcPackageName: "monitoring",
 			modelName:      "monitoring",
 			serviceVersion: "v2.3.1",
 			expectedPath:   "/aws/aws-sdk-go-v2/service/monitoring/v2.3.1/codegen/sdk-codegen/aws-models/monitoring.json",
 		},
 		{
 			name:           "version without v prefix gets normalized",
+			svcPackageName: "sqs",
 			modelName:      "sqs",
 			serviceVersion: "1.5.0",
 			// EnsureSemverPrefix will add the v prefix
 			expectedPath: "/aws/aws-sdk-go-v2/service/sqs/v1.5.0/codegen/sdk-codegen/aws-models/sqs.json",
+		},
+		{
+			// route53's service package is "route53" but its model file is
+			// "route-53"; the tag path uses the package name, the file name
+			// uses the model name.
+			name:           "package name differs from model name",
+			svcPackageName: "route53",
+			modelName:      "route-53",
+			serviceVersion: "v1.0.0",
+			expectedPath:   "/aws/aws-sdk-go-v2/service/route53/v1.0.0/codegen/sdk-codegen/aws-models/route-53.json",
+		},
+		{
+			// When svcPackageName is empty, EnsureModel falls back to modelName
+			// for the tag path segment.
+			name:           "empty package name falls back to model name",
+			svcPackageName: "",
+			modelName:      "lambda",
+			serviceVersion: "v1.0.0",
+			expectedPath:   "/aws/aws-sdk-go-v2/service/lambda/v1.0.0/codegen/sdk-codegen/aws-models/lambda.json",
 		},
 	}
 
@@ -330,7 +353,7 @@ func TestEnsureModel_PerServiceURLConstruction(t *testing.T) {
 			defer cleanup()
 
 			cacheDir := t.TempDir()
-			_, err := sdk.EnsureModel(context.Background(), cacheDir, "v1.41.5", tc.modelName, tc.serviceVersion)
+			_, err := sdk.EnsureModel(context.Background(), cacheDir, "v1.41.5", tc.svcPackageName, tc.modelName, tc.serviceVersion)
 			require.NoError(t, err)
 
 			assert.Equal(t, tc.expectedPath, capturedPath,
@@ -380,7 +403,7 @@ func TestEnsureModel_CoreCacheHit(t *testing.T) {
 
 	// Pass empty serviceSDKVersion to exercise the core-only branch
 	// No test server needed — if HTTP is attempted, it will fail
-	basePath, err := sdk.EnsureModel(context.Background(), cacheDir, "v1.41.5", "s3files", "")
+	basePath, err := sdk.EnsureModel(context.Background(), cacheDir, "v1.41.5", "s3files", "s3files", "")
 	require.NoError(t, err)
 
 	expectedBase := filepath.Join(cacheDir, "models", "v1.41.5")
@@ -405,7 +428,7 @@ func TestEnsureModel_PerServiceCacheHit(t *testing.T) {
 	require.NoError(t, os.WriteFile(filepath.Join(coreModelDir, "s3files.json"), []byte(`{"cached":"core-should-not-be-used"}`), 0644))
 
 	// No test server needed — if HTTP is attempted, it will fail
-	basePath, err := sdk.EnsureModel(context.Background(), cacheDir, "v1.41.5", "s3files", "v1.0.0")
+	basePath, err := sdk.EnsureModel(context.Background(), cacheDir, "v1.41.5", "s3files", "s3files", "v1.0.0")
 	require.NoError(t, err)
 
 	// Verify per-service cache path is returned, not core

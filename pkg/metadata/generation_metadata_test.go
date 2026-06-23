@@ -68,8 +68,12 @@ func TestGenerationMetadata_RoundTrip(t *testing.T) {
 			data, err := yaml.Marshal(original)
 			require.NoError(t, err)
 
-			// Verify the aws_service_sdk_version field presence/absence in raw YAML
+			// Verify aws_sdk_go_version is always emitted when set
 			yamlStr := string(data)
+			assert.True(t, strings.Contains(yamlStr, "aws_sdk_go_version: v1.41.5"),
+				"expected aws_sdk_go_version in YAML output")
+
+			// Verify the aws_service_sdk_version field presence/absence in raw YAML
 			if tc.expectFieldInYAML {
 				assert.True(t, strings.Contains(yamlStr, "aws_service_sdk_version"),
 					"expected aws_service_sdk_version in YAML output")
@@ -96,7 +100,7 @@ func TestGenerationMetadata_RoundTrip(t *testing.T) {
 
 // TestGenerationMetadata_BackwardCompatibility verifies that YAML without the
 // aws_service_sdk_version field deserializes without error and the field
-// defaults to empty string (Requirement 4.3).
+// defaults to empty string.
 func TestGenerationMetadata_BackwardCompatibility(t *testing.T) {
 	// YAML that predates the aws_service_sdk_version field
 	oldYAML := `
