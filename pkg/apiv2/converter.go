@@ -390,6 +390,7 @@ func injectCustomPrimitiveShapes() map[string]*awssdkmodel.Shape {
 		"PrimitiveLong",
 		"String",
 		"Timestamp",
+		"Unit",
 	}
 
 	for _, t := range types {
@@ -402,8 +403,12 @@ func injectCustomPrimitiveShapes() map[string]*awssdkmodel.Shape {
 			shapes[t].DefaultValue = "false"
 		case "PrimitiveLong":
 			shapes[t].DefaultValue = "0"
+		case "Unit":
+			shapes[t].Type = "structure"
+			shapes[t].MemberRefs = map[string]*awssdkmodel.ShapeRef{}
 		}
 	}
+
 	return shapes
 }
 
