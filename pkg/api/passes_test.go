@@ -974,3 +974,91 @@ func TestValidateShapeNameMethod(t *testing.T) {
 		})
 	}
 }
+
+// TestRenamedUnionShapePreservesOriginalName verifies that when a union
+// shape is renamed (e.g. MemoryStrategyInput -> MemoryStrategyInput_) by
+// renameIOSuffixedShapeNames, the OriginalShapeName is preserved. The
+// downstream SDK code generation functions (setSDKForUnion,
+// setResourceForUnion, varEmptyConstructorSDKType) use OriginalShapeName
+// to emit correct SDK type references.
+func TestRenamedUnionShapePreservesOriginalName(t *testing.T) {
+	a := &API{
+		name: "testapi",
+		Metadata: Metadata{
+			APIVersion:          "0000-00-00",
+			EndpointPrefix:      "testapi",
+			JSONVersion:         "1.1",
+			Protocol:            "json",
+			ServiceAbbreviation: "TestAPI",
+			ServiceFullName:     "Test API",
+			SignatureVersion:    "v4",
+		},
+		Operations: map[string]*Operation{
+			"CreateMemory": {
+				Name:      "CreateMemory",
+				InputRef:  ShapeRef{ShapeName: "CreateMemoryInput"},
+				OutputRef: ShapeRef{ShapeName: "CreateMemoryOutput"},
+			},
+		},
+		Shapes: map[string]*Shape{
+			"CreateMemoryInput": {
+				ShapeName: "CreateMemoryInput",
+				Type:      "structure",
+				MemberRefs: map[string]*ShapeRef{
+					"Strategies": {ShapeName: "MemoryStrategyInputList"},
+				},
+			},
+			"CreateMemoryOutput": {
+				ShapeName: "CreateMemoryOutput",
+				Type:      "structure",
+			},
+			"MemoryStrategyInputList": {
+				ShapeName: "MemoryStrategyInputList",
+				Type:      "list",
+				MemberRef: ShapeRef{ShapeName: "MemoryStrategyInput"},
+			},
+			"MemoryStrategyInput": {
+				ShapeName: "MemoryStrategyInput",
+				Type:      "structure",
+				RealType:  "union",
+			},
+		},
+	}
+
+	// Wire up shape refs
+	for _, op := range a.Operations {
+		op.InputRef.API = a
+		op.InputRef.Shape = a.Shapes[op.InputRef.ShapeName]
+		op.OutputRef.API = a
+		op.OutputRef.Shape = a.Shapes[op.OutputRef.ShapeName]
+	}
+	for _, s := range a.Shapes {
+		s.API = a
+		for k := range s.MemberRefs {
+			ref := s.MemberRefs[k]
+			ref.API = a
+			ref.Shape = a.Shapes[ref.ShapeName]
+			s.MemberRefs[k] = ref
+		}
+		if s.MemberRef.ShapeName != "" {
+			s.MemberRef.API = a
+			s.MemberRef.Shape = a.Shapes[s.MemberRef.ShapeName]
+		}
+	}
+
+	unionShape := a.Shapes["MemoryStrategyInput"]
+	if unionShape.OriginalShapeName != "" {
+		t.Fatalf("expected empty OriginalShapeName before rename, got %q", unionShape.OriginalShapeName)
+	}
+
+	a.renameIOSuffixedShapeNames()
+
+	// ShapeName gets underscore suffix, OriginalShapeName preserves the
+	// pre-rename value for downstream SDK code generation.
+	if unionShape.ShapeName != "MemoryStrategyInput_" {
+		t.Fatalf("expected ShapeName %q after rename, got %q", "MemoryStrategyInput_", unionShape.ShapeName)
+	}
+	if unionShape.OriginalShapeName != "MemoryStrategyInput" {
+		t.Fatalf("expected OriginalShapeName %q after rename, got %q", "MemoryStrategyInput", unionShape.OriginalShapeName)
+	}
+}

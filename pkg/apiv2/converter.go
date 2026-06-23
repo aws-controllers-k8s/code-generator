@@ -274,6 +274,14 @@ func addMemberRefs(apiShape *awssdkmodel.Shape, shape Shape, serviceAlias string
 		if ok {
 			apiShape.MemberRefs[memberName].DefaultValue = fmt.Sprintf("%v", val)
 		}
+		_, ok = member.Traits["smithy.api#addedDefault"]
+		if ok {
+			apiShape.MemberRefs[memberName].AddedDefault = true
+		}
+		_, ok = member.Traits["smithy.api#clientOptional"]
+		if ok {
+			apiShape.MemberRefs[memberName].ClientOptional = true
+		}
 	}
 	slices.Sort(apiShape.Required)
 }

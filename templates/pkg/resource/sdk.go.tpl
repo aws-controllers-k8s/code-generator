@@ -154,6 +154,7 @@ func (rm *resourceManager) sdkDelete(
 {{- if $hookCode := Hook .CRD "sdk_delete_pre_build_request" }}
 {{ $hookCode }}
 {{- end }}
+{{- GoCodeResourceIsDeletable .CRD "r" 1 }}
 {{- if $customMethod := .CRD.GetCustomImplementation .CRD.Ops.Delete }}
 	if err = rm.{{ $customMethod }}(ctx, r); err != nil {
 		return nil, err
@@ -200,6 +201,9 @@ func (rm *resourceManager) setStatusDefaults (
 	}
 	if ko.Status.ACKResourceMetadata.Region == nil {
 		ko.Status.ACKResourceMetadata.Region = &rm.awsRegion
+	}
+	if ko.Status.ACKResourceMetadata.Partition == nil {
+		ko.Status.ACKResourceMetadata.Partition = &rm.awsPartition
 	}
 	if ko.Status.ACKResourceMetadata.OwnerAccountID == nil {
 		ko.Status.ACKResourceMetadata.OwnerAccountID = &rm.awsAccountID

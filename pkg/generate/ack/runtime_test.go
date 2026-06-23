@@ -51,6 +51,11 @@ func (ids *fakeIdentifiers) Region() *ackv1alpha1.AWSRegion {
 	return &region
 }
 
+func (ids *fakeIdentifiers) Partition() *ackv1alpha1.AWSPartition {
+	region := ackv1alpha1.AWSPartition("aws")
+	return &region
+}
+
 type fakeDescriptor struct{}
 
 func (fd *fakeDescriptor) GroupVersionKind() schema.GroupVersionKind {

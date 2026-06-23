@@ -5579,3 +5579,31 @@ func TestSetResource_BedrockAgentCoreControl_GatewayTarget_NestedUnionTypeSwitch
 	assert.Contains(got, "case *svcsdktypes.ApiSchemaConfigurationMemberInlinePayload:")
 	assert.Contains(got, "case *svcsdktypes.ApiSchemaConfigurationMemberS3:")
 }
+
+// TestSetResource_BedrockAgentCoreControl_Memory_InputSuffixUnion tests that
+// union types whose names end in "Input" (e.g. MemoryStrategyInput) use the
+// original SDK shape name in generated set-output code, not the renamed
+// version with an underscore suffix (MemoryStrategyInput_).
+func TestSetResource_BedrockAgentCoreControl_Memory_InputSuffixUnion(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "bedrock-agentcore-control", &testutil.TestingModelOptions{
+		GeneratorConfigFile: "generator-with-input-suffix-union.yaml",
+	})
+
+	crd := testutil.GetCRDByName(t, g, "Memory")
+	require.NotNil(crd)
+	assert.NotNil(crd.Ops.ReadOne)
+
+	got, err := code.SetResource(crd.Config(), crd, model.OpTypeGet, "resp", "ko", 1)
+	require.NoError(err)
+
+	// On the read path, union type switches must use the original SDK name
+	assert.NotContains(got, "MemoryStrategyInput_",
+		"Should use original SDK shape name MemoryStrategyInput, not renamed MemoryStrategyInput_")
+	assert.NotContains(got, "CustomConfigurationInput_",
+		"Should use original SDK shape name CustomConfigurationInput, not renamed version")
+	assert.NotContains(got, "TriggerConditionInput_",
+		"Should use original SDK shape name TriggerConditionInput, not renamed version")
+}

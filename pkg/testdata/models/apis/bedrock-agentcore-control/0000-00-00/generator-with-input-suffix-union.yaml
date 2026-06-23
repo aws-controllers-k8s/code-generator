@@ -1,0 +1,33 @@
+ignore:
+  resource_names:
+    - AgentRuntime
+    - AgentRuntimeEndpoint
+    - ApiKeyCredentialProvider
+    - Browser
+    - BrowserProfile
+    - CodeInterpreter
+    - Evaluator
+    - Gateway
+    - GatewayTarget
+    # Memory
+    - Oauth2CredentialProvider
+    - OnlineEvaluationConfig
+    - WorkloadIdentity
+    - Policy
+    - PolicyEngine
+  field_paths:
+    - MemoryStrategy.Configuration
+    - CreateMemoryInput.ClientToken
+    - UpdateMemoryInput.ClientToken
+    - DeleteMemoryInput.ClientToken
+sdk_names:
+  model_name: bedrock-agentcore-control
+
+resources:
+  Memory:
+    ignore_idempotency_token: true
+    fields:
+      MemoryId:
+        is_primary_key: true
+    tags:
+      ignore: true

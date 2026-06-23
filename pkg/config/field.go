@@ -270,6 +270,9 @@ type CompareFieldConfig struct {
 	// NilEqualsZeroValue indicates a nil pointer and zero-value pointed-to
 	// value should be considered equal for the purposes of comparison
 	NilEqualsZeroValue bool `json:"nil_equals_zero_value"`
+	// PreDeleteInclude indicates the field should be included in the
+	// pre-delete delta comparison even if IsIgnored is true
+	PreDeleteInclude bool `json:"pre_delete_include"`
 }
 
 // PrintFieldConfig instructs the code generator how to handle kubebuilder:printcolumn
@@ -428,6 +431,11 @@ type FieldConfig struct {
 	// string comparison. This handles IAM-specific semantics like statement
 	// ordering independence and Action/Resource as string vs array.
 	IsIAMPolicy bool `json:"is_iam_policy"`
+	// IsDocument indicates that the field contains a JSON or YAML document
+	// and should be compared using semantic document comparison rather than
+	// string comparison. This handles differences in whitespace, key ordering,
+	// and formatting that are semantically equivalent.
+	IsDocument bool `json:"is_document"`
 	// From instructs the code generator that the value of the field should
 	// be retrieved from the specified operation and member path
 	From *SourceFieldConfig `json:"from,omitempty"`

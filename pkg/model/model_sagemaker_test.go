@@ -226,3 +226,48 @@ func TestSageMaker_RequeueOnSuccessSeconds_Default(t *testing.T) {
 	assert.Equal(0, crd.ReconcileRequeuOnSuccessSeconds())
 
 }
+
+func TestSageMaker_TrialComponent_CustomNestedField_MapOfStruct(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "sagemaker", &testutil.TestingModelOptions{
+		GeneratorConfigFile: "generator-with-custom-nested-fields.yaml",
+	})
+
+	crds, err := g.GetCRDs()
+	require.Nil(err)
+
+	crd := getCRDByName("TrialComponent", crds)
+	require.NotNil(crd)
+
+	// InputArtifacts is a map-of-struct field (map[string]*TrialComponentArtifact).
+	// The generator config adds a custom nested field "InputArtifacts.CustomTag"
+	// of type *string. Verify it was injected into the map value's struct shape.
+	inputArtifactsField := crd.Fields["InputArtifacts"]
+	require.NotNil(inputArtifactsField)
+	require.NotNil(inputArtifactsField.ShapeRef)
+	require.NotNil(inputArtifactsField.ShapeRef.Shape)
+	assert.Equal("map", inputArtifactsField.ShapeRef.Shape.Type)
+
+	// The map value shape should be a structure
+	valueShape := inputArtifactsField.ShapeRef.Shape.ValueRef.Shape
+	require.NotNil(valueShape)
+	assert.Equal("structure", valueShape.Type)
+
+	// Verify the custom nested field "CustomTag" was added to the map value's struct
+	require.Contains(valueShape.MemberRefs, "CustomTag")
+	customTagRef := valueShape.MemberRefs["CustomTag"]
+	require.NotNil(customTagRef)
+	require.NotNil(customTagRef.Shape)
+	assert.Equal("string", customTagRef.Shape.Type)
+
+	// Verify the original members are still present
+	assert.Contains(valueShape.MemberRefs, "Value")
+	assert.Contains(valueShape.MemberRefs, "MediaType")
+
+	// Verify the custom nested field also appears as a MemberField on the CRD field
+	require.NotNil(inputArtifactsField.MemberFields)
+	customTagMemberField := inputArtifactsField.MemberFields["CustomTag"]
+	require.NotNil(customTagMemberField)
+}

@@ -25,6 +25,17 @@ resources:
           in:
             - 1
             - 2
+    updateable:
+      when:
+        - path: Status.State
+          in:
+            - Active
+    deletable:
+      when:
+        - path: Status.State
+          in:
+            - Active
+            - Failed
   CodeSigningConfig:
     fields:
       Tags:

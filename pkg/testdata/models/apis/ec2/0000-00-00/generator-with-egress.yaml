@@ -1,0 +1,161 @@
+ignore:
+  field_paths:
+    - CreateDhcpOptionsInput.DryRun
+    - CreateVpcInput.DryRun
+    - CreateVpcEndpointInput.DryRun
+    - Instance.ClientToken
+    - InstanceNetworkInterfaceSpecification.Groups
+    - RunInstancesInput.AdditionalInfo
+    - RunInstancesInput.ClientToken
+    - RunInstancesInput.DryRun
+    - LaunchTemplate.Operator
+    - Instance.CpuOptions.AmdSevSnp
+    - Instance.CurrentInstanceBootMode
+    - Instance.Ipv6Address
+    - Instance.MaintenanceOptions
+    - Instance.MetadataOptions.InstanceMetadataTags
+    - Instance.NetworkPerformanceOptions
+    - Instance.Operator
+    - Instance.PrivateDnsNameOptions
+    - Instance.Placement.GroupId
+    - Instance.TpmSupport
+    - InstanceIpv6Address.IsPrimaryIpv6
+  resource_names:
+    - AccountAttribute
+    - CapacityReservation
+    - CarrierGateway
+    - ClientVpnEndpoint
+    - ClientVpnRoute
+    - CustomerGateway
+    - DefaultSubnet
+    - DefaultVpc
+    #- DhcpOptions
+    #- EgressOnlyInternetGateway
+    - Fleet
+    - FpgaImage
+    - Image
+    #- Instance
+    - InstanceExportTask
+    - InternetGateway
+    - KeyPair
+    - LaunchTemplateVersion
+    #- LaunchTemplate
+    - LocalGatewayRouteTableVpcAssociation
+    - LocalGatewayRoute
+    - ManagedPrefixList
+    - NatGateway
+    - NetworkAclEntry
+    - NetworkAcl
+    - NetworkInsightsPath
+    - NetworkInterfacePermission
+    - NetworkInterface
+    - PlacementGroup
+    - ReservedInstancesListing
+    - RouteTable
+    - Route
+    #- SecurityGroup
+    - Snapshot
+    - SpotDatafeedSubscription
+    - Subnet 
+    - TrafficMirrorFilterRule
+    - TrafficMirrorFilter
+    - TrafficMirrorSession
+    - TrafficMirrorTarget
+    - TransitGatewayConnectPeer
+    - TransitGatewayConnect
+    - TransitGatewayMulticastDomain
+    - TransitGatewayPeeringAttachment
+    - TransitGatewayPrefixListReference
+    - TransitGatewayRouteTable
+    - TransitGatewayRoute
+    - TransitGatewayVpcAttachment
+    - TransitGateway
+    #- Volume
+    - VpcEndpointConnectionNotification
+    - VpcEndpointServiceConfiguration
+    #- VpcEndpoint
+    #- Vpc
+    - VpcCidrBlock
+    - VpcPeeringConnection
+    - VpnConnectionRoute
+    - VpnConnection
+    - VpnGateway
+
+operations:
+  CreateLaunchTemplate:
+    output_wrapper_field_path: LaunchTemplate
+  CreateVpcEndpoint:
+    output_wrapper_field_path: VpcEndpoint
+  RunInstances:
+    #output shape: Reservation
+    output_wrapper_field_path: Instances
+    operation_type:
+      - Create
+    resource_name: Instance
+  DescribeInstances:
+    #output shape: DescribeInstancesOutput
+    output_wrapper_field_path: Reservations.Instances
+    operation_type:
+      - List
+    resource_name: Instance
+  TerminateInstances:
+    operation_type:
+      - Delete
+    resource_name: Instance
+  CreateEgressOnlyInternetGateway:
+    output_wrapper_field_path: EgressOnlyInternetGateway
+resources:
+  DhcpOptions:
+    fields:
+      DHCPConfigurations.Values:
+        set:
+          - from: AttributeValue.Value
+  Instance:
+    fields:
+      SecurityGroups:
+        set:
+          - from: GroupName
+  SecurityGroup:
+    renames:
+      operations:
+        CreateSecurityGroup:
+          input_fields:
+            GroupName: Name
+          output_fields:
+            GroupId: Id
+        DeleteSecurityGroup:
+          input_fields:
+            GroupId: Id
+            GroupName: Name
+        DescribeSecurityGroups:
+          input_fields:
+            GroupIds: Ids
+            GroupNames: Names
+  EgressOnlyInternetGateway:
+    renames:
+      operations:
+        CreateEgressOnlyInternetGateway:
+          output_fields:
+            EgressOnlyInternetGatewayId: ID
+        DescribeEgressOnlyInternetGateways:
+          input_fields:
+            EgressOnlyInternetGatewayIds: ID
+          output_fields:
+            EgressOnlyInternetGatewayId: ID
+        DeleteEgressOnlyInternetGateway:
+          input_fields:
+            EgressOnlyInternetGatewayId: ID
+    fields:
+      ID:
+        is_primary_key: true
+        print:
+          name: ID
+      VpcId:
+        is_immutable: true
+        references:
+          resource: VPC
+          path: Status.VPCID
+      Tags:
+        from:
+          operation: CreateTags
+          path: Tags

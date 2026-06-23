@@ -15,6 +15,9 @@ type DocumentationConfig struct {
 // ResourceDocsConfig represents the configuration for the documentation
 // overrides of a single resource
 type ResourceDocsConfig struct {
+	// Note specifies a resource-level documentation note that describes
+	// special considerations for the resource
+	Note *string `json:"note,omitempty"`
 	Fields map[string]*FieldDocsConfig `json:"fields,omitempty"`
 }
 

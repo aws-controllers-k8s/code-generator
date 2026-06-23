@@ -181,6 +181,12 @@
           "type": "boolean",
           "default": false
         },
+        {{- if eq .ControllerName "s3" }}
+        "endpoint_use_path_style": {
+          "type": "boolean",
+          "default": false
+        },
+        {{- end }}
         "credentials": {
           "description": "AWS credentials information",
           "properties": {
@@ -272,6 +278,11 @@
     },
     "enableCARM": {
       "description": "Parameter to enable or disable cross account resource management.",
+      "type": "boolean",
+      "default": true
+   },
+    "enableCrossNamespace": {
+      "description": "Enable cross-namespace behavior (resource references, secret references, field exports). When false, the controller rejects any operation that crosses namespace boundaries.",
       "type": "boolean",
       "default": true
    },

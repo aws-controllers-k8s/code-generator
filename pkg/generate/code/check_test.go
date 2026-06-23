@@ -143,6 +143,28 @@ func TestCheckRequiredFields_StatusField_ReadMany(t *testing.T) {
 	)
 }
 
+func TestCheckRequiredFields_StatusField_ReadMany_EgressOnlyIGW(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "ec2", &testutil.TestingModelOptions{GeneratorConfigFile: "generator-with-egress.yaml"})
+
+	crd := testutil.GetCRDByName(t, g, "EgressOnlyInternetGateway")
+	require.NotNil(crd)
+
+	expRequiredFieldsCode := `
+	return r.ko.Status.ID == nil
+`
+	gotCode, err := code.CheckRequiredFieldsMissingFromShape(
+		crd, model.OpTypeList, "r.ko", 1,
+	)
+	require.NoError(err)
+	assert.Equal(
+		strings.TrimSpace(expRequiredFieldsCode),
+		strings.TrimSpace(gotCode),
+	)
+}
+
 func TestCheckNilFieldPath(t *testing.T) {
 	// Empty FieldPath
 	field := model.Field{Path: ""}

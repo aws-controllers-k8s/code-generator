@@ -22,6 +22,16 @@ import (
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 )
 
+func fieldGoName(r *model.CRD, configName string) string {
+	if f, ok := r.SpecFields[configName]; ok {
+		return f.Names.Camel
+	}
+	if f, ok := r.Fields[configName]; ok {
+		return f.Names.Camel
+	}
+	return configName
+}
+
 // FindLateInitializedFieldNames outputs the code to create a sorted slice of fieldNames to
 // late initialize. This slice helps with short circuiting the AWSResourceManager.LateInitialize()
 // method if there are no fields to late initialize.
@@ -49,7 +59,7 @@ func FindLateInitializedFieldNames(
 	sort.Strings(lateInitFieldNames)
 	out += fmt.Sprintf("%svar %s = []string{", indent, resVarName)
 	for _, fName := range lateInitFieldNames {
-		out += fmt.Sprintf("%q,", fName)
+		out += fmt.Sprintf("%q,", fieldGoName(r, fName))
 	}
 	out += "}\n"
 	return out
@@ -163,7 +173,8 @@ func LateInitializeFromReadOne(
 				continue
 			}
 			indent := strings.Repeat("\t", fNameIndentLevel)
-			fNamePartAccesor := fmt.Sprintf("Spec%s.%s", fParentPath, fNamePart)
+			goName := fieldGoName(r, fNamePart)
+			fNamePartAccesor := fmt.Sprintf("Spec%s.%s", fParentPath, goName)
 			if mapShapedParent {
 				fNamePartAccesor = fmt.Sprintf("Spec%s[%q]", fParentPath, fNamePart)
 			}
@@ -175,7 +186,7 @@ func LateInitializeFromReadOne(
 					fParentPath = fmt.Sprintf("%s[%q]", fParentPath, fNamePart)
 					mapShapedParent = false
 				} else {
-					fParentPath = fmt.Sprintf("%s.%s", fParentPath, fNamePart)
+					fParentPath = fmt.Sprintf("%s.%s", fParentPath, goName)
 				}
 				fNameIndentLevel = fNameIndentLevel + 1
 			} else {
@@ -303,7 +314,8 @@ func IncompleteLateInitialization(
 				continue
 			}
 			indent := strings.Repeat("\t", fNameIndentLevel)
-			fNamePartAccesor := fmt.Sprintf("Spec%s.%s", fParentPath, fNamePart)
+			goName := fieldGoName(r, fNamePart)
+			fNamePartAccesor := fmt.Sprintf("Spec%s.%s", fParentPath, goName)
 			if mapShapedParent {
 				fNamePartAccesor = fmt.Sprintf("Spec%s[%q]", fParentPath, fNamePart)
 			}
@@ -315,7 +327,7 @@ func IncompleteLateInitialization(
 					fParentPath = fmt.Sprintf("%s[%q]", fParentPath, fNamePart)
 					mapShapedParent = false
 				} else {
-					fParentPath = fmt.Sprintf("%s.%s", fParentPath, fNamePart)
+					fParentPath = fmt.Sprintf("%s.%s", fParentPath, goName)
 				}
 				fNameIndentLevel = fNameIndentLevel + 1
 			} else {

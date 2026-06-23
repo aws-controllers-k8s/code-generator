@@ -1,0 +1,38 @@
+ignore:
+  resource_names:
+    - AgentRuntime
+    - AgentRuntimeEndpoint
+    - ApiKeyCredentialProvider
+    - Browser
+    - BrowserProfile
+    - CodeInterpreter
+    - Evaluator
+    - Gateway
+    # GatewayTarget
+    - Memory
+    - Oauth2CredentialProvider
+    - OnlineEvaluationConfig
+    - WorkloadIdentity
+    - Policy
+    - PolicyEngine
+  field_paths:
+    - CreateGatewayTargetInput.TargetConfiguration.Mcp.Lambda.ToolSchema.InlinePayload.ToolDefinition.InputSchema
+    - CreateGatewayTargetInput.TargetConfiguration.Mcp.Lambda.ToolSchema.InlinePayload.ToolDefinition.OutputSchema
+sdk_names:
+  model_name: bedrock-agentcore-control
+resources:
+  GatewayTarget:
+    ignore_idempotency_token: true
+    fields:
+      TargetId:
+        is_primary_key: true
+      # Custom nested fields injected into a list-of-struct shape.
+      # InlinePayload is a list of ToolDefinition structs. InputSchema
+      # and OutputSchema are ignored from the SDK model (recursive
+      # SchemaDefinition type) and re-added here as simple string fields.
+      TargetConfiguration.Mcp.Lambda.ToolSchema.InlinePayload.InputSchema:
+        type: "*string"
+      TargetConfiguration.Mcp.Lambda.ToolSchema.InlinePayload.OutputSchema:
+        type: "*string"
+    tags:
+      ignore: true

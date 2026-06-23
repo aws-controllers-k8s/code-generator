@@ -1,0 +1,114 @@
+{
+  "smithy": "2.0",
+  "metadata": {},
+  "shapes": {
+    "com.amazonaws.s3files#S3Files": {
+      "type": "service",
+      "version": "2024-08-20",
+      "traits": {
+        "aws.api#service": {"sdkId": "S3Files"},
+        "smithy.api#documentation": "Amazon S3 Files"
+      },
+      "operations": [
+        {"target": "com.amazonaws.s3files#CreateAccessPoint"},
+        {"target": "com.amazonaws.s3files#GetAccessPoint"},
+        {"target": "com.amazonaws.s3files#DeleteAccessPoint"}
+      ]
+    },
+    "com.amazonaws.s3files#CreateAccessPoint": {
+      "type": "operation",
+      "input": {"target": "com.amazonaws.s3files#CreateAccessPointInput"},
+      "output": {"target": "com.amazonaws.s3files#CreateAccessPointOutput"}
+    },
+    "com.amazonaws.s3files#CreateAccessPointInput": {
+      "type": "structure",
+      "members": {
+        "FileSystemId": {"target": "com.amazonaws.s3files#FileSystemId"},
+        "PosixUser": {"target": "com.amazonaws.s3files#PosixUser"},
+        "Tags": {"target": "com.amazonaws.s3files#Tags"}
+      }
+    },
+    "com.amazonaws.s3files#CreateAccessPointOutput": {
+      "type": "structure",
+      "members": {
+        "AccessPointId": {"target": "com.amazonaws.s3files#AccessPointId"},
+        "FileSystemId": {"target": "com.amazonaws.s3files#FileSystemId"},
+        "PosixUser": {"target": "com.amazonaws.s3files#PosixUser"},
+        "Tags": {"target": "com.amazonaws.s3files#Tags"}
+      }
+    },
+    "com.amazonaws.s3files#GetAccessPoint": {
+      "type": "operation",
+      "input": {"target": "com.amazonaws.s3files#GetAccessPointInput"},
+      "output": {"target": "com.amazonaws.s3files#GetAccessPointOutput"}
+    },
+    "com.amazonaws.s3files#GetAccessPointInput": {
+      "type": "structure",
+      "members": {
+        "AccessPointId": {"target": "com.amazonaws.s3files#AccessPointId"}
+      }
+    },
+    "com.amazonaws.s3files#GetAccessPointOutput": {
+      "type": "structure",
+      "members": {
+        "AccessPointId": {"target": "com.amazonaws.s3files#AccessPointId"},
+        "FileSystemId": {"target": "com.amazonaws.s3files#FileSystemId"},
+        "PosixUser": {"target": "com.amazonaws.s3files#PosixUser"},
+        "Tags": {"target": "com.amazonaws.s3files#Tags"}
+      }
+    },
+    "com.amazonaws.s3files#DeleteAccessPoint": {
+      "type": "operation",
+      "input": {"target": "com.amazonaws.s3files#DeleteAccessPointInput"},
+      "output": {"target": "com.amazonaws.s3files#DeleteAccessPointOutput"}
+    },
+    "com.amazonaws.s3files#DeleteAccessPointInput": {
+      "type": "structure",
+      "members": {
+        "AccessPointId": {"target": "com.amazonaws.s3files#AccessPointId"}
+      }
+    },
+    "com.amazonaws.s3files#DeleteAccessPointOutput": {
+      "type": "structure",
+      "members": {}
+    },
+    "com.amazonaws.s3files#AccessPointId": {
+      "type": "string"
+    },
+    "com.amazonaws.s3files#FileSystemId": {
+      "type": "string"
+    },
+    "com.amazonaws.s3files#PosixUser": {
+      "type": "structure",
+      "members": {
+        "Uid": {"target": "com.amazonaws.s3files#Long"},
+        "Gid": {"target": "com.amazonaws.s3files#Long"},
+        "SecondaryGids": {"target": "com.amazonaws.s3files#SecondaryGids"}
+      }
+    },
+    "com.amazonaws.s3files#SecondaryGids": {
+      "type": "list",
+      "member": {"target": "com.amazonaws.s3files#Long"}
+    },
+    "com.amazonaws.s3files#Long": {
+      "type": "long"
+    },
+    "com.amazonaws.s3files#Tags": {
+      "type": "list",
+      "member": {"target": "com.amazonaws.s3files#Tag"}
+    },
+    "com.amazonaws.s3files#Tag": {
+      "type": "structure",
+      "members": {
+        "Key": {"target": "com.amazonaws.s3files#TagKey"},
+        "Value": {"target": "com.amazonaws.s3files#TagValue"}
+      }
+    },
+    "com.amazonaws.s3files#TagKey": {
+      "type": "string"
+    },
+    "com.amazonaws.s3files#TagValue": {
+      "type": "string"
+    }
+  }
+}

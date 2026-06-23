@@ -669,6 +669,313 @@ func TestCompareResource_IAM_Role_IAMPolicy(t *testing.T) {
 	assert.Equal(expected, got)
 }
 
+func TestCompareResource_SNS_Subscription_Document(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "sns", &testutil.TestingModelOptions{
+		GeneratorConfigFile: "generator-document.yaml",
+	})
+
+	crd := testutil.GetCRDByName(t, g, "Subscription")
+	require.NotNil(crd)
+
+	// The FilterPolicy field is marked as is_document: true so it should use
+	// DocumentEqual instead of string comparison (community#2872)
+	expected := `
+	if ackcompare.HasNilDifference(a.ko.Spec.DeliveryPolicy, b.ko.Spec.DeliveryPolicy) {
+		delta.Add("Spec.DeliveryPolicy", a.ko.Spec.DeliveryPolicy, b.ko.Spec.DeliveryPolicy)
+	} else if a.ko.Spec.DeliveryPolicy != nil && b.ko.Spec.DeliveryPolicy != nil {
+		if *a.ko.Spec.DeliveryPolicy != *b.ko.Spec.DeliveryPolicy {
+			delta.Add("Spec.DeliveryPolicy", a.ko.Spec.DeliveryPolicy, b.ko.Spec.DeliveryPolicy)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.Endpoint, b.ko.Spec.Endpoint) {
+		delta.Add("Spec.Endpoint", a.ko.Spec.Endpoint, b.ko.Spec.Endpoint)
+	} else if a.ko.Spec.Endpoint != nil && b.ko.Spec.Endpoint != nil {
+		if *a.ko.Spec.Endpoint != *b.ko.Spec.Endpoint {
+			delta.Add("Spec.Endpoint", a.ko.Spec.Endpoint, b.ko.Spec.Endpoint)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.FilterPolicy, b.ko.Spec.FilterPolicy) {
+		delta.Add("Spec.FilterPolicy", a.ko.Spec.FilterPolicy, b.ko.Spec.FilterPolicy)
+	} else if a.ko.Spec.FilterPolicy != nil && b.ko.Spec.FilterPolicy != nil {
+		if equal, err := ackcompare.DocumentEqual(*a.ko.Spec.FilterPolicy, *b.ko.Spec.FilterPolicy); err != nil || !equal {
+			delta.Add("Spec.FilterPolicy", a.ko.Spec.FilterPolicy, b.ko.Spec.FilterPolicy)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.FilterPolicyScope, b.ko.Spec.FilterPolicyScope) {
+		delta.Add("Spec.FilterPolicyScope", a.ko.Spec.FilterPolicyScope, b.ko.Spec.FilterPolicyScope)
+	} else if a.ko.Spec.FilterPolicyScope != nil && b.ko.Spec.FilterPolicyScope != nil {
+		if *a.ko.Spec.FilterPolicyScope != *b.ko.Spec.FilterPolicyScope {
+			delta.Add("Spec.FilterPolicyScope", a.ko.Spec.FilterPolicyScope, b.ko.Spec.FilterPolicyScope)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.Protocol, b.ko.Spec.Protocol) {
+		delta.Add("Spec.Protocol", a.ko.Spec.Protocol, b.ko.Spec.Protocol)
+	} else if a.ko.Spec.Protocol != nil && b.ko.Spec.Protocol != nil {
+		if *a.ko.Spec.Protocol != *b.ko.Spec.Protocol {
+			delta.Add("Spec.Protocol", a.ko.Spec.Protocol, b.ko.Spec.Protocol)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.RawMessageDelivery, b.ko.Spec.RawMessageDelivery) {
+		delta.Add("Spec.RawMessageDelivery", a.ko.Spec.RawMessageDelivery, b.ko.Spec.RawMessageDelivery)
+	} else if a.ko.Spec.RawMessageDelivery != nil && b.ko.Spec.RawMessageDelivery != nil {
+		if *a.ko.Spec.RawMessageDelivery != *b.ko.Spec.RawMessageDelivery {
+			delta.Add("Spec.RawMessageDelivery", a.ko.Spec.RawMessageDelivery, b.ko.Spec.RawMessageDelivery)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.RedrivePolicy, b.ko.Spec.RedrivePolicy) {
+		delta.Add("Spec.RedrivePolicy", a.ko.Spec.RedrivePolicy, b.ko.Spec.RedrivePolicy)
+	} else if a.ko.Spec.RedrivePolicy != nil && b.ko.Spec.RedrivePolicy != nil {
+		if *a.ko.Spec.RedrivePolicy != *b.ko.Spec.RedrivePolicy {
+			delta.Add("Spec.RedrivePolicy", a.ko.Spec.RedrivePolicy, b.ko.Spec.RedrivePolicy)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.SubscriptionRoleARN, b.ko.Spec.SubscriptionRoleARN) {
+		delta.Add("Spec.SubscriptionRoleARN", a.ko.Spec.SubscriptionRoleARN, b.ko.Spec.SubscriptionRoleARN)
+	} else if a.ko.Spec.SubscriptionRoleARN != nil && b.ko.Spec.SubscriptionRoleARN != nil {
+		if *a.ko.Spec.SubscriptionRoleARN != *b.ko.Spec.SubscriptionRoleARN {
+			delta.Add("Spec.SubscriptionRoleARN", a.ko.Spec.SubscriptionRoleARN, b.ko.Spec.SubscriptionRoleARN)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.TopicARN, b.ko.Spec.TopicARN) {
+		delta.Add("Spec.TopicARN", a.ko.Spec.TopicARN, b.ko.Spec.TopicARN)
+	} else if a.ko.Spec.TopicARN != nil && b.ko.Spec.TopicARN != nil {
+		if *a.ko.Spec.TopicARN != *b.ko.Spec.TopicARN {
+			delta.Add("Spec.TopicARN", a.ko.Spec.TopicARN, b.ko.Spec.TopicARN)
+		}
+	}
+`
+	got, err := code.CompareResource(
+		crd.Config(), crd, "delta", "a.ko", "b.ko", 1,
+	)
+	require.NoError(err)
+	assert.Equal(expected, got)
+}
+
+func TestCompareResourceForPreDelete_S3_Bucket_NoPreDeleteInclude(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "s3")
+
+	crd := testutil.GetCRDByName(t, g, "Bucket")
+	require.NotNil(crd)
+
+	// With the default S3 generator config, no fields have
+	// compare.pre_delete_include: true, so the pre-delete delta should be
+	// empty (only opted-in fields are included by default).
+	got, err := code.CompareResourceForPreDelete(
+		crd.Config(), crd, "delta", "a.ko", "b.ko", 1,
+	)
+	require.NoError(err)
+	assert.Equal("\n", got)
+}
+
+func TestCompareResourceForPreDelete_S3_Bucket_WithPreDeleteInclude(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "s3", &testutil.TestingModelOptions{
+		GeneratorConfigFile: "generator-with-pre-delete-include.yaml",
+	})
+
+	crd := testutil.GetCRDByName(t, g, "Bucket")
+	require.NotNil(crd)
+
+	// With pre_delete_include: true on ACL, only ACL should appear in the
+	// pre-delete delta output (other fields are not opted in).
+	expected := `
+	if ackcompare.HasNilDifference(a.ko.Spec.ACL, b.ko.Spec.ACL) {
+		delta.Add("Spec.ACL", a.ko.Spec.ACL, b.ko.Spec.ACL)
+	} else if a.ko.Spec.ACL != nil && b.ko.Spec.ACL != nil {
+		if *a.ko.Spec.ACL != *b.ko.Spec.ACL {
+			delta.Add("Spec.ACL", a.ko.Spec.ACL, b.ko.Spec.ACL)
+		}
+	}
+`
+	got, err := code.CompareResourceForPreDelete(
+		crd.Config(), crd, "delta", "a.ko", "b.ko", 1,
+	)
+	require.NoError(err)
+	assert.Equal(expected, got)
+
+	// Verify that CompareResource does NOT contain ACL (it's is_ignored)
+	compareOut, err := code.CompareResource(
+		crd.Config(), crd, "delta", "a.ko", "b.ko", 1,
+	)
+	require.NoError(err)
+	assert.NotContains(compareOut, "Spec.ACL")
+}
+
+func TestCompareResourceForPreDelete_S3_Bucket_WithPreDeleteIncludeNested(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "s3", &testutil.TestingModelOptions{
+		GeneratorConfigFile: "generator-with-pre-delete-include-nested.yaml",
+	})
+
+	crd := testutil.GetCRDByName(t, g, "Bucket")
+	require.NotNil(crd)
+
+	got, err := code.CompareResourceForPreDelete(
+		crd.Config(), crd, "delta", "a.ko", "b.ko", 1,
+	)
+	require.NoError(err)
+
+	// ACL (scalar with pre_delete_include) should be included
+	assert.Contains(got, "Spec.ACL")
+	// Logging (struct with pre_delete_include) should be included with
+	// nested field comparisons
+	assert.Contains(got, "Spec.Logging")
+	assert.Contains(got, "Spec.Logging.LoggingEnabled")
+	// Other fields should NOT be included
+	assert.NotContains(got, "Spec.Name")
+	assert.NotContains(got, "Spec.CreateBucketConfiguration")
+	assert.NotContains(got, "Spec.GrantFullControl")
+
+	// Merge should also include both ACL and Logging
+	mergeOut, err := code.MergeResourceForPreDelete(
+		crd.Config(), crd, "a.ko", "merged.ko", 1,
+	)
+	require.NoError(err)
+	assert.Contains(mergeOut, "merged.ko.Spec.ACL = a.ko.Spec.ACL")
+	assert.Contains(mergeOut, "merged.ko.Spec.Logging = a.ko.Spec.Logging")
+	assert.NotContains(mergeOut, "merged.ko.Spec.Name")
+}
+
+func TestCompareResourceForPreDelete_S3_Bucket_CompareAll(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "s3", &testutil.TestingModelOptions{
+		GeneratorConfigFile: "generator-with-pre-delete-compare-all.yaml",
+	})
+
+	crd := testutil.GetCRDByName(t, g, "Bucket")
+	require.NotNil(crd)
+
+	// With pre_delete_sync.compare_all: true, ALL fields should be included
+	// in the pre-delete delta, including ACL (which has is_ignored: true).
+	got, err := code.CompareResourceForPreDelete(
+		crd.Config(), crd, "delta", "a.ko", "b.ko", 1,
+	)
+	require.NoError(err)
+
+	// ACL (is_ignored) should be included
+	assert.Contains(got, "Spec.ACL")
+	// All non-ignored fields should also be included
+	assert.Contains(got, "Spec.CreateBucketConfiguration")
+	assert.Contains(got, "Spec.GrantFullControl")
+	assert.Contains(got, "Spec.GrantRead")
+	assert.Contains(got, "Spec.GrantReadACP")
+	assert.Contains(got, "Spec.GrantWrite")
+	assert.Contains(got, "Spec.GrantWriteACP")
+	assert.Contains(got, "Spec.Logging")
+	assert.Contains(got, "Spec.Name")
+	assert.Contains(got, "Spec.ObjectLockEnabledForBucket")
+	assert.Contains(got, "Spec.Tagging")
+
+	// CompareResource should NOT contain ACL
+	compareOut, err := code.CompareResource(
+		crd.Config(), crd, "delta", "a.ko", "b.ko", 1,
+	)
+	require.NoError(err)
+	assert.NotContains(compareOut, "Spec.ACL")
+
+	// The pre-delete output should be a superset of CompareResource
+	assert.Contains(got, compareOut)
+}
+
+func TestCompareResourceForPreDelete_S3_Bucket_EmptyWithoutOptIn(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "s3")
+
+	crd := testutil.GetCRDByName(t, g, "Bucket")
+	require.NotNil(crd)
+
+	// Pre-delete delta should be empty when no fields are opted in
+	preDeleteOut, err := code.CompareResourceForPreDelete(
+		crd.Config(), crd, "delta", "a.ko", "b.ko", 1,
+	)
+	require.NoError(err)
+	assert.Equal("\n", preDeleteOut)
+
+	// But CompareResource should still work normally (non-ignored fields present)
+	compareOut, err := code.CompareResource(
+		crd.Config(), crd, "delta", "a.ko", "b.ko", 1,
+	)
+	require.NoError(err)
+	assert.Contains(compareOut, "Spec.CreateBucketConfiguration")
+	assert.Contains(compareOut, "Spec.Name")
+	assert.NotContains(compareOut, "Spec.ACL")
+}
+
+func TestMergeResourceForPreDelete_S3_Bucket_WithPreDeleteInclude(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "s3", &testutil.TestingModelOptions{
+		GeneratorConfigFile: "generator-with-pre-delete-include.yaml",
+	})
+
+	crd := testutil.GetCRDByName(t, g, "Bucket")
+	require.NotNil(crd)
+
+	// Only ACL has pre_delete_include: true, so only ACL should be merged
+	got, err := code.MergeResourceForPreDelete(
+		crd.Config(), crd, "a.ko", "merged.ko", 1,
+	)
+	require.NoError(err)
+	assert.Contains(got, "merged.ko.Spec.ACL = a.ko.Spec.ACL")
+	// Other fields should NOT be merged
+	assert.NotContains(got, "merged.ko.Spec.Name")
+	assert.NotContains(got, "merged.ko.Spec.CreateBucketConfiguration")
+	assert.NotContains(got, "merged.ko.Spec.GrantFullControl")
+}
+
+func TestMergeResourceForPreDelete_S3_Bucket_CompareAll(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "s3", &testutil.TestingModelOptions{
+		GeneratorConfigFile: "generator-with-pre-delete-compare-all.yaml",
+	})
+
+	crd := testutil.GetCRDByName(t, g, "Bucket")
+	require.NotNil(crd)
+
+	// With compare_all: true, all fields should be merged
+	got, err := code.MergeResourceForPreDelete(
+		crd.Config(), crd, "a.ko", "merged.ko", 1,
+	)
+	require.NoError(err)
+	assert.Contains(got, "merged.ko.Spec.ACL = a.ko.Spec.ACL")
+	assert.Contains(got, "merged.ko.Spec.Name = a.ko.Spec.Name")
+	assert.Contains(got, "merged.ko.Spec.CreateBucketConfiguration = a.ko.Spec.CreateBucketConfiguration")
+}
+
+func TestMergeResourceForPreDelete_S3_Bucket_NoOptIn(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "s3")
+
+	crd := testutil.GetCRDByName(t, g, "Bucket")
+	require.NotNil(crd)
+
+	// No pre_delete_include fields, so merge output should be empty
+	got, err := code.MergeResourceForPreDelete(
+		crd.Config(), crd, "a.ko", "merged.ko", 1,
+	)
+	require.NoError(err)
+	assert.Equal("", got)
+}
+
 // TestCompareResource_QuickSight_DataSet tests that the delta code generation
 // correctly handles the QuickSight DataSet resource, specifically the
 // RowLevelPermissionTagConfiguration.TagRuleConfigurations field which is a
@@ -746,6 +1053,132 @@ func TestCompareResource_QuickSight_DataSet(t *testing.T) {
 		if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.Tags, b.ko.Spec.Tags) {
 			delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
 		}
+	}
+`
+	got, err := code.CompareResource(
+		crd.Config(), crd, "delta", "a.ko", "b.ko", 1,
+	)
+	require.NoError(err)
+	assert.Equal(expected, got)
+}
+
+// TestCompareResource_S3Files_AccessPoint verifies that the code generator
+// correctly handles the S3 Files AccessPoint resource, specifically the
+// PosixUser.SecondaryGids field which is a list of longs ([]*int64).
+// This was previously unsupported and caused "unsupported element type in
+// compareSlice: long" errors.
+func TestCompareResource_S3Files_AccessPoint(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "s3files")
+
+	crd := testutil.GetCRDByName(t, g, "AccessPoint")
+	require.NotNil(crd)
+
+	expected := `
+	if ackcompare.HasNilDifference(a.ko.Spec.FileSystemID, b.ko.Spec.FileSystemID) {
+		delta.Add("Spec.FileSystemID", a.ko.Spec.FileSystemID, b.ko.Spec.FileSystemID)
+	} else if a.ko.Spec.FileSystemID != nil && b.ko.Spec.FileSystemID != nil {
+		if *a.ko.Spec.FileSystemID != *b.ko.Spec.FileSystemID {
+			delta.Add("Spec.FileSystemID", a.ko.Spec.FileSystemID, b.ko.Spec.FileSystemID)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.PosixUser, b.ko.Spec.PosixUser) {
+		delta.Add("Spec.PosixUser", a.ko.Spec.PosixUser, b.ko.Spec.PosixUser)
+	} else if a.ko.Spec.PosixUser != nil && b.ko.Spec.PosixUser != nil {
+		if ackcompare.HasNilDifference(a.ko.Spec.PosixUser.GID, b.ko.Spec.PosixUser.GID) {
+			delta.Add("Spec.PosixUser.GID", a.ko.Spec.PosixUser.GID, b.ko.Spec.PosixUser.GID)
+		} else if a.ko.Spec.PosixUser.GID != nil && b.ko.Spec.PosixUser.GID != nil {
+			if *a.ko.Spec.PosixUser.GID != *b.ko.Spec.PosixUser.GID {
+				delta.Add("Spec.PosixUser.GID", a.ko.Spec.PosixUser.GID, b.ko.Spec.PosixUser.GID)
+			}
+		}
+		if len(a.ko.Spec.PosixUser.SecondaryGIDs) != len(b.ko.Spec.PosixUser.SecondaryGIDs) {
+			delta.Add("Spec.PosixUser.SecondaryGIDs", a.ko.Spec.PosixUser.SecondaryGIDs, b.ko.Spec.PosixUser.SecondaryGIDs)
+		} else if len(a.ko.Spec.PosixUser.SecondaryGIDs) > 0 {
+			if !equality.Semantic.Equalities.DeepEqual(a.ko.Spec.PosixUser.SecondaryGIDs, b.ko.Spec.PosixUser.SecondaryGIDs) {
+				delta.Add("Spec.PosixUser.SecondaryGIDs", a.ko.Spec.PosixUser.SecondaryGIDs, b.ko.Spec.PosixUser.SecondaryGIDs)
+			}
+		}
+		if ackcompare.HasNilDifference(a.ko.Spec.PosixUser.UID, b.ko.Spec.PosixUser.UID) {
+			delta.Add("Spec.PosixUser.UID", a.ko.Spec.PosixUser.UID, b.ko.Spec.PosixUser.UID)
+		} else if a.ko.Spec.PosixUser.UID != nil && b.ko.Spec.PosixUser.UID != nil {
+			if *a.ko.Spec.PosixUser.UID != *b.ko.Spec.PosixUser.UID {
+				delta.Add("Spec.PosixUser.UID", a.ko.Spec.PosixUser.UID, b.ko.Spec.PosixUser.UID)
+			}
+		}
+	}
+	desiredACKTags, _ := convertToOrderedACKTags(a.ko.Spec.Tags)
+	latestACKTags, _ := convertToOrderedACKTags(b.ko.Spec.Tags)
+	if !ackcompare.MapStringStringEqual(desiredACKTags, latestACKTags) {
+		delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
+	}
+`
+	got, err := code.CompareResource(
+		crd.Config(), crd, "delta", "a.ko", "b.ko", 1,
+	)
+	require.NoError(err)
+	assert.Equal(expected, got)
+}
+
+func TestCompareResource_SNS_Topic_NilEqualsZeroValue(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "sns", &testutil.TestingModelOptions{
+		GeneratorConfigFile: "generator-nil-equals-zero-value.yaml",
+	})
+
+	crd := testutil.GetCRDByName(t, g, "Topic")
+	require.NotNil(crd)
+
+	// DisplayName has compare.nil_equals_zero_value: true, so the generated
+	// code should only report a nil difference if the non-nil side (latest
+	// from AWS) is not an empty string. This prevents permanent drift when
+	// AWS returns "" for an unset optional field while the desired state has nil.
+	expected := `
+	if ackcompare.HasNilDifference(a.ko.Spec.DeliveryPolicy, b.ko.Spec.DeliveryPolicy) {
+		delta.Add("Spec.DeliveryPolicy", a.ko.Spec.DeliveryPolicy, b.ko.Spec.DeliveryPolicy)
+	} else if a.ko.Spec.DeliveryPolicy != nil && b.ko.Spec.DeliveryPolicy != nil {
+		if *a.ko.Spec.DeliveryPolicy != *b.ko.Spec.DeliveryPolicy {
+			delta.Add("Spec.DeliveryPolicy", a.ko.Spec.DeliveryPolicy, b.ko.Spec.DeliveryPolicy)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.DisplayName, b.ko.Spec.DisplayName) {
+		if !ackcompare.IsNilEqualsZero(a.ko.Spec.DisplayName, b.ko.Spec.DisplayName) {
+			delta.Add("Spec.DisplayName", a.ko.Spec.DisplayName, b.ko.Spec.DisplayName)
+		}
+	} else if a.ko.Spec.DisplayName != nil && b.ko.Spec.DisplayName != nil {
+		if *a.ko.Spec.DisplayName != *b.ko.Spec.DisplayName {
+			delta.Add("Spec.DisplayName", a.ko.Spec.DisplayName, b.ko.Spec.DisplayName)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.KMSMasterKeyID, b.ko.Spec.KMSMasterKeyID) {
+		delta.Add("Spec.KMSMasterKeyID", a.ko.Spec.KMSMasterKeyID, b.ko.Spec.KMSMasterKeyID)
+	} else if a.ko.Spec.KMSMasterKeyID != nil && b.ko.Spec.KMSMasterKeyID != nil {
+		if *a.ko.Spec.KMSMasterKeyID != *b.ko.Spec.KMSMasterKeyID {
+			delta.Add("Spec.KMSMasterKeyID", a.ko.Spec.KMSMasterKeyID, b.ko.Spec.KMSMasterKeyID)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.Name, b.ko.Spec.Name) {
+		delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
+	} else if a.ko.Spec.Name != nil && b.ko.Spec.Name != nil {
+		if *a.ko.Spec.Name != *b.ko.Spec.Name {
+			delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.Policy, b.ko.Spec.Policy) {
+		delta.Add("Spec.Policy", a.ko.Spec.Policy, b.ko.Spec.Policy)
+	} else if a.ko.Spec.Policy != nil && b.ko.Spec.Policy != nil {
+		if *a.ko.Spec.Policy != *b.ko.Spec.Policy {
+			delta.Add("Spec.Policy", a.ko.Spec.Policy, b.ko.Spec.Policy)
+		}
+	}
+	desiredACKTags, _ := convertToOrderedACKTags(a.ko.Spec.Tags)
+	latestACKTags, _ := convertToOrderedACKTags(b.ko.Spec.Tags)
+	if !ackcompare.MapStringStringEqual(desiredACKTags, latestACKTags) {
+		delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
 	}
 `
 	got, err := code.CompareResource(

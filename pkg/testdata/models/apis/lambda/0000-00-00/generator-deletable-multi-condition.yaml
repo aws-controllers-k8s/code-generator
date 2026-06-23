@@ -1,0 +1,30 @@
+resources:
+  Function:
+    fields:
+      CodeLocation:
+        is_read_only: true
+        from:
+          operation: GetFunction
+          path: Code.Location
+      CodeRepositoryType:
+        is_read_only: true
+        from:
+          operation: GetFunction
+          path: Code.RepositoryType
+    deletable:
+      when:
+        - path: Status.State
+          in:
+            - Active
+        - path: Status.LastUpdateStatus
+          in:
+            - Successful
+      requeue_after_seconds: 20
+ignore:
+  field_paths:
+    - CreateFunctionInput.Architectures
+    - CreateFunctionInput.LoggingConfig
+    - CreateFunctionInput.EphemeralStorage
+    - FunctionCode.SourceKMSKeyArn
+    - CreateFunctionInput.SnapStart
+    - CreateFunctionInput.VpcConfig.Ipv6AllowedForDualStack

@@ -140,6 +140,19 @@ func (r *CRD) Documentation() string {
 	return docString
 }
 
+// Note returns the resource-level documentation note if one is configured,
+// otherwise returns an empty string.
+func (r *CRD) Note() string {
+	if r.docCfg == nil {
+		return ""
+	}
+	resourceConfig, exists := r.docCfg.Resources[r.Names.Camel]
+	if !exists || resourceConfig.Note == nil {
+		return ""
+	}
+	return *resourceConfig.Note
+}
+
 // HasShapeAsMember returns true if the supplied Shape name appears in *any*
 // payload shape of *any* Operation for the resource. It recurses down through
 // the resource's Operation Input and Output shapes and their member shapes
@@ -374,9 +387,8 @@ func (r *CRD) IsPrimaryARNField(fieldName string) bool {
 // IsSecretField returns true if the supplied field *path* refers to a Field
 // that is a SecretKeyReference
 func (r *CRD) IsSecretField(path string) bool {
-	fConfigs := r.cfg.GetFieldConfigs(r.Names.Original)
-	fConfig, found := fConfigs[path]
-	if found {
+	fConfig := r.cfg.GetFieldConfigByPath(r.Names.Original, path)
+	if fConfig != nil {
 		return fConfig.IsSecret
 	}
 	return false
@@ -802,8 +814,43 @@ func (crd *CRD) addCustomNestedFields(customNestedFields map[string]*ackgenconfi
 		if err != nil {
 			return fmt.Errorf("resource %q, custom nested field %q: %w", crd.Names.Original, customNestedField, err)
 		}
-		parentField.ShapeRef.Shape.MemberRefs[fieldName] = memberShapeRef
+		//parentField.ShapeRef.Shape.MemberRefs[fieldName] = memberShapeRef
+		if err := addMemberShapRef(parentField.ShapeRef, memberShapeRef, fieldName); err != nil {
+			return fmt.Errorf("resource %q, custom nested field %q: %w", crd.Names.Original, customNestedField, err)
+		}
 	}
+	return nil
+}
+
+// addMemberShapRef injects a new member shape into the specified shape.
+// It returns an error if the shape type is unsupported or if a member with
+// the given field name already exists with a conflicting type.
+func addMemberShapRef(shapeRef, memberShapeRef *awssdkmodel.ShapeRef, fieldName string) error {
+	var memberRefs map[string]*awssdkmodel.ShapeRef
+	switch shapeRef.Shape.Type {
+	case "structure":
+		memberRefs = shapeRef.Shape.MemberRefs
+	case "list":
+		memberRefs = shapeRef.Shape.MemberRef.Shape.MemberRefs
+	case "map":
+		memberRefs = shapeRef.Shape.ValueRef.Shape.MemberRefs
+	default:
+		return fmt.Errorf("unsupported shape type %q for adding member %q", shapeRef.Shape.Type, fieldName)
+	}
+	if existing, exists := memberRefs[fieldName]; exists {
+		if existing.Shape.Type != memberShapeRef.Shape.Type {
+			return fmt.Errorf(
+				"member %q already exists in shape %q with type %q, cannot override with type %q",
+				fieldName, shapeRef.ShapeName, existing.Shape.Type, memberShapeRef.Shape.Type,
+			)
+		}
+		util.Warnf(
+			"member %q already injected into shared shape %q, skipping duplicate\n",
+			fieldName, shapeRef.ShapeName,
+		)
+		return nil
+	}
+	memberRefs[fieldName] = memberShapeRef
 	return nil
 }
 
@@ -856,9 +903,13 @@ func (r *CRD) GetIdentifiers() []string {
 	}
 	identifierLookup := []string{
 		"Id",
+		"ID",
 		"Ids",
+		"IDs",
 		r.Names.Original + "Id",
+		r.Names.Original + "ID",
 		r.Names.Original + "Ids",
+		r.Names.Original + "IDs",
 		"Name",
 		"Names",
 		r.Names.Original + "Name",

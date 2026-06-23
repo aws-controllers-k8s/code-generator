@@ -1101,6 +1101,11 @@ func setSDKForContainer(
 // the value of a Secret when the type of the source variable is a
 // SecretKeyReference.
 //
+// Cross-namespace validation (and the Phase 1 deprecation warning) is
+// performed inside the runtime's SecretValueFromReference, so it is not
+// emitted here. This ensures every caller is covered, including custom
+// update functions and hooks that call SecretValueFromReference directly.
+//
 // The Go code output from this function looks like this:
 //
 //     tmpSecret, err := rm.rr.SecretValueFromReference(ctx, ko.Spec.MasterUserPassword)
@@ -1109,16 +1114,6 @@ func setSDKForContainer(
 //     }
 //     if tmpSecret != "" {
 //         res.SetMasterUserPassword(tmpSecret)
-//     }
-//
-//     or:
-//
-//     tmpSecret, err := rm.rr.SecretValueFromReference(ctx, f3iter)
-//     if err != nil {
-//         return nil, ackrequeue.Needed(err)
-//     }
-//     if tmpSecret != "" {
-//         f3elem = tmpSecret
 //     }
 //
 // The second case is used when the SecretKeyReference field
@@ -1139,6 +1134,11 @@ func setSDKForSecret(
 	out := ""
 	indent := strings.Repeat("\t", indentLevel)
 	secVar := "tmpSecret"
+
+	// Cross-namespace validation for the secret reference is performed inside
+	// the runtime's SecretValueFromReference, so that every call site is
+	// covered (including custom update functions and hooks). No per-call
+	// validation is generated here.
 
 	//     tmpSecret, err := rm.rr.SecretValueFromReference(ctx, ko.Spec.MasterUserPassword)
 	out += fmt.Sprintf(
@@ -1208,7 +1208,7 @@ func SetSDKForStruct(
 		var setCfg *ackgenconfig.SetFieldConfig
 		f, ok := r.Fields[sourceFieldPath]
 		if ok {
-			mf, ok := f.MemberFields[memberName]
+			mf, ok := f.MemberFields[names.New(memberName).Camel]
 			if ok {
 				setCfg = mf.GetSetterConfig(op)
 				if setCfg != nil && setCfg.IgnoreSDKSetter() {
@@ -1500,7 +1500,7 @@ func setSDKForMap(
 	}
 
 	dereference := "*"
-	if !targetShapeRef.HasDefaultValue() && targetShape.ValueRef.Shape.Type != "structure" {
+	if !targetShapeRef.IsNonPointerInSDK() && targetShape.ValueRef.Shape.Type != "structure" {
 		dereference = ""
 	}
 	// Union types are interfaces, not pointers — no dereference needed
@@ -1533,7 +1533,7 @@ func varEmptyConstructorSDKType(
 	// For SDK types, we need to use the original shape name (before stutter
 	// removal) since the AWS SDK uses the original names. The stutter removal
 	// renames are only for CRD types.
-	if shape.Type == "structure" && shape.OriginalShapeName != "" {
+	if (shape.Type == "structure" || shape.RealType == "union") && shape.OriginalShapeName != "" {
 		// Replace the renamed shape name with the original SDK shape name
 		goType = "svcsdktypes." + shape.OriginalShapeName
 	}
@@ -1740,13 +1740,13 @@ func setSDKForScalar(
 		out += fmt.Sprintf("%s}\n", indent)
 		tempVar := ogShapeName.CamelLower + "Copy"
 		out += fmt.Sprintf("%s%s := %s32(%s)\n", indent, tempVar, actualType[2], dereferencedVal)
-		if !shapeRef.HasDefaultValue() && !isListMember {
+		if !shapeRef.IsNonPointerInSDK() && !isListMember {
 			tempVar = "&" + tempVar
 		}
 		out += fmt.Sprintf("%s%s = %s\n", indent, targetVarPath, tempVar)
 	} else if shape.IsEnum() {
 		out += fmt.Sprintf("%s%s = svcsdktypes.%s(%s)\n", indent, targetVarPath, shape.ShapeName, setTo)
-	} else if shapeRef.HasDefaultValue() {
+	} else if shapeRef.IsNonPointerInSDK() {
 		out += fmt.Sprintf("%s%s = %s\n", indent, targetVarPath, setTo)
 
 	} else if targetVarType == "structure" && shape.Type == "boolean" {
@@ -1863,6 +1863,11 @@ func setSDKForUnion(
 
 	sdkGoType := targetShape.GoTypeWithPkgName()
 	sdkGoType = model.ReplacePkgName(sdkGoType, r.SDKAPIPackageName(), "svcsdktypes", false)
+	// Use the original shape name for SDK type references when the shape
+	// was renamed (e.g. Input/Output suffix collision avoidance).
+	if targetShape.OriginalShapeName != "" {
+		sdkGoType = "svcsdktypes." + targetShape.OriginalShapeName
+	}
 
 	out += fmt.Sprintf("%sisInterfaceSet := false\n", indent)
 

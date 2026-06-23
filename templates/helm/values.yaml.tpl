@@ -92,6 +92,9 @@ aws:
   endpoint_url: ""
   identity_endpoint_url: ""
   allow_unsafe_aws_endpoint_urls: false
+{{- if eq .ControllerName "s3" }}
+  endpoint_use_path_style: false
+{{- end }}
   credentials:
     # If specified, Secret with shared credentials file to use.
     secretName: ""
@@ -176,6 +179,11 @@ leaderElection:
 
 # Enable Cross Account Resource Management (default = true). Set this to false to disable cross account resource management.
 enableCARM: true
+
+# Enable cross-namespace behavior including resource references, secret references,
+# and field exports (default = true). When false, the controller rejects any operation
+# that crosses namespace boundaries.
+enableCrossNamespace: true
 
 # Configuration for feature gates.  These are optional controller features that
 # can be individually enabled ("true") or disabled ("false") by adding key/value

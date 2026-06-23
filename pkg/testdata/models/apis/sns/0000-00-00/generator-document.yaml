@@ -1,0 +1,56 @@
+operations:
+  Subscribe:
+    resource_name: Subscription
+    operation_type: CREATE
+  Unsubscribe:
+    resource_name: Subscription
+    operation_type: DELETE
+  GetSubscriptionAttributes:
+    resource_name: Subscription
+    operation_type: GET_ATTRIBUTES
+  SetSubscriptionAttributes:
+    resource_name: Subscription
+    operation_type: SET_ATTRIBUTES
+resources:
+  Subscription:
+    is_arn_primary_key: true
+    update_operation:
+      custom_method_name: customUpdate
+    unpack_attributes_map:
+      set_attributes_single_attribute: true
+    fields:
+      FilterPolicy:
+        is_attribute: true
+        is_document: true
+      FilterPolicyScope:
+        is_attribute: true
+      Owner:
+        is_attribute: true
+        is_read_only: true
+        is_owner_account_id: true
+      PendingConfirmation:
+        is_attribute: true
+        is_read_only: true
+      ConfirmationWasAuthenticated:
+        is_attribute: true
+        is_read_only: true
+      EffectiveDeliveryPolicy:
+        is_attribute: true
+        is_read_only: true
+      DeliveryPolicy:
+        is_attribute: true
+      RawMessageDelivery:
+        is_attribute: true
+      RedrivePolicy:
+        is_attribute: true
+      SubscriptionRoleArn:
+        is_attribute: true
+    tags:
+      ignore: true
+ignore:
+  resource_names:
+    - PlatformApplication
+    - Endpoint
+    - Topic
+  field_paths:
+    - SubscribeInput.ReturnSubscriptionArn
