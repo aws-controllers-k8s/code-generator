@@ -5607,3 +5607,25 @@ func TestSetResource_BedrockAgentCoreControl_Memory_InputSuffixUnion(t *testing.
 	assert.NotContains(got, "TriggerConditionInput_",
 		"Should use original SDK shape name TriggerConditionInput, not renamed version")
 }
+
+// TestSetResource_LambdaMicrovms_MicrovmImage_Create_ValidateField is the
+// read-path counterpart to the SetSDK regression test. It ensures the
+// generated code reads the real aws-sdk-go-v2 field "Validate" off the
+// response shape rather than the historically-mangled "Validate_" produced by
+// the renameCollidingFields pass. See that test for the full background.
+func TestSetResource_LambdaMicrovms_MicrovmImage_Create_ValidateField(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "lambdamicrovms")
+
+	crd := testutil.GetCRDByName(t, g, "MicrovmImage")
+	require.NotNil(crd)
+
+	got, err := code.SetResource(crd.Config(), crd, model.OpTypeCreate, "resp", "ko", 1)
+	require.NoError(err)
+
+	assert.Contains(got, "if resp.Hooks.MicrovmImageHooks.Validate != \"\" {")
+	assert.Contains(got, "f10f1.Validate = aws.String(string(resp.Hooks.MicrovmImageHooks.Validate))")
+	assert.NotContains(got, "Validate_")
+}

@@ -6960,3 +6960,30 @@ func TestSetSDK_EKS_Nodegroup_Create(t *testing.T) {
 	require.NoError(err)
 	assert.Equal(expected, got)
 }
+
+// TestSetSDK_LambdaMicrovms_MicrovmImage_Create_ValidateField is a regression
+// test for the code-generator's renameCollidingFields pass. The "Validate"
+// member name was historically renamed to "Validate_" to avoid colliding with
+// the Validate() method generated on aws-sdk-go (v1) input shapes. aws-sdk-go-v2
+// types carry no such method, so the rename produced references to a
+// non-existent SDK field (e.g. svcsdktypes.MicrovmImageHooks.Validate_) and
+// broke compilation. The MicrovmImageHooks shape has a member literally named
+// "Validate", so this asserts the generated SDK code targets the real field.
+func TestSetSDK_LambdaMicrovms_MicrovmImage_Create_ValidateField(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "lambdamicrovms")
+
+	crd := testutil.GetCRDByName(t, g, "MicrovmImage")
+	require.NotNil(crd)
+
+	got, err := code.SetSDK(crd.Config(), crd, model.OpTypeCreate, "r.ko", "res", 1)
+	require.NoError(err)
+
+	// The Validate member must map to the real SDK field "Validate", not the
+	// historically-mangled "Validate_".
+	assert.Contains(got, "if r.ko.Spec.Hooks.MicrovmImageHooks.Validate != nil {")
+	assert.Contains(got, "f10f1.Validate = svcsdktypes.HookState(*r.ko.Spec.Hooks.MicrovmImageHooks.Validate)")
+	assert.NotContains(got, "Validate_")
+}

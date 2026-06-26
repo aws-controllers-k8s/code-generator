@@ -429,8 +429,7 @@ func renameCollidingField(name string, v *Shape, field *ShapeRef) {
 func collides(name string) bool {
 	switch name {
 	case "String",
-		"GoString",
-		"Validate":
+		"GoString":
 		return true
 	}
 	return false

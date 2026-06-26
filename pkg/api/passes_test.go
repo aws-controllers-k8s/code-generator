@@ -183,7 +183,7 @@ func TestCollidingFields(t *testing.T) {
 				"OrigErr",
 				"SetFoo_",
 				"String_",
-				"Validate_",
+				"Validate",
 			},
 		},
 		"ExceptionShape": {

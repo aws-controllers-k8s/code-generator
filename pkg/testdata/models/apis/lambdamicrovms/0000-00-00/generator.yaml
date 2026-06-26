@@ -1,0 +1,33 @@
+ignore:
+  resource_names:
+    - MicrovmAuthToken
+    - MicrovmShellAuthToken
+    - MicrovmImageVersion
+    - MicrovmImageBuild
+    - ManagedMicrovmImage
+    - ManagedMicrovmImageVersion
+    - Microvm
+
+empty_shapes:
+  - LoggingDisabled
+
+resources:
+  MicrovmImage:
+    is_arn_primary_key: true
+    renames:
+      operations:
+        GetMicrovmImage:
+          input_fields:
+            ImageIdentifier: Name
+        UpdateMicrovmImage:
+          input_fields:
+            ImageIdentifier: Name
+        DeleteMicrovmImage:
+          input_fields:
+            ImageIdentifier: Name
+    ignore_idempotency_token: true
+    fields:
+      Name:
+        is_primary_key: true
+        is_required: true
+        is_immutable: true
