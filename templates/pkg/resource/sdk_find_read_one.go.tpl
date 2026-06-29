@@ -48,6 +48,9 @@ func (rm *resourceManager) sdkFind(
 {{ $hookCode }}
 {{- end }}
 {{ GoCodeSetReadOneOutput .CRD "resp" "ko" 1 }}
+{{- if .CRD.HasReferenceFields }}
+{{ GoCodePreserveReferenceFields .CRD "r.ko" "ko" 1 }}
+{{- end }}
 	rm.setStatusDefaults(ko)
 {{- if $setOutputCustomMethodName := .CRD.SetOutputCustomMethodName .CRD.Ops.ReadOne }}
 	// custom set output from response

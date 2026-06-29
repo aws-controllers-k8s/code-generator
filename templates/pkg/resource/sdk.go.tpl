@@ -100,6 +100,9 @@ func (rm *resourceManager) sdkCreate(
 {{ $hookCode }}
 {{- end }}
 {{ GoCodeSetCreateOutput .CRD "resp" "ko" 1 }}
+{{- if .CRD.HasReferenceFields }}
+{{ GoCodePreserveReferenceFields .CRD "desired.ko" "ko" 1 }}
+{{- end }}
 	rm.setStatusDefaults(ko)
 {{- if $setOutputCustomMethodName := .CRD.SetOutputCustomMethodName .CRD.Ops.Create }}
 	// custom set output from response

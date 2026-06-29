@@ -90,6 +90,9 @@ var (
 		"GoCodeSetReadOneOutput": func(r *ackmodel.CRD, sourceVarName string, targetVarName string, indentLevel int) (string, error) {
 			return code.SetResource(r.Config(), r, ackmodel.OpTypeGet, sourceVarName, targetVarName, indentLevel)
 		},
+		"GoCodePreserveReferenceFields": func(r *ackmodel.CRD, sourceVarName string, targetVarName string, indentLevel int) (string, error) {
+			return code.PreserveReferenceFields(r, sourceVarName, targetVarName, indentLevel)
+		},
 		"GoCodeSetReadOneInput": func(r *ackmodel.CRD, sourceVarName string, targetVarName string, indentLevel int) (string, error) {
 			return code.SetSDK(r.Config(), r, ackmodel.OpTypeGet, sourceVarName, targetVarName, indentLevel)
 		},

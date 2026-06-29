@@ -126,6 +126,31 @@ func Test_ReferenceFieldsValidation_NestedReference(t *testing.T) {
 	assert.Equal(expected, got)
 }
 
+func Test_ReferenceFieldsPreservation_NestedReference(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "apigatewayv2",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-nested-reference.yaml",
+		})
+
+	crd := testutil.GetCRDByName(t, g, "Authorizer")
+	require.NotNil(crd)
+
+	expected :=
+		`	if r.ko.Spec.JWTConfiguration != nil && r.ko.Spec.JWTConfiguration.IssuerRef != nil {
+		if ko.Spec.JWTConfiguration == nil {
+			ko.Spec.JWTConfiguration = &svcapitypes.JWTConfiguration{}
+		}
+		ko.Spec.JWTConfiguration.IssuerRef = r.ko.Spec.JWTConfiguration.IssuerRef
+	}
+`
+	got, err := code.PreserveReferenceFields(crd, "r.ko", "ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
+}
+
 func Test_ResolveReferencesForField_SingleReference(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
