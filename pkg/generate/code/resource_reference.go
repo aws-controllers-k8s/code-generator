@@ -506,39 +506,29 @@ func getReferencedStateForField(field *model.Field, indentLevel int) string {
 	return out
 }
 
-// PreserveReferenceFields returns Go code that copies the `*Ref` field values
-// from a source resource (the original Kubernetes object, e.g. the desired
-// resource) into a target resource that was just reconstructed from an AWS API
-// response (the latest resource).
+// PreserveReferenceFields returns Go code that copies nested `*Ref` field
+// values from a source resource (the original object, e.g. desired) into a
+// target resource rebuilt from an API response (e.g. latest).
 //
-// This is necessary because the code that sets a resource's fields from an API
-// response rebuilds nested struct fields from scratch. The API response
-// carries only the concrete value of a reference (e.g. an ARN) and has no
-// concept of the `*Ref` field, so reconstructing the parent struct discards
-// any `*Ref` values the user supplied. Top-level references do not suffer from
-// this because the `*Ref` field is a sibling of the concrete field and is
-// never touched when setting fields from the response.
-//
-// Only references nested inside structs (with no intervening lists or maps)
-// need to be preserved here. Top-level references are already retained by the
-// deep copy of the original object, and references nested inside lists have
-// their concrete values restored by index during reference resolution.
+// Setting fields from a response rebuilds nested structs from scratch, which
+// drops the `*Ref` fields (the response only carries the concrete value).
+// Top-level references are unaffected (the `*Ref` field is a sibling that is
+// never rebuilt), and references inside lists are restored by index during
+// resolution, so only references nested inside structs are handled here.
 //
 // Sample output:
 //
-//	if r.ko.Spec.LambdaConfig != nil && r.ko.Spec.LambdaConfig.PreSignUpRef != nil {
-//		if ko.Spec.LambdaConfig == nil {
-//			ko.Spec.LambdaConfig = &svcapitypes.LambdaConfigType{}
+//	if from.Spec.LambdaConfig != nil && from.Spec.LambdaConfig.PreSignUpRef != nil {
+//		if to.Spec.LambdaConfig == nil {
+//			to.Spec.LambdaConfig = &svcapitypes.LambdaConfigType{}
 //		}
-//		ko.Spec.LambdaConfig.PreSignUpRef = r.ko.Spec.LambdaConfig.PreSignUpRef
+//		to.Spec.LambdaConfig.PreSignUpRef = from.Spec.LambdaConfig.PreSignUpRef
 //	}
 func PreserveReferenceFields(
 	r *model.CRD,
-	// sourceVarName is the name of the variable holding the original Kubernetes
-	// object (e.g. "r.ko" or "desired.ko").
+	// sourceVarName holds the original object (e.g. "r.ko" or "desired.ko").
 	sourceVarName string,
-	// targetVarName is the name of the variable holding the resource that was
-	// rebuilt from the API response (e.g. "ko").
+	// targetVarName holds the object rebuilt from the response (e.g. "ko").
 	targetVarName string,
 	indentLevel int,
 ) (string, error) {
@@ -558,16 +548,12 @@ func PreserveReferenceFields(
 		}
 		fp := fieldpath.FromString(refFieldPath)
 
-		// Top-level references (e.g. ko.Spec.RoleRef) are preserved by the deep
-		// copy of the original object, since setting fields from the response
-		// never touches the sibling *Ref field. Nothing to do here.
+		// Top-level references are already preserved by the caller's deep copy.
 		if fp.Size() < 2 {
 			continue
 		}
 
-		// Walk the ancestors of the reference field. If any ancestor is a list
-		// or map, this reference is out of scope for struct preservation and we
-		// skip it.
+		// Skip references whose path crosses a list or map (out of scope).
 		skip := false
 		for depth := 0; depth < fp.Size()-1; depth++ {
 			ancestorPath := fp.CopyAt(depth).String()
@@ -586,8 +572,7 @@ func PreserveReferenceFields(
 			continue
 		}
 
-		// Build the nil-check conditions on the source object, drilling down
-		// through each ancestor struct and finally the *Ref field itself.
+		// Nil-check each ancestor and the *Ref field on the source.
 		srcAccess := sourceVarName + specField
 		conds := make([]string, 0, fp.Size())
 		for depth := 0; depth < fp.Size()-1; depth++ {
@@ -599,8 +584,7 @@ func PreserveReferenceFields(
 
 		out += fmt.Sprintf("%sif %s {\n", indent, strings.Join(conds, " && "))
 
-		// Ensure each ancestor struct exists on the target object, creating
-		// empty structs where necessary.
+		// Create any missing ancestor structs on the target.
 		tgtAccess := targetVarName + specField
 		for depth := 0; depth < fp.Size()-1; depth++ {
 			tgtAccess = fmt.Sprintf("%s.%s", tgtAccess, fp.At(depth))
@@ -619,10 +603,8 @@ func PreserveReferenceFields(
 	return out, nil
 }
 
-// referenceParentGoType returns the Kubernetes (svcapitypes) Go type name for a
-// struct shape, e.g. "svcapitypes.LambdaConfigType". It mirrors the type name
-// resolution used by varEmptyConstructorK8sType so the generated constructor
-// matches the type used elsewhere in the generated code.
+// referenceParentGoType returns the svcapitypes Go type name for a struct
+// shape (e.g. "svcapitypes.LambdaConfigType"), matching varEmptyConstructorK8sType.
 func referenceParentGoType(r *model.CRD, shape *awssdkmodel.Shape) string {
 	goType := shape.GoTypeWithPkgName()
 	goType = model.ReplacePkgName(goType, r.SDKAPIPackageName(), "svcapitypes", false)
