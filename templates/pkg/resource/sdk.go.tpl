@@ -101,7 +101,7 @@ func (rm *resourceManager) sdkCreate(
 {{- end }}
 {{ GoCodeSetCreateOutput .CRD "resp" "ko" 1 }}
 {{- if .CRD.HasReferenceFields }}
-{{ GoCodePreserveReferenceFields .CRD "desired.ko" "ko" 1 }}
+	rm.preserveReferenceFields(desired.ko, ko)
 {{- end }}
 	rm.setStatusDefaults(ko)
 {{- if $setOutputCustomMethodName := .CRD.SetOutputCustomMethodName .CRD.Ops.Create }}

@@ -58,6 +58,21 @@ func (rm *resourceManager) ClearResolvedReferences(res acktypes.AWSResource) (ac
 	return &resource{ko}
 }
 
+{{ if .CRD.HasReferenceFields -}}
+// preserveReferenceFields copies the reference (*Ref) field values from the
+// `from` resource into the `to` resource. `to` is typically the latest
+// resource constructed from an AWS API response. The response only carries the
+// concrete (resolved) values and has no concept of the *Ref fields, so building
+// the resource from it drops any *Ref values nested inside struct fields.
+// Copying the *Ref values back ensures they are preserved in the resource's
+// spec. Top-level references are already retained by the caller's deep copy of
+// `from`, and references nested within lists are restored by index during
+// resolution, so only references nested inside structs are copied here.
+func (rm *resourceManager) preserveReferenceFields(from, to *svcapitypes.{{ .CRD.Names.Camel }}) {
+{{ GoCodePreserveReferenceFields .CRD "from" "to" 1 }}
+}
+
+{{ end -}}
 // ResolveReferences finds if there are any Reference field(s) present
 // inside AWSResource passed in the parameter and attempts to resolve those
 // reference field(s) into their respective target field(s). It returns a
