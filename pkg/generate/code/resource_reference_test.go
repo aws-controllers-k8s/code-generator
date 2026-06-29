@@ -139,10 +139,7 @@ func Test_ReferenceFieldsPreservation_NestedReference(t *testing.T) {
 	require.NotNil(crd)
 
 	expected :=
-		`	if from.Spec.JWTConfiguration != nil && from.Spec.JWTConfiguration.IssuerRef != nil {
-		if to.Spec.JWTConfiguration == nil {
-			to.Spec.JWTConfiguration = &svcapitypes.JWTConfiguration{}
-		}
+		`	if from.Spec.JWTConfiguration != nil && to.Spec.JWTConfiguration != nil && from.Spec.JWTConfiguration.IssuerRef != nil {
 		to.Spec.JWTConfiguration.IssuerRef = from.Spec.JWTConfiguration.IssuerRef
 	}
 `

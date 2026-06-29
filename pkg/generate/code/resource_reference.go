@@ -17,10 +17,8 @@ import (
 	"fmt"
 	"strings"
 
-	awssdkmodel "github.com/aws-controllers-k8s/code-generator/pkg/api"
 	"github.com/aws-controllers-k8s/code-generator/pkg/fieldpath"
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
-	"github.com/aws-controllers-k8s/pkg/names"
 	"github.com/samber/lo"
 )
 
@@ -572,62 +570,27 @@ func PreserveReferenceFields(
 			continue
 		}
 
-		// Nil-check each ancestor and the *Ref field on the source.
+		// Nil-check each ancestor and the *Ref on the source, and each ancestor
+		// on the target. The target's ancestor structs already exist whenever
+		// the reference is set (the resolved value was applied and read back),
+		// so we never create them here.
 		srcAccess := sourceVarName + specField
-		conds := make([]string, 0, fp.Size())
+		tgtAccess := targetVarName + specField
+		conds := make([]string, 0, fp.Size()*2)
 		for depth := 0; depth < fp.Size()-1; depth++ {
 			srcAccess = fmt.Sprintf("%s.%s", srcAccess, fp.At(depth))
+			tgtAccess = fmt.Sprintf("%s.%s", tgtAccess, fp.At(depth))
 			conds = append(conds, fmt.Sprintf("%s != nil", srcAccess))
+			conds = append(conds, fmt.Sprintf("%s != nil", tgtAccess))
 		}
 		srcRefAccess := fmt.Sprintf("%s.%s", srcAccess, fp.Back())
+		tgtRefAccess := fmt.Sprintf("%s.%s", tgtAccess, fp.Back())
 		conds = append(conds, fmt.Sprintf("%s != nil", srcRefAccess))
 
 		out += fmt.Sprintf("%sif %s {\n", indent, strings.Join(conds, " && "))
-
-		// Create any missing ancestor structs on the target.
-		tgtAccess := targetVarName + specField
-		for depth := 0; depth < fp.Size()-1; depth++ {
-			tgtAccess = fmt.Sprintf("%s.%s", tgtAccess, fp.At(depth))
-			ancestor := r.Fields[fp.CopyAt(depth).String()]
-			goType := referenceParentGoType(r, ancestor.ShapeRef.Shape)
-			out += fmt.Sprintf("%s\tif %s == nil {\n", indent, tgtAccess)
-			out += fmt.Sprintf("%s\t\t%s = &%s{}\n", indent, tgtAccess, goType)
-			out += fmt.Sprintf("%s\t}\n", indent)
-		}
-
-		tgtRefAccess := fmt.Sprintf("%s.%s", tgtAccess, fp.Back())
 		out += fmt.Sprintf("%s\t%s = %s\n", indent, tgtRefAccess, srcRefAccess)
 		out += fmt.Sprintf("%s}\n", indent)
 	}
 
 	return out, nil
-}
-
-// referenceParentGoType returns the svcapitypes Go type name for a struct
-// shape (e.g. "svcapitypes.LambdaConfigType"), matching varEmptyConstructorK8sType.
-func referenceParentGoType(r *model.CRD, shape *awssdkmodel.Shape) string {
-	goType := shape.GoTypeWithPkgName()
-	goType = model.ReplacePkgName(goType, r.SDKAPIPackageName(), "svcapitypes", false)
-	goTypeNoPkg := goType
-	goPkg := ""
-	hadPkg := false
-	if strings.Contains(goType, ".") {
-		parts := strings.Split(goType, ".")
-		goTypeNoPkg = parts[1]
-		goPkg = parts[0]
-		hadPkg = true
-	}
-	renames := r.TypeRenames()
-	altTypeName, renamed := renames[goTypeNoPkg]
-	if renamed {
-		goTypeNoPkg = altTypeName
-	} else if hadPkg {
-		cleanNames := names.New(goTypeNoPkg)
-		goTypeNoPkg = cleanNames.Camel
-	}
-	goType = goTypeNoPkg
-	if hadPkg {
-		goType = goPkg + "." + goType
-	}
-	return goType
 }
