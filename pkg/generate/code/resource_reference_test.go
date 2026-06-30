@@ -148,6 +148,25 @@ func Test_ReferenceFieldsPreservation_NestedReference(t *testing.T) {
 	assert.Equal(expected, got)
 }
 
+func Test_ReferenceFieldsPreservation_TopLevelReference_NoOutput(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "apigatewayv2",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-reference.yaml",
+		})
+
+	crd := testutil.GetCRDByName(t, g, "Integration")
+	require.NotNil(crd)
+
+	// Integration.APIID is a top-level reference, which is preserved by the
+	// caller's deep copy, so no preservation code should be generated.
+	got, err := code.PreserveReferenceFields(crd, "fromKO", "toKO", 1)
+	require.NoError(err)
+	assert.Equal("", got)
+}
+
 func Test_ResolveReferencesForField_SingleReference(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)

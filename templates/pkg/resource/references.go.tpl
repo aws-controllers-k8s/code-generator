@@ -59,16 +59,19 @@ func (rm *resourceManager) ClearResolvedReferences(res acktypes.AWSResource) (ac
 }
 
 {{ if .CRD.HasReferenceFields -}}
+{{ $preserveRefs := GoCodePreserveReferenceFields .CRD "fromKO" "toKO" 1 -}}
+{{ if $preserveRefs -}}
 // PreserveReferenceValues copies nested *Ref values from `from` into a copy of
 // `to` (rebuilt from an API response, which drops them). The ACK runtime
 // invokes this before patching the resource's spec.
 func (rm *resourceManager) PreserveReferenceValues(from acktypes.AWSResource, to acktypes.AWSResource) acktypes.AWSResource {
 	fromKO := rm.concreteResource(from).ko
 	toKO := rm.concreteResource(to).ko.DeepCopy()
-{{ GoCodePreserveReferenceFields .CRD "fromKO" "toKO" 1 }}
+{{ $preserveRefs }}
 	return &resource{toKO}
 }
 
+{{ end -}}
 {{ end -}}
 // ResolveReferences finds if there are any Reference field(s) present
 // inside AWSResource passed in the parameter and attempts to resolve those
