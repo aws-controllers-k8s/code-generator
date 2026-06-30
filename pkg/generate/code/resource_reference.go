@@ -504,29 +504,19 @@ func getReferencedStateForField(field *model.Field, indentLevel int) string {
 	return out
 }
 
-// PreserveReferenceFields returns Go code that copies nested `*Ref` field
-// values from a source resource (the original object, e.g. desired) into a
-// target resource rebuilt from an API response (e.g. latest).
-//
-// Setting fields from a response rebuilds nested structs from scratch, which
-// drops the `*Ref` fields (the response only carries the concrete value).
-// Top-level references are unaffected (the `*Ref` field is a sibling that is
-// never rebuilt), and references inside lists are restored by index during
-// resolution, so only references nested inside structs are handled here.
+// PreserveReferenceFields returns Go code that copies nested `*Ref` values from
+// a source object into a target object rebuilt from an API response, which
+// drops them. Only struct-nested references are handled; top-level ones are
+// preserved by the caller's deep copy and list-nested ones by resolution.
 //
 // Sample output:
 //
-//	if from.Spec.LambdaConfig != nil && from.Spec.LambdaConfig.PreSignUpRef != nil {
-//		if to.Spec.LambdaConfig == nil {
-//			to.Spec.LambdaConfig = &svcapitypes.LambdaConfigType{}
-//		}
+//	if from.Spec.LambdaConfig != nil && to.Spec.LambdaConfig != nil && from.Spec.LambdaConfig.PreSignUpRef != nil {
 //		to.Spec.LambdaConfig.PreSignUpRef = from.Spec.LambdaConfig.PreSignUpRef
 //	}
 func PreserveReferenceFields(
 	r *model.CRD,
-	// sourceVarName holds the original object (e.g. "r.ko" or "desired.ko").
 	sourceVarName string,
-	// targetVarName holds the object rebuilt from the response (e.g. "ko").
 	targetVarName string,
 	indentLevel int,
 ) (string, error) {
@@ -570,10 +560,8 @@ func PreserveReferenceFields(
 			continue
 		}
 
-		// Nil-check each ancestor and the *Ref on the source, and each ancestor
-		// on the target. The target's ancestor structs already exist whenever
-		// the reference is set (the resolved value was applied and read back),
-		// so we never create them here.
+		// Guard source and target ancestors, then assign. Target ancestors
+		// already exist when the reference is set, so we never create them.
 		srcAccess := sourceVarName + specField
 		tgtAccess := targetVarName + specField
 		conds := make([]string, 0, fp.Size()*2)
