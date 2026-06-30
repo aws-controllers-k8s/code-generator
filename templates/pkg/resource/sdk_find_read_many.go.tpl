@@ -47,9 +47,6 @@ func (rm *resourceManager) sdkFind(
 {{ $hookCode }}
 {{- end }}
 {{ GoCodeSetReadManyOutput .CRD "resp" "ko" 1 }}
-{{- if .CRD.HasReferenceFields }}
-	rm.preserveReferenceFields(r.ko, ko)
-{{- end }}
 	rm.setStatusDefaults(ko)
 {{- if $setOutputCustomMethodName := .CRD.SetOutputCustomMethodName .CRD.Ops.ReadMany }}
 	// custom set output from response

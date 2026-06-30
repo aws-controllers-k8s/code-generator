@@ -44,9 +44,6 @@ func (rm *resourceManager) sdkUpdate(
 {{ $hookCode }}
 {{- end }}
 {{ GoCodeSetUpdateOutput .CRD "resp" "ko" 1 }}
-{{- if .CRD.HasReferenceFields }}
-	rm.preserveReferenceFields(desired.ko, ko)
-{{- end }}
 	rm.setStatusDefaults(ko)
 {{- if $setOutputCustomMethodName := .CRD.SetOutputCustomMethodName .CRD.Ops.Update }}
 	// custom set output from response

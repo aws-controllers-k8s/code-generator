@@ -59,11 +59,16 @@ func (rm *resourceManager) ClearResolvedReferences(res acktypes.AWSResource) (ac
 }
 
 {{ if .CRD.HasReferenceFields -}}
-// preserveReferenceFields copies nested reference (*Ref) values from `from`
-// into `to`. `to` is rebuilt from an API response, which carries only the
-// concrete values, so its nested *Ref fields would otherwise be lost.
-func (rm *resourceManager) preserveReferenceFields(from, to *svcapitypes.{{ .CRD.Names.Camel }}) {
-{{ GoCodePreserveReferenceFields .CRD "from" "to" 1 }}
+// PreserveReferenceValues copies nested reference (*Ref) values from the `from`
+// resource into a copy of the `to` resource. `to` is typically the latest
+// resource rebuilt from an API response, which carries only the concrete
+// (resolved) values, so nested *Ref values would otherwise be lost. The ACK
+// runtime invokes this before patching the resource's spec.
+func (rm *resourceManager) PreserveReferenceValues(from acktypes.AWSResource, to acktypes.AWSResource) acktypes.AWSResource {
+	fromKO := rm.concreteResource(from).ko
+	toKO := rm.concreteResource(to).ko.DeepCopy()
+{{ GoCodePreserveReferenceFields .CRD "fromKO" "toKO" 1 }}
+	return &resource{toKO}
 }
 
 {{ end -}}
