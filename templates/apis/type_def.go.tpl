@@ -11,6 +11,9 @@ type {{ .Names.Camel }} struct {
 	{{- if $attr.IsImmutable }}
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 	{{- end }}
+	{{- range $rule := $attr.CustomCELRules }}
+	// +kubebuilder:validation:XValidation:rule="{{ $rule.Rule }}"{{- if $rule.Message }},message="{{ $rule.Message | Deref }}"{{- end }}
+	{{- end }}
 	{{ $attr.Names.Camel }} {{ $attr.GoType }} {{ $attr.GetGoTag }}
 {{- end }}
 }
