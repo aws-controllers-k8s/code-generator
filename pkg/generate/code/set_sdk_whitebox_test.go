@@ -93,10 +93,10 @@ func TestSetSDKForScalar(t *testing.T) {
 `,
 		},
 		{
-			// An intEnum is surfaced on the ACK side as a named string enum,
-			// while the SDK field is an int32 alias. The write path emits a
-			// switch mapping each human-friendly name to its integer value.
-			name:            "intEnum scalar (name -> int value)",
+			// An intEnum (DefaultValue set) is a non-pointer value SDK field, so
+			// the write path must assign a value, not a pointer:
+			// `res.EngineVersion = engineVersionCopy` (no leading &).
+			name:            "intEnum scalar (value-type SDK field)",
 			targetFieldName: "EngineVersion",
 			targetVarName:   "res",
 			targetVarType:   "structure",
@@ -105,20 +105,21 @@ func TestSetSDKForScalar(t *testing.T) {
 			isListMember:    false,
 			shapeRef: &awssdkmodel.ShapeRef{
 				Shape: &awssdkmodel.Shape{
-					Type:          "string",
-					ShapeName:     "EngineVersion",
-					Enum:          []string{"ONE", "TWO"},
-					IntEnumValues: map[string]int64{"ONE": 1, "TWO": 2},
+					Type:         "integer",
+					DefaultValue: "0",
 				},
+				// member ref carries no default trait, so its own DefaultValue
+				// is empty (not "<nil>") and HasDefaultValue() defers to the
+				// shape's DefaultValue.
 				OriginalMemberName: "EngineVersion",
 			},
 			indentLevel: 1,
-			expected: `	switch *ko.Spec.EngineVersion {
-	case "ONE":
-		res.EngineVersion = svcsdktypes.EngineVersion(1)
-	case "TWO":
-		res.EngineVersion = svcsdktypes.EngineVersion(2)
+			expected: `	engineVersionCopy0 := *ko.Spec.EngineVersion
+	if engineVersionCopy0 > math.MaxInt32 || engineVersionCopy0 < math.MinInt32 {
+		return nil, fmt.Errorf("error: field EngineVersion is of type int32")
 	}
+	engineVersionCopy := int32(engineVersionCopy0)
+	res.EngineVersion = engineVersionCopy
 `,
 		},
 		{
@@ -258,66 +259,21 @@ func TestSetResourceForScalar(t *testing.T) {
 			expected: "\tmaxKeysCopy := int64(*resp.MaxKeys)\n\tko.Spec.MaxKeys = &maxKeysCopy\n",
 		},
 		{
-			// An intEnum's SDK field is a non-pointer int32 alias while the ACK
-			// field is a human-friendly string name. The read path emits a
-			// self-contained switch mapping each integer value back to its name,
-			// with a default that clears the field to nil. There is no outer
-			// "!= 0" guard, since zero can be a legitimate intEnum member.
-			name:        "intEnum scalar (int value -> name)",
+			// An intEnum (DefaultValue set) is a non-pointer value SDK field, so
+			// the read path must NOT dereference the source:
+			// `int64(resp.EngineVersion)` (no leading *).
+			name:        "intEnum scalar (value-type SDK field)",
 			targetVar:   "ko.Spec.EngineVersion",
 			sourceVar:   "resp.EngineVersion",
 			indentLevel: 1,
 			shapeRef: &awssdkmodel.ShapeRef{
 				Shape: &awssdkmodel.Shape{
-					Type:          "string",
-					ShapeName:     "EngineVersion",
-					Enum:          []string{"ONE", "TWO"},
-					IntEnumValues: map[string]int64{"ONE": 1, "TWO": 2},
+					Type:         "integer",
+					DefaultValue: "0",
 				},
 				OriginalMemberName: "EngineVersion",
 			},
-			expected: `	switch resp.EngineVersion {
-	case 1:
-		engineVersionName := "ONE"
-		ko.Spec.EngineVersion = &engineVersionName
-	case 2:
-		engineVersionName := "TWO"
-		ko.Spec.EngineVersion = &engineVersionName
-	default:
-		ko.Spec.EngineVersion = nil
-	}
-`,
-		},
-		{
-			// Regression: a zero-valued intEnum member must produce a real
-			// `case 0:` arm and must NOT be swallowed by a `!= 0` guard. Since
-			// the SDK field is a non-pointer int32, zero is indistinguishable
-			// from "unset", so the only safe behavior is to map it to its name
-			// like any other member.
-			name:        "intEnum scalar with zero-valued member",
-			targetVar:   "ko.Spec.EngineVersion",
-			sourceVar:   "resp.EngineVersion",
-			indentLevel: 1,
-			shapeRef: &awssdkmodel.ShapeRef{
-				Shape: &awssdkmodel.Shape{
-					Type:          "string",
-					ShapeName:     "EngineVersion",
-					Enum:          []string{"ZERO", "ONE"},
-					IntEnumValues: map[string]int64{"ZERO": 0, "ONE": 1},
-				},
-				OriginalMemberName: "EngineVersion",
-			},
-			expected: `	switch resp.EngineVersion {
-	case 0:
-		engineVersionName := "ZERO"
-		ko.Spec.EngineVersion = &engineVersionName
-	case 1:
-		engineVersionName := "ONE"
-		ko.Spec.EngineVersion = &engineVersionName
-	default:
-		ko.Spec.EngineVersion = nil
-	}
-`,
+			expected: "\tengineVersionCopy := int64(resp.EngineVersion)\n\tko.Spec.EngineVersion = &engineVersionCopy\n",
 		},
 	}
 

@@ -1192,7 +1192,7 @@ func (m *Model) GetEnumDefs() ([]*EnumDef, error) {
 	sort.Strings(enumShapeNames)
 	for _, shapeName := range enumShapeNames {
 		shape := m.SDKAPI.API.Shapes[shapeName]
-		if !shape.IsEnum() && !shape.IsIntEnum() {
+		if !shape.IsEnum() {
 			continue
 		}
 		enumNames := names.New(shapeName)

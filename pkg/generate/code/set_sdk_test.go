@@ -6997,10 +6997,13 @@ func TestSetSDK_MWAAServerless_Workflow_Create(t *testing.T) {
 	crd := testutil.GetCRDByName(t, g, "Workflow")
 	require.NotNil(crd)
 
-	// EngineVersion is a Smithy intEnum. On the ACK side it is surfaced as a
-	// named string enum (*string), while the SDK field is an int32 alias
-	// (type EngineVersion = int32). The generated input code must therefore
-	// map the human-friendly name to its integer value via a switch.
+	// EngineVersion is a Smithy intEnum. The converter normalizes intEnum ->
+	// integer at the API boundary, so downstream codegen never sees an enum:
+	// on the ACK side it is surfaced as *int64 and the SDK field is a
+	// non-pointer int32 alias (type EngineVersion = int32). The generated
+	// input code therefore follows the standard integer value-type path -- a
+	// bounds-checked int32 copy assigned to the non-pointer field -- with no
+	// name<->int switch.
 	expected := `
 	if r.ko.Spec.DefinitionS3Location != nil {
 		f1 := &svcsdktypes.DefinitionS3Location{}
@@ -7029,10 +7032,12 @@ func TestSetSDK_MWAAServerless_Workflow_Create(t *testing.T) {
 		res.EncryptionConfiguration = f3
 	}
 	if r.ko.Spec.EngineVersion != nil {
-		switch *r.ko.Spec.EngineVersion {
-		case "ONE":
-			res.EngineVersion = svcsdktypes.EngineVersion(1)
+		engineVersionCopy0 := *r.ko.Spec.EngineVersion
+		if engineVersionCopy0 > math.MaxInt32 || engineVersionCopy0 < math.MinInt32 {
+			return nil, fmt.Errorf("error: field EngineVersion is of type int32")
 		}
+		engineVersionCopy := int32(engineVersionCopy0)
+		res.EngineVersion = engineVersionCopy
 	}
 	if r.ko.Spec.LoggingConfiguration != nil {
 		f5 := &svcsdktypes.LoggingConfiguration{}

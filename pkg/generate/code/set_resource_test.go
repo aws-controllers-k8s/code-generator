@@ -5639,13 +5639,12 @@ func TestSetResource_MWAAServerless_Workflow_ReadOne(t *testing.T) {
 	crd := testutil.GetCRDByName(t, g, "Workflow")
 	require.NotNil(crd)
 
-	// EngineVersion is a Smithy intEnum. On the ACK side it is surfaced as a
-	// named string enum (*string), while the SDK field is a non-pointer int32
-	// alias (type EngineVersion = int32). The generated read code maps the
-	// integer value back to its human-friendly name via a self-contained
-	// switch whose default clears the field to nil. There is intentionally no
-	// outer "!= 0" guard: zero can be a legitimate intEnum member, so guarding
-	// on it would silently drop a valid value.
+	// EngineVersion is a Smithy intEnum. The converter normalizes intEnum ->
+	// integer at the API boundary, so downstream codegen never sees an enum:
+	// on the ACK side it is surfaced as *int64 and the SDK field is a
+	// non-pointer int32 alias (type EngineVersion = int32). The generated read
+	// code therefore follows the standard integer value-type path -- a plain
+	// int64() copy assigned to the field pointer, with no name<->int switch.
 	expected := `
 	if resp.CreatedAt != nil {
 		ko.Status.CreatedAt = &metav1.Time{*resp.CreatedAt}
@@ -5684,13 +5683,8 @@ func TestSetResource_MWAAServerless_Workflow_ReadOne(t *testing.T) {
 	} else {
 		ko.Spec.EncryptionConfiguration = nil
 	}
-	switch resp.EngineVersion {
-	case 1:
-		engineVersionName := "ONE"
-		ko.Spec.EngineVersion = &engineVersionName
-	default:
-		ko.Spec.EngineVersion = nil
-	}
+	engineVersionCopy := int64(resp.EngineVersion)
+	ko.Spec.EngineVersion = &engineVersionCopy
 	if resp.LoggingConfiguration != nil {
 		f5 := &svcapitypes.LoggingConfiguration{}
 		if resp.LoggingConfiguration.LogGroupName != nil {

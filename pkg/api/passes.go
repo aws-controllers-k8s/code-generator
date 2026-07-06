@@ -262,7 +262,7 @@ var legacyShapeNames = map[string][]string{
 func (a *API) validateShapeNames() error {
 loop:
 	for _, s := range a.Shapes {
-		if s.Type == "structure" || s.IsEnum() || s.IsIntEnum() {
+		if s.Type == "structure" || s.IsEnum() {
 			for _, legacyname := range legacyShapeNames[a.PackageName()] {
 				if s.ShapeName == legacyname {
 					continue loop
@@ -379,7 +379,7 @@ func (a *API) renameExportable() {
 
 	for _, s := range a.Shapes {
 		// fix enum names
-		if s.IsEnum() || s.IsIntEnum() {
+		if s.IsEnum() {
 			s.EnumConsts = make([]string, len(s.Enum))
 			for i := range s.Enum {
 				shape := s.ShapeName

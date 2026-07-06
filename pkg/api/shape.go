@@ -102,13 +102,9 @@ type Shape struct {
 	Type       string
 	// this is being added for type union specifically. We want to generate
 	//  api as struct and handle setSDK and setResource differently
-	RealType  string
-	Exception bool
-	Enum      []string
-	// IntEnumValues maps each Smithy intEnum member name to its integer value
-	// (from the smithy.api#enumValue trait). Non-empty only for intEnum shapes,
-	// which are otherwise represented as string enums on the ACK side.
-	IntEnumValues    map[string]int64 `json:"-"`
+	RealType         string
+	Exception        bool
+	Enum             []string
 	EnumConsts       []string
 	Flattened        bool
 	Streaming        bool
@@ -438,7 +434,7 @@ func goType(s *Shape, withPkgName bool) string {
 		return "*string"
 	case "blob":
 		return "[]byte"
-	case "byte", "short", "integer", "long", "primitiveInteger":
+	case "byte", "short", "integer", "long", "primitiveInteger", "intEnum":
 		return "*int64"
 	case "float", "double":
 		return "*float64"
@@ -574,9 +570,9 @@ func (ref *ShapeRef) GoTags(toplevel bool, isRequired bool) string {
 	if isRequired {
 		tags = append(tags, ShapeTag{"required", "true"})
 	}
-	if ref.Shape.IsEnum() || ref.Shape.IsIntEnum() {
+	if ref.Shape.IsEnum() {
 		tags = append(tags, ShapeTag{"enum", ref.ShapeName})
-	} else if ref.Shape.Type == "list" && (ref.Shape.MemberRef.Shape.IsEnum() || ref.Shape.MemberRef.Shape.IsIntEnum()) {
+	} else if ref.Shape.Type == "list" && ref.Shape.MemberRef.Shape.IsEnum() {
 		tags = append(tags, ShapeTag{"enum", ref.Shape.MemberRef.ShapeName})
 	}
 
@@ -1045,7 +1041,7 @@ func (s *Shape) GoCode() string {
 					s.ShapeName, err),
 			)
 		}
-	case s.IsEnum() || s.IsIntEnum():
+	case s.IsEnum():
 		if err := enumShapeTmpl.Execute(w, s); err != nil {
 			panic(
 				fmt.Sprintf(
@@ -1060,19 +1056,9 @@ func (s *Shape) GoCode() string {
 	return w.String()
 }
 
-// IsEnum returns whether this shape is a (string) enum. Smithy intEnum shapes
-// are deliberately excluded here even though they are also surfaced as
-// string-typed enums on the ACK side: they require name<->int conversion at the
-// SDK boundary, so callers must branch on IsIntEnum() explicitly. Type
-// generation that wants to treat both alike should test IsEnum() || IsIntEnum().
+// IsEnum returns whether this shape is an enum list
 func (s *Shape) IsEnum() bool {
-	return s.Type == "string" && len(s.Enum) > 0 && len(s.IntEnumValues) == 0
-}
-
-// IsIntEnum reports whether this (string-typed) enum shape originated from a
-// Smithy intEnum and therefore needs name<->int conversion at the SDK boundary.
-func (s *Shape) IsIntEnum() bool {
-	return len(s.IntEnumValues) > 0
+	return s.Type == "string" && len(s.Enum) > 0
 }
 
 // HasDefaultValue returns whether this shape has a default value.
@@ -1108,12 +1094,6 @@ func (s *Shape) HasDefaultValue() bool {
 // The @default can come from the member reference itself (ShapeRef.DefaultValue)
 // or from the target shape (Shape.DefaultValue).
 func (s *ShapeRef) IsNonPointerInSDK() bool {
-	// Smithy intEnum members are surfaced by AWS SDK Go v2 as a value-typed
-	// int32 alias (e.g. `EngineVersion types.EngineVersion`), never a pointer,
-	// so they are always non-pointer in the SDK regardless of any default.
-	if s.Shape != nil && s.Shape.IsIntEnum() {
-		return true
-	}
 	if s.DefaultValue == "<nil>" {
 		return false
 	}

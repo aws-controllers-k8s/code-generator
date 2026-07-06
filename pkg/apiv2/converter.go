@@ -150,12 +150,6 @@ func buildAPI(shapes map[string]Shape) (*awssdkmodel.API, string, error) {
 		case "enum":
 			newApi.Shapes[name].Type = "string"
 			addEnumRef(newApi.Shapes[name], shape)
-		// intEnum shapes are surfaced on the ACK side as named string enums
-		// (the human-friendly member name), with the underlying integer values
-		// captured so the SDK boundary can convert name <-> int.
-		case "intEnum":
-			newApi.Shapes[name].Type = "string"
-			addIntEnumRef(newApi.Shapes[name], shape)
 		// union is considered to be an interface. needs to be handled
 		// using custom code/generator.yaml renaming so it can point to
 		// the correct structure.
@@ -213,14 +207,27 @@ func createApiOperation(shape Shape, name, serviceAlias string) *awssdkmodel.Ope
 func createApiShape(shape Shape) (*awssdkmodel.Shape, error) {
 	isException := shape.isException()
 
+	// Smithy `intEnum` shapes are non-pointer value fields in aws-sdk-go-v2, so
+	// normalize them to `integer` and tag a DefaultValue. HasDefaultValue() then
+	// routes them through the existing value-type (non-pointer) SDK field path.
+	shapeType := shape.Type
+	isIntEnum := shapeType == "intEnum"
+	if isIntEnum {
+		shapeType = "integer"
+	}
+
 	apiShape := &awssdkmodel.Shape{
-		Type:       shape.Type,
+		Type:       shapeType,
 		Exception:  isException,
 		MemberRefs: make(map[string]*awssdkmodel.ShapeRef),
 		MemberRef:  awssdkmodel.ShapeRef{},
 		KeyRef:     awssdkmodel.ShapeRef{},
 		ValueRef:   awssdkmodel.ShapeRef{},
 		Required:   []string{},
+	}
+
+	if isIntEnum {
+		apiShape.DefaultValue = "0"
 	}
 
 	if isException {
@@ -318,23 +325,6 @@ func addEnumRef(apiShape *awssdkmodel.Shape, shape Shape) {
 		enumValue, ok := member.Traits["smithy.api#enumValue"]
 		if ok {
 			memberName = enumValue.(string)
-		}
-		apiShape.Enum = append(apiShape.Enum, memberName)
-	}
-	slices.Sort(apiShape.Enum)
-}
-
-// addIntEnumRef populates a (now string-typed) shape from a Smithy intEnum.
-// The member name becomes the enum's string value (what the user sets on the
-// ACK side), and the integer from the `smithy.api#enumValue` trait is recorded
-// in IntEnumValues so the SDK conversion code can map name <-> int.
-func addIntEnumRef(apiShape *awssdkmodel.Shape, shape Shape) {
-	apiShape.IntEnumValues = map[string]int64{}
-	for memberName, member := range shape.MemberRefs {
-		if enumValue, ok := member.Traits["smithy.api#enumValue"]; ok {
-			if f, ok := enumValue.(float64); ok {
-				apiShape.IntEnumValues[memberName] = int64(f)
-			}
 		}
 		apiShape.Enum = append(apiShape.Enum, memberName)
 	}
