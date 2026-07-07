@@ -58,6 +58,27 @@ func (rm *resourceManager) ClearResolvedReferences(res acktypes.AWSResource) (ac
 	return &resource{ko}
 }
 
+{{ if .CRD.HasReferenceFields -}}
+// restoreReferenceValues copies the `*Ref` field(s) from the original,
+// unmodified resource (typically the desired resource passed into the
+// resource manager) onto the supplied resource whose spec was reconstructed
+// from an AWS API response. The set_resource logic rebuilds nested parent
+// structs wholesale from the API response, which drops any `*Ref` sibling
+// fields because they have no AWS shape counterpart. Restoring them here
+// preserves the reference relationship across reconciles.
+func (rm *resourceManager) restoreReferenceValues(
+	ko *svcapitypes.{{ .CRD.Names.Camel }},
+	original *svcapitypes.{{ .CRD.Names.Camel }},
+) {
+{{ range $fieldName := .CRD.SortedFieldNames -}}
+{{ $field := (index $.CRD.Fields $fieldName) -}}
+{{ if $field.HasReference -}}
+{{ GoCodeRestoreReferences $field "ko" "original" 1 }}
+{{ end -}}
+{{ end -}}
+}
+
+{{ end -}}
 // ResolveReferences finds if there are any Reference field(s) present
 // inside AWSResource passed in the parameter and attempts to resolve those
 // reference field(s) into their respective target field(s). It returns a

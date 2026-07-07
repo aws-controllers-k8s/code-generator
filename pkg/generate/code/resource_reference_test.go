@@ -624,3 +624,156 @@ func Test_ClearResolvedReferencesForField_SingleReference_WithinMultipleSlices(t
 	require.NoError(err)
 	assert.Equal(expected, got)
 }
+
+func Test_RestoreReferencesForField_SingleReference(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "apigatewayv2",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-reference.yaml",
+		})
+
+	crd := testutil.GetCRDByName(t, g, "Integration")
+	require.NotNil(crd)
+	expected :=
+		`	ko.Spec.APIRef = original.Spec.APIRef
+`
+
+	field := crd.Fields["APIID"]
+	got, err := code.RestoreReferencesForField(field, "ko", "original", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
+}
+
+func Test_RestoreReferencesForField_SliceOfReferences(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "apigatewayv2",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-reference.yaml",
+		})
+
+	crd := testutil.GetCRDByName(t, g, "VpcLink")
+	require.NotNil(crd)
+	expected :=
+		`	ko.Spec.SecurityGroupRefs = original.Spec.SecurityGroupRefs
+`
+
+	field := crd.Fields["SecurityGroupIDs"]
+	got, err := code.RestoreReferencesForField(field, "ko", "original", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
+}
+
+func Test_RestoreReferencesForField_NestedSingleReference(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "apigatewayv2",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-nested-reference.yaml",
+		})
+
+	crd := testutil.GetCRDByName(t, g, "Authorizer")
+	require.NotNil(crd)
+	expected :=
+		`	if original.Spec.JWTConfiguration != nil && ko.Spec.JWTConfiguration != nil {
+		ko.Spec.JWTConfiguration.IssuerRef = original.Spec.JWTConfiguration.IssuerRef
+	}
+`
+
+	field := crd.Fields["JWTConfiguration.Issuer"]
+	got, err := code.RestoreReferencesForField(field, "ko", "original", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
+}
+
+func Test_RestoreReferencesForField_SingleReference_DeeplyNested(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "s3",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-nested-references.yaml",
+		})
+
+	crd := testutil.GetCRDByName(t, g, "Bucket")
+	require.NotNil(crd)
+
+	expected :=
+		`	if original.Spec.Logging != nil && ko.Spec.Logging != nil {
+		if original.Spec.Logging.LoggingEnabled != nil && ko.Spec.Logging.LoggingEnabled != nil {
+			ko.Spec.Logging.LoggingEnabled.TargetBucketRef = original.Spec.Logging.LoggingEnabled.TargetBucketRef
+		}
+	}
+`
+
+	field := crd.Fields["Logging.LoggingEnabled.TargetBucket"]
+	got, err := code.RestoreReferencesForField(field, "ko", "original", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
+}
+
+func Test_RestoreReferencesForField_SingleReference_WithinSlice(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "ec2",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-nested-references.yaml",
+		})
+
+	crd := testutil.GetCRDByName(t, g, "RouteTable")
+	require.NotNil(crd)
+
+	expected :=
+		`	for f0idx := range ko.Spec.Routes {
+		if f0idx < len(original.Spec.Routes) {
+			ko.Spec.Routes[f0idx].GatewayRef = original.Spec.Routes[f0idx].GatewayRef
+		}
+	}
+`
+
+	field := crd.Fields["Routes.GatewayID"]
+	got, err := code.RestoreReferencesForField(field, "ko", "original", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
+}
+
+func Test_RestoreReferencesForField_SingleReference_WithinMultipleSlices(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "s3",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-nested-references.yaml",
+		})
+
+	crd := testutil.GetCRDByName(t, g, "Bucket")
+	require.NotNil(crd)
+
+	expected :=
+		`	if original.Spec.Notification != nil && ko.Spec.Notification != nil {
+		for f0idx := range ko.Spec.Notification.LambdaFunctionConfigurations {
+			if f0idx < len(original.Spec.Notification.LambdaFunctionConfigurations) {
+				if original.Spec.Notification.LambdaFunctionConfigurations[f0idx].Filter != nil && ko.Spec.Notification.LambdaFunctionConfigurations[f0idx].Filter != nil {
+					if original.Spec.Notification.LambdaFunctionConfigurations[f0idx].Filter.Key != nil && ko.Spec.Notification.LambdaFunctionConfigurations[f0idx].Filter.Key != nil {
+						for f1idx := range ko.Spec.Notification.LambdaFunctionConfigurations[f0idx].Filter.Key.FilterRules {
+							if f1idx < len(original.Spec.Notification.LambdaFunctionConfigurations[f0idx].Filter.Key.FilterRules) {
+								ko.Spec.Notification.LambdaFunctionConfigurations[f0idx].Filter.Key.FilterRules[f1idx].ValueRef = original.Spec.Notification.LambdaFunctionConfigurations[f0idx].Filter.Key.FilterRules[f1idx].ValueRef
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+`
+
+	field := crd.Fields["Notification.LambdaFunctionConfigurations.Filter.Key.FilterRules.Value"]
+	got, err := code.RestoreReferencesForField(field, "ko", "original", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
+}

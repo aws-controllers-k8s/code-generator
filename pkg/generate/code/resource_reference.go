@@ -335,6 +335,114 @@ func ClearResolvedReferencesForField(field *model.Field, targetVarName string, i
 	return iterOut, nil
 }
 
+// RestoreReferencesForField returns Go code that copies the `*Ref` field for
+// the given reference field from a source resource (the original, unmodified
+// desired resource) onto a target resource (a resource whose spec was
+// reconstructed from an AWS API response). This is required because the
+// set_resource logic rebuilds nested parent structs wholesale from the AWS
+// response, which drops any `*Ref` sibling fields (they have no AWS shape
+// counterpart). Restoring them preserves the reference relationship across
+// reconciles.
+//
+// The generated code drills into both the source and target in parallel,
+// nil-checking struct parents and iterating list parents positionally, then
+// assigns the whole `*Ref` field.
+//
+// Sample output (nested, singular reference):
+//
+//	if original.Spec.DistributionConfig != nil && ko.Spec.DistributionConfig != nil {
+//		ko.Spec.DistributionConfig.WebACLRef = original.Spec.DistributionConfig.WebACLRef
+//	}
+//
+// Sample output (top-level reference):
+//
+//	ko.Spec.APIRef = original.Spec.APIRef
+//
+// Sample output (reference nested within a list of structs):
+//
+//	for f0idx := range ko.Spec.Routes {
+//		if f0idx < len(original.Spec.Routes) {
+//			ko.Spec.Routes[f0idx].GatewayRef = original.Spec.Routes[f0idx].GatewayRef
+//		}
+//	}
+func RestoreReferencesForField(
+	field *model.Field,
+	targetVarName string,
+	sourceVarName string,
+	indentLevel int,
+) (string, error) {
+	r := field.CRD
+	refFieldPath, err := field.ReferenceFieldPath()
+	if err != nil {
+		return "", err
+	}
+	refFieldName, err := field.GetReferenceFieldName()
+	if err != nil {
+		return "", err
+	}
+	fp := fieldpath.FromString(refFieldPath)
+
+	specField := r.Config().PrefixConfig.SpecField
+	targetPrefix := fmt.Sprintf("%s%s", targetVarName, specField)
+	sourcePrefix := fmt.Sprintf("%s%s", sourceVarName, specField)
+
+	outPrefix := ""
+	outSuffix := ""
+
+	lvl := indentLevel
+	listDepth := 0
+
+	// Drill into every parent of the `*Ref` field (i.e. every path element
+	// except the final `*Ref` field itself).
+	for fpDepth := 0; fpDepth < fp.Size()-1; fpDepth++ {
+		curFP := fp.CopyAt(fpDepth).String()
+		cur, ok := r.Fields[curFP]
+		if !ok {
+			return "", fmt.Errorf(
+				"resource %q: unable to find field with path %q",
+				r.Kind, curFP,
+			)
+		}
+
+		indent := strings.Repeat("\t", lvl)
+		targetPrefix = fmt.Sprintf("%s.%s", targetPrefix, fp.At(fpDepth))
+		sourcePrefix = fmt.Sprintf("%s.%s", sourcePrefix, fp.At(fpDepth))
+
+		switch cur.ShapeRef.Shape.Type {
+		case "map":
+			return "", fmt.Errorf(
+				"resource %q, field %q: references cannot be within a map",
+				r.Kind, field.Path,
+			)
+		case "structure":
+			outPrefix += fmt.Sprintf("%sif %s != nil && %s != nil {\n",
+				indent, sourcePrefix, targetPrefix)
+			outSuffix = fmt.Sprintf("%s}\n%s", indent, outSuffix)
+			lvl++
+		case "list":
+			idxVarName := fmt.Sprintf(indexVarFmt, listDepth)
+			outPrefix += fmt.Sprintf("%sfor %s := range %s {\n",
+				indent, idxVarName, targetPrefix)
+			// Guard against a shorter source list. ACK follows the existing
+			// positional-correspondence assumption used elsewhere for list
+			// references.
+			outPrefix += fmt.Sprintf("%s\tif %s < len(%s) {\n",
+				indent, idxVarName, sourcePrefix)
+			outSuffix = fmt.Sprintf("%s\t}\n%s}\n%s", indent, indent, outSuffix)
+			targetPrefix = fmt.Sprintf("%s[%s]", targetPrefix, idxVarName)
+			sourcePrefix = fmt.Sprintf("%s[%s]", sourcePrefix, idxVarName)
+			lvl += 2
+			listDepth++
+		}
+	}
+
+	indent := strings.Repeat("\t", lvl)
+	assign := fmt.Sprintf("%s%s.%s = %s.%s\n",
+		indent, targetPrefix, refFieldName.Camel, sourcePrefix, refFieldName.Camel)
+
+	return outPrefix + assign + outSuffix, nil
+}
+
 // iterReferenceValues returns Go code that drills down through the spec, doing
 // nil checks and iterating over values, until it reaches the reference field
 // for the given field. Once it reaches the reference field, it runs the inner
