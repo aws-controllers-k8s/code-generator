@@ -990,6 +990,19 @@ func (r *CRD) HasReferenceFields() bool {
 	return false
 }
 
+// HasRestorableReferenceFields returns true if any of the fields in the CRD is
+// a reference that must be restored after the set_resource readback (i.e. a
+// reference nested inside structs, excluding top-level references and any
+// reference with a list in its ancestor path). See Field.IsRestorableReference.
+func (r *CRD) HasRestorableReferenceFields() bool {
+	for _, field := range r.Fields {
+		if field.IsRestorableReference() {
+			return true
+		}
+	}
+	return false
+}
+
 // ReferencedServiceNames returns the set of service names for ACK controllers
 // whose resources are referenced inside the CRD. The service name is
 // the go package name for the AWS service inside aws-sdk-go.

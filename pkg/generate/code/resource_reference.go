@@ -344,9 +344,15 @@ func ClearResolvedReferencesForField(field *model.Field, targetVarName string, i
 // counterpart). Restoring them preserves the reference relationship across
 // reconciles.
 //
+// Only references nested inside structs are handled (see
+// Field.IsRestorableReference). Top-level references and references with a list
+// anywhere in their ancestor path return empty code:
+//   - Top-level references are never dropped by set_resource.
+//   - References inside a list would require positional correspondence between
+//     the desired and readback lists, which is not guaranteed.
+//
 // The generated code drills into both the source and target in parallel,
-// nil-checking struct parents and iterating list parents positionally, then
-// assigns the whole `*Ref` field.
+// nil-checking each struct parent, then assigns the whole `*Ref` field.
 //
 // Sample output (nested, singular reference):
 //
@@ -354,15 +360,11 @@ func ClearResolvedReferencesForField(field *model.Field, targetVarName string, i
 //		ko.Spec.DistributionConfig.WebACLRef = original.Spec.DistributionConfig.WebACLRef
 //	}
 //
-// Sample output (top-level reference):
+// Sample output (deeply nested reference):
 //
-//	ko.Spec.APIRef = original.Spec.APIRef
-//
-// Sample output (reference nested within a list of structs):
-//
-//	for f0idx := range ko.Spec.Routes {
-//		if f0idx < len(original.Spec.Routes) {
-//			ko.Spec.Routes[f0idx].GatewayRef = original.Spec.Routes[f0idx].GatewayRef
+//	if original.Spec.Logging != nil && ko.Spec.Logging != nil {
+//		if original.Spec.Logging.LoggingEnabled != nil && ko.Spec.Logging.LoggingEnabled != nil {
+//			ko.Spec.Logging.LoggingEnabled.TargetBucketRef = original.Spec.Logging.LoggingEnabled.TargetBucketRef
 //		}
 //	}
 func RestoreReferencesForField(
@@ -371,6 +373,12 @@ func RestoreReferencesForField(
 	sourceVarName string,
 	indentLevel int,
 ) (string, error) {
+	// Only restore references nested inside structs. Top-level references and
+	// references living inside a list at any depth are intentionally skipped.
+	if !field.IsRestorableReference() {
+		return "", nil
+	}
+
 	r := field.CRD
 	refFieldPath, err := field.ReferenceFieldPath()
 	if err != nil {
@@ -390,50 +398,19 @@ func RestoreReferencesForField(
 	outSuffix := ""
 
 	lvl := indentLevel
-	listDepth := 0
 
 	// Drill into every parent of the `*Ref` field (i.e. every path element
-	// except the final `*Ref` field itself).
+	// except the final `*Ref` field itself). IsRestorableReference guarantees
+	// every parent is a struct.
 	for fpDepth := 0; fpDepth < fp.Size()-1; fpDepth++ {
-		curFP := fp.CopyAt(fpDepth).String()
-		cur, ok := r.Fields[curFP]
-		if !ok {
-			return "", fmt.Errorf(
-				"resource %q: unable to find field with path %q",
-				r.Kind, curFP,
-			)
-		}
-
 		indent := strings.Repeat("\t", lvl)
 		targetPrefix = fmt.Sprintf("%s.%s", targetPrefix, fp.At(fpDepth))
 		sourcePrefix = fmt.Sprintf("%s.%s", sourcePrefix, fp.At(fpDepth))
 
-		switch cur.ShapeRef.Shape.Type {
-		case "map":
-			return "", fmt.Errorf(
-				"resource %q, field %q: references cannot be within a map",
-				r.Kind, field.Path,
-			)
-		case "structure":
-			outPrefix += fmt.Sprintf("%sif %s != nil && %s != nil {\n",
-				indent, sourcePrefix, targetPrefix)
-			outSuffix = fmt.Sprintf("%s}\n%s", indent, outSuffix)
-			lvl++
-		case "list":
-			idxVarName := fmt.Sprintf(indexVarFmt, listDepth)
-			outPrefix += fmt.Sprintf("%sfor %s := range %s {\n",
-				indent, idxVarName, targetPrefix)
-			// Guard against a shorter source list. ACK follows the existing
-			// positional-correspondence assumption used elsewhere for list
-			// references.
-			outPrefix += fmt.Sprintf("%s\tif %s < len(%s) {\n",
-				indent, idxVarName, sourcePrefix)
-			outSuffix = fmt.Sprintf("%s\t}\n%s}\n%s", indent, indent, outSuffix)
-			targetPrefix = fmt.Sprintf("%s[%s]", targetPrefix, idxVarName)
-			sourcePrefix = fmt.Sprintf("%s[%s]", sourcePrefix, idxVarName)
-			lvl += 2
-			listDepth++
-		}
+		outPrefix += fmt.Sprintf("%sif %s != nil && %s != nil {\n",
+			indent, sourcePrefix, targetPrefix)
+		outSuffix = fmt.Sprintf("%s}\n%s", indent, outSuffix)
+		lvl++
 	}
 
 	indent := strings.Repeat("\t", lvl)

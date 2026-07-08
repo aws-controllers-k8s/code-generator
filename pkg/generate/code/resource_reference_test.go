@@ -625,7 +625,7 @@ func Test_ClearResolvedReferencesForField_SingleReference_WithinMultipleSlices(t
 	assert.Equal(expected, got)
 }
 
-func Test_RestoreReferencesForField_SingleReference(t *testing.T) {
+func Test_RestoreReferencesForField_TopLevelSingleReference_Skipped(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
@@ -636,17 +636,16 @@ func Test_RestoreReferencesForField_SingleReference(t *testing.T) {
 
 	crd := testutil.GetCRDByName(t, g, "Integration")
 	require.NotNil(crd)
-	expected :=
-		`	ko.Spec.APIRef = original.Spec.APIRef
-`
 
+	// Top-level references are never dropped by set_resource, so nothing is
+	// generated to restore them.
 	field := crd.Fields["APIID"]
 	got, err := code.RestoreReferencesForField(field, "ko", "original", 1)
 	require.NoError(err)
-	assert.Equal(expected, got)
+	assert.Equal("", got)
 }
 
-func Test_RestoreReferencesForField_SliceOfReferences(t *testing.T) {
+func Test_RestoreReferencesForField_TopLevelSliceOfReferences_Skipped(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
@@ -657,14 +656,12 @@ func Test_RestoreReferencesForField_SliceOfReferences(t *testing.T) {
 
 	crd := testutil.GetCRDByName(t, g, "VpcLink")
 	require.NotNil(crd)
-	expected :=
-		`	ko.Spec.SecurityGroupRefs = original.Spec.SecurityGroupRefs
-`
 
+	// Top-level (array) references are never dropped by set_resource.
 	field := crd.Fields["SecurityGroupIDs"]
 	got, err := code.RestoreReferencesForField(field, "ko", "original", 1)
 	require.NoError(err)
-	assert.Equal(expected, got)
+	assert.Equal("", got)
 }
 
 func Test_RestoreReferencesForField_NestedSingleReference(t *testing.T) {
@@ -716,7 +713,7 @@ func Test_RestoreReferencesForField_SingleReference_DeeplyNested(t *testing.T) {
 	assert.Equal(expected, got)
 }
 
-func Test_RestoreReferencesForField_SingleReference_WithinSlice(t *testing.T) {
+func Test_RestoreReferencesForField_WithinSlice_Skipped(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
@@ -728,21 +725,15 @@ func Test_RestoreReferencesForField_SingleReference_WithinSlice(t *testing.T) {
 	crd := testutil.GetCRDByName(t, g, "RouteTable")
 	require.NotNil(crd)
 
-	expected :=
-		`	for f0idx := range ko.Spec.Routes {
-		if f0idx < len(original.Spec.Routes) {
-			ko.Spec.Routes[f0idx].GatewayRef = original.Spec.Routes[f0idx].GatewayRef
-		}
-	}
-`
-
+	// A reference inside a list is skipped: restoring it would rely on
+	// positional correspondence between the desired and readback lists.
 	field := crd.Fields["Routes.GatewayID"]
 	got, err := code.RestoreReferencesForField(field, "ko", "original", 1)
 	require.NoError(err)
-	assert.Equal(expected, got)
+	assert.Equal("", got)
 }
 
-func Test_RestoreReferencesForField_SingleReference_WithinMultipleSlices(t *testing.T) {
+func Test_RestoreReferencesForField_WithinMultipleSlices_Skipped(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
@@ -754,26 +745,10 @@ func Test_RestoreReferencesForField_SingleReference_WithinMultipleSlices(t *test
 	crd := testutil.GetCRDByName(t, g, "Bucket")
 	require.NotNil(crd)
 
-	expected :=
-		`	if original.Spec.Notification != nil && ko.Spec.Notification != nil {
-		for f0idx := range ko.Spec.Notification.LambdaFunctionConfigurations {
-			if f0idx < len(original.Spec.Notification.LambdaFunctionConfigurations) {
-				if original.Spec.Notification.LambdaFunctionConfigurations[f0idx].Filter != nil && ko.Spec.Notification.LambdaFunctionConfigurations[f0idx].Filter != nil {
-					if original.Spec.Notification.LambdaFunctionConfigurations[f0idx].Filter.Key != nil && ko.Spec.Notification.LambdaFunctionConfigurations[f0idx].Filter.Key != nil {
-						for f1idx := range ko.Spec.Notification.LambdaFunctionConfigurations[f0idx].Filter.Key.FilterRules {
-							if f1idx < len(original.Spec.Notification.LambdaFunctionConfigurations[f0idx].Filter.Key.FilterRules) {
-								ko.Spec.Notification.LambdaFunctionConfigurations[f0idx].Filter.Key.FilterRules[f1idx].ValueRef = original.Spec.Notification.LambdaFunctionConfigurations[f0idx].Filter.Key.FilterRules[f1idx].ValueRef
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-`
-
+	// A reference nested within (multiple) lists is skipped for the same
+	// positional-correspondence reason.
 	field := crd.Fields["Notification.LambdaFunctionConfigurations.Filter.Key.FilterRules.Value"]
 	got, err := code.RestoreReferencesForField(field, "ko", "original", 1)
 	require.NoError(err)
-	assert.Equal(expected, got)
+	assert.Equal("", got)
 }

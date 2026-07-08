@@ -45,10 +45,11 @@ func (rm *resourceManager) sdkUpdate(
 {{- end }}
 {{ GoCodeSetUpdateOutput .CRD "resp" "ko" 1 }}
 	rm.setStatusDefaults(ko)
-{{- if .CRD.HasReferenceFields }}
-	// Reference fields (`*Ref`) have no AWS shape counterpart and are dropped
-	// when set_resource rebuilds nested structs from the API response. Restore
-	// them from the original resource so the reference relationship persists.
+{{- if .CRD.HasRestorableReferenceFields }}
+	// Nested reference fields (`*Ref`) have no AWS shape counterpart and are
+	// dropped when set_resource rebuilds their parent struct from the API
+	// response. Restore them from the original resource so the reference
+	// relationship persists.
 	rm.restoreReferenceValues(ko, desired.ko)
 {{- end }}
 {{- if $setOutputCustomMethodName := .CRD.SetOutputCustomMethodName .CRD.Ops.Update }}

@@ -58,7 +58,7 @@ func (rm *resourceManager) ClearResolvedReferences(res acktypes.AWSResource) (ac
 	return &resource{ko}
 }
 
-{{ if .CRD.HasReferenceFields -}}
+{{ if .CRD.HasRestorableReferenceFields -}}
 // restoreReferenceValues copies the `*Ref` field(s) from the original,
 // unmodified resource (typically the desired resource passed into the
 // resource manager) onto the supplied resource whose spec was reconstructed
@@ -66,13 +66,17 @@ func (rm *resourceManager) ClearResolvedReferences(res acktypes.AWSResource) (ac
 // structs wholesale from the API response, which drops any `*Ref` sibling
 // fields because they have no AWS shape counterpart. Restoring them here
 // preserves the reference relationship across reconciles.
+//
+// Only references nested inside structs are restored. Top-level references are
+// never dropped, and references inside a list are skipped to avoid relying on
+// positional correspondence between the desired and readback lists.
 func (rm *resourceManager) restoreReferenceValues(
 	ko *svcapitypes.{{ .CRD.Names.Camel }},
 	original *svcapitypes.{{ .CRD.Names.Camel }},
 ) {
 {{ range $fieldName := .CRD.SortedFieldNames -}}
 {{ $field := (index $.CRD.Fields $fieldName) -}}
-{{ if $field.HasReference -}}
+{{ if $field.IsRestorableReference -}}
 {{ GoCodeRestoreReferences $field "ko" "original" 1 }}
 {{ end -}}
 {{ end -}}
