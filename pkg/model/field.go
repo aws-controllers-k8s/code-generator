@@ -18,6 +18,7 @@ import (
 	"strings"
 
 	awssdkmodel "github.com/aws-controllers-k8s/code-generator/pkg/api"
+	"github.com/aws-controllers-k8s/code-generator/pkg/fieldpath"
 	"github.com/aws-controllers-k8s/pkg/names"
 	"github.com/gertd/go-pluralize"
 
@@ -297,15 +298,16 @@ func (f *Field) IsRestorableReference() bool {
 	if !f.HasReference() {
 		return false
 	}
-	parts := strings.Split(f.Path, ".")
+	fp := fieldpath.FromString(f.Path)
 	// Top-level reference (single path segment): nothing to restore.
-	if len(parts) < 2 {
+	if fp.Size() < 2 {
 		return false
 	}
-	// Inspect every ancestor of the reference field. If any ancestor is a
-	// list or a map, the reference cannot be safely restored and is skipped.
-	for i := 1; i < len(parts); i++ {
-		ancestorPath := strings.Join(parts[:i], ".")
+	// Inspect every ancestor of the reference field (every path element except
+	// the field itself). If any ancestor is a list or a map, the reference
+	// cannot be safely restored and is skipped.
+	for fpDepth := 0; fpDepth < fp.Size()-1; fpDepth++ {
+		ancestorPath := fp.CopyAt(fpDepth).String()
 		ancestor, ok := f.CRD.Fields[ancestorPath]
 		if !ok {
 			return false
