@@ -288,10 +288,11 @@ func (f *Field) HasReference() bool {
 //   - Top-level references are excluded: set_resource writes their concrete
 //     sibling directly onto the deep-copied object without rebuilding a parent,
 //     so the *Ref is never dropped.
-//   - References with a list anywhere in their ancestor path are excluded:
-//     restoring a *Ref inside a list element would rely on positional
+//   - References with a list or map anywhere in their ancestor path are
+//     excluded: restoring a *Ref inside a list element would rely on positional
 //     correspondence between the desired and readback lists, which is not
-//     guaranteed. Traversal stops at the first list ancestor.
+//     guaranteed, and references cannot live inside a map. Traversal stops at
+//     the first list or map ancestor.
 func (f *Field) IsRestorableReference() bool {
 	if !f.HasReference() {
 		return false
@@ -302,7 +303,7 @@ func (f *Field) IsRestorableReference() bool {
 		return false
 	}
 	// Inspect every ancestor of the reference field. If any ancestor is a
-	// list, the reference lives inside a list and is skipped.
+	// list or a map, the reference cannot be safely restored and is skipped.
 	for i := 1; i < len(parts); i++ {
 		ancestorPath := strings.Join(parts[:i], ".")
 		ancestor, ok := f.CRD.Fields[ancestorPath]
@@ -310,7 +311,8 @@ func (f *Field) IsRestorableReference() bool {
 			return false
 		}
 		if ancestor.ShapeRef != nil && ancestor.ShapeRef.Shape != nil &&
-			ancestor.ShapeRef.Shape.Type == "list" {
+			(ancestor.ShapeRef.Shape.Type == "list" ||
+				ancestor.ShapeRef.Shape.Type == "map") {
 			return false
 		}
 	}

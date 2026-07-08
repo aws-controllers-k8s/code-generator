@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 	"github.com/aws-controllers-k8s/code-generator/pkg/testutil"
 )
@@ -401,4 +402,77 @@ func TestFieldWithPattern(t *testing.T) {
 		"// The name of your cluster.\n//\n// Regex Pattern: `^[0-9A-Za-z][A-Za-z0-9\\-_]*$`",
 		ltdField.GetDocumentation(),
 	)
+}
+
+func TestField_IsRestorableReference(t *testing.T) {
+	assert := assert.New(t)
+
+	// newCRDWithNestedRef builds a synthetic CRD whose Fields map contains a
+	// parent container of the given shape type plus a reference field nested
+	// directly under it. This lets us exercise IsRestorableReference for parent
+	// shapes that are not all producible through normal generator configs — in
+	// particular, references inside a map are rejected by the generator, so
+	// there is no fixture with one.
+	newCRDWithNestedRef := func(parentShapeType string) *model.Field {
+		crd := &model.CRD{Fields: map[string]*model.Field{}}
+		crd.Fields["Parent"] = &model.Field{
+			CRD:      crd,
+			Names:    names.New("Parent"),
+			Path:     "Parent",
+			ShapeRef: &api.ShapeRef{Shape: &api.Shape{Type: parentShapeType}},
+		}
+		refField := &model.Field{
+			CRD:      crd,
+			Names:    names.New("ClusterID"),
+			Path:     "Parent.ClusterID",
+			ShapeRef: &api.ShapeRef{Shape: &api.Shape{Type: "string"}},
+			FieldConfig: &ackgenconfig.FieldConfig{
+				References: &ackgenconfig.ReferencesConfig{Resource: "Cluster"},
+			},
+		}
+		crd.Fields["Parent.ClusterID"] = refField
+		return refField
+	}
+
+	// A reference nested inside a struct is restorable.
+	assert.True(newCRDWithNestedRef("structure").IsRestorableReference())
+
+	// A reference nested inside a list is skipped (positional-correspondence
+	// between the desired and readback lists is not guaranteed).
+	assert.False(newCRDWithNestedRef("list").IsRestorableReference())
+
+	// A reference nested inside a map is skipped, just like a list. References
+	// cannot legally live inside a map; the guard is defensive.
+	assert.False(newCRDWithNestedRef("map").IsRestorableReference())
+
+	// A top-level reference is skipped (never dropped by set_resource).
+	topLevelCRD := &model.CRD{Fields: map[string]*model.Field{}}
+	topLevelRef := &model.Field{
+		CRD:      topLevelCRD,
+		Names:    names.New("ClusterID"),
+		Path:     "ClusterID",
+		ShapeRef: &api.ShapeRef{Shape: &api.Shape{Type: "string"}},
+		FieldConfig: &ackgenconfig.FieldConfig{
+			References: &ackgenconfig.ReferencesConfig{Resource: "Cluster"},
+		},
+	}
+	topLevelCRD.Fields["ClusterID"] = topLevelRef
+	assert.False(topLevelRef.IsRestorableReference())
+
+	// A non-reference field is never restorable.
+	nonRefCRD := &model.CRD{Fields: map[string]*model.Field{}}
+	nonRef := &model.Field{
+		CRD:      nonRefCRD,
+		Names:    names.New("Name"),
+		Path:     "Config.Name",
+		ShapeRef: &api.ShapeRef{Shape: &api.Shape{Type: "string"}},
+	}
+	nonRefCRD.Fields["Config"] = &model.Field{
+		CRD:      nonRefCRD,
+		Names:    names.New("Config"),
+		Path:     "Config",
+		ShapeRef: &api.ShapeRef{Shape: &api.Shape{Type: "structure"}},
+	}
+	nonRefCRD.Fields["Config.Name"] = nonRef
+	assert.False(nonRef.IsRestorableReference())
 }
