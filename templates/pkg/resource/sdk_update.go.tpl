@@ -45,13 +45,6 @@ func (rm *resourceManager) sdkUpdate(
 {{- end }}
 {{ GoCodeSetUpdateOutput .CRD "resp" "ko" 1 }}
 	rm.setStatusDefaults(ko)
-{{- if .CRD.HasRestorableReferenceFields }}
-	// Nested reference fields (`*Ref`) have no AWS shape counterpart and are
-	// dropped when set_resource rebuilds their parent struct from the API
-	// response. Restore them from the original resource so the reference
-	// relationship persists.
-	rm.restoreReferenceValues(ko, desired.ko)
-{{- end }}
 {{- if $setOutputCustomMethodName := .CRD.SetOutputCustomMethodName .CRD.Ops.Update }}
 	// custom set output from response
 	ko, err = rm.{{ $setOutputCustomMethodName }}(ctx, desired, resp, ko)
@@ -61,6 +54,13 @@ func (rm *resourceManager) sdkUpdate(
 {{- end }}
 {{- if $hookCode := Hook .CRD "sdk_update_post_set_output" }}
 {{ $hookCode }}
+{{- end }}
+{{- if .CRD.HasRestorableReferenceFields }}
+	// Nested reference fields (`*Ref`) have no AWS shape counterpart and are
+	// dropped when set_resource (or a custom set-output method / post-set-output
+	// hook) rebuilds their parent struct from the API response. Restore them
+	// from the original resource, last, so the reference relationship persists.
+	rm.restoreReferenceValues(ko, desired.ko)
 {{- end }}
 	return &resource{ko}, nil
 }
