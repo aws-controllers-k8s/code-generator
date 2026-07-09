@@ -2291,6 +2291,7 @@ func setResourceForScalar(
 
 	intOrFloat := map[string]string{
 		"integer": "int",
+		"intEnum": "int",
 		"float":   "float",
 	}
 

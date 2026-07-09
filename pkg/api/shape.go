@@ -1102,6 +1102,11 @@ func (s *ShapeRef) IsNonPointerInSDK() bool {
 	if s.AddedDefault || s.ClientOptional {
 		return false
 	}
+	// Smithy intEnum shapes are always non-pointer value types in
+	// aws-sdk-go-v2 — they are integer aliases with no nil state.
+	if s.Shape != nil && s.Shape.Type == "intEnum" {
+		return true
+	}
 	// Determine the effective default value: prefer the ref, fall back to shape
 	defaultVal := s.DefaultValue
 	if defaultVal == "" {

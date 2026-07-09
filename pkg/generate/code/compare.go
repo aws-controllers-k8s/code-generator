@@ -363,7 +363,7 @@ func compareNil(
 	nilEqualsZeroValue := compareConfig != nil && compareConfig.NilEqualsZeroValue
 
 	switch shape.Type {
-	case "boolean", "string", "character", "byte", "short", "integer", "long",
+	case "boolean", "string", "character", "byte", "short", "integer", "intEnum", "long",
 		"float", "double", "timestamp", "structure", "jsonvalue":
 		// if ackcompare.HasNilDifference(a.ko.Spec.Name, b.ko.Spec.Name) {
 		out += fmt.Sprintf(
@@ -444,7 +444,7 @@ func compareScalar(
 	indent := strings.Repeat("\t", indentLevel)
 
 	switch shape.Type {
-	case "boolean", "string", "character", "byte", "short", "integer", "long", "float", "double":
+	case "boolean", "string", "character", "byte", "short", "integer", "intEnum", "long", "float", "double":
 		// if *a.ko.Spec.Name != *b.ko.Spec.Name {
 		out += fmt.Sprintf(
 			"%sif *%s != *%s {\n",

@@ -1550,7 +1550,7 @@ func varEmptyConstructorSDKType(
 			out += fmt.Sprintf("%s%s := &%s{}\n", indent, varName, goType)
 		}
 	case "list":
-		if shape.MemberRef.Shape.Type == "integer" {
+		if shape.MemberRef.Shape.Type == "integer" || shape.MemberRef.Shape.Type == "intEnum" {
 			goType = "[]int32"
 		}
 		if shape.MemberRef.Shape.IsEnum() {
@@ -1707,6 +1707,7 @@ func setSDKForScalar(
 	// be a usual input, but will generate it just to be safe
 	intOrFloat := map[string][]string{
 		"integer": {"Int", "MinInt", "int"},
+		"intEnum": {"Int", "MinInt", "int"},
 		"float":   {"Float", "SmallestNonzeroFloat", "float"},
 	}
 
@@ -1758,7 +1759,7 @@ func setSDKForScalar(
 
 		out += fmt.Sprintf("%s%s = %s\n", indent, targetVarPath, strings.TrimPrefix(setTo, "*"))
 
-	} else if shape.Type == "integer" {
+	} else if shape.Type == "integer" || shape.Type == "intEnum" {
 		targetVarPath := targetVarName
 		if targetFieldName != "" {
 			targetVarPath += "." + targetFieldName

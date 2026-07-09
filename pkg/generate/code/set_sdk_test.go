@@ -6997,13 +6997,11 @@ func TestSetSDK_MWAAServerless_Workflow_Create(t *testing.T) {
 	crd := testutil.GetCRDByName(t, g, "Workflow")
 	require.NotNil(crd)
 
-	// EngineVersion is a Smithy intEnum. The converter normalizes intEnum ->
-	// integer at the API boundary, so downstream codegen never sees an enum:
-	// on the ACK side it is surfaced as *int64 and the SDK field is a
-	// non-pointer int32 alias (type EngineVersion = int32). The generated
-	// input code therefore follows the standard integer value-type path -- a
-	// bounds-checked int32 copy assigned to the non-pointer field -- with no
-	// name<->int switch.
+	// EngineVersion is a Smithy intEnum. On the ACK side it is surfaced as
+	// *int64 and the SDK field is a non-pointer int32 alias (type
+	// EngineVersion = int32). IsNonPointerInSDK() recognizes "intEnum"
+	// directly, and setSDKForScalar emits the standard integer value-type
+	// path -- a bounds-checked int32 copy assigned to the non-pointer field.
 	expected := `
 	if r.ko.Spec.DefinitionS3Location != nil {
 		f1 := &svcsdktypes.DefinitionS3Location{}

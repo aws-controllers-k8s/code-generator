@@ -93,9 +93,9 @@ func TestSetSDKForScalar(t *testing.T) {
 `,
 		},
 		{
-			// An intEnum (DefaultValue set) is a non-pointer value SDK field, so
-			// the write path must assign a value, not a pointer:
-			// `res.EngineVersion = engineVersionCopy` (no leading &).
+			// An intEnum is inherently a non-pointer value SDK field (recognized
+			// by IsNonPointerInSDK via its "intEnum" type), so the write path
+			// assigns a value, not a pointer: `res.EngineVersion = engineVersionCopy`.
 			name:            "intEnum scalar (value-type SDK field)",
 			targetFieldName: "EngineVersion",
 			targetVarName:   "res",
@@ -105,12 +105,8 @@ func TestSetSDKForScalar(t *testing.T) {
 			isListMember:    false,
 			shapeRef: &awssdkmodel.ShapeRef{
 				Shape: &awssdkmodel.Shape{
-					Type:         "integer",
-					DefaultValue: "0",
+					Type: "intEnum",
 				},
-				// member ref carries no default trait, so its own DefaultValue
-				// is empty (not "<nil>") and HasDefaultValue() defers to the
-				// shape's DefaultValue.
 				OriginalMemberName: "EngineVersion",
 			},
 			indentLevel: 1,
@@ -259,17 +255,16 @@ func TestSetResourceForScalar(t *testing.T) {
 			expected: "\tmaxKeysCopy := int64(*resp.MaxKeys)\n\tko.Spec.MaxKeys = &maxKeysCopy\n",
 		},
 		{
-			// An intEnum (DefaultValue set) is a non-pointer value SDK field, so
-			// the read path must NOT dereference the source:
-			// `int64(resp.EngineVersion)` (no leading *).
+			// An intEnum is inherently a non-pointer value SDK field (recognized
+			// by IsNonPointerInSDK via its "intEnum" type), so the read path must
+			// NOT dereference the source: `int64(resp.EngineVersion)` (no leading *).
 			name:        "intEnum scalar (value-type SDK field)",
 			targetVar:   "ko.Spec.EngineVersion",
 			sourceVar:   "resp.EngineVersion",
 			indentLevel: 1,
 			shapeRef: &awssdkmodel.ShapeRef{
 				Shape: &awssdkmodel.Shape{
-					Type:         "integer",
-					DefaultValue: "0",
+					Type: "intEnum",
 				},
 				OriginalMemberName: "EngineVersion",
 			},
