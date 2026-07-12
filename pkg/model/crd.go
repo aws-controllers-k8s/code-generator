@@ -216,7 +216,7 @@ func (r *CRD) AddSpecField(
 ) error {
 	fPath := memberNames.Camel
 	fConfig := r.cfg.GetFieldConfigByPath(r.Names.Original, fPath)
-	f, err := NewField(r, fPath, memberNames, shapeRef, fConfig)
+	f, err := NewFieldWithRenames(r, fPath, memberNames, shapeRef, fConfig, mergedFieldRenames(r))
 	if err != nil {
 		return fmt.Errorf("resource %q, field %q: %w", r.Names.Original, fPath, err)
 	}
@@ -250,7 +250,7 @@ func (r *CRD) AddStatusField(
 ) error {
 	fPath := memberNames.Camel
 	fConfig := r.cfg.GetFieldConfigByPath(r.Names.Original, fPath)
-	f, err := NewField(r, fPath, memberNames, shapeRef, fConfig)
+	f, err := NewFieldWithRenames(r, fPath, memberNames, shapeRef, fConfig, mergedFieldRenames(r))
 	if err != nil {
 		return fmt.Errorf("resource %q, field %q: %w", r.Names.Original, fPath, err)
 	}
