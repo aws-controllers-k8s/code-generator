@@ -831,6 +831,9 @@ func (m *Model) processNestedFieldTypeDefs(
 				// field paths contains a dot (".")
 				continue
 			}
+			if err := renameTypeDefAttribute(crd, field, tdefs); err != nil {
+				return fmt.Errorf("resource %q, field %q: %w", crd.Names.Original, fieldPath, err)
+			}
 			if field.FieldConfig == nil {
 				// Likewise, we don't need to transform any TypeDef if the
 				// nested field doesn't have a FieldConfig instructing us to
@@ -864,6 +867,43 @@ func (m *Model) processNestedFieldTypeDefs(
 			}
 		}
 	}
+	return nil
+}
+
+// renameTypeDefAttribute updates the TypeDef attribute name to match a renamed
+// nested field path.
+func renameTypeDefAttribute(crd *CRD, field *Field, tdefs []*TypeDef) error {
+	if field == nil || field.ShapeRef == nil {
+		return nil
+	}
+
+	origMemberName := field.ShapeRef.OriginalMemberName
+	if origMemberName == "" || strings.EqualFold(origMemberName, field.Names.Original) {
+		return nil
+	}
+
+	origFieldPath := strings.TrimSuffix(field.Path, field.Names.Camel) + names.New(origMemberName).Camel
+	parentTypeDef, fieldAttr, err := getAttributeFromPath(crd, origFieldPath, tdefs)
+	if err != nil {
+		// If we can't find the attribute with the original name, it may have already
+		// been renamed. Return without error.
+		return nil
+	}
+	if fieldAttr == nil || parentTypeDef == nil {
+		// If we can't find the attribute with the original name, it may have already
+		// been renamed. Check if it already has the new name.
+		renamedFieldPath := strings.TrimSuffix(field.Path, field.Names.Camel) + field.Names.Camel
+		_, renamedAttr, _ := getAttributeFromPath(crd, renamedFieldPath, tdefs)
+		if renamedAttr != nil {
+			// Already renamed, nothing to do
+			return nil
+		}
+		return nil
+	}
+
+	delete(parentTypeDef.Attrs, fieldAttr.Names.Original)
+	fieldAttr.Names = names.New(field.Names.Original)
+	parentTypeDef.Attrs[fieldAttr.Names.Original] = fieldAttr
 	return nil
 }
 
@@ -1129,13 +1169,14 @@ func replaceSecretAttrGoType(
 // data type overridden (e.g. for SecretKeyReferences)
 func (m *Model) processFields(crds []*CRD) error {
 	for _, crd := range crds {
+		renames := mergedFieldRenames(crd)
 		for _, fieldName := range crd.SpecFieldNames() {
-			if err := m.processTopLevelField(crd, crd.SpecFields[fieldName]); err != nil {
+			if err := m.processTopLevelField(crd, crd.SpecFields[fieldName], renames); err != nil {
 				return err
 			}
 		}
 		for _, fieldName := range crd.StatusFieldNames() {
-			if err := m.processTopLevelField(crd, crd.StatusFields[fieldName]); err != nil {
+			if err := m.processTopLevelField(crd, crd.StatusFields[fieldName], renames); err != nil {
 				return err
 			}
 		}
@@ -1143,11 +1184,43 @@ func (m *Model) processFields(crds []*CRD) error {
 	return nil
 }
 
+// mergedFieldRenames collects field rename mappings across all configured
+// operations for a resource and returns a single lookup map keyed by original
+// field path.
+//
+// Renames must be globally consistent per resource: if two operations rename
+// the same original path to different target names, this function panics to
+// surface an invalid generator configuration early.
+func mergedFieldRenames(crd *CRD) map[string]string {
+	renames := map[string]string{}
+	if crd == nil || crd.Config() == nil {
+		return renames
+	}
+
+	for _, op := range crd.Ops.IterOps() {
+		opRenames := crd.Config().GetAllRenames(crd.Names.Original, map[string]*awssdkmodel.Operation{
+			op.ExportedName: op,
+		})
+		for orig, renamed := range opRenames {
+			if existing, ok := renames[orig]; ok && existing != renamed {
+				panic(fmt.Sprintf(
+					"conflicting field renames for resource %q field %q: %q vs %q",
+					crd.Names.Original, orig, existing, renamed,
+				))
+			}
+			renames[orig] = renamed
+		}
+	}
+
+	return renames
+}
+
 // processTopLevelField processes any nested fields (non-scalar fields associated
 // with the Spec and Status objects)
 func (m *Model) processTopLevelField(
 	crd *CRD,
 	field *Field,
+	renames map[string]string,
 ) error {
 	if field.ShapeRef == nil && !field.IsReference() && (field.FieldConfig == nil || !field.FieldConfig.IsAttribute) {
 		fmt.Printf(
@@ -1162,15 +1235,15 @@ func (m *Model) processTopLevelField(
 		fieldType := fieldShape.Type
 		switch fieldType {
 		case "structure":
-			if err := m.processStructField(crd, field.Path+".", field); err != nil {
+			if err := m.processStructField(crd, field.Path+".", field, renames); err != nil {
 				return err
 			}
 		case "list":
-			if err := m.processListField(crd, field.Path+".", field); err != nil {
+			if err := m.processListField(crd, field.Path+".", field, renames); err != nil {
 				return err
 			}
 		case "map":
-			if err := m.processMapField(crd, field.Path+".", field); err != nil {
+			if err := m.processMapField(crd, field.Path+".", field, renames); err != nil {
 				return err
 			}
 		}
@@ -1185,27 +1258,35 @@ func (m *Model) processField(
 	parentField *Field,
 	fieldName string,
 	fieldShapeRef *awssdkmodel.ShapeRef,
+	renames map[string]string,
 ) error {
 	fieldNames := names.New(fieldName)
 	fieldShape := fieldShapeRef.Shape
 	fieldShapeType := fieldShape.Type
 	fieldPath := parentFieldPath + fieldNames.Camel
+	
+	// Check if the full field path has a rename
+	if renamed, ok := renames[fieldPath]; ok {
+		fieldNames = names.New(renamed)
+		fieldPath = parentFieldPath + fieldNames.Camel
+	}
+	
 	fieldConfig := crd.Config().GetFieldConfigByPath(crd.Names.Original, fieldPath)
-	field, err := NewField(crd, fieldPath, fieldNames, fieldShapeRef, fieldConfig)
+	field, err := NewFieldWithRenames(crd, fieldPath, fieldNames, fieldShapeRef, fieldConfig, renames)
 	if err != nil {
 		return fmt.Errorf("resource %q, field %q: %w", crd.Names.Original, fieldPath, err)
 	}
 	switch fieldShapeType {
 	case "structure":
-		if err := m.processStructField(crd, fieldPath+".", field); err != nil {
+		if err := m.processStructField(crd, fieldPath+".", field, renames); err != nil {
 			return err
 		}
 	case "list":
-		if err := m.processListField(crd, fieldPath+".", field); err != nil {
+		if err := m.processListField(crd, fieldPath+".", field, renames); err != nil {
 			return err
 		}
 	case "map":
-		if err := m.processMapField(crd, fieldPath+".", field); err != nil {
+		if err := m.processMapField(crd, fieldPath+".", field, renames); err != nil {
 			return err
 		}
 	}
@@ -1219,11 +1300,12 @@ func (m *Model) processStructField(
 	crd *CRD,
 	fieldPath string,
 	field *Field,
+	renames map[string]string,
 ) error {
 	fieldShape := field.ShapeRef.Shape
 	for _, memberName := range fieldShape.MemberNames() {
 		memberRef := fieldShape.MemberRefs[memberName]
-		if err := m.processField(crd, fieldPath, field, memberName, memberRef); err != nil {
+		if err := m.processField(crd, fieldPath, field, memberName, memberRef, renames); err != nil {
 			return err
 		}
 	}
@@ -1237,6 +1319,7 @@ func (m *Model) processListField(
 	crd *CRD,
 	fieldPath string,
 	field *Field,
+	renames map[string]string,
 ) error {
 	fieldShape := field.ShapeRef.Shape
 	elementFieldShape := fieldShape.MemberRef.Shape
@@ -1245,7 +1328,7 @@ func (m *Model) processListField(
 	}
 	for _, memberName := range elementFieldShape.MemberNames() {
 		memberRef := elementFieldShape.MemberRefs[memberName]
-		if err := m.processField(crd, fieldPath, field, memberName, memberRef); err != nil {
+		if err := m.processField(crd, fieldPath, field, memberName, memberRef, renames); err != nil {
 			return err
 		}
 	}
@@ -1259,6 +1342,7 @@ func (m *Model) processMapField(
 	crd *CRD,
 	fieldPath string,
 	field *Field,
+	renames map[string]string,
 ) error {
 	fieldShape := field.ShapeRef.Shape
 	valueFieldShape := fieldShape.ValueRef.Shape
@@ -1267,7 +1351,7 @@ func (m *Model) processMapField(
 	}
 	for _, memberName := range valueFieldShape.MemberNames() {
 		memberRef := valueFieldShape.MemberRefs[memberName]
-		if err := m.processField(crd, fieldPath, field, memberName, memberRef); err != nil {
+		if err := m.processField(crd, fieldPath, field, memberName, memberRef, renames); err != nil {
 			return err
 		}
 	}
