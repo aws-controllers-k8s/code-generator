@@ -98,6 +98,16 @@ func (r *CRD) Config() *ackgenconfig.Config {
 	return r.cfg
 }
 
+// SpecValidations returns the CEL validation rules configured for the
+// generated resource Spec.
+func (r *CRD) SpecValidations() []ackgenconfig.XValidationConfig {
+	resourceConfig := r.cfg.GetResourceConfig(r.Names.Original)
+	if resourceConfig == nil {
+		return nil
+	}
+	return resourceConfig.SpecValidations
+}
+
 // GetStorageVersion returns the configured storage API version for the CRD, or
 // the specified default version.
 func (r *CRD) GetStorageVersion(defaultVersion string) (string, error) {

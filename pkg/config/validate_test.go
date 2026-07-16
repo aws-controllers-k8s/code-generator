@@ -103,6 +103,56 @@ func TestValidateRenameOperations(t *testing.T) {
 	}
 }
 
+func TestValidateSpecValidations(t *testing.T) {
+	tests := []struct {
+		name         string
+		validations  []XValidationConfig
+		wantErrCount int
+	}{
+		{
+			name: "valid",
+			validations: []XValidationConfig{{
+				Rule:    "!has(self.importFrom) || !has(self.certificate)",
+				Message: "importFrom and certificate are mutually exclusive",
+			}},
+		},
+		{
+			name: "missing rule",
+			validations: []XValidationConfig{{
+				Message: "message",
+			}},
+			wantErrCount: 1,
+		},
+		{
+			name: "missing message",
+			validations: []XValidationConfig{{
+				Rule: "true",
+			}},
+			wantErrCount: 1,
+		},
+		{
+			name: "missing rule and message",
+			validations: []XValidationConfig{{
+				Rule:    " ",
+				Message: " ",
+			}},
+			wantErrCount: 2,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := &Config{Resources: map[string]ResourceConfig{
+				"Certificate": {SpecValidations: tt.validations},
+			}}
+			errs := validateSpecValidations(cfg)
+			if len(errs) != tt.wantErrCount {
+				t.Fatalf("got %d errors, want %d: %v", len(errs), tt.wantErrCount, errs)
+			}
+		})
+	}
+}
+
 func TestValidateIgnoredOperations(t *testing.T) {
 	sdkOps := map[string]struct{}{
 		"CreateBucket": {},
