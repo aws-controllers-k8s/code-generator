@@ -1882,6 +1882,111 @@ func TestSetResource_APIGWV2_ApiMapping_PopulateResourceFromAnnotation(t *testin
 	assert.Equal(expected, got)
 }
 
+func TestIdentifierFieldsFromARN_EKS_Cluster_SingleKey(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "eks")
+	crd := testutil.GetCRDByName(t, g, "Cluster")
+	require.NotNil(crd)
+
+	// Single required identifier key ("name"); positional derivation.
+	expected := "\treturn ackrt.IdentifierFieldsFromARNPositional(arn, \"cluster\", []string{\"name\"})\n"
+	got, err := code.IdentifierFieldsFromARN(crd.Config(), crd, "arn", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
+	// The single key must match what PopulateResourceFromAnnotation reads.
+	assert.Equal("eks:cluster", crd.ResourceTypeFilter())
+}
+
+func TestIdentifierFieldsFromARN_EKS_Nodegroup_MultiKeyRequiresTemplate(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "eks")
+	crd := testutil.GetCRDByName(t, g, "Nodegroup")
+	require.NotNil(crd)
+
+	// Nodegroup has two identifier fields (clusterName, name). ARN segment order
+	// is not encoded in the SDK model, so positional derivation is unsafe: the
+	// generated body must return a terminal error requesting an
+	// arn_identifier_template rather than guessing.
+	assert.Equal("eks:nodegroup", crd.ResourceTypeFilter())
+	got, err := code.IdentifierFieldsFromARN(crd.Config(), crd, "arn", 1)
+	require.NoError(err)
+	assert.Contains(got, "ackerrors.NewTerminalError")
+	assert.Contains(got, "arn_identifier_template")
+}
+
+func TestIdentifierFieldsFromARN_SageMaker_ModelPackage_NoTagsUnsupported(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "sagemaker")
+	crd := testutil.GetCRDByName(t, g, "ModelPackage")
+	require.NotNil(crd)
+
+	// ModelPackage is ARN-primary-key, but its CRD has no Tags field, so it
+	// cannot be matched by a tag selector: tag-based adoption is unsupported and
+	// the generated body returns a terminal error rather than an identifier.
+	assert.Equal("", crd.ResourceTypeFilter())
+	got, err := code.IdentifierFieldsFromARN(crd.Config(), crd, "arn", 1)
+	require.NoError(err)
+	assert.Contains(got, "ackerrors.NewTerminalError")
+	assert.Contains(got, "does not support tag-based adoption")
+}
+
+func TestIdentifierFieldsFromARN_ARNPrimaryKeyWithTags(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	// Find an ARN-primary-key resource that DOES have a tag field, to exercise
+	// the {"arn": arn} identifier path. Search a few tag-supporting services.
+	for _, svc := range []string{"sns", "lambda", "ecr", "sagemaker", "rds", "s3", "wafv2", "mq"} {
+		g := testutil.NewModelForService(t, svc)
+		crds, err := g.GetCRDs()
+		require.NoError(err)
+		for _, crd := range crds {
+			if !crd.IsARNPrimaryKey() {
+				continue
+			}
+			if crd.ResourceTypeFilter() == "" {
+				continue // no tag support; not the case under test
+			}
+			got, gerr := code.IdentifierFieldsFromARN(crd.Config(), crd, "arn", 1)
+			require.NoError(gerr, "%s/%s", svc, crd.Names.Original)
+			assert.Equal("\treturn map[string]string{\"arn\": arn}, nil\n", got,
+				"%s/%s ARN-primary-key with tags should map arn directly", svc, crd.Names.Original)
+			return
+		}
+	}
+	t.Skip("no ARN-primary-key resource with tag support found in sampled services")
+}
+
+func TestIdentifierFieldsFromARN_MatchesPopulateResourceFromAnnotationKeys(t *testing.T) {
+	require := require.New(t)
+
+	// For every service/resource below, the keys emitted by
+	// IdentifierFieldsFromARN (positional) must be exactly the keys read by
+	// PopulateResourceFromAnnotation, in the same order.
+	cases := []struct {
+		service  string
+		resource string
+		keys     []string
+	}{
+		{"eks", "Cluster", []string{"name"}},
+		{"eks", "Nodegroup", []string{"clusterName", "name"}},
+	}
+	for _, c := range cases {
+		g := testutil.NewModelForService(t, c.service)
+		crd := testutil.GetCRDByName(t, g, c.resource)
+		require.NotNil(crd, c.resource)
+		keys, err := code.OrderedAdoptionIdentifierKeys(crd.Config(), crd)
+		require.NoError(err, c.resource)
+		require.Equal(c.keys, keys, c.resource)
+	}
+}
+
 func TestSetResource_IAM_Role_NestedSetConfig(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)

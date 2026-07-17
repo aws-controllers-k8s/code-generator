@@ -23,6 +23,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	svcsdk "github.com/aws/aws-sdk-go-v2/service/{{ .ServicePackageName }}"
 	"github.com/aws/aws-sdk-go-v2/aws"
+	rgtsdk "github.com/aws/aws-sdk-go-v2/service/resourcegroupstaggingapi"
+	rgtsdktypes "github.com/aws/aws-sdk-go-v2/service/resourcegroupstaggingapi/types"
 
 	svcapitypes "github.com/aws-controllers-k8s/{{ .ControllerName }}-controller/apis/{{ .APIVersion }}"
 )
@@ -67,6 +69,9 @@ type resourceManager struct {
 	// sdk is a pointer to the AWS service API client exposed by the
 	// aws-sdk-go-v2/services/{alias} package.
 	sdkapi *svcsdk.Client
+	// rgtapi is a pointer to the AWS Resource Groups Tagging API client, used
+	// only during tag-based adoption to resolve a resource's ARN from its tags.
+	rgtapi *rgtsdk.Client
 }
 
 // concreteResource returns a pointer to a resource from the supplied
@@ -440,7 +445,69 @@ func newResourceManager(
 		awsRegion:    region,
 		awsPartition: ackv1alpha1.AWSPartition(cfg.Partition),
 		sdkapi:	      svcsdk.NewFromConfig(clientcfg{{- if $hookCode := Hook .CRD "new_resource_manager_client_options" }}, {{ $hookCode }}{{ end }}),
+		rgtapi:       rgtsdk.NewFromConfig(clientcfg),
 	}, nil
+}
+
+// resolveARNsByTagsMaxPages bounds how many GetResources pages tag-based
+// adoption will read. Combined with a page size of 2, the caller can always
+// distinguish zero, one, and more-than-one matches within this many calls, so
+// this caps the Resource Groups Tagging API quota consumed per adoption
+// attempt even when a (mis-authored) tag selector matches a large number of
+// resources.
+const resolveARNsByTagsMaxPages = 5
+
+// ResolveARNsByTags returns the ARNs of AWS resources matching ALL of the
+// supplied tag key/value pairs (AND semantics), scoped to the supplied Resource
+// Groups Tagging API resource-type filter. It is used during tag-based
+// adoption. It applies no count policy - the caller decides what zero, one, or
+// more than one result mean.
+//
+// GetResources is a paginated API and may return a partial page together with a
+// pagination token, so a single page returning one match does not by itself
+// prove the match is unique - a second match may be on a later page. Because the
+// caller only needs to distinguish zero, one, and more-than-one, we request a
+// page size of 2 and stop as soon as we have collected a second match. The
+// Resource Groups Tagging API has a request-rate quota, so we never page
+// unbounded: a page size of 2 means at most a couple of calls in practice, and
+// resolveARNsByTagsMaxPages is a hard ceiling.
+func (rm *resourceManager) ResolveARNsByTags(
+	ctx context.Context,
+	tagFilters map[string]string,
+	resourceTypeFilter string,
+) ([]string, error) {
+	filters := make([]rgtsdktypes.TagFilter, 0, len(tagFilters))
+	for k, v := range tagFilters {
+		filters = append(filters, rgtsdktypes.TagFilter{
+			Key:    aws.String(k),
+			Values: []string{v},
+		})
+	}
+	input := &rgtsdk.GetResourcesInput{
+		TagFilters:          filters,
+		ResourceTypeFilters: []string{resourceTypeFilter},
+		// We only need to tell 0 / 1 / >1 apart, so never fetch more than 2 per
+		// page. This keeps the number of matches (and API calls) bounded.
+		ResourcesPerPage:    aws.Int32(2),
+	}
+	arns := []string{}
+	paginator := rgtsdk.NewGetResourcesPaginator(rm.rgtapi, input)
+	for pages := 0; paginator.HasMorePages() && pages < resolveARNsByTagsMaxPages; pages++ {
+		page, err := paginator.NextPage(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, mapping := range page.ResourceTagMappingList {
+			if mapping.ResourceARN != nil {
+				arns = append(arns, *mapping.ResourceARN)
+			}
+		}
+		// The caller only needs to distinguish 0, 1, and >1 matches.
+		if len(arns) > 1 {
+			return arns, nil
+		}
+	}
+	return arns, nil
 }
 
 // onError updates resource conditions and returns updated resource

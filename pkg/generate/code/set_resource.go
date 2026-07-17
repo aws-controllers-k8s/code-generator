@@ -1532,6 +1532,234 @@ func PopulateResourceFromAnnotation(
 	return out + primaryKeyOut + additionalKeyOut, nil
 }
 
+// OrderedAdoptionIdentifierKeys returns the annotation/identifier keys that
+// PopulateResourceFromAnnotation consumes for the primary (required) identifier
+// fields, in the order they appear in the ReadOne input shape's member list.
+//
+// This mirrors the required-field enumeration in PopulateResourceFromAnnotation
+// so that the keys produced by IdentifierFieldsFromARN are guaranteed to match
+// the keys PopulateResourceFromAnnotation reads. It returns the "arn" key alone
+// for ARN-primary-key resources.
+func OrderedAdoptionIdentifierKeys(
+	cfg *ackgenconfig.Config,
+	r *model.CRD,
+) ([]string, error) {
+	if r.IsARNPrimaryKey() {
+		return []string{"arn"}, nil
+	}
+
+	op := r.Ops.ReadOne
+	if op == nil {
+		switch {
+		case r.Ops.GetAttributes != nil:
+			op = r.Ops.GetAttributes
+		case r.Ops.ReadMany != nil:
+			op = r.Ops.ReadMany
+		default:
+			return nil, nil
+		}
+	}
+	inputShape := op.InputRef.Shape
+	if inputShape == nil {
+		return nil, nil
+	}
+
+	primaryField, err := r.GetPrimaryKeyField()
+	if err != nil {
+		return nil, err
+	}
+
+	var primaryCRField, primaryShapeField string
+	isPrimarySet := primaryField != nil
+	keys := []string{}
+	if isPrimarySet {
+		keys = append(keys, primaryField.Names.CamelLower)
+	} else {
+		var findErr error
+		primaryCRField, primaryShapeField, findErr = FindPrimaryIdentifierFieldNames(cfg, r, op)
+		if findErr != nil {
+			return nil, findErr
+		}
+		if primaryShapeField == PrimaryIdentifierARNOverride {
+			return []string{"arn"}, nil
+		}
+	}
+
+	paginatorFieldLookup := []string{"NextToken", "MaxResults"}
+	for _, memberName := range inputShape.MemberNames() {
+		if util.InStrings(memberName, paginatorFieldLookup) {
+			continue
+		}
+		inputMemberShape := inputShape.MemberRefs[memberName].Shape
+		if inputMemberShape.Type != "string" &&
+			(inputMemberShape.Type != "list" ||
+				inputMemberShape.MemberRef.Shape.Type != "string") {
+			continue
+		}
+		if r.IsSecretField(memberName) {
+			continue
+		}
+		if r.IsPrimaryARNField(memberName) {
+			continue
+		}
+		fieldName := cfg.GetResourceFieldName(r.Names.Original, op.ExportedName, memberName)
+		if isPrimarySet && fieldName == primaryField.Names.Camel {
+			continue
+		}
+		isPrimaryIdentifier := fieldName == primaryShapeField
+		searchField := fieldName
+		if isPrimaryIdentifier {
+			searchField = primaryCRField
+		}
+		_, targetField := findFieldInCR(cfg, r, searchField)
+		if targetField == nil || (isPrimarySet && targetField == primaryField) {
+			continue
+		}
+		// Only required (or the primary) identifier fields participate in
+		// positional ARN derivation. Optional additional keys are not encoded
+		// in the ARN.
+		if inputShape.IsRequired(memberName) || isPrimaryIdentifier {
+			keys = append(keys, names.New(fieldName).CamelLower)
+		}
+	}
+	return keys, nil
+}
+
+// IdentifierFieldsFromARN returns the Go code for the body of the generated
+// resource's IdentifierFieldsFromARN method, which derives the ReadOne
+// identifier fields (the same map[string]string PopulateResourceFromAnnotation
+// consumes) from an ARN during tag-based adoption.
+//
+// The generated body delegates the ARN string parsing to the runtime helpers
+// (ackrt.IdentifierFieldsFromARNPositional / IdentifierFieldsFromARNTemplate),
+// passing the identifier keys computed here at generation time so that they are
+// guaranteed to match PopulateResourceFromAnnotation. When an
+// arn_identifier_template override is configured, the template path is emitted
+// (and validated against the required keys); otherwise positional derivation is
+// emitted. Resources that support no tag-based adoption (empty
+// ResourceTypeFilter) or have no derivable identifier emit an "unsupported"
+// error body.
+func IdentifierFieldsFromARN(
+	cfg *ackgenconfig.Config,
+	r *model.CRD,
+	arnVarName string,
+	indentLevel int,
+) (string, error) {
+	indent := strings.Repeat("\t", indentLevel)
+
+	// Kinds that do not support tag-based adoption emit an error body.
+	if r.ResourceTypeFilter() == "" {
+		return fmt.Sprintf(
+			"%sreturn nil, ackerrors.NewTerminalError(fmt.Errorf(\"resource %s does not support tag-based adoption\"))\n",
+			indent, r.Names.Original,
+		), nil
+	}
+
+	// Compute the ordered required identifier keys. If they cannot be derived
+	// (e.g. the resource has no single clear primary identifier), we do NOT fail
+	// code generation: positional derivation is impossible, but an explicit
+	// arn_identifier_template override may still work, and otherwise the resource
+	// emits the "unsupported" error body (a runtime terminal condition).
+	keys, keysErr := OrderedAdoptionIdentifierKeys(cfg, r)
+
+	// Template override path. An explicit template overrides positional
+	// derivation, so it is honored even when keys could not be auto-derived. It
+	// is validated against the derived keys only when those are available.
+	if tmpl := r.ARNIdentifierTemplate(); tmpl != "" {
+		if keysErr == nil {
+			if err := validateARNIdentifierTemplate(tmpl, keys); err != nil {
+				return "", err
+			}
+		}
+		return fmt.Sprintf(
+			"%sreturn ackrt.IdentifierFieldsFromARNTemplate(%s, %q)\n",
+			indent, arnVarName, tmpl,
+		), nil
+	}
+
+	if keysErr != nil || len(keys) == 0 {
+		return fmt.Sprintf(
+			"%sreturn nil, ackerrors.NewTerminalError(fmt.Errorf(\"resource %s has no derivable identifier for tag-based adoption\"))\n",
+			indent, r.Names.Original,
+		), nil
+	}
+
+	// ARN-primary-key: the whole ARN is the identifier.
+	if len(keys) == 1 && keys[0] == "arn" {
+		return fmt.Sprintf(
+			"%sreturn map[string]string{\"arn\": %s}, nil\n",
+			indent, arnVarName,
+		), nil
+	}
+
+	// Multi-identifier resources cannot be derived positionally. The order and
+	// literal layout of an ARN's resource segments are AWS conventions that are
+	// NOT present in the SDK model, so there is no reliable way to map ARN
+	// segments onto more than one identifier field automatically (the identifier
+	// keys here are sorted by shape member name, which need not match ARN segment
+	// order). These resources require an explicit adoption.arn_identifier_template
+	// override; without one, tag-based adoption is unsupported and the generated
+	// body returns a terminal error rather than guess.
+	if len(keys) > 1 {
+		return fmt.Sprintf(
+			"%sreturn nil, ackerrors.NewTerminalError(fmt.Errorf(\"resource %s requires an adoption.arn_identifier_template to support tag-based adoption (multiple identifier fields: %s)\"))\n",
+			indent, r.Names.Original, strings.Join(keys, ", "),
+		), nil
+	}
+
+	// Single-identifier resource: the sole identifier is the ARN's resource-id
+	// segment. The resource-type label is the last segment of the resource-type
+	// filter (e.g. "eks:cluster" -> "cluster").
+	typeFilter := r.ResourceTypeFilter()
+	label := typeFilter
+	if idx := strings.LastIndex(typeFilter, ":"); idx >= 0 {
+		label = typeFilter[idx+1:]
+	}
+	return fmt.Sprintf(
+		"%sreturn ackrt.IdentifierFieldsFromARNPositional(%s, %q, []string{%q})\n",
+		indent, arnVarName, label, keys[0],
+	), nil
+}
+
+// validateARNIdentifierTemplate ensures the non-discard placeholder keys in an
+// arn_identifier_template exactly match the supplied required identifier keys.
+// A mismatch fails code generation, so a template can never silently populate
+// the wrong (or a partial) set of identifier fields.
+func validateARNIdentifierTemplate(template string, requiredKeys []string) error {
+	tmplKeys := map[string]bool{}
+	for _, token := range strings.FieldsFunc(template, func(r rune) bool {
+		return r == '/' || r == ':'
+	}) {
+		if token == "{-}" || token == "{_}" {
+			continue
+		}
+		if strings.HasPrefix(token, "{") && strings.HasSuffix(token, "}") {
+			tmplKeys[token[1:len(token)-1]] = true
+		}
+	}
+	required := map[string]bool{}
+	for _, k := range requiredKeys {
+		required[k] = true
+	}
+	for k := range required {
+		if !tmplKeys[k] {
+			return fmt.Errorf(
+				"arn_identifier_template %q is missing required identifier key %q",
+				template, k,
+			)
+		}
+	}
+	for k := range tmplKeys {
+		if !required[k] {
+			return fmt.Errorf(
+				"arn_identifier_template %q has key %q that is not a required identifier",
+				template, k,
+			)
+		}
+	}
+	return nil
+}
+
 // findFieldInCR will search for a given field, by its name, in a CR and returns
 // the member path and Field type if one is found.
 func findFieldInCR(

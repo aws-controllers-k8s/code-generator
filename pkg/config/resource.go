@@ -135,6 +135,83 @@ type ResourceConfig struct {
 	// SDK implementation details that are auto-filled by the SDK middleware
 	// when nil and should not be exposed in the CRD.
 	IgnoreIdempotencyToken bool `json:"ignore_idempotency_token,omitempty"`
+	// Adoption contains instructions for the code generator about tag-based
+	// adoption (the `services.k8s.aws/adoption-tag-selector` annotation) for
+	// this resource.
+	Adoption *AdoptionConfig `json:"adoption,omitempty"`
+}
+
+// AdoptionConfig instructs the code generator on how a resource supports
+// tag-based adoption: resolving the resource's ReadOne identifier from AWS tags
+// (via the Resource Groups Tagging API) at adoption time.
+type AdoptionConfig struct {
+	// ResourceTypeFilter is the Resource Groups Tagging API resource-type filter
+	// used to scope the tag lookup to this kind (e.g. "ec2:vpc",
+	// "eks:nodegroup"). When empty, the code generator derives a best-effort
+	// default of "<service>:<lowercased kind>". Set this override when the
+	// default is wrong. A resource whose (default or overridden) filter is empty,
+	// or that does not support tags, is treated as not supporting tag-based
+	// adoption.
+	ResourceTypeFilter *string `json:"resource_type_filter,omitempty"`
+	// ARNIdentifierTemplate maps an AWS ARN onto this resource's ReadOne
+	// identifier fields for tag-based adoption.
+	//
+	// It is REQUIRED for resources with more than one identifier field and
+	// OPTIONAL otherwise:
+	//   - Resources with a single identifier field (e.g. eks Cluster, whose
+	//     ReadOne key is "name") derive it automatically from the ARN's
+	//     resource-id segment; no template is needed.
+	//   - Resources with multiple identifier fields (e.g. eks Nodegroup, keyed by
+	//     clusterName + name) cannot be derived automatically, because the order
+	//     and literal layout of an ARN's resource segments are AWS conventions
+	//     that are NOT present in the SDK model. These MUST set a template; if one
+	//     is not set the resource returns a terminal condition at adoption time.
+	//
+	// Template syntax: the template is matched against the resource portion of the
+	// ARN (everything after "arn:<partition>:<service>:<region>:<account>:"),
+	// split on '/' and ':'. Each token is one of:
+	//   - "{key}"  captures that segment into the identifier field named "key"
+	//              (the key must be the CamelLower ReadOne input field name, i.e.
+	//              the same key PopulateResourceFromAnnotation consumes),
+	//   - "{-}"    captures and discards a segment (e.g. a trailing unique-id),
+	//   - a literal, which must match the ARN segment exactly.
+	// The set of non-discard placeholder keys must equal the resource's required
+	// identifier keys, else code generation fails.
+	//
+	// To find a resource's ARN format, use the AWS Service Authorization
+	// Reference. There are two ways to view it:
+	//
+	//   - In a browser, open the service's page and scroll to the "Resource
+	//     types defined by <service>" table; the "ARN" column has the format.
+	//     For EKS:
+	//       https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazoneks.html
+	//     Note the table is rendered by JavaScript, so viewing it in a browser
+	//     works but plain text search / curl of the page will not find it.
+	//
+	//   - As JSON (reliable for scripting), fetch the service file and read
+	//     Resources[].ARNFormats:
+	//       https://servicereference.us-east-1.amazonaws.com/v1/<service>/<service>.json
+	//     (the index of all services is at
+	//     https://servicereference.us-east-1.amazonaws.com/).
+	//
+	// To turn an ARN format into a template, take the part after
+	// "arn:${Partition}:<service>:${Region}:${Account}:", keep literal segments
+	// as-is, replace each "${...}" that maps to a ReadOne identifier field with
+	// "{<key>}", and replace segments that are not identifiers (such as a
+	// trailing "${UUID}") with "{-}". For example the EKS nodegroup ARN format:
+	//   arn:${Partition}:eks:${Region}:${Account}:nodegroup/${ClusterName}/${NodegroupName}/${UUID}
+	// becomes (with NodegroupName renamed to "name"):
+	//   arn_identifier_template: "nodegroup/{clusterName}/{name}/{-}"
+	// The placeholder names in the ARN are AWS's own; the "{<key>}" names must be
+	// this resource's ReadOne identifier field names (after any renames), which is
+	// why they may differ (${NodegroupName} -> {name}).
+	//
+	// When a template is not expressive enough - for example the identifier is
+	// not encoded in the ARN at all and requires a secondary API lookup - use the
+	// "identifier_fields_from_arn" hook instead, which fully replaces the
+	// generated IdentifierFieldsFromARN body with custom Go code. See the hooks
+	// documentation.
+	ARNIdentifierTemplate *string `json:"arn_identifier_template,omitempty"`
 }
 
 // TagConfig instructs the code  generator on how to generate functions that

@@ -187,6 +187,9 @@ var (
 		"GoCodePopulateResourceFromAnnotation": func(r *ackmodel.CRD, sourceVarName string, targetVarName string, indentLevel int) (string, error) {
 			return code.PopulateResourceFromAnnotation(r.Config(), r, sourceVarName, targetVarName, indentLevel)
 		},
+		"GoCodeIdentifierFieldsFromARN": func(r *ackmodel.CRD, arnVarName string, indentLevel int) (string, error) {
+			return code.IdentifierFieldsFromARN(r.Config(), r, arnVarName, indentLevel)
+		},
 		"GoCodeFindLateInitializedFieldNames": func(r *ackmodel.CRD, resVarName string, indentLevel int) string {
 			return code.FindLateInitializedFieldNames(r.Config(), r, resVarName, indentLevel)
 		},

@@ -71,6 +71,11 @@ code paths:
 * convert_tags_post_from_ack_tags
 * pre_set_resource_identifiers
 * post_set_resource_identifiers
+* pre_populate_resource_from_annotation
+* post_populate_resource_from_annotation
+* pre_identifier_fields_from_arn
+* identifier_fields_from_arn
+* post_identifier_fields_from_arn
 
 The "pre_build_request" hooks are called BEFORE the call to construct
 the Input shape that is used in the API operation and therefore BEFORE
@@ -151,6 +156,24 @@ that sets the resource identifiers to uniquely identify a resource
 
 The "post_set_resource_identifiers" hook is called after the generated code
 that sets the resource identifiers to uniquely identify a resource
+
+The "pre_populate_resource_from_annotation" and
+"post_populate_resource_from_annotation" hooks are called before and after the
+generated code that populates a resource's fields from the adoption-fields
+annotation (in AWSResource.PopulateResourceFromAnnotation).
+
+The "pre_identifier_fields_from_arn" and "post_identifier_fields_from_arn" hooks
+are called before and after the generated code that derives a resource's ReadOne
+identifier fields from an ARN during tag-based adoption (in
+AWSResource.IdentifierFieldsFromARN). The "post" hook has access to the generated
+result via Go variables named `fields` (map[string]string) and `err` (error) and
+may augment them before they are returned.
+
+The "identifier_fields_from_arn" hook FULLY REPLACES the generated
+IdentifierFieldsFromARN body. Use it for resources whose identifier cannot be
+derived from the ARN by the built-in positional/template logic - for example
+when a secondary API lookup is required. The hook has access to a Go variable
+named `arn` (string) and is responsible for returning (map[string]string, error).
 */
 
 // ResourceHookCode returns a string with custom callback code for a resource

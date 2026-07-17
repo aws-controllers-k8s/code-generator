@@ -434,6 +434,53 @@ func (r *CRD) IsARNPrimaryKey() bool {
 	return resGenConfig.IsARNPrimaryKey
 }
 
+// ResourceTypeFilter returns the Resource Groups Tagging API resource-type
+// filter used to scope tag-based adoption lookups to this kind (e.g. "ec2:vpc",
+// "eks:nodegroup"). It returns the empty string when the kind does not support
+// tag-based adoption, which happens when:
+//   - the resource does not support tags (tags.ignore: true), since a resource
+//     that carries no tags cannot be matched by a tag selector; or
+//   - a resource-type filter cannot be determined (no service ID).
+//
+// The value is the generator.yaml override (adoption.resource_type_filter) if
+// set, otherwise a best-effort default of "<serviceID>:<lowercased kind>". The
+// default is not always correct for every resource type; use the override when
+// it is wrong.
+func (r *CRD) ResourceTypeFilter() string {
+	resGenConfig := r.cfg.GetResourceConfig(r.Names.Original)
+	if resGenConfig != nil && resGenConfig.Adoption != nil &&
+		resGenConfig.Adoption.ResourceTypeFilter != nil {
+		return *resGenConfig.Adoption.ResourceTypeFilter
+	}
+
+	// A resource that does not support tags cannot be matched by a tag
+	// selector, so it does not support tag-based adoption. This covers both an
+	// explicit tags.ignore: true and a resource that has no tag field at all
+	// (GetTagField returns a nil field in both cases).
+	if tagField, _ := r.GetTagField(); tagField == nil {
+		return ""
+	}
+
+	serviceID := strings.ToLower(r.sdkAPI.ServiceID())
+	if serviceID == "" {
+		return ""
+	}
+	return fmt.Sprintf("%s:%s", serviceID, strings.ToLower(r.Names.Original))
+}
+
+// ARNIdentifierTemplate returns the optional ARN-to-identifier template
+// override configured for tag-based adoption (adoption.arn_identifier_template),
+// or the empty string if none is configured. When empty, the code generator
+// derives the identifier fields from the ARN positionally.
+func (r *CRD) ARNIdentifierTemplate() string {
+	resGenConfig := r.cfg.GetResourceConfig(r.Names.Original)
+	if resGenConfig != nil && resGenConfig.Adoption != nil &&
+		resGenConfig.Adoption.ARNIdentifierTemplate != nil {
+		return *resGenConfig.Adoption.ARNIdentifierTemplate
+	}
+	return ""
+}
+
 // GetPrimaryKeyField returns the field designated as the primary key, nil if
 // none are specified or an error if multiple are designated.
 func (r *CRD) GetPrimaryKeyField() (*Field, error) {
