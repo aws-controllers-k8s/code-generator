@@ -1,0 +1,40 @@
+# Test config that injects custom nested fields carrying semantic-comparison
+# markers (is_iam_policy / is_document) into an existing SDK struct shape
+# (StreamSpecification). Used to verify that CompareStruct honors is_iam_policy
+# and is_document for nested struct members, not just top-level spec fields.
+resources:
+  Table:
+    exceptions:
+      errors:
+        404:
+          code: ResourceNotFoundException
+    fields:
+      # Nested custom field carrying an IAM policy document. This mirrors the
+      # DynamoDB stream resource-policy use case where a policy lives on the
+      # stream configured via StreamSpecification.
+      StreamSpecification.ResourcePolicy:
+        type: "*string"
+        is_iam_policy: true
+      # Nested custom field carrying a generic JSON/YAML document.
+      StreamSpecification.PolicyDocument:
+        type: "*string"
+        is_document: true
+operations:
+  DescribeBackup:
+    output_wrapper_field_path: BackupDescription.BackupDetails
+ignore:
+  field_paths:
+  - DescribeTableOutput.Table.DeletionProtectionEnabled
+  - DescribeTableOutput.Table.TableClassSummary
+  - DescribeTableOutput.Table.WarmThroughput
+  - GlobalSecondaryIndex.OnDemandThroughputOverride
+  - GlobalSecondaryIndex.OnDemandThroughput
+  - DescribeTableOutput.Table.OnDemandThroughput
+  - GlobalSecondaryIndex.WarmThroughput
+  - DescribeTableOutput.Table.MultiRegionConsistency
+  - ReplicaGlobalSecondaryIndexDescription.OnDemandThroughputOverride
+  - ReplicaGlobalSecondaryIndexDescription.WarmThroughput
+  - ReplicaDescription.OnDemandThroughputOverride
+  - ReplicaDescription.ReplicaInaccessibleDateTime
+  - ReplicaDescription.ReplicaTableClassSummary
+  - ReplicaDescription.WarmThroughput

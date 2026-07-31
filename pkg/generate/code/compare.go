@@ -881,6 +881,16 @@ func CompareStruct(
 			continue
 		}
 
+		if fieldConfig != nil && fieldConfig.IsIAMPolicy {
+			out += compareIAMPolicy(deltaVarName, firstResAdaptedVarName, secondResAdaptedVarName, memberFieldPath, indentLevel)
+			continue
+		}
+
+		if fieldConfig != nil && fieldConfig.IsDocument {
+			out += compareDocument(deltaVarName, firstResAdaptedVarName, secondResAdaptedVarName, memberFieldPath, indentLevel)
+			continue
+		}
+
 		fastComparisonOutput, needToCloseBlock, err := fastCompareTypes(
 			compareConfig,
 			memberShape,
