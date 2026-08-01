@@ -1187,3 +1187,52 @@ func TestCompareResource_SNS_Topic_NilEqualsZeroValue(t *testing.T) {
 	require.NoError(err)
 	assert.Equal(expected, got)
 }
+
+func TestCompareResource_DynamoDB_Table_NestedIAMPolicyAndDocument(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "dynamodb", &testutil.TestingModelOptions{
+		GeneratorConfigFile: "generator-nested-policy.yaml",
+	})
+
+	crd := testutil.GetCRDByName(t, g, "Table")
+	require.NotNil(crd)
+
+	got, err := code.CompareResource(
+		crd.Config(), crd, "delta", "a.ko", "b.ko", 1,
+	)
+	require.NoError(err)
+
+	// StreamSpecification.ResourcePolicy is a custom nested field marked with
+	// is_iam_policy: true. Even though it lives inside the StreamSpecification
+	// struct (and is therefore emitted by CompareStruct, not the top-level
+	// field loop), it must use the semantic IAMPolicyDocumentEqual comparison
+	// rather than a plain string comparison.
+	expectedIAMPolicy := `		if ackcompare.HasNilDifference(a.ko.Spec.StreamSpecification.ResourcePolicy, b.ko.Spec.StreamSpecification.ResourcePolicy) {
+			delta.Add("Spec.StreamSpecification.ResourcePolicy", a.ko.Spec.StreamSpecification.ResourcePolicy, b.ko.Spec.StreamSpecification.ResourcePolicy)
+		} else if a.ko.Spec.StreamSpecification.ResourcePolicy != nil && b.ko.Spec.StreamSpecification.ResourcePolicy != nil {
+			if equal, err := ackcompare.IAMPolicyDocumentEqual(*a.ko.Spec.StreamSpecification.ResourcePolicy, *b.ko.Spec.StreamSpecification.ResourcePolicy); err != nil || !equal {
+				delta.Add("Spec.StreamSpecification.ResourcePolicy", a.ko.Spec.StreamSpecification.ResourcePolicy, b.ko.Spec.StreamSpecification.ResourcePolicy)
+			}
+		}
+`
+	assert.Contains(got, expectedIAMPolicy)
+
+	// StreamSpecification.PolicyDocument is a custom nested field marked with
+	// is_document: true and must use the semantic DocumentEqual comparison.
+	expectedDocument := `		if ackcompare.HasNilDifference(a.ko.Spec.StreamSpecification.PolicyDocument, b.ko.Spec.StreamSpecification.PolicyDocument) {
+			delta.Add("Spec.StreamSpecification.PolicyDocument", a.ko.Spec.StreamSpecification.PolicyDocument, b.ko.Spec.StreamSpecification.PolicyDocument)
+		} else if a.ko.Spec.StreamSpecification.PolicyDocument != nil && b.ko.Spec.StreamSpecification.PolicyDocument != nil {
+			if equal, err := ackcompare.DocumentEqual(*a.ko.Spec.StreamSpecification.PolicyDocument, *b.ko.Spec.StreamSpecification.PolicyDocument); err != nil || !equal {
+				delta.Add("Spec.StreamSpecification.PolicyDocument", a.ko.Spec.StreamSpecification.PolicyDocument, b.ko.Spec.StreamSpecification.PolicyDocument)
+			}
+		}
+`
+	assert.Contains(got, expectedDocument)
+
+	// Sanity check: the sibling scalar nested field must still use plain
+	// string/value comparison, confirming we only special-case the marked
+	// fields.
+	assert.Contains(got, `			if *a.ko.Spec.StreamSpecification.StreamEnabled != *b.ko.Spec.StreamSpecification.StreamEnabled {`)
+}
