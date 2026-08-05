@@ -135,6 +135,17 @@ type ResourceConfig struct {
 	// SDK implementation details that are auto-filled by the SDK middleware
 	// when nil and should not be exposed in the CRD.
 	IgnoreIdempotencyToken bool `json:"ignore_idempotency_token,omitempty"`
+	// SpecValidations contains CEL validation rules applied to the generated
+	// resource Spec as kubebuilder XValidation markers.
+	SpecValidations []XValidationConfig `json:"spec_validations,omitempty"`
+}
+
+// XValidationConfig describes a kubebuilder CEL validation rule.
+type XValidationConfig struct {
+	// Rule is the CEL expression evaluated against the generated Spec.
+	Rule string `json:"rule"`
+	// Message is returned when Rule evaluates to false.
+	Message string `json:"message"`
 }
 
 // TagConfig instructs the code  generator on how to generate functions that
