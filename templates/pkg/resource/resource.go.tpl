@@ -102,3 +102,11 @@ func (r *resource) DeepCopy() acktypes.AWSResource {
 	koCopy := r.ko.DeepCopy()
 	return &resource{koCopy}
 }
+
+{{ if HasSecretFields .CRD -}}
+// SecretReferences returns all SecretKeyReferences held by this resource.
+// Implements acktypes.SecretReferenceResolver.
+func (r *resource) SecretReferences() []*ackv1alpha1.SecretKeyReference {
+{{ GoCodeSecretReferences .CRD "r.ko" 1 }}
+}
+{{- end }}

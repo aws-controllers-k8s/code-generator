@@ -154,6 +154,12 @@ var (
 		"HasPreDeleteSync": func(r *ackmodel.CRD) bool {
 			return code.HasPreDeleteSync(r.Config(), r)
 		},
+		"HasSecretFields": func(r *ackmodel.CRD) bool {
+			return r.HasSecretFields()
+		},
+		"GoCodeSecretReferences": func(r *ackmodel.CRD, koVarName string, indentLevel int) string {
+			return code.SecretReferences(r, koVarName, indentLevel)
+		},
 		"GoCodeIsSynced": func(r *ackmodel.CRD, resVarName string, indentLevel int) (string, error) {
 			return code.ResourceIsSynced(r.Config(), r, resVarName, indentLevel)
 		},
