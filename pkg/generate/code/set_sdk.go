@@ -1192,31 +1192,61 @@ func SetSDKForStruct(
 	indent := strings.Repeat("\t", indentLevel)
 	targetShape := targetShapeRef.Shape
 
+	// Convert opType to get the actual operation for rename lookups
+	operation := operationForType(r, op)
+
 	for memberIndex, memberName := range targetShape.MemberNames() {
 		memberShapeRef := targetShape.MemberRefs[memberName]
 		memberShape := memberShapeRef.Shape
-		cleanMemberNames := names.New(memberName)
-		cleanMemberName := cleanMemberNames.Camel
-		sourceAdaptedVarName := sourceVarName + "." + cleanMemberName
-		memberFieldPath := sourceFieldPath + "." + cleanMemberName
+		
+		// Look up the renamed CRD field name for this SDK field name
+		crdfieldName := memberName
+		if operation != nil {
+			crdfieldName = getTargetFieldNameForRename(
+				cfg, r.Names.Original, operation.ExportedName,
+				sourceFieldPath, memberName,
+			)
+		}
+		explicitRename := crdfieldName != memberName
 
-		// todo: To make `ignore` functionality work for all fields that has `ignore` set to `true`,
-		// we need to add the below logic inside `SetSDK` function.
-
-		// To check if the field member has `ignore` set to `true`.
-		// This condition currently applies only for members of a field whose shape is `structure`
+		// Resolve the canonical CRD member field name from model metadata so we
+		// honor acronym/name normalization (e.g. JSONBody) in addition to explicit
+		// rename configuration.
+		sourceMemberName := names.New(crdfieldName).Camel
 		var setCfg *ackgenconfig.SetFieldConfig
 		f, ok := r.Fields[sourceFieldPath]
 		if ok {
-			mf, ok := f.MemberFields[names.New(memberName).Camel]
+			mf, ok := f.MemberFields[sourceMemberName]
+			if !ok && !explicitRename {
+				mf, ok = f.MemberFields[names.New(memberName).Camel]
+			}
+			if !ok && !explicitRename {
+				for _, candidate := range f.MemberFields {
+					if candidate.ShapeRef != nil && strings.EqualFold(candidate.ShapeRef.OriginalMemberName, memberName) {
+						mf = candidate
+						ok = true
+						break
+					}
+				}
+			}
 			if ok {
+				sourceMemberName = mf.Names.Camel
 				setCfg = mf.GetSetterConfig(op)
 				if setCfg != nil && setCfg.IgnoreSDKSetter() {
 					continue
 				}
 			}
 		}
+		
+		// Construct sourceAdaptedVarName using the CRD field name
+		sourceAdaptedVarName := sourceVarName + "." + sourceMemberName
+		memberFieldPath := sourceFieldPath + "." + memberName
 
+		// todo: To make `ignore` functionality work for all fields that has `ignore` set to `true`,
+		// we need to add the below logic inside `SetSDK` function.
+
+		// To check if the field member has `ignore` set to `true`.
+		// This condition currently applies only for members of a field whose shape is `structure`
 		fallBackName := r.GetMatchingInputShapeFieldName(op, memberName)
 		if fallBackName != "" {
 			sourceAdaptedVarName = sourceVarName + "." + fallBackName
@@ -1870,27 +1900,49 @@ func setSDKForUnion(
 		sdkGoType = "svcsdktypes." + targetShape.OriginalShapeName
 	}
 
+	operation := operationForType(r, op)
+
 	out += fmt.Sprintf("%sisInterfaceSet := false\n", indent)
 
 	for memberIndex, memberName := range targetShape.MemberNames() {
 		memberShapeRef := targetShape.MemberRefs[memberName]
 		memberShape := memberShapeRef.Shape
-		cleanMemberNames := names.New(memberName)
-		cleanMemberName := cleanMemberNames.Camel
-		sourceAdaptedVarName := sourceVarName + "." + cleanMemberName
-		memberFieldPath := sourceFieldPath + "." + cleanMemberName
+		crdfieldName := memberName
+		if operation != nil {
+			crdfieldName = getTargetFieldNameForRename(
+				cfg, r.Names.Original, operation.ExportedName,
+				sourceFieldPath, memberName,
+			)
+		}
+		explicitRename := crdfieldName != memberName
+		sourceMemberName := names.New(crdfieldName).Camel
 
 		var setCfg *ackgenconfig.SetFieldConfig
 		f, ok := r.Fields[sourceFieldPath]
 		if ok {
-			mf, ok := f.MemberFields[memberName]
+			mf, ok := f.MemberFields[sourceMemberName]
+			if !ok && !explicitRename {
+				mf, ok = f.MemberFields[names.New(memberName).Camel]
+			}
+			if !ok && !explicitRename {
+				for _, candidate := range f.MemberFields {
+					if candidate.ShapeRef != nil && strings.EqualFold(candidate.ShapeRef.OriginalMemberName, memberName) {
+						mf = candidate
+						ok = true
+						break
+					}
+				}
+			}
 			if ok {
+				sourceMemberName = mf.Names.Camel
 				setCfg = mf.GetSetterConfig(op)
 				if setCfg != nil && setCfg.IgnoreSDKSetter() {
 					continue
 				}
 			}
 		}
+		sourceAdaptedVarName := sourceVarName + "." + sourceMemberName
+		memberFieldPath := sourceFieldPath + "." + memberName
 
 		elemVarName := fmt.Sprintf("%sf%dParent", targetVarName, memberIndex)
 
@@ -1967,4 +2019,46 @@ func setSDKForUnion(
 	}
 
 	return out, nil
+}
+
+// getTargetFieldNameForRename finds the renamed CRD field name for an SDK field name
+// by searching through the renames configuration for a matching path
+func getTargetFieldNameForRename(
+	cfg *ackgenconfig.Config,
+	resourceName string,
+	opID string,
+	sourceFieldPath string,
+	sourceMemberName string,
+) string {
+	if cfg == nil {
+		return sourceMemberName
+	}
+	rConfig, ok := cfg.Resources[resourceName]
+	if !ok {
+		return sourceMemberName
+	}
+	if rConfig.Renames == nil {
+		return sourceMemberName
+	}
+	oRenames, ok := rConfig.Renames.Operations[opID]
+	if !ok {
+		return sourceMemberName
+	}
+
+	for originalPath, renamedField := range oRenames.InputFields {
+		pathParts := strings.Split(originalPath, ".")
+		if len(pathParts) == 0 {
+			continue
+		}
+		originalMemberName := pathParts[len(pathParts)-1]
+		if !strings.EqualFold(originalMemberName, sourceMemberName) {
+			continue
+		}
+		originalParentPath := strings.Join(pathParts[:len(pathParts)-1], ".")
+		if strings.EqualFold(originalParentPath, sourceFieldPath) {
+			return renamedField
+		}
+	}
+
+	return sourceMemberName
 }
