@@ -174,6 +174,7 @@ func main() {
 		"gitCommit", version.GitCommit,
 		"buildDate", version.BuildDate,
 		"goVersion", goruntime.Version(),
+		"ackGenerateVersion", version.ACKGenerateVersion,
 		"ackRuntimeVersion", depVersion("github.com/aws-controllers-k8s/runtime"),
 		"awsSDKGoV2Version", depVersion("github.com/aws/aws-sdk-go-v2"),
 	)
