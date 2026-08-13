@@ -199,3 +199,5 @@ featureGates:
   ResourceAdoption: true
   # Enable IAMRoleSelector, a multirole feature, replacing CARM. See https://github.com/aws-controllers-k8s/community/pull/2628
   IAMRoleSelector: false
+  # Enable IgnoreFieldDrift, services.k8s.aws/ignore-field-drift annotation. See https://aws-controllers-k8s.github.io/docs/guides/ignore-field-drift
+  IgnoreFieldDrift: false
