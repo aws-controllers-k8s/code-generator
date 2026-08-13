@@ -5,6 +5,8 @@ package main
 import (
 	"os"
 	"context"
+	goruntime "runtime"
+	"runtime/debug"
 
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
 	ackcfg "github.com/aws-controllers-k8s/runtime/pkg/config"
@@ -50,6 +52,21 @@ var (
 	scheme			        = runtime.NewScheme()
 	setupLog		        = ctrlrt.Log.WithName("setup")
 )
+
+// depVersion returns the module version of the given dependency import path,
+// as recorded in the binary's build info, or "unknown" if it cannot be found.
+func depVersion(path string) string {
+	info, ok := debug.ReadBuildInfo()
+	if !ok {
+		return "unknown"
+	}
+	for _, dep := range info.Deps {
+		if dep.Path == path {
+			return dep.Version
+		}
+	}
+	return "unknown"
+}
 
 func init() {
 	_ = clientgoscheme.AddToScheme(scheme)
@@ -149,6 +166,17 @@ func main() {
 	setupLog.Info(
 		"initializing service controller",
 		"aws.service", awsServiceAlias,
+		"version", version.GitVersion,
+	)
+	setupLog.V(1).Info(
+		"build details",
+		"aws.service", awsServiceAlias,
+		"gitCommit", version.GitCommit,
+		"buildDate", version.BuildDate,
+		"goVersion", goruntime.Version(),
+		"ackGenerateVersion", version.ACKGenerateVersion,
+		"ackRuntimeVersion", depVersion("github.com/aws-controllers-k8s/runtime"),
+		"awsSDKGoV2Version", depVersion("github.com/aws/aws-sdk-go-v2"),
 	)
 	sc := ackrt.NewServiceController(
 		awsServiceAlias, awsServiceAPIGroup,

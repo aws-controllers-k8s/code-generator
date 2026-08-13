@@ -28,6 +28,7 @@ import (
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
+	"github.com/aws-controllers-k8s/code-generator/pkg/version"
 )
 
 var (
@@ -311,8 +312,17 @@ func Controller(
 		return nil, err
 	}
 
-	// Next add the template for pkg/version/version.go file
-	if err = ts.Add("pkg/version/version.go", "pkg/version/version.go.tpl", nil); err != nil {
+	// Next add the template for pkg/version/version.go file. The context
+	// carries the ack-generate build info so the generated controller records
+	// which code-generator version produced it.
+	versionVars := struct {
+		Version   string
+		BuildDate string
+	}{
+		Version:   version.Version,
+		BuildDate: version.BuildDate,
+	}
+	if err = ts.Add("pkg/version/version.go", "pkg/version/version.go.tpl", versionVars); err != nil {
 		return nil, err
 	}
 
