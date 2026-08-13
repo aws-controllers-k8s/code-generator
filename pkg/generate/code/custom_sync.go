@@ -20,6 +20,15 @@ import (
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 )
 
+// customSyncPendingMessage is the Synced condition message set after create when
+// a resource has `custom_sync` fields still to be applied.
+//
+// It is deliberately generic rather than naming the pending fields. The nil
+// checks that guard it are evaluated at runtime, but a generated message can
+// only be built from every configured field, so naming them would over-report
+// whenever a user populates only some of them.
+const customSyncPendingMessage = "Secondary sync required; resource will be requeued"
+
 // CustomSyncUpdate returns Go code that invokes the hand-written sync function
 // for each of the resource's `custom_sync` Spec fields, and then short-circuits
 // out of sdkUpdate when those fields are the only ones that differ.
@@ -128,16 +137,16 @@ func CustomSyncUpdate(
 // synced while the field was still unapplied, and the correction would wait for
 // the full resync period.
 //
-// The Synced condition carries a message naming the fields still to be applied,
-// so that a user running `kubectl describe` sees why the resource is not synced
-// yet and that the controller intends to sync again on its own.
+// The Synced condition carries a message so that a user running
+// `kubectl describe` sees why the resource is not synced yet and that the
+// controller intends to sync again on its own.
 //
 // The empty string is returned when the resource has no `custom_sync` fields.
 //
 // Sample output:
 //
 //	if ko.Spec.Tags != nil {
-//	    msg := "Sync pending for Spec.Tags; resource will be requeued"
+//	    msg := "Secondary sync required; resource will be requeued"
 //	    ackcondition.SetSynced(&resource{ko}, corev1.ConditionFalse, &msg, nil)
 //	}
 func CustomSyncCreate(
@@ -164,20 +173,11 @@ func CustomSyncCreate(
 		))
 	}
 
-	// Name the pending fields in the condition message so `kubectl describe`
-	// explains both why the resource is not synced and that the controller will
-	// sync again without the user doing anything. Phrased to read correctly for
-	// any number of fields.
-	msg := fmt.Sprintf(
-		"Sync pending for %s; resource will be requeued",
-		strings.Join(customSyncFieldPaths(r, fields), ", "),
-	)
-
 	out := "\n"
 	out += fmt.Sprintf(
 		"%sif %s {\n", indent, strings.Join(conditions, " || "),
 	)
-	out += fmt.Sprintf("%s\tmsg := %q\n", indent, msg)
+	out += fmt.Sprintf("%s\tmsg := %q\n", indent, customSyncPendingMessage)
 	out += fmt.Sprintf(
 		"%s\tackcondition.SetSynced(&resource{%s}, corev1.ConditionFalse, &msg, nil)\n",
 		indent, koVarName,

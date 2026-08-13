@@ -74,7 +74,8 @@ func TestCustomSyncUpdate(t *testing.T) {
 // TestCustomSyncCreate verifies the post-create marker. The resource is marked
 // unsynced only when at least one custom_sync field is actually set, since a
 // resource created without any of them has nothing for the follow-up reconcile
-// to do.
+// to do. The condition message is generic, so it stays accurate no matter which
+// subset of the fields the user populated.
 func TestCustomSyncCreate(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
@@ -89,7 +90,7 @@ func TestCustomSyncCreate(t *testing.T) {
 
 	expected := `
 	if ko.Spec.LogDeliveryConfigurations != nil || ko.Spec.Tags != nil {
-		msg := "Sync pending for Spec.LogDeliveryConfigurations, Spec.Tags; resource will be requeued"
+		msg := "Secondary sync required; resource will be requeued"
 		ackcondition.SetSynced(&resource{ko}, corev1.ConditionFalse, &msg, nil)
 	}
 `
