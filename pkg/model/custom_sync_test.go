@@ -23,8 +23,7 @@ import (
 )
 
 // TestCustomSyncFields verifies that the model resolves custom_sync fields in a
-// deterministic order and derives the sync method name correctly, both from the
-// field name and from an explicit `method` override.
+// deterministic order and derives each sync method name from its field name.
 func TestCustomSyncFields(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
@@ -47,10 +46,9 @@ func TestCustomSyncFields(t *testing.T) {
 
 	// Sorted by field name so generated output is stable across runs.
 	assert.Equal("LogDeliveryConfigurations", fields[0].Names.Camel)
-	assert.Equal("syncLogDelivery", fields[0].CustomSyncMethodName())
+	assert.Equal("syncLogDeliveryConfigurations", fields[0].CustomSyncMethodName())
 
 	assert.Equal("Tags", fields[1].Names.Camel)
-	// No `method` override, so the name is derived from the field name.
 	assert.Equal("syncTags", fields[1].CustomSyncMethodName())
 }
 

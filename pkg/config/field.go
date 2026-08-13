@@ -308,12 +308,16 @@ type CompareFieldConfig struct {
 //	  fields:
 //	    Tags:
 //	      custom_sync: {}
-type CustomSyncConfig struct {
-	// Method optionally overrides the name of the sync function the generated
-	// code calls. When empty, the name defaults to "sync" followed by the
-	// field's camel-cased name, e.g. a Tags field yields "syncTags".
-	Method string `json:"method,omitempty"`
-}
+//
+// The struct is intentionally empty. Presence of the `custom_sync` key is the
+// entire configuration, and the sync method name is always derived from the
+// field name so that it is identical across every controller.
+//
+// It is declared as a struct rather than a bool so that options can be added
+// later without breaking the generator.yaml files that adopt it now: promoting a
+// bool to a struct would be a breaking change under the strict unmarshalling
+// config.New performs.
+type CustomSyncConfig struct{}
 
 // PrintFieldConfig instructs the code generator how to handle kubebuilder:printcolumn
 // comment marker generation. If this struct is not nil, the field will be added to the

@@ -30,8 +30,8 @@ import (
 // hand-written hook has to be widened by hand every time a field is added, and
 // forgetting to do so silently short-circuits legitimate updates.
 //
-// Tags uses the default method name (syncTags); LogDeliveryConfigurations
-// exercises the `method` override.
+// Each method name is derived from its field name, so the calls are rm.syncTags
+// and rm.syncLogDeliveryConfigurations.
 func TestCustomSyncUpdate(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
@@ -50,7 +50,7 @@ func TestCustomSyncUpdate(t *testing.T) {
 	updatedDesired := desired.DeepCopy()
 	updatedDesired.SetStatus(latest)
 	if delta.DifferentAt("Spec.LogDeliveryConfigurations") {
-		err = rm.syncLogDelivery(ctx, desired, latest)
+		err = rm.syncLogDeliveryConfigurations(ctx, desired, latest)
 		if err != nil {
 			return nil, err
 		}

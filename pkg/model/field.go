@@ -297,18 +297,16 @@ func (f *Field) HasCustomSync() bool {
 	return f.FieldConfig != nil && f.FieldConfig.CustomSync != nil
 }
 
-// CustomSyncMethodName returns the name of the hand-written sync function that
-// the generated code calls for this field. It returns the empty string when the
+// CustomSyncMethodName returns the name of the hand-written sync method that the
+// generated code calls for this field. It returns the empty string when the
 // field is not configured with `custom_sync`.
 //
-// The name defaults to "sync" followed by the field's camel-cased name, so a
-// Tags field yields "syncTags". The `custom_sync.method` config overrides it.
+// The name is always "sync" followed by the field's camel-cased name, so a Tags
+// field yields "syncTags". It is deliberately not configurable, so that the sync
+// method for a given field is named identically across every controller.
 func (f *Field) CustomSyncMethodName() string {
 	if !f.HasCustomSync() {
 		return ""
-	}
-	if f.FieldConfig.CustomSync.Method != "" {
-		return f.FieldConfig.CustomSync.Method
 	}
 	return "sync" + f.Names.Camel
 }

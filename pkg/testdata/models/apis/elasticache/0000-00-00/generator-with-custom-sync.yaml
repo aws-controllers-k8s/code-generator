@@ -11,11 +11,10 @@ ignore:
 resources:
   ReplicationGroup:
     fields:
-      # Exercises the default method name: a Tags field yields syncTags.
+      # A Tags field yields syncTags.
       Tags:
         custom_sync: {}
-      # Exercises the `method` override, and the multi-field composition of the
-      # generated DifferentExcept call.
+      # A second field, to exercise the multi-field composition of the generated
+      # DifferentExcept call and the combined create-path guard.
       LogDeliveryConfigurations:
-        custom_sync:
-          method: syncLogDelivery
+        custom_sync: {}
