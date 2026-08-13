@@ -14,6 +14,7 @@ func (rm *resourceManager) sdkUpdate(
 {{ $hookCode }}
 {{- end }}
 {{- GoCodeResourceIsUpdateable .CRD "latest" 1 }}
+{{- GoCodeCustomSyncUpdate .CRD "desired" "latest" "delta" 1 }}
 {{- if $customMethod := .CRD.GetCustomImplementation .CRD.Ops.Update }}
 	updated, err = rm.{{ $customMethod }}(ctx, desired, latest, delta)
 	if updated != nil || err != nil {

@@ -164,6 +164,12 @@ var (
 		"GoCodeResourceIsDeletable": func(r *ackmodel.CRD, resVarName string, indentLevel int) (string, error) {
 			return code.ResourceIsDeletable(r.Config(), r, resVarName, indentLevel)
 		},
+		"GoCodeCustomSyncUpdate": func(r *ackmodel.CRD, desiredVarName string, latestVarName string, deltaVarName string, indentLevel int) string {
+			return code.CustomSyncUpdate(r, desiredVarName, latestVarName, deltaVarName, indentLevel)
+		},
+		"GoCodeCustomSyncCreate": func(r *ackmodel.CRD, koVarName string, indentLevel int) string {
+			return code.CustomSyncCreate(r, koVarName, indentLevel)
+		},
 		"GoCodeCompareStruct": func(r *ackmodel.CRD, shape *awssdkmodel.Shape, deltaVarName string, sourceVarName string, targetVarName string, fieldPath string, indentLevel int) (string, error) {
 			return code.CompareStruct(r.Config(), r, nil, shape, deltaVarName, sourceVarName, targetVarName, fieldPath, indentLevel)
 		},

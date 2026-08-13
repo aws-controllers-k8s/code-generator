@@ -520,8 +520,103 @@ func (m *Model) GetCRDs() ([]*CRD, error) {
 		return nil, fmt.Errorf("generator.yaml validation failed:\n  %s", strings.Join(fieldErrs, "\n  "))
 	}
 
+	if err := m.validateCustomSyncConfigs(crds); err != nil {
+		return nil, err
+	}
+
 	m.crds = crds
 	return crds, nil
+}
+
+// validateCustomSyncConfigs rejects `custom_sync` field configs that the code
+// generator cannot produce working code for.
+//
+// Each of these combinations otherwise yields a controller that compiles but
+// misbehaves at runtime, so they are caught at generation time instead.
+func (m *Model) validateCustomSyncConfigs(crds []*CRD) error {
+	var errs []string
+	for _, crd := range crds {
+		for fieldName, fc := range m.cfg.GetFieldConfigs(crd.Names.Original) {
+			if fc.CustomSync == nil {
+				continue
+			}
+			prefix := fmt.Sprintf(
+				"resources.%s.fields.%s.custom_sync", crd.Names.Original, fieldName,
+			)
+			// The generated code lives in sdkUpdate, so without an Update
+			// operation there is nowhere to emit the sync invocation.
+			if crd.Ops.Update == nil {
+				errs = append(errs, fmt.Sprintf(
+					"%s: resource has no Update operation, so the sync function "+
+						"would never be called", prefix,
+				))
+				continue
+			}
+			// Only top-level Spec fields are supported. The generated code
+			// builds a "Spec.<Field>" delta path and a nil check directly off
+			// ko.Spec, neither of which is correct for a nested field.
+			if strings.Contains(fieldName, ".") {
+				errs = append(errs, fmt.Sprintf(
+					"%s: only supported on top-level Spec fields, but %q is a nested field",
+					prefix, fieldName,
+				))
+				continue
+			}
+			// A Status field is not user-settable, so there is no desired value
+			// to sync toward.
+			if fc.IsReadOnly {
+				errs = append(errs, fmt.Sprintf(
+					"%s: cannot be combined with is_read_only, which places the "+
+						"field in Status where there is no desired value to sync",
+					prefix,
+				))
+				continue
+			}
+			// An ignored field never lands in the delta, so DifferentAt would
+			// never fire and DifferentExcept would short-circuit sdkUpdate on
+			// every reconcile — the resource would stop updating entirely.
+			if fc.Compare != nil && fc.Compare.IsIgnored {
+				errs = append(errs, fmt.Sprintf(
+					"%s: cannot be combined with compare.is_ignored, because the "+
+						"field would never appear in the delta and the resource "+
+						"would stop reconciling",
+					prefix,
+				))
+				continue
+			}
+			// Catch anything that did not resolve into a top-level Spec field
+			// for a reason not covered above, so the config is never silently
+			// ignored.
+			if _, found := crd.SpecFields[fieldName]; !found {
+				if !fieldInSpecByCamelName(crd, fieldName) {
+					errs = append(errs, fmt.Sprintf(
+						"%s: field is not a top-level Spec field of the resource",
+						prefix,
+					))
+				}
+			}
+		}
+	}
+	if len(errs) > 0 {
+		sort.Strings(errs)
+		return fmt.Errorf(
+			"generator.yaml validation failed:\n  %s", strings.Join(errs, "\n  "),
+		)
+	}
+	return nil
+}
+
+// fieldInSpecByCamelName returns true if the CRD has a top-level Spec field
+// whose camel-cased name matches the supplied name, case-insensitively. Field
+// configs are keyed by the renamed field path, which may differ in case from the
+// original SDK member name that SpecFields is keyed by.
+func fieldInSpecByCamelName(crd *CRD, fieldName string) bool {
+	for _, f := range crd.SpecFields {
+		if strings.EqualFold(f.Names.Camel, fieldName) {
+			return true
+		}
+	}
+	return false
 }
 
 // crdHasField returns true if the CRD has a field matching the given name

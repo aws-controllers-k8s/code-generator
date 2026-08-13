@@ -275,6 +275,46 @@ type CompareFieldConfig struct {
 	PreDeleteInclude bool `json:"pre_delete_include"`
 }
 
+// CustomSyncConfig instructs the code generator that the field is not
+// reconciled by the resource's normal Update operation, but instead by a
+// hand-written sync function that the controller author implements.
+//
+// The field's value is typically managed by a separate AWS API (tags via
+// CreateTags/DeleteTags, a scaling configuration via its own Put* call, and so
+// on), so it cannot be set through the resource's Update input shape. Setting
+// this config makes the code generator emit the boilerplate that invokes the
+// sync function from sdkUpdate, and that marks the resource unsynced after
+// create so a follow-up reconcile applies the field.
+//
+// The code generator does NOT generate the sync function itself. The author
+// implements it as a method on the resource manager in the resource's hooks.go,
+// which is how every other hand-written seam in the generated code is shaped:
+//
+//	func (rm *resourceManager) sync<Field>(
+//	    ctx context.Context,
+//	    desired *resource,
+//	    latest *resource,
+//	) error
+//
+// The receiver gives the implementation access to rm.sdkapi and rm.metrics, so
+// no additional plumbing is needed to make API calls or record them.
+//
+// Given a Tags field, the generator emits a call to `syncTags` and expects
+// `syncTags` to exist. For example:
+//
+// resources:
+//
+//	AutoScalingGroup:
+//	  fields:
+//	    Tags:
+//	      custom_sync: {}
+type CustomSyncConfig struct {
+	// Method optionally overrides the name of the sync function the generated
+	// code calls. When empty, the name defaults to "sync" followed by the
+	// field's camel-cased name, e.g. a Tags field yields "syncTags".
+	Method string `json:"method,omitempty"`
+}
+
 // PrintFieldConfig instructs the code generator how to handle kubebuilder:printcolumn
 // comment marker generation. If this struct is not nil, the field will be added to the
 // columns of `kubectl get` response.
@@ -459,6 +499,11 @@ type FieldConfig struct {
 	// References instructs the code generator how to refer this field from
 	// other custom resource
 	References *ReferencesConfig `json:"references,omitempty"`
+	// CustomSync instructs the code generator that this field is reconciled by
+	// a hand-written sync function rather than by the resource's Update
+	// operation, and that the boilerplate invoking that function should be
+	// generated into sdkUpdate.
+	CustomSync *CustomSyncConfig `json:"custom_sync,omitempty"`
 	// Type *overrides* the inferred Go type of the field. This is required for
 	// custom fields that are not inferred either as a Create Input/Output
 	// shape or via the SourceFieldConfig attribute.

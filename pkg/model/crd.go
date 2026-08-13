@@ -319,6 +319,36 @@ func (r *CRD) CompareIgnoredFields() []string {
 	return r.cfg.GetCompareIgnoredFieldPaths(r.Names.Original)
 }
 
+// CustomSyncFields returns the CRD's top-level Spec fields that are configured
+// with `custom_sync`, in a deterministic order.
+//
+// Such fields are not reconciled by the resource's Update operation. Instead,
+// the code generator emits boilerplate into sdkUpdate that invokes a
+// hand-written sync function for each of them, and marks the resource unsynced
+// after create so that a follow-up reconcile applies them. See
+// ackgenconfig.CustomSyncConfig.
+//
+// `custom_sync` is only supported on top-level Spec fields. Configuring it on a
+// nested or Status field is rejected during model construction, so this method
+// does not need to filter those out.
+func (r *CRD) CustomSyncFields() []*Field {
+	res := []*Field{}
+	// SpecFieldNames is sorted, which keeps generated output stable.
+	for _, fieldName := range r.SpecFieldNames() {
+		f := r.SpecFields[fieldName]
+		if f.FieldConfig != nil && f.FieldConfig.CustomSync != nil {
+			res = append(res, f)
+		}
+	}
+	return res
+}
+
+// HasCustomSyncFields returns true if any of the CRD's Spec fields is
+// configured with `custom_sync`.
+func (r *CRD) HasCustomSyncFields() bool {
+	return len(r.CustomSyncFields()) > 0
+}
+
 // SetAttributesSingleAttribute returns true if the supplied resource name has
 // a SetAttributes operation that only actually changes a single attribute at a
 // time. See: SNS SetTopicAttributes API call, which is entirely different from

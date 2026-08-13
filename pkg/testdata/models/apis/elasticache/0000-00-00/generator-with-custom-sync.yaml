@@ -1,0 +1,21 @@
+ignore:
+  resource_names:
+    - GlobalReplicationGroup
+    - CacheCluster
+    - CacheSecurityGroup
+    - UserGroup
+    - CacheParameterGroup
+    - CacheSubnetGroup
+    - Snapshot
+    - User
+resources:
+  ReplicationGroup:
+    fields:
+      # Exercises the default method name: a Tags field yields syncTags.
+      Tags:
+        custom_sync: {}
+      # Exercises the `method` override, and the multi-field composition of the
+      # generated DifferentExcept call.
+      LogDeliveryConfigurations:
+        custom_sync:
+          method: syncLogDelivery

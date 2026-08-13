@@ -1,0 +1,19 @@
+ignore:
+  resource_names:
+    - GlobalReplicationGroup
+    - CacheCluster
+    - CacheSecurityGroup
+    - UserGroup
+    - CacheParameterGroup
+    - CacheSubnetGroup
+    - Snapshot
+    - User
+resources:
+  ReplicationGroup:
+    fields:
+      # Invalid: an ignored field never lands in the delta, so the sync would
+      # never run and the short-circuit would fire on every reconcile.
+      Tags:
+        custom_sync: {}
+        compare:
+          is_ignored: true

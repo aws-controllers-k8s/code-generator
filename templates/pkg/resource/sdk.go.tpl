@@ -111,6 +111,7 @@ func (rm *resourceManager) sdkCreate(
 {{- if $hookCode := Hook .CRD "sdk_create_post_set_output" }}
 {{ $hookCode }}
 {{- end }}
+{{- GoCodeCustomSyncCreate .CRD "ko" 1 }}
 	return &resource{ko}, nil
 }
 
