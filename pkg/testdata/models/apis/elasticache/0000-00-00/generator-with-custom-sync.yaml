@@ -1,0 +1,20 @@
+ignore:
+  resource_names:
+    - GlobalReplicationGroup
+    - CacheCluster
+    - CacheSecurityGroup
+    - UserGroup
+    - CacheParameterGroup
+    - CacheSubnetGroup
+    - Snapshot
+    - User
+resources:
+  ReplicationGroup:
+    fields:
+      # A Tags field yields syncTags.
+      Tags:
+        custom_sync: {}
+      # A second field, to exercise the multi-field composition of the generated
+      # DifferentExcept call and the combined create-path guard.
+      LogDeliveryConfigurations:
+        custom_sync: {}

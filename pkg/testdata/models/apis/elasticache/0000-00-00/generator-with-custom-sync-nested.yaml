@@ -1,0 +1,18 @@
+ignore:
+  resource_names:
+    - GlobalReplicationGroup
+    - CacheCluster
+    - CacheSecurityGroup
+    - UserGroup
+    - CacheParameterGroup
+    - CacheSubnetGroup
+    - Snapshot
+    - User
+resources:
+  ReplicationGroup:
+    fields:
+      # Invalid: custom_sync is only supported on top-level Spec fields. The
+      # generated code builds a "Spec.<Field>" delta path and a nil check
+      # directly off ko.Spec, neither of which is correct here.
+      LogDeliveryConfigurations.DestinationType:
+        custom_sync: {}
