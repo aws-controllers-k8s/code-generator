@@ -1,0 +1,22 @@
+ignore:
+  resource_names:
+    - GlobalReplicationGroup
+    - CacheCluster
+    - CacheSecurityGroup
+    - UserGroup
+    - CacheParameterGroup
+    - CacheSubnetGroup
+    - Snapshot
+    - User
+resources:
+  ReplicationGroup:
+    fields:
+      # CreateReplicationGroup carries Tags, so tags are live as soon as create
+      # returns and no post-create sync is pending for them. Tag UPDATES still
+      # need their own API, which is why the field is custom_sync all the same.
+      Tags:
+        custom_sync:
+          applied_on_create: true
+      # Not carried by create, so this field alone drives the post-create marker.
+      LogDeliveryConfigurations:
+        custom_sync: {}

@@ -127,21 +127,28 @@ func CustomSyncUpdate(
 }
 
 // CustomSyncCreate returns Go code that marks the resource unsynced after a
-// successful create when any of its `custom_sync` fields is set.
+// successful create when any of its `custom_sync` fields is set and still
+// pending.
 //
-// A `custom_sync` field is only ever applied in the update path, so immediately
-// after create the field is present in the resource's Spec but has not been
-// pushed to AWS. Setting the Synced condition to false makes the runtime requeue
-// after requeue.DefaultRequeueAfterDuration (30 seconds), which lands in
+// A `custom_sync` field is normally applied only in the update path, so
+// immediately after create the field is present in the resource's Spec but has
+// not been pushed to AWS. Setting the Synced condition to false makes the runtime
+// requeue after requeue.DefaultRequeueAfterDuration (30 seconds), which lands in
 // sdkUpdate and runs the sync. Without this, the resource would report itself
 // synced while the field was still unapplied, and the correction would wait for
 // the full resync period.
+//
+// Fields marked `applied_on_create` are excluded, because the Create operation
+// already carried their value and there is nothing for the follow-up reconcile to
+// do. They still participate in the update path — see CustomSyncUpdate, which
+// uses every `custom_sync` field.
 //
 // The Synced condition carries a message so that a user running
 // `kubectl describe` sees why the resource is not synced yet and that the
 // controller intends to sync again on its own.
 //
-// The empty string is returned when the resource has no `custom_sync` fields.
+// The empty string is returned when the resource has no `custom_sync` fields, or
+// when every one of them is `applied_on_create`.
 //
 // Sample output:
 //
@@ -156,7 +163,7 @@ func CustomSyncCreate(
 	// Number of levels of indentation to use
 	indentLevel int,
 ) string {
-	fields := r.CustomSyncFields()
+	fields := r.CustomSyncFieldsPendingAfterCreate()
 	if len(fields) == 0 {
 		return ""
 	}

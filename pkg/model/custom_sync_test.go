@@ -108,6 +108,63 @@ func TestCustomSync_CompareIgnored(t *testing.T) {
 	assert.Equal("syncTags", fields[0].CustomSyncMethodName())
 }
 
+// TestCustomSyncAppliedOnCreate covers the model accessors for
+// `applied_on_create`: it partitions the custom_sync fields into those a
+// successful create leaves pending and those it does not, while leaving the full
+// set - which the update path uses - untouched.
+func TestCustomSyncAppliedOnCreate(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "elasticache",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-custom-sync-applied-on-create.yaml",
+		})
+
+	crds, err := g.GetCRDs()
+	require.NoError(err)
+
+	crd := getCRDByName("ReplicationGroup", crds)
+	require.NotNil(crd)
+
+	// Both fields are still custom_sync fields, so both are synced on update.
+	all := crd.CustomSyncFields()
+	require.Len(all, 2)
+	assert.Equal("LogDeliveryConfigurations", all[0].Names.Camel)
+	assert.False(all[0].CustomSyncAppliedOnCreate())
+	assert.Equal("Tags", all[1].Names.Camel)
+	assert.True(all[1].CustomSyncAppliedOnCreate())
+
+	// Only the field create does not apply is pending afterwards.
+	pending := crd.CustomSyncFieldsPendingAfterCreate()
+	require.Len(pending, 1)
+	assert.Equal("LogDeliveryConfigurations", pending[0].Names.Camel)
+}
+
+// TestCustomSyncAppliedOnCreate_Default confirms the option defaults to false,
+// so a field configured with a bare `custom_sync: {}` is still treated as
+// pending after create.
+func TestCustomSyncAppliedOnCreate_Default(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "elasticache",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-custom-sync.yaml",
+		})
+
+	crds, err := g.GetCRDs()
+	require.NoError(err)
+
+	crd := getCRDByName("ReplicationGroup", crds)
+	require.NotNil(crd)
+
+	for _, f := range crd.CustomSyncFields() {
+		assert.False(f.CustomSyncAppliedOnCreate())
+	}
+	assert.Len(crd.CustomSyncFieldsPendingAfterCreate(), 2)
+}
+
 // TestCustomSyncInvalid_NestedField rejects custom_sync on a nested field. The
 // emitted code builds a "Spec.<Field>" delta path and a nil check directly off
 // ko.Spec, neither of which is correct below the top level.

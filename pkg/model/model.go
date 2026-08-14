@@ -552,6 +552,18 @@ func (m *Model) validateCustomSyncConfigs(crds []*CRD) error {
 				))
 				continue
 			}
+			// `applied_on_create` asserts that the Create operation applies the
+			// field. With no Create operation there is nothing for it to assert,
+			// and honoring it would drop the post-create marker on the claim of
+			// an operation that does not exist.
+			if fc.CustomSync.AppliedOnCreate && crd.Ops.Create == nil {
+				errs = append(errs, fmt.Sprintf(
+					"%s.applied_on_create: resource has no Create operation, so "+
+						"there is no create path that could apply the field",
+					prefix,
+				))
+				continue
+			}
 			// Only top-level Spec fields are supported. The generated code
 			// builds a "Spec.<Field>" delta path and a nil check directly off
 			// ko.Spec, neither of which is correct for a nested field.
