@@ -572,18 +572,20 @@ func (m *Model) validateCustomSyncConfigs(crds []*CRD) error {
 				))
 				continue
 			}
-			// An ignored field never lands in the delta, so DifferentAt would
-			// never fire and DifferentExcept would short-circuit sdkUpdate on
-			// every reconcile — the resource would stop updating entirely.
-			if fc.Compare != nil && fc.Compare.IsIgnored {
-				errs = append(errs, fmt.Sprintf(
-					"%s: cannot be combined with compare.is_ignored, because the "+
-						"field would never appear in the delta and the resource "+
-						"would stop reconciling",
-					prefix,
-				))
-				continue
-			}
+			// NOTE: `compare.is_ignored` is deliberately NOT rejected here.
+			// It suppresses only the GENERATED comparison, and a resource with
+			// a `delta_pre_compare` hook can add the very same path by hand —
+			// which is how the established out-of-band tag pattern is written
+			// across the existing controllers. Whether the path reaches the
+			// delta therefore depends on hand-written code the generator cannot
+			// see, so any check here is a guess, and this one guessed wrong for
+			// the most common shape of the feature's intended consumer.
+			//
+			// Narrowing it to "ignored AND no delta_pre_compare hook" would
+			// still be a guess, since the presence of a hook does not prove the
+			// hook adds THIS path. The runtime symptom of getting it wrong is
+			// visible and local: the field stops being applied.
+
 			// Catch anything that did not resolve into a top-level Spec field
 			// for a reason not covered above, so the config is never silently
 			// ignored.

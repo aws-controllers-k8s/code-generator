@@ -11,8 +11,8 @@ ignore:
 resources:
   ReplicationGroup:
     fields:
-      # Invalid: an ignored field never lands in the delta, so the sync would
-      # never run and the short-circuit would fire on every reconcile.
+      # Valid: compare.is_ignored suppresses only the generated comparison, and
+      # a delta_pre_compare hook can add Spec.Tags to the delta by hand.
       Tags:
         custom_sync: {}
         compare:

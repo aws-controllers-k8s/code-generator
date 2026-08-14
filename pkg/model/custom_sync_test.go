@@ -77,11 +77,15 @@ func TestCustomSyncFields_NotConfigured(t *testing.T) {
 	assert.Equal("", tags.CustomSyncMethodName())
 }
 
-// TestCustomSyncInvalid_CompareIgnored rejects custom_sync on an ignored field.
-// Such a field never enters the delta, so the sync would never run and the
-// generated DifferentExcept short-circuit would fire on every reconcile,
-// stopping the resource from updating at all.
-func TestCustomSyncInvalid_CompareIgnored(t *testing.T) {
+// TestCustomSync_CompareIgnored accepts custom_sync on a field that is also
+// compare.is_ignored.
+//
+// `compare.is_ignored` suppresses only the generated comparison. A resource with
+// a `delta_pre_compare` hook adds the same path by hand, which is how the
+// out-of-band tag pattern this feature generalizes is written in the controllers
+// that have it today. Whether the path reaches the delta is therefore a property
+// of hand-written code, and the generator does not attempt to judge it.
+func TestCustomSync_CompareIgnored(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
@@ -90,10 +94,18 @@ func TestCustomSyncInvalid_CompareIgnored(t *testing.T) {
 			GeneratorConfigFile: "generator-with-custom-sync-compare-ignored.yaml",
 		})
 
-	_, err := g.GetCRDs()
-	require.Error(err)
-	assert.Contains(err.Error(), "resources.ReplicationGroup.fields.Tags.custom_sync")
-	assert.Contains(err.Error(), "compare.is_ignored")
+	crds, err := g.GetCRDs()
+	require.NoError(err)
+
+	crd := getCRDByName("ReplicationGroup", crds)
+	require.NotNil(crd)
+
+	// The config is honored, not silently dropped: the field is still collected
+	// as a custom_sync field and still yields a sync method name.
+	fields := crd.CustomSyncFields()
+	require.Len(fields, 1)
+	assert.Equal("Tags", fields[0].Names.Camel)
+	assert.Equal("syncTags", fields[0].CustomSyncMethodName())
 }
 
 // TestCustomSyncInvalid_NestedField rejects custom_sync on a nested field. The
