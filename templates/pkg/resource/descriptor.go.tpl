@@ -37,6 +37,12 @@ func (d *resourceDescriptor) GroupVersionKind() schema.GroupVersionKind {
 	return svcapitypes.GroupVersion.WithKind(GroupKind.Kind)
 }
 
+// GroupVersionResource returns a Kubernetes schema.GroupVersionResource struct that
+// describes the API Group, Version and Resource of CRs described by the descriptor
+func (d *resourceDescriptor) GroupVersionResource() schema.GroupVersionResource {
+	return GroupVersionResource
+}
+
 // EmptyRuntimeObject returns an empty object prototype that may be used in
 // apimachinery and k8s client operations
 func (d *resourceDescriptor) EmptyRuntimeObject() rtclient.Object {
