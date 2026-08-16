@@ -521,7 +521,8 @@ func newFieldRecurse(
 			// "unpack" the member fields composing this struct field...
 			for _, memberName := range containerShape.MemberNames() {
 				originalMemberName := memberName
-				if renamed, ok := renames[originalMemberName]; ok {
+				originalMemberPath := path + "." + names.New(originalMemberName).Camel
+				if renamed, ok := renames[originalMemberPath]; ok {
 					memberName = renamed
 				}
 				cleanMemberNames := names.New(memberName)
