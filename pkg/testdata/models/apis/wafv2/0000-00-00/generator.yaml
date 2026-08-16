@@ -35,10 +35,6 @@ resources:
         type: string
         set:
           - ignore: "all"
-      Rules.Statement.IPSetReferenceStatement.IPSetARN:
-        references:
-          resource: IPSet
-          path: Status.ACKResourceMetadata.ARN
       Rules.Statement.OrStatement:
         type: string
         set:
@@ -55,21 +51,6 @@ resources:
         type: string
         set:
           - ignore: "all"
-    renames:
-      operations:
-        CreateRuleGroup:
-          input_fields:
-            Rules.Statement.IPSetReferenceStatement.ARN: IPSetARN
-          output_fields:
-            Rules.Statement.IPSetReferenceStatement.ARN: IPSetARN
-        GetRuleGroup:
-          output_fields:
-            Rules.Statement.IPSetReferenceStatement.ARN: IPSetARN
-        UpdateRuleGroup:
-          input_fields:
-            Rules.Statement.IPSetReferenceStatement.ARN: IPSetARN
-          output_fields:
-            Rules.Statement.IPSetReferenceStatement.ARN: IPSetARN
   WebACL:
     fields:
       Name:
@@ -79,10 +60,10 @@ resources:
         type: string
         set:
           - ignore: "all"
-      Rules.Statement.IPSetReferenceStatement.IPSetARN:
-        references:
-          resource: IPSet
-          path: Status.ACKResourceMetadata.ARN
+      Rules.Statement.OrStatement:
+        type: string
+        set:
+          - ignore: "all"
       Rules.Statement.NotStatement:
         type: string
         set:
@@ -91,35 +72,7 @@ resources:
         type: string
         set:
           - ignore: "all"
-      Rules.Statement.OrStatement:
-        type: string
-        set:
-          - ignore: "all"
       Rules.Statement.RateBasedStatement.ScopeDownStatement:
         type: string
         set:
           - ignore: "all"
-      Rules.Statement.RuleGroupReferenceStatement.RuleGroupARN:
-        references:
-          resource: RuleGroup
-          path: Status.ACKResourceMetadata.ARN
-    renames:
-      operations:
-        CreateWebACL:
-          input_fields:
-            Rules.Statement.IPSetReferenceStatement.ARN: IPSetARN
-            Rules.Statement.RuleGroupReferenceStatement.ARN: RuleGroupARN
-          output_fields:
-            Rules.Statement.IPSetReferenceStatement.ARN: IPSetARN
-            Rules.Statement.RuleGroupReferenceStatement.ARN: RuleGroupARN
-        GetWebACL:
-          output_fields:
-            Rules.Statement.IPSetReferenceStatement.ARN: IPSetARN
-            Rules.Statement.RuleGroupReferenceStatement.ARN: RuleGroupARN
-        UpdateWebACL:
-          input_fields:
-            Rules.Statement.IPSetReferenceStatement.ARN: IPSetARN
-            Rules.Statement.RuleGroupReferenceStatement.ARN: RuleGroupARN
-          output_fields:
-            Rules.Statement.IPSetReferenceStatement.ARN: IPSetARN
-            Rules.Statement.RuleGroupReferenceStatement.ARN: RuleGroupARN
