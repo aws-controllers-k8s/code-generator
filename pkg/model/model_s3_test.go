@@ -91,6 +91,11 @@ func TestS3_Bucket(t *testing.T) {
 	}
 	assert.Equal(expStatusFieldCamel, attrCamelNames(statusFields))
 
+	// Ensure the top-level Bucket -> Name rename does not leak into nested paths.
+	createBucketCfg := specFields["CreateBucketConfiguration"]
+	require.NotNil(createBucketCfg)
+	assert.Contains(createBucketCfg.MemberFields, "Bucket")
+
 	expTypeDefCamel := []string{
 		"BucketLoggingStatus",
 		"LoggingEnabled",
