@@ -349,6 +349,29 @@ func (r *CRD) HasCustomSyncFields() bool {
 	return len(r.CustomSyncFields()) > 0
 }
 
+// CustomSyncFieldsPendingAfterCreate returns the subset of the CRD's
+// `custom_sync` fields that a successful create leaves unapplied, in the same
+// deterministic order as CustomSyncFields.
+//
+// A `custom_sync` field is normally applied only in the update path, so right
+// after create it is present in the resource's Spec but has not reached AWS. The
+// exception is a field whose value the Create operation already carries, marked
+// with `applied_on_create` — for that field there is nothing left to sync. See
+// ackgenconfig.CustomSyncConfig.AppliedOnCreate.
+//
+// Only the post-create marker consults this. The update path uses
+// CustomSyncFields, because every `custom_sync` field is synced on update
+// regardless of what create did.
+func (r *CRD) CustomSyncFieldsPendingAfterCreate() []*Field {
+	res := []*Field{}
+	for _, f := range r.CustomSyncFields() {
+		if !f.CustomSyncAppliedOnCreate() {
+			res = append(res, f)
+		}
+	}
+	return res
+}
+
 // SetAttributesSingleAttribute returns true if the supplied resource name has
 // a SetAttributes operation that only actually changes a single attribute at a
 // time. See: SNS SetTopicAttributes API call, which is entirely different from

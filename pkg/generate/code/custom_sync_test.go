@@ -100,6 +100,80 @@ func TestCustomSyncCreate(t *testing.T) {
 	)
 }
 
+// TestCustomSyncCreate_AppliedOnCreate verifies that a field marked
+// `applied_on_create` is left out of the post-create marker. Create already
+// carried its value, so there is nothing for the follow-up reconcile to apply,
+// and including it would cost a needless requeue while reporting a synced
+// resource as unsynced.
+//
+// Only LogDeliveryConfigurations remains in the guard, so the marker fires on
+// exactly the field that is still pending.
+func TestCustomSyncCreate_AppliedOnCreate(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "elasticache",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-custom-sync-applied-on-create.yaml",
+		})
+
+	crd := testutil.GetCRDByName(t, g, "ReplicationGroup")
+	require.NotNil(crd)
+
+	expected := `
+	if ko.Spec.LogDeliveryConfigurations != nil {
+		msg := "Secondary sync required; resource will be requeued"
+		ackcondition.SetSynced(&resource{ko}, corev1.ConditionFalse, &msg, nil)
+	}
+`
+	assert.Equal(
+		strings.TrimSpace(expected),
+		strings.TrimSpace(code.CustomSyncCreate(crd, "ko", 1)),
+	)
+}
+
+// TestCustomSyncUpdate_AppliedOnCreate verifies that `applied_on_create` does
+// NOT change the update path. Tags are applied by create but still updated
+// out-of-band, so sdkUpdate must keep calling rm.syncTags and must keep counting
+// Spec.Tags in the DifferentExcept short-circuit - otherwise a tags-only change
+// would fall through to the Update operation, which cannot apply it.
+func TestCustomSyncUpdate_AppliedOnCreate(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "elasticache",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-custom-sync-applied-on-create.yaml",
+		})
+
+	crd := testutil.GetCRDByName(t, g, "ReplicationGroup")
+	require.NotNil(crd)
+
+	expected := `
+	updatedDesired := desired.DeepCopy()
+	updatedDesired.SetStatus(latest)
+	if delta.DifferentAt("Spec.LogDeliveryConfigurations") {
+		err = rm.syncLogDeliveryConfigurations(ctx, desired, latest)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if delta.DifferentAt("Spec.Tags") {
+		err = rm.syncTags(ctx, desired, latest)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if !delta.DifferentExcept("Spec.LogDeliveryConfigurations", "Spec.Tags") {
+		return rm.concreteResource(updatedDesired), nil
+	}
+`
+	assert.Equal(
+		strings.TrimSpace(expected),
+		strings.TrimSpace(code.CustomSyncUpdate(crd, "desired", "latest", "delta", 1)),
+	)
+}
+
 // TestCustomSyncNoFields confirms both emitters are inert for the overwhelming
 // majority of resources, which have no custom_sync fields at all.
 func TestCustomSyncNoFields(t *testing.T) {

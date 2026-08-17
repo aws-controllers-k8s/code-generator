@@ -309,15 +309,47 @@ type CompareFieldConfig struct {
 //	    Tags:
 //	      custom_sync: {}
 //
-// The struct is intentionally empty. Presence of the `custom_sync` key is the
-// entire configuration, and the sync method name is always derived from the
-// field name so that it is identical across every controller.
+// The sync method name is always derived from the field name so that it is
+// identical across every controller, and is not configurable.
 //
-// It is declared as a struct rather than a bool so that options can be added
-// later without breaking the generator.yaml files that adopt it now: promoting a
-// bool to a struct would be a breaking change under the strict unmarshalling
-// config.New performs.
-type CustomSyncConfig struct{}
+// The struct is declared rather than a bool so that options can be added without
+// breaking the generator.yaml files that already use it: promoting a bool to a
+// struct would be a breaking change under the strict unmarshalling config.New
+// performs.
+type CustomSyncConfig struct {
+	// AppliedOnCreate declares that the resource's Create operation already
+	// applies this field, so no follow-up sync is needed for it after create.
+	//
+	// By default a `custom_sync` field is assumed to be applied only in the
+	// update path, and the generator marks the resource unsynced after a
+	// successful create so the runtime requeues and applies the field. That is
+	// wrong for a field the Create input shape carries: it is live the moment
+	// create returns, and the marker costs a needless reconcile while reporting
+	// the resource as not synced when it is.
+	//
+	// This is common for tags. Both eventbridge PutRule and autoscaling
+	// CreateAutoScalingGroup take Tags on create, while tag UPDATES still have to
+	// go through TagResource/UntagResource - which is precisely why the field
+	// needs `custom_sync` and `applied_on_create` at the same time:
+	//
+	//	Rule:
+	//	  fields:
+	//	    Tags:
+	//	      custom_sync:
+	//	        applied_on_create: true
+	//
+	// This affects the post-create marker ONLY. The field still takes part in
+	// the update path exactly as before: sdkUpdate still calls its sync function
+	// when the delta reports it, and still counts it in the DifferentExcept
+	// short-circuit.
+	//
+	// It is stated by the author rather than derived from the Create input shape
+	// because the two can disagree. The generator can see that a field was
+	// written into the request struct, but not whether AWS acted on it, and an
+	// API that accepts a field on create and ignores it would silently lose its
+	// marker - reporting Synced on a field that was never applied.
+	AppliedOnCreate bool `json:"applied_on_create"`
+}
 
 // PrintFieldConfig instructs the code generator how to handle kubebuilder:printcolumn
 // comment marker generation. If this struct is not nil, the field will be added to the
