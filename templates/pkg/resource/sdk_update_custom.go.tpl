@@ -5,6 +5,7 @@ func (rm *resourceManager) sdkUpdate(
 	latest *resource,
 	delta *ackcompare.Delta,
 ) (*resource, error) {
+{{- GoCodeResourceIsUpdateable .CRD "latest" 1 }}
 	return rm.{{ .CRD.CustomUpdateMethodName }}(ctx, desired, latest, delta)
 }
 {{- end -}}
