@@ -464,6 +464,14 @@ func (r *CRD) IsARNPrimaryKey() bool {
 	return resGenConfig.IsARNPrimaryKey
 }
 
+// IsPrimaryKeyOptional returns true if the CRD is configured to treat its
+// primary key as optional when populating the resource from an adoption
+// annotation. When true, PopulateResourceFromAnnotation still sets the primary
+// key when present but does not require it.
+func (r *CRD) IsPrimaryKeyOptional() bool {
+	return r.cfg.ResourceIsPrimaryKeyOptional(r.Names.Original)
+}
+
 // GetPrimaryKeyField returns the field designated as the primary key, nil if
 // none are specified or an error if multiple are designated.
 func (r *CRD) GetPrimaryKeyField() (*Field, error) {

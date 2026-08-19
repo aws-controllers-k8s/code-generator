@@ -1802,6 +1802,33 @@ func TestSetResource_EKS_Cluster_PopulateResourceFromAnnotation(t *testing.T) {
 	assert.Equal(expected, got)
 }
 
+func TestSetResource_EKS_Cluster_OptionalPrimaryKey_PopulateResourceFromAnnotation(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "eks", &testutil.TestingModelOptions{
+		GeneratorConfigFile: "generator-with-optional-primary-key.yaml",
+	})
+
+	crd := testutil.GetCRDByName(t, g, "Cluster")
+	require.NotNil(crd)
+	require.True(crd.IsPrimaryKeyOptional())
+
+	// With is_primary_key_optional, the primary key is still read and set from
+	// the annotation, but is guarded by `if ok` instead of returning a terminal
+	// "required field missing" error when absent.
+	expected := `
+	primaryKey, ok := fields["name"]
+	if ok {
+		r.ko.Spec.Name = &primaryKey
+	}
+
+`
+	got, err := code.PopulateResourceFromAnnotation(crd.Config(), crd, "fields", "r.ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
+}
+
 func TestSetResource_OpensearchServerless_SecurityPolicy_PopulateResourceFromAnnotation(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)

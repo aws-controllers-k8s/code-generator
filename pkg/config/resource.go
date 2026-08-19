@@ -126,6 +126,16 @@ type ResourceConfig struct {
 	// IsARNPrimaryKey determines whether the CRD uses the ARN as the primary
 	// identifier in the ReadOne operations.
 	IsARNPrimaryKey bool `json:"is_arn_primary_key"`
+	// IsPrimaryKeyOptional, when true, tells the code generator to treat the
+	// primary key field as optional when populating the resource from an
+	// adoption annotation. PopulateResourceFromAnnotation still reads and sets
+	// the primary key (and any additional identifier fields), but no longer
+	// returns a "required field missing" terminal error when it is absent. Use
+	// this for resources that can be identified by one of several
+	// mutually-exclusive fields (for example, a policy keyed by name OR by
+	// resource ARN) so adoption succeeds with whichever field(s) the user
+	// supplies.
+	IsPrimaryKeyOptional bool `json:"is_primary_key_optional"`
 	// TagConfig contains instructions for the code generator to generate
 	// custom code for ensuring tags
 	TagConfig *TagConfig `json:"tags,omitempty"`
@@ -510,6 +520,20 @@ func (c *Config) ResourceIsAdoptable(resourceName string) bool {
 		return true
 	}
 	return *rConfig.IsAdoptable
+}
+
+// ResourceIsPrimaryKeyOptional returns true if the resource is configured to
+// treat its primary key field as optional when populating the resource from an
+// adoption annotation (is_primary_key_optional: true).
+func (c *Config) ResourceIsPrimaryKeyOptional(resourceName string) bool {
+	if c == nil {
+		return false
+	}
+	rConfig, ok := c.Resources[resourceName]
+	if !ok {
+		return false
+	}
+	return rConfig.IsPrimaryKeyOptional
 }
 
 // ResourceContainsAttributesMap returns true if the underlying API has

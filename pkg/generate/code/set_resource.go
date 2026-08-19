@@ -904,6 +904,29 @@ func requiredFieldGuardContructor(
 	return out
 }
 
+// optionalFieldGuardConstructor returns Go code that opens an `if ok {` guard
+// which is entered only when the given optional field is present in the source
+// map. The caller is responsible for emitting the guarded body and closing the
+// block:
+//
+//	f0, ok := fields["policyName"]
+//	if ok {
+func optionalFieldGuardConstructor(
+	// optionalFieldVarName is the variable where the field value will be stored
+	optionalFieldVarName string,
+	// String representing the fields map that contains the fields for adoption
+	sourceVarName string,
+	// String representing the name of the optional field
+	optionalField string,
+	// Number of levels of indentation to use
+	indentLevel int,
+) string {
+	indent := strings.Repeat("\t", indentLevel)
+	out := fmt.Sprintf("%s%s, ok := %s[\"%s\"]\n", indent, optionalFieldVarName, sourceVarName, optionalField)
+	out += fmt.Sprintf("%sif ok {\n", indent)
+	return out
+}
+
 // SetResourceGetAttributes returns the Go code that sets the Status fields
 // from the Output shape returned from a resource's GetAttributes operation.
 //
@@ -1423,14 +1446,27 @@ func PopulateResourceFromAnnotation(
 	isPrimarySet := primaryField != nil
 	if isPrimarySet {
 		memberPath, _ := findFieldInCR(cfg, r, primaryField.Names.Original)
-		primaryKeyOut += requiredFieldGuardContructor("primaryKey", sourceVarName, primaryField.Names.CamelLower, indentLevel)
 		targetVarPath := fmt.Sprintf("%s%s", targetVarName, memberPath)
-		primaryKeyOut += setResourceIdentifierPrimaryIdentifierAnn(
-			"&primaryKey",
-			primaryField,
-			targetVarPath,
-			indentLevel,
-		)
+		if r.IsPrimaryKeyOptional() {
+			// The primary key is optional for adoption: set it when the
+			// annotation supplies it, but do not require it.
+			primaryKeyOut += optionalFieldGuardConstructor("primaryKey", sourceVarName, primaryField.Names.CamelLower, indentLevel)
+			primaryKeyOut += setResourceIdentifierPrimaryIdentifierAnn(
+				"&primaryKey",
+				primaryField,
+				targetVarPath,
+				indentLevel+1,
+			)
+			primaryKeyOut += fmt.Sprintf("%s}\n", indent)
+		} else {
+			primaryKeyOut += requiredFieldGuardContructor("primaryKey", sourceVarName, primaryField.Names.CamelLower, indentLevel)
+			primaryKeyOut += setResourceIdentifierPrimaryIdentifierAnn(
+				"&primaryKey",
+				primaryField,
+				targetVarPath,
+				indentLevel,
+			)
+		}
 	} else {
 		var findErr error
 		primaryCRField, primaryShapeField, findErr = FindPrimaryIdentifierFieldNames(cfg, r, op)

@@ -1,0 +1,8 @@
+resources:
+  Cluster:
+    # is_primary_key_optional makes PopulateResourceFromAnnotation set the
+    # primary key when the adoption annotation supplies it, but not require it.
+    is_primary_key_optional: true
+    fields:
+      Name:
+        is_primary_key: true
