@@ -1545,13 +1545,29 @@ func PopulateResourceFromAnnotation(
 		sourceVarPath := fmt.Sprintf("%s%s", targetVarName, memberPath)
 		if inputShape.IsRequired(memberName) || isPrimaryIdentifier {
 			requiredFieldVarName := fmt.Sprintf("f%d", memberIndex)
-			primaryKeyOut += requiredFieldGuardContructor(requiredFieldVarName, sourceVarName, targetField.Names.CamelLower, indentLevel)
-			primaryKeyOut += setResourceIdentifierPrimaryIdentifierAnn(
-				fmt.Sprintf("&%s", requiredFieldVarName),
-				targetField,
-				sourceVarPath,
-				indentLevel,
-			)
+			if isPrimaryIdentifier && r.IsPrimaryKeyOptional() {
+				// The auto-discovered primary key is optional for adoption: set
+				// it when the annotation supplies it, but do not require it.
+				// This mirrors the explicit is_primary_key handling above.
+				// (Note: is_primary_key_optional has no effect for ARN primary
+				// keys, which return early and always require the ARN.)
+				primaryKeyOut += optionalFieldGuardConstructor(requiredFieldVarName, sourceVarName, targetField.Names.CamelLower, indentLevel)
+				primaryKeyOut += setResourceIdentifierPrimaryIdentifierAnn(
+					fmt.Sprintf("&%s", requiredFieldVarName),
+					targetField,
+					sourceVarPath,
+					indentLevel+1,
+				)
+				primaryKeyOut += fmt.Sprintf("%s}\n", indent)
+			} else {
+				primaryKeyOut += requiredFieldGuardContructor(requiredFieldVarName, sourceVarName, targetField.Names.CamelLower, indentLevel)
+				primaryKeyOut += setResourceIdentifierPrimaryIdentifierAnn(
+					fmt.Sprintf("&%s", requiredFieldVarName),
+					targetField,
+					sourceVarPath,
+					indentLevel,
+				)
+			}
 		} else {
 			additionalKeyOut += setResourceIdentifierAdditionalKeyAnn(
 				cfg, r,
