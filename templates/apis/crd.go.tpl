@@ -15,6 +15,9 @@ import (
 )
 
 {{ .CRD.Documentation }}
+{{- range $validation := .CRD.SpecValidations }}
+// +kubebuilder:validation:XValidation:rule="{{ $validation.Rule }}",message="{{ $validation.Message }}"
+{{- end }}
 type {{ .CRD.Kind }}Spec struct {
 {{ range $fieldName := .CRD.SpecFieldNames }}
 {{- $field := (index $.CRD.SpecFields $fieldName) }}
