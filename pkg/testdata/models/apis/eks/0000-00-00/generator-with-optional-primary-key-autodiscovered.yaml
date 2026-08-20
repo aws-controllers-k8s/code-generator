@@ -1,0 +1,7 @@
+resources:
+  Cluster:
+    # is_primary_key_optional makes PopulateResourceFromAnnotation set the
+    # primary key when the adoption annotation supplies it, but not require it.
+    # No field is marked is_primary_key here, so the primary identifier is
+    # auto-discovered (Name, from DescribeCluster's `name` input).
+    is_primary_key_optional: true
