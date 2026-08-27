@@ -82,10 +82,10 @@ func CleanGoType(
 		gtwp = "*metav1.Time"
 		gte = "metav1.Time"
 		gt = "*metav1.Time"
-	} else if fieldCfg != nil && fieldCfg.IsSecretReference {
-		gt = "*ackv1alpha1.SecretReference"
-		gte = "SecretReference"
-		gtwp = "*ackv1alpha1.SecretReference"
+	} else if fieldCfg != nil && fieldCfg.IsTLSSecret {
+		gt = "*ackv1alpha1.TlsSecretReference"
+		gte = "TlsSecretReference"
+		gtwp = "*ackv1alpha1.TlsSecretReference"
 		return gte, gt, gtwp
 	} else if fieldCfg != nil && fieldCfg.IsSecret {
 		gt = "*ackv1alpha1.SecretKeyReference"
