@@ -80,15 +80,15 @@ func TestReplacePkgName(t *testing.T) {
 	}
 }
 
-func TestCleanGoTypeSecretReference(t *testing.T) {
+func TestCleanGoTypeTlsSecretReference(t *testing.T) {
 	gte, gt, gtwp := model.CleanGoType(
 		nil,
 		nil,
 		&api.Shape{Type: "blob"},
-		&config.FieldConfig{IsSecretReference: true},
+		&config.FieldConfig{IsTLSSecret: true},
 	)
 
-	assert.Equal(t, "SecretReference", gte)
-	assert.Equal(t, "*ackv1alpha1.SecretReference", gt)
-	assert.Equal(t, "*ackv1alpha1.SecretReference", gtwp)
+	assert.Equal(t, "TlsSecretReference", gte)
+	assert.Equal(t, "*ackv1alpha1.TlsSecretReference", gt)
+	assert.Equal(t, "*ackv1alpha1.TlsSecretReference", gtwp)
 }
