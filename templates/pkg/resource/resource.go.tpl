@@ -3,6 +3,8 @@
 package {{ .CRD.Names.Snake }}
 
 import (
+	"fmt"
+
 	ackv1alpha1 "github.com/aws-controllers-k8s/runtime/apis/core/v1alpha1"
 	acktypes "github.com/aws-controllers-k8s/runtime/pkg/types"
 	ackerrors "github.com/aws-controllers-k8s/runtime/pkg/errors"
@@ -16,6 +18,8 @@ import (
 // Hack to avoid import errors during build...
 var (
 	_ = &ackerrors.MissingNameIdentifier
+	_ = fmt.Sprintf
+	_ = aws.String
 )
 
 // resource implements the `aws-controller-k8s/runtime/pkg/types.AWSResource`

@@ -17,15 +17,17 @@ import (
 	"fmt"
 
 	awssdkmodel "github.com/aws-controllers-k8s/code-generator/pkg/api"
+	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/config"
 	"github.com/aws-controllers-k8s/pkg/names"
 )
 
 type Attr struct {
-	Names       names.Names
-	GoType      string
-	Shape       *awssdkmodel.Shape
-	GoTag       string
-	IsImmutable bool
+	Names          names.Names
+	GoType         string
+	Shape          *awssdkmodel.Shape
+	GoTag          string
+	IsImmutable    bool
+	CustomCELRules []ackgenconfig.CELRule
 }
 
 func NewAttr(

@@ -51,6 +51,35 @@ func (o *TestingModelOptions) SetDefaults() {
 	}
 }
 
+// repoRootFromWD returns the repository root directory by looking for "generate"
+// or "model" in the working directory path (both live directly under pkg/).
+// Returns ("", false) if the root cannot be determined.
+func repoRootFromWD(wd string) (string, bool) {
+	pathParts := strings.Split(wd, "/")
+	for x, pathPart := range pathParts {
+		if pathPart == "generate" || pathPart == "model" {
+			// x-1 points to "pkg"; everything before that is the repo root
+			return filepath.Join("/", filepath.Join(pathParts[0:x-1]...)), true
+		}
+	}
+	return "", false
+}
+
+// TemplatesBasePath returns the absolute path to the templates/ directory at
+// the root of the repository.
+func TemplatesBasePath(t *testing.T) string {
+	t.Helper()
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	root, ok := repoRootFromWD(wd)
+	if !ok {
+		t.Fatalf("could not determine templates/ path from working directory %q", wd)
+	}
+	return filepath.Join(root, "templates")
+}
+
 // NewModelForService returns a new *ackmodel.Model used for testing purposes.
 func NewModelForService(t *testing.T, servicePackageName string) *ackmodel.Model {
 	return NewModelForServiceWithOptions(t, servicePackageName, &TestingModelOptions{})
@@ -58,25 +87,21 @@ func NewModelForService(t *testing.T, servicePackageName string) *ackmodel.Model
 
 // NewModelForServiceWithOptions returns a new *ackmodel.Model used for testing purposes.
 func NewModelForServiceWithOptions(t *testing.T, servicePackageName string, options *TestingModelOptions) *ackmodel.Model {
-	path, err := os.Getwd()
+	wd, err := os.Getwd()
 	if err != nil {
 		t.Fatal(err)
 	}
 	// We have subdirectories in pkg/generate and pkg/model that rely on the testdata
 	// in pkg/generate. This code simply detects if we're running from one of
 	// those subdirectories and if so, rebuilds the path to the API model files
-	// in pkg/generate/testdata
-	pathParts := strings.Split(path, "/")
-	for x, pathPart := range pathParts {
-		if pathPart == "generate" || pathPart == "model" {
-			path = filepath.Join(pathParts[0:x]...)
-			path = filepath.Join("/", path, "testdata")
-			break
-		}
+	// in pkg/testdata
+	testdataPath := wd
+	if root, ok := repoRootFromWD(wd); ok {
+		testdataPath = filepath.Join(root, "pkg", "testdata")
 	}
 	options.SetDefaults()
 
-	generatorConfigPath := filepath.Join(path, "models", "apis", servicePackageName, options.ServiceAPIVersion, options.GeneratorConfigFile)
+	generatorConfigPath := filepath.Join(testdataPath, "models", "apis", servicePackageName, options.ServiceAPIVersion, options.GeneratorConfigFile)
 	if _, err := os.Stat(generatorConfigPath); os.IsNotExist(err) {
 		t.Fatalf("Could not find generator file %q", generatorConfigPath)
 	}
@@ -84,7 +109,7 @@ func NewModelForServiceWithOptions(t *testing.T, servicePackageName string, opti
 	if err != nil {
 		t.Fatal(err)
 	}
-	sdkHelper := acksdk.NewHelper(path, cfg)
+	sdkHelper := acksdk.NewHelper(testdataPath, cfg)
 	sdkHelper.WithAPIVersion(options.ServiceAPIVersion)
 	sdkAPI, err := sdkHelper.API(servicePackageName)
 	if err != nil {
@@ -93,7 +118,7 @@ func NewModelForServiceWithOptions(t *testing.T, servicePackageName string, opti
 
 	docConfigPath := ""
 	if options.DocumentationConfigFile != "" {
-		docConfigPath = filepath.Join(path, "models", "apis", servicePackageName, options.ServiceAPIVersion, options.DocumentationConfigFile)
+		docConfigPath = filepath.Join(testdataPath, "models", "apis", servicePackageName, options.ServiceAPIVersion, options.DocumentationConfigFile)
 	}
 	docCfg, err := ackgenconfig.NewDocumentationConfig(docConfigPath)
 	if err != nil {

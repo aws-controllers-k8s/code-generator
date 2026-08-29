@@ -18,6 +18,11 @@ operations:
     resource_name:
       RecordSet
 resources:
+  HostedZone:
+    custom_cel_rules:
+      - rule: "!has(self.hostedZoneConfig) || !self.hostedZoneConfig.privateZone || has(self.vpc)"
+        message: "spec.vpc is required for private hosted zones"
+      - rule: "size(self.name) > 0"
   RecordSet:
     fields:
       AliasTarget:
@@ -61,6 +66,9 @@ resources:
           operation: ListResourceRecordSets
           path: ResourceRecordSets.Name
         is_immutable: true
+        custom_cel_rules:
+          - rule: "self.endsWith('.')"
+            message: "DNS name must end with a dot"
       # Changing this value after a CR has been created could result in orphaned record sets
       RecordType:
         from:
