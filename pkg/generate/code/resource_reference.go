@@ -503,3 +503,200 @@ func getReferencedStateForField(field *model.Field, indentLevel int) string {
 
 	return out
 }
+
+// referenceAncestors returns the fields lying on the path to a field's reference
+// (`*Ref`) sibling, outermost first and excluding the reference itself, and
+// reports whether a LIST lies among them.
+//
+// The walk stops at the first list, returning a nil slice and inList true: a
+// reference reached through a list has no fixed address, so a caller skips it and
+// nothing deeper on the path matters. A MAP ancestor is rejected outright -- a
+// reference cannot be addressed through a map at all -- which is the same
+// rejection iterReferenceValues makes, kept in one place so a caller that does
+// not walk the path itself cannot disagree with it.
+//
+// Only ancestors count. A reference field that is itself a list (`*Refs`, whose
+// concrete sibling is a list of scalars) is the leaf rather than part of the path,
+// so nothing has to be indexed to reach it.
+func referenceAncestors(
+	field *model.Field,
+) (ancestors []*model.Field, inList bool, err error) {
+	r := field.CRD
+	refFieldPath, err := field.ReferenceFieldPath()
+	if err != nil {
+		return nil, false, err
+	}
+	fp := fieldpath.FromString(refFieldPath)
+	ancestors = make([]*model.Field, 0, fp.Size()-1)
+	for depth := 0; depth < fp.Size()-1; depth++ {
+		curFP := fp.CopyAt(depth).String()
+		cur, ok := r.Fields[curFP]
+		if !ok {
+			return nil, false, fmt.Errorf(
+				"resource %q: unable to find field with path %q", r.Kind, curFP,
+			)
+		}
+		switch cur.ShapeRef.Shape.Type {
+		case "map":
+			return nil, false, fmt.Errorf(
+				"resource %q, field %q: references cannot be within a map",
+				r.Kind, field.Path,
+			)
+		case "list":
+			return nil, true, nil
+		}
+		ancestors = append(ancestors, cur)
+	}
+	return ancestors, false, nil
+}
+
+// EnsureReferences returns Go code that restores, from a source object into a
+// target object, the cross-resource reference (`*Ref`) fields the target is
+// missing. See acktypes.ReferenceEnsurer for why they go missing.
+//
+// What is emitted, by the shape of the path to the `*Ref`:
+//
+//   - STRUCTS: emitted. The reference has one fixed address, so exactly that field
+//     is assigned and every value the service reported stands.
+//   - TOP-LEVEL: skipped. Generated set-output code deep-copies the object it was
+//     handed and overwrites only the concrete field, so nothing rebuilds the `*Ref`.
+//     A hand-written hook that rebuilds the object wholesale must carry it across
+//     itself.
+//   - LIST: skipped, and behaves as it does today. See below.
+//
+// Each containing struct is MATERIALISED on the target when the source has it and
+// the target does not, because generated set-output code nils a struct when the
+// response omits it. Without that the reference would be dropped in exactly the
+// case it most needs restoring, and the spec patch would delete the whole declared
+// block rather than just the reference. The hand-maintained hooks in `eks/cluster`,
+// `lambda/function` and `opensearchservice/domain` already do this.
+//
+// The guards are NESTED rather than combined. One condition reaches several hundred
+// characters on a deep path, which gofmt does not wrap, and nesting mirrors
+// ClearResolvedReferences, which walks the same paths.
+//
+// A reference behind a LIST is left alone because restoring it means pairing an
+// element the service reported with one the user declared, and neither key is
+// sound. Position is unreliable, since a response need not preserve request order.
+// The resolved value is unreliable too: 75 of the roughly 470 references configured
+// across the controllers resolve to a `Spec.*` path with no uniqueness guarantee --
+// `sqs/Queue.Policy` and `sns/Topic.Policy` resolve `iam/Policy` via
+// `Spec.PolicyDocument`, so two policies granting the same thing collide. Replacing
+// the whole list needs no pairing but discards what the service populated inside it
+// (ec2's `NetworkACL.Associations`). A sound per-element restore needs a declared
+// notion of element identity, left to a follow-up.
+//
+// Sample output:
+//
+//	if desiredKO.Spec.JWTConfiguration != nil {
+//		if desiredKO.Spec.JWTConfiguration.IssuerRef != nil {
+//			if latestKO.Spec.JWTConfiguration == nil {
+//				latestKO.Spec.JWTConfiguration = &svcapitypes.JWTConfiguration{}
+//			}
+//			if latestKO.Spec.JWTConfiguration.IssuerRef == nil {
+//				latestKO.Spec.JWTConfiguration.IssuerRef = desiredKO.Spec.JWTConfiguration.IssuerRef
+//			}
+//		}
+//	}
+func EnsureReferences(
+	r *model.CRD,
+	sourceVarName string,
+	targetVarName string,
+	indentLevel int,
+) (string, error) {
+	out := ""
+	specField := r.Config().PrefixConfig.SpecField
+
+	for _, fieldName := range r.SortedFieldNames() {
+		field := r.Fields[fieldName]
+		if !field.HasReference() {
+			continue
+		}
+		refName, err := field.GetReferenceFieldName()
+		if err != nil {
+			return "", err
+		}
+		refFieldPath, err := field.ReferenceFieldPath()
+		if err != nil {
+			return "", err
+		}
+		fp := fieldpath.FromString(refFieldPath)
+
+		// A top-level reference has no parent to be rebuilt.
+		if fp.Size() < 2 {
+			continue
+		}
+
+		// A reference behind a list has no fixed address to assign to; see the doc
+		// comment.
+		ancestors, inList, err := referenceAncestors(field)
+		if err != nil {
+			return "", err
+		}
+		if inList {
+			continue
+		}
+
+		// Struct-only path. Build the accessor for each level on both objects,
+		// along with the Go type needed to construct it on the target.
+		type level struct {
+			src, tgt, goType string
+		}
+		levels := make([]level, 0, len(ancestors))
+		srcAccess := sourceVarName + specField
+		tgtAccess := targetVarName + specField
+		for depth, ancestor := range ancestors {
+			srcAccess = fmt.Sprintf("%s.%s", srcAccess, fp.At(depth))
+			tgtAccess = fmt.Sprintf("%s.%s", tgtAccess, fp.At(depth))
+			levels = append(levels, level{
+				src:    srcAccess,
+				tgt:    tgtAccess,
+				goType: K8sGoTypeName(r, ancestor.ShapeRef.Shape),
+			})
+		}
+		srcRef := fmt.Sprintf("%s.%s", srcAccess, refName.Camel)
+		tgtRef := fmt.Sprintf("%s.%s", tgtAccess, refName.Camel)
+
+		// A list-of-references field is one value at a fixed address, so it is
+		// copied whole; length stands in for nil, as it does in
+		// ClearResolvedReferences for the same shape.
+		isList := field.ShapeRef.Shape.Type == "list"
+		srcHasRef := fmt.Sprintf("%s != nil", srcRef)
+		tgtLacksRef := fmt.Sprintf("%s == nil", tgtRef)
+		if isList {
+			srcHasRef = fmt.Sprintf("len(%s) > 0", srcRef)
+			tgtLacksRef = fmt.Sprintf("len(%s) == 0", tgtRef)
+		}
+
+		// Source side: nothing to do unless the declared resource actually holds
+		// a reference here, so those guards come first and the target is left
+		// entirely alone when they do not hold.
+		depth := 0
+		for ; depth < len(levels); depth++ {
+			ind := strings.Repeat("\t", indentLevel+depth)
+			out += fmt.Sprintf("%sif %s != nil {\n", ind, levels[depth].src)
+		}
+		refIndent := strings.Repeat("\t", indentLevel+depth)
+		out += fmt.Sprintf("%sif %s {\n", refIndent, srcHasRef)
+
+		// Target side: materialise each container the target is missing, then
+		// assign the reference. Only the reference is written, so every concrete
+		// value the service reported stands.
+		inner := strings.Repeat("\t", indentLevel+depth+1)
+		for _, l := range levels {
+			out += fmt.Sprintf("%sif %s == nil {\n", inner, l.tgt)
+			out += fmt.Sprintf("%s\t%s = &%s{}\n", inner, l.tgt, l.goType)
+			out += fmt.Sprintf("%s}\n", inner)
+		}
+		out += fmt.Sprintf("%sif %s {\n", inner, tgtLacksRef)
+		out += fmt.Sprintf("%s\t%s = %s\n", inner, tgtRef, srcRef)
+		out += fmt.Sprintf("%s}\n", inner)
+
+		out += fmt.Sprintf("%s}\n", refIndent)
+		for d := depth - 1; d >= 0; d-- {
+			out += fmt.Sprintf("%s}\n", strings.Repeat("\t", indentLevel+d))
+		}
+	}
+
+	return out, nil
+}

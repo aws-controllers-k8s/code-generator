@@ -1596,17 +1596,20 @@ func varEmptyConstructorSDKType(
 	return out
 }
 
-func varEmptyConstructorK8sType(
-	cfg *ackgenconfig.Config,
+// K8sGoTypeName returns the name of the Go type that the K8s-side (apis/)
+// representation of the supplied shape is generated as, qualified with the
+// `svcapitypes` package alias where the shape lives in the service's API
+// package.
+//
+// It is the type name a caller needs in order to construct that shape, e.g. the
+// `svcapitypes.VPCConfig` in `&svcapitypes.VPCConfig{}`. Kept separate from
+// varEmptyConstructorK8sType so that a caller which emits an assignment rather
+// than a `:=` declaration resolves the name identically, and the two cannot
+// disagree about what a shape is called.
+func K8sGoTypeName(
 	r *model.CRD,
-	varName string,
-	// The shape we want to construct a new thing for
 	shape *awssdkmodel.Shape,
-	// Number of levels of indentation to use
-	indentLevel int,
 ) string {
-	out := ""
-	indent := strings.Repeat("\t", indentLevel)
 	goType := shape.GoTypeWithPkgName()
 	keepPointer := (shape.Type == "list" || shape.Type == "map")
 	goType = model.ReplacePkgName(goType, r.SDKAPIPackageName(), "svcapitypes", keepPointer)
@@ -1631,6 +1634,21 @@ func varEmptyConstructorK8sType(
 	if hadPkg {
 		goType = goPkg + "." + goType
 	}
+	return goType
+}
+
+func varEmptyConstructorK8sType(
+	cfg *ackgenconfig.Config,
+	r *model.CRD,
+	varName string,
+	// The shape we want to construct a new thing for
+	shape *awssdkmodel.Shape,
+	// Number of levels of indentation to use
+	indentLevel int,
+) string {
+	out := ""
+	indent := strings.Repeat("\t", indentLevel)
+	goType := K8sGoTypeName(r, shape)
 
 	switch shape.Type {
 	case "structure", "union":
