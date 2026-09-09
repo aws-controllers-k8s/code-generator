@@ -143,8 +143,8 @@ func commentify(doc string) string {
 	}
 
 	if len(out) > 0 {
-		out[0] = "// " + out[0]
-		return strings.Join(out, "\n// ")
+		out[0] = "\t// " + out[0]
+		return strings.Join(out, "\n\t// ")
 	}
 	return ""
 }
