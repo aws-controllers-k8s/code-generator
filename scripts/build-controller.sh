@@ -224,6 +224,16 @@ if ! $ACK_GENERATE_BIN_PATH "${apis_args[@]}"; then
     exit 2
 fi
 
+# gofmt rewrites Markdown-style list markers in doc comments (e.g. "*" -> "-")
+# as part of its doc-comment formatting. Run it here, before the CRD schemas
+# are generated from these doc comments, so that this controller-gen run and
+# the later one in build-controller-release.sh (which reads the same,
+# already-gofmt'd source) produce identical description text. Otherwise the
+# two output targets (config/crd/bases and helm/crds) capture the doc
+# comments on opposite sides of this rewrite and permanently disagree on
+# list-marker style for the same enum text.
+gofmt -w "$SERVICE_CONTROLLER_SOURCE_PATH/apis/$ACK_GENERATE_API_VERSION"
+
 pushd "$SERVICE_CONTROLLER_SOURCE_PATH/apis/$ACK_GENERATE_API_VERSION" 1>/dev/null
 
 echo "Generating deepcopy code for $SERVICE"
