@@ -92,6 +92,41 @@ type Field struct {
 //	// please note that this field is updated on the service
 //	// side"
 func (f *Field) GetDocumentation() string {
+	return indentDocComment(f.buildDocumentation())
+}
+
+// docCommentIndent is prefixed to every line of a generated field doc comment
+// so the comment begins past column 1. gofmt only re-flows a doc comment
+// (normalizing list markers/indentation via go/doc/comment) when the comment
+// starts at column 1; an already-indented comment is left as written. Emitting
+// the comment pre-indented keeps generated output identical across Go
+// toolchains -- Go <=1.26 reformatted column-1 field comments while Go 1.27+
+// does not (see go/printer commit c1f0b9b) -- without the generator having to
+// reproduce gofmt's canonical list formatting itself. gofmt still re-derives
+// the actual struct indentation, so a single tab here is sufficient regardless
+// of nesting depth.
+const docCommentIndent = "\t"
+
+// indentDocComment prefixes docCommentIndent to every non-empty comment line so
+// the whole comment (SDK docs, appended Regex Pattern, and any user-provided
+// prepend/append text) is indented uniformly.
+func indentDocComment(doc string) string {
+	if doc == "" {
+		return ""
+	}
+	lines := strings.Split(doc, "\n")
+	for i, line := range lines {
+		if line != "" {
+			lines[i] = docCommentIndent + line
+		}
+	}
+	return strings.Join(lines, "\n")
+}
+
+// buildDocumentation assembles the field's raw (unindented) doc comment from
+// the SDK documentation, an optional Regex Pattern line, and any user-provided
+// documentation.yaml override/append/prepend text.
+func (f *Field) buildDocumentation() string {
 	cfg := f.GetFieldDocsConfig()
 
 	hasShapeDoc := false
