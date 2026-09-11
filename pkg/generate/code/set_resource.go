@@ -1342,7 +1342,7 @@ func SetResourceIdentifiers(
 				targetField,
 				targetVarPath,
 				sourceVarName,
-				names.New(fieldName).CamelLower,
+				targetField.GetCRDJSONFieldName(),
 				indentLevel)
 		}
 	}
@@ -1475,7 +1475,7 @@ func PopulateResourceFromAnnotation(
 		}
 		identifierKeys := make([]string, 0, len(identifierFields))
 		for _, identifierField := range identifierFields {
-			identifierKeys = append(identifierKeys, identifierField.Names.CamelLower)
+			identifierKeys = append(identifierKeys, identifierField.GetCRDJSONFieldName())
 		}
 		out += mutuallyExclusiveIdentifierGuardConstructor(identifierKeys, sourceVarName, indentLevel)
 	}
@@ -1508,7 +1508,7 @@ func PopulateResourceFromAnnotation(
 			// The primary key is one of several mutually-exclusive identifiers:
 			// set it when the annotation supplies it, but do not require it. The
 			// exactly-one guard emitted above ensures some identifier is present.
-			primaryKeyOut += optionalFieldGuardConstructor("primaryKey", sourceVarName, primaryField.Names.CamelLower, indentLevel)
+			primaryKeyOut += optionalFieldGuardConstructor("primaryKey", sourceVarName, primaryField.GetCRDJSONFieldName(), indentLevel)
 			primaryKeyOut += setResourceIdentifierPrimaryIdentifierAnn(
 				"&primaryKey",
 				primaryField,
@@ -1517,7 +1517,7 @@ func PopulateResourceFromAnnotation(
 			)
 			primaryKeyOut += fmt.Sprintf("%s}\n", indent)
 		} else {
-			primaryKeyOut += requiredFieldGuardContructor("primaryKey", sourceVarName, primaryField.Names.CamelLower, indentLevel)
+			primaryKeyOut += requiredFieldGuardContructor("primaryKey", sourceVarName, primaryField.GetCRDJSONFieldName(), indentLevel)
 			primaryKeyOut += setResourceIdentifierPrimaryIdentifierAnn(
 				"&primaryKey",
 				primaryField,
@@ -1611,7 +1611,7 @@ func PopulateResourceFromAnnotation(
 				// exactly-one guard emitted above enforces that one is present.
 				// Fields that are genuinely required and are not declared
 				// mutually-exclusive keep their required-field guard below.
-				primaryKeyOut += optionalFieldGuardConstructor(requiredFieldVarName, sourceVarName, targetField.Names.CamelLower, indentLevel)
+				primaryKeyOut += optionalFieldGuardConstructor(requiredFieldVarName, sourceVarName, targetField.GetCRDJSONFieldName(), indentLevel)
 				primaryKeyOut += setResourceIdentifierPrimaryIdentifierAnn(
 					fmt.Sprintf("&%s", requiredFieldVarName),
 					targetField,
@@ -1620,7 +1620,7 @@ func PopulateResourceFromAnnotation(
 				)
 				primaryKeyOut += fmt.Sprintf("%s}\n", indent)
 			} else {
-				primaryKeyOut += requiredFieldGuardContructor(requiredFieldVarName, sourceVarName, targetField.Names.CamelLower, indentLevel)
+				primaryKeyOut += requiredFieldGuardContructor(requiredFieldVarName, sourceVarName, targetField.GetCRDJSONFieldName(), indentLevel)
 				primaryKeyOut += setResourceIdentifierPrimaryIdentifierAnn(
 					fmt.Sprintf("&%s", requiredFieldVarName),
 					targetField,
@@ -1635,7 +1635,7 @@ func PopulateResourceFromAnnotation(
 				targetField,
 				sourceVarPath,
 				sourceVarName,
-				names.New(fieldName).CamelLower,
+				targetField.GetCRDJSONFieldName(),
 				indentLevel,
 			)
 		}
