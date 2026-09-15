@@ -153,3 +153,4 @@ func (d *resourceDescriptor) MarkAdopted(
 	curr[ackv1alpha1.AnnotationAdopted] = "true"
 	obj.SetAnnotations(curr)
 }
+
