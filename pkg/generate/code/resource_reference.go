@@ -512,9 +512,10 @@ func getReferencedStateForField(field *model.Field, indentLevel int) string {
 // The walk stops at the first list, returning a nil slice and inList true: a
 // reference reached through a list has no fixed address, so a caller skips it and
 // nothing deeper on the path matters. A MAP ancestor is rejected outright -- a
-// reference cannot be addressed through a map at all -- which is the same
-// rejection iterReferenceValues makes, kept in one place so a caller that does
-// not walk the path itself cannot disagree with it.
+// reference cannot be addressed through a map at all. iterReferenceValues makes
+// the same rejection while walking the path itself; this keeps it in one place for
+// callers that do not walk it, so they cannot disagree about which paths are
+// addressable.
 //
 // Only ancestors count. A reference field that is itself a list (`*Refs`, whose
 // concrete sibling is a list of scalars) is the leaf rather than part of the path,
