@@ -714,6 +714,102 @@ func Test_EnsureReferences_StructPath_ListOfReferences(t *testing.T) {
 	assert.NotContains(got, "SecurityGroupIDs")
 }
 
+// Test_EnsureReferences_SharesGuardsAcrossReferencesInAContainer pins that a
+// container's guard is emitted ONCE however many references sit inside it, and that
+// a container nested inside another is guarded within it rather than restating the
+// outer guard.
+//
+// Both properties matter for the deep resources: ecs/CapacityProvider has four
+// references across three nested containers, and repeating each guard chain per
+// reference is what made its generated method the longest in the fleet.
+//
+// The materialisation stays per-reference on purpose. It has to sit inside the
+// guard that establishes the source holds a reference to put in the container --
+// otherwise an empty container reaches the spec patch, which
+// Test_EnsureReferences_MaterialisesMissingContainerOnTarget pins -- and sharing it
+// would need the source-side guards OR'd together, which is exactly the
+// concatenation Test_EnsureReferences_GuardsAreNestedNotConcatenated rejects.
+func Test_EnsureReferences_SharesGuardsAcrossReferencesInAContainer(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "eks",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-nested-references.yaml",
+		})
+
+	// Cluster carries both shapes: ResourcesVpcConfig holds two references, and
+	// OutpostConfig holds one of its own plus the nested ControlPlanePlacement.
+	crd := testutil.GetCRDByName(t, g, "Cluster")
+	require.NotNil(crd)
+	expected :=
+		`	if desiredKO.Spec.OutpostConfig != nil {
+		if desiredKO.Spec.OutpostConfig.ControlPlaneInstanceTypeRef != nil {
+			if latestKO.Spec.OutpostConfig == nil {
+				latestKO.Spec.OutpostConfig = &svcapitypes.OutpostConfigRequest{}
+			}
+			if latestKO.Spec.OutpostConfig.ControlPlaneInstanceTypeRef == nil {
+				latestKO.Spec.OutpostConfig.ControlPlaneInstanceTypeRef = desiredKO.Spec.OutpostConfig.ControlPlaneInstanceTypeRef
+			}
+		}
+		if desiredKO.Spec.OutpostConfig.ControlPlanePlacement != nil {
+			if desiredKO.Spec.OutpostConfig.ControlPlanePlacement.GroupRef != nil {
+				if latestKO.Spec.OutpostConfig == nil {
+					latestKO.Spec.OutpostConfig = &svcapitypes.OutpostConfigRequest{}
+				}
+				if latestKO.Spec.OutpostConfig.ControlPlanePlacement == nil {
+					latestKO.Spec.OutpostConfig.ControlPlanePlacement = &svcapitypes.ControlPlanePlacementRequest{}
+				}
+				if latestKO.Spec.OutpostConfig.ControlPlanePlacement.GroupRef == nil {
+					latestKO.Spec.OutpostConfig.ControlPlanePlacement.GroupRef = desiredKO.Spec.OutpostConfig.ControlPlanePlacement.GroupRef
+				}
+			}
+		}
+	}
+	if desiredKO.Spec.ResourcesVPCConfig != nil {
+		if len(desiredKO.Spec.ResourcesVPCConfig.SecurityGroupRefs) > 0 {
+			if latestKO.Spec.ResourcesVPCConfig == nil {
+				latestKO.Spec.ResourcesVPCConfig = &svcapitypes.VPCConfigRequest{}
+			}
+			if len(latestKO.Spec.ResourcesVPCConfig.SecurityGroupRefs) == 0 {
+				latestKO.Spec.ResourcesVPCConfig.SecurityGroupRefs = desiredKO.Spec.ResourcesVPCConfig.SecurityGroupRefs
+			}
+		}
+		if len(desiredKO.Spec.ResourcesVPCConfig.SubnetRefs) > 0 {
+			if latestKO.Spec.ResourcesVPCConfig == nil {
+				latestKO.Spec.ResourcesVPCConfig = &svcapitypes.VPCConfigRequest{}
+			}
+			if len(latestKO.Spec.ResourcesVPCConfig.SubnetRefs) == 0 {
+				latestKO.Spec.ResourcesVPCConfig.SubnetRefs = desiredKO.Spec.ResourcesVPCConfig.SubnetRefs
+			}
+		}
+	}
+`
+
+	got, err := code.EnsureReferences(crd, "desiredKO", "latestKO", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
+
+	// Stated independently of the expected string, so a future reshuffle that
+	// reintroduces a duplicate guard fails on the reason rather than on the diff.
+	assert.Equal(1, strings.Count(got, "if desiredKO.Spec.ResourcesVPCConfig != nil {"),
+		"two references in one container must share its guard")
+	assert.Equal(1, strings.Count(got, "if desiredKO.Spec.OutpostConfig != nil {"),
+		"a nested container's guard must not restate its parent's")
+
+	// Every reference is still restored, and every brace still balances.
+	for _, ref := range []string{
+		"latestKO.Spec.ResourcesVPCConfig.SecurityGroupRefs =",
+		"latestKO.Spec.ResourcesVPCConfig.SubnetRefs =",
+		"latestKO.Spec.OutpostConfig.ControlPlaneInstanceTypeRef =",
+		"latestKO.Spec.OutpostConfig.ControlPlanePlacement.GroupRef =",
+	} {
+		assert.Contains(got, ref)
+	}
+	assert.Equal(strings.Count(got, "{"), strings.Count(got, "}"),
+		"guards opened by one reference must be closed once the last one sharing them is emitted")
+}
+
 func Test_EnsureReferences_ListPath_IsSkipped(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
@@ -920,7 +1016,7 @@ func Test_EnsureReferences_GuardsAreNestedNotConcatenated(t *testing.T) {
 
 	// A single combined condition reaches several hundred characters on a deep
 	// path -- 661 on ecs/CapacityProvider's three-level path -- and gofmt does not
-	// wrap it. Nesting keeps every line readable and mirrors
+	// wrap it. Nesting keeps every guard readable and mirrors
 	// ClearResolvedReferences, which walks the same paths.
 	crd := testutil.GetCRDByName(t, g, "Bucket")
 	require.NotNil(crd)
@@ -928,9 +1024,22 @@ func Test_EnsureReferences_GuardsAreNestedNotConcatenated(t *testing.T) {
 	got, err := code.EnsureReferences(crd, "desiredKO", "latestKO", 1)
 	require.NoError(err)
 
-	for _, line := range strings.Split(got, "\n") {
-		assert.LessOrEqual(len(line), 120,
-			"generated line should stay readable, got %d chars: %s", len(line), line)
-	}
 	assert.NotContains(got, " && ", "guards must be nested, not concatenated")
+	assert.NotContains(got, " || ", "guards must be nested, not concatenated")
+
+	// The length bound is on the GUARD lines, which is what nesting controls. An
+	// assignment line is as long as its two field paths and gofmt wraps neither
+	// form, so it is deliberately not bounded: ecs/CapacityProvider's deepest
+	// reference produces a 210-character one, as the hand-written hooks this
+	// replaces already do.
+	guards := 0
+	for _, line := range strings.Split(got, "\n") {
+		if !strings.HasPrefix(strings.TrimSpace(line), "if ") {
+			continue
+		}
+		guards++
+		assert.LessOrEqual(len(line), 120,
+			"guard should stay readable, got %d chars: %s", len(line), line)
+	}
+	require.NotZero(guards, "no guard lines found; the assertion above is vacuous")
 }
