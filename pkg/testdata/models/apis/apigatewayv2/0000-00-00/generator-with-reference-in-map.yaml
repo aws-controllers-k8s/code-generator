@@ -1,0 +1,22 @@
+resources:
+  Stage:
+    fields:
+      # A nonsense reference, to test the case of a reference reached through a
+      # MAP. RouteSettings is a RouteSettingsMap, so LoggingLevel is reachable
+      # only by inventing a map key; code generation must reject it.
+      RouteSettings.LoggingLevel:
+        references:
+          resource: Api
+          path: Spec.Name
+ignore:
+  resource_names:
+    - ApiMapping
+    - Authorizer
+    - Deployment
+    - DomainName
+    - Integration
+    - IntegrationResponse
+    - Model
+    - Route
+    - RouteResponse
+    - VpcLink

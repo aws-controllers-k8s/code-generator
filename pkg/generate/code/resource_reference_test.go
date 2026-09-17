@@ -14,6 +14,7 @@
 package code_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/aws-controllers-k8s/code-generator/pkg/generate/code"
@@ -623,4 +624,422 @@ func Test_ClearResolvedReferencesForField_SingleReference_WithinMultipleSlices(t
 	got, err := code.ClearResolvedReferencesForField(field, "ko", 1)
 	require.NoError(err)
 	assert.Equal(expected, got)
+}
+
+func Test_EnsureReferences_TopLevelReference_EmitsNothing(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "apigatewayv2",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-reference.yaml",
+		})
+
+	// Integration's only reference is the top-level APIID/APIRef pair; VpcLink's
+	// are top-level lists of references. A top-level *Ref has no parent that could
+	// be rebuilt, so it always survives and nothing needs emitting.
+	for _, kind := range []string{"Integration", "VpcLink"} {
+		crd := testutil.GetCRDByName(t, g, kind)
+		require.NotNil(crd)
+
+		got, err := code.EnsureReferences(crd, "desiredKO", "latestKO", 1)
+		require.NoError(err)
+		assert.Equal("", got, "resource %s", kind)
+	}
+}
+
+func Test_EnsureReferences_StructPath_AssignsOnlyTheReference(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "apigatewayv2",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-nested-reference.yaml",
+		})
+
+	// Reached through a struct, so the reference has one fixed address: guard the
+	// ancestors on both objects and assign just that field.
+	crd := testutil.GetCRDByName(t, g, "Authorizer")
+	require.NotNil(crd)
+	expected :=
+		`	if desiredKO.Spec.JWTConfiguration != nil {
+		if desiredKO.Spec.JWTConfiguration.IssuerRef != nil {
+			if latestKO.Spec.JWTConfiguration == nil {
+				latestKO.Spec.JWTConfiguration = &svcapitypes.JWTConfiguration{}
+			}
+			if latestKO.Spec.JWTConfiguration.IssuerRef == nil {
+				latestKO.Spec.JWTConfiguration.IssuerRef = desiredKO.Spec.JWTConfiguration.IssuerRef
+			}
+		}
+	}
+`
+
+	got, err := code.EnsureReferences(crd, "desiredKO", "latestKO", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
+}
+
+func Test_EnsureReferences_StructPath_ListOfReferences(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "eks",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-nested-reference.yaml",
+		})
+
+	// The reference field is itself a list (*Refs) but sits in a struct at a fixed
+	// address, so the list is the leaf rather than part of the path. It is copied
+	// whole, guarded on length, as ClearResolvedReferences treats the same shape.
+	// This is the shape community#2431 was filed for.
+	crd := testutil.GetCRDByName(t, g, "Cluster")
+	require.NotNil(crd)
+	expected :=
+		`	if desiredKO.Spec.ResourcesVPCConfig != nil {
+		if len(desiredKO.Spec.ResourcesVPCConfig.SecurityGroupRefs) > 0 {
+			if latestKO.Spec.ResourcesVPCConfig == nil {
+				latestKO.Spec.ResourcesVPCConfig = &svcapitypes.VPCConfigRequest{}
+			}
+			if len(latestKO.Spec.ResourcesVPCConfig.SecurityGroupRefs) == 0 {
+				latestKO.Spec.ResourcesVPCConfig.SecurityGroupRefs = desiredKO.Spec.ResourcesVPCConfig.SecurityGroupRefs
+			}
+		}
+	}
+`
+
+	got, err := code.EnsureReferences(crd, "desiredKO", "latestKO", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
+	// The concrete sibling is never read or written.
+	assert.NotContains(got, "SecurityGroupIDs")
+}
+
+// Test_EnsureReferences_SharesGuardsAcrossReferencesInAContainer pins that a
+// container's guard is emitted ONCE however many references sit inside it, and that
+// a container nested inside another is guarded within it rather than restating the
+// outer guard.
+//
+// Both properties matter for the deep resources: ecs/CapacityProvider has four
+// references across three nested containers, and repeating each guard chain per
+// reference is what made its generated method the longest in the fleet.
+//
+// The materialisation stays per-reference on purpose. It has to sit inside the
+// guard that establishes the source holds a reference to put in the container --
+// otherwise an empty container reaches the spec patch, which
+// Test_EnsureReferences_MaterialisesMissingContainerOnTarget pins -- and sharing it
+// would need the source-side guards OR'd together, which is exactly the
+// concatenation Test_EnsureReferences_GuardsAreNestedNotConcatenated rejects.
+func Test_EnsureReferences_SharesGuardsAcrossReferencesInAContainer(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "eks",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-nested-references.yaml",
+		})
+
+	// Cluster carries both shapes: ResourcesVpcConfig holds two references, and
+	// OutpostConfig holds one of its own plus the nested ControlPlanePlacement.
+	crd := testutil.GetCRDByName(t, g, "Cluster")
+	require.NotNil(crd)
+	expected :=
+		`	if desiredKO.Spec.OutpostConfig != nil {
+		if desiredKO.Spec.OutpostConfig.ControlPlaneInstanceTypeRef != nil {
+			if latestKO.Spec.OutpostConfig == nil {
+				latestKO.Spec.OutpostConfig = &svcapitypes.OutpostConfigRequest{}
+			}
+			if latestKO.Spec.OutpostConfig.ControlPlaneInstanceTypeRef == nil {
+				latestKO.Spec.OutpostConfig.ControlPlaneInstanceTypeRef = desiredKO.Spec.OutpostConfig.ControlPlaneInstanceTypeRef
+			}
+		}
+		if desiredKO.Spec.OutpostConfig.ControlPlanePlacement != nil {
+			if desiredKO.Spec.OutpostConfig.ControlPlanePlacement.GroupRef != nil {
+				if latestKO.Spec.OutpostConfig == nil {
+					latestKO.Spec.OutpostConfig = &svcapitypes.OutpostConfigRequest{}
+				}
+				if latestKO.Spec.OutpostConfig.ControlPlanePlacement == nil {
+					latestKO.Spec.OutpostConfig.ControlPlanePlacement = &svcapitypes.ControlPlanePlacementRequest{}
+				}
+				if latestKO.Spec.OutpostConfig.ControlPlanePlacement.GroupRef == nil {
+					latestKO.Spec.OutpostConfig.ControlPlanePlacement.GroupRef = desiredKO.Spec.OutpostConfig.ControlPlanePlacement.GroupRef
+				}
+			}
+		}
+	}
+	if desiredKO.Spec.ResourcesVPCConfig != nil {
+		if len(desiredKO.Spec.ResourcesVPCConfig.SecurityGroupRefs) > 0 {
+			if latestKO.Spec.ResourcesVPCConfig == nil {
+				latestKO.Spec.ResourcesVPCConfig = &svcapitypes.VPCConfigRequest{}
+			}
+			if len(latestKO.Spec.ResourcesVPCConfig.SecurityGroupRefs) == 0 {
+				latestKO.Spec.ResourcesVPCConfig.SecurityGroupRefs = desiredKO.Spec.ResourcesVPCConfig.SecurityGroupRefs
+			}
+		}
+		if len(desiredKO.Spec.ResourcesVPCConfig.SubnetRefs) > 0 {
+			if latestKO.Spec.ResourcesVPCConfig == nil {
+				latestKO.Spec.ResourcesVPCConfig = &svcapitypes.VPCConfigRequest{}
+			}
+			if len(latestKO.Spec.ResourcesVPCConfig.SubnetRefs) == 0 {
+				latestKO.Spec.ResourcesVPCConfig.SubnetRefs = desiredKO.Spec.ResourcesVPCConfig.SubnetRefs
+			}
+		}
+	}
+`
+
+	got, err := code.EnsureReferences(crd, "desiredKO", "latestKO", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
+
+	// Stated independently of the expected string, so a future reshuffle that
+	// reintroduces a duplicate guard fails on the reason rather than on the diff.
+	assert.Equal(1, strings.Count(got, "if desiredKO.Spec.ResourcesVPCConfig != nil {"),
+		"two references in one container must share its guard")
+	assert.Equal(1, strings.Count(got, "if desiredKO.Spec.OutpostConfig != nil {"),
+		"a nested container's guard must not restate its parent's")
+
+	// Every reference is still restored, and every brace still balances.
+	for _, ref := range []string{
+		"latestKO.Spec.ResourcesVPCConfig.SecurityGroupRefs =",
+		"latestKO.Spec.ResourcesVPCConfig.SubnetRefs =",
+		"latestKO.Spec.OutpostConfig.ControlPlaneInstanceTypeRef =",
+		"latestKO.Spec.OutpostConfig.ControlPlanePlacement.GroupRef =",
+	} {
+		assert.Contains(got, ref)
+	}
+	assert.Equal(strings.Count(got, "{"), strings.Count(got, "}"),
+		"guards opened by one reference must be closed once the last one sharing them is emitted")
+}
+
+func Test_EnsureReferences_ListPath_IsSkipped(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "ec2",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-nested-references.yaml",
+		})
+
+	// RouteTable's references are two inside spec.Routes plus a top-level VPCID.
+	// The top-level one needs no help and the list-nested ones are skipped, so
+	// nothing is emitted and the template's `if $ensureReferences` guard leaves
+	// RouteTable without the method entirely.
+	crd := testutil.GetCRDByName(t, g, "RouteTable")
+	require.NotNil(crd)
+
+	got, err := code.EnsureReferences(crd, "desiredKO", "latestKO", 1)
+	require.NoError(err)
+	assert.Equal("", got)
+}
+
+func Test_EnsureReferences_MixedShapes_EmitsOnlyTheStructPath(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "s3",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-nested-references.yaml",
+		})
+
+	// Bucket carries one of each shape, pinning that they are treated differently
+	// within a single resource: Logging.LoggingEnabled.TargetBucket is reached
+	// through structs alone, while
+	// Notification.LambdaFunctionConfigurations[].Filter.Key.FilterRules[].Value
+	// sits two lists deep.
+	crd := testutil.GetCRDByName(t, g, "Bucket")
+	require.NotNil(crd)
+
+	got, err := code.EnsureReferences(crd, "desiredKO", "latestKO", 1)
+	require.NoError(err)
+
+	// The struct path is restored, writing nothing but the reference itself.
+	expected :=
+		`	if desiredKO.Spec.Logging != nil {
+		if desiredKO.Spec.Logging.LoggingEnabled != nil {
+			if desiredKO.Spec.Logging.LoggingEnabled.TargetBucketRef != nil {
+				if latestKO.Spec.Logging == nil {
+					latestKO.Spec.Logging = &svcapitypes.BucketLoggingStatus{}
+				}
+				if latestKO.Spec.Logging.LoggingEnabled == nil {
+					latestKO.Spec.Logging.LoggingEnabled = &svcapitypes.LoggingEnabled{}
+				}
+				if latestKO.Spec.Logging.LoggingEnabled.TargetBucketRef == nil {
+					latestKO.Spec.Logging.LoggingEnabled.TargetBucketRef = desiredKO.Spec.Logging.LoggingEnabled.TargetBucketRef
+				}
+			}
+		}
+	}
+`
+	assert.Equal(expected, got)
+
+	// The list-nested reference contributes nothing, and in particular the
+	// containing list is not assigned.
+	assert.NotContains(got, "LambdaFunctionConfigurations")
+	assert.NotContains(got, "FilterRules")
+
+	// Nothing is iterated or indexed on the way there.
+	assert.NotContains(got, "range")
+	assert.NotContains(got, "[f0idx]")
+	assert.NotContains(got, "[f1idx]")
+}
+
+func Test_EnsureReferences_RespectsIndentLevel(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "apigatewayv2",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-nested-reference.yaml",
+		})
+
+	crd := testutil.GetCRDByName(t, g, "Authorizer")
+	require.NotNil(crd)
+	expected :=
+		`			if desiredKO.Spec.JWTConfiguration != nil {
+				if desiredKO.Spec.JWTConfiguration.IssuerRef != nil {
+					if latestKO.Spec.JWTConfiguration == nil {
+						latestKO.Spec.JWTConfiguration = &svcapitypes.JWTConfiguration{}
+					}
+					if latestKO.Spec.JWTConfiguration.IssuerRef == nil {
+						latestKO.Spec.JWTConfiguration.IssuerRef = desiredKO.Spec.JWTConfiguration.IssuerRef
+					}
+				}
+			}
+`
+
+	got, err := code.EnsureReferences(crd, "desiredKO", "latestKO", 3)
+	require.NoError(err)
+	assert.Equal(expected, got)
+}
+
+func Test_EnsureReferences_ReferenceWithinMap_IsRejected(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "apigatewayv2",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-reference-in-map.yaml",
+		})
+
+	// Stage's RouteSettings is a RouteSettingsMap, so LoggingLevel is reachable
+	// only by inventing a map key -- worse than the list case, which at least has
+	// positions. Generation must fail rather than silently miss the reference.
+	crd := testutil.GetCRDByName(t, g, "Stage")
+	require.NotNil(crd)
+
+	got, err := code.EnsureReferences(crd, "desiredKO", "latestKO", 1)
+	require.Error(err)
+	assert.Contains(err.Error(), "references cannot be within a map")
+	assert.Equal("", got, "nothing may be emitted when generation fails")
+}
+
+func Test_EnsureReferences_MissingAncestorField_IsRejected(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "s3",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-nested-references.yaml",
+		})
+
+	crd := testutil.GetCRDByName(t, g, "Bucket")
+	require.NotNil(crd)
+
+	// With the model intact the struct-nested reference under Logging is emitted.
+	// Establishing that first keeps the negative case below from being vacuous.
+	before, err := code.EnsureReferences(crd, "desiredKO", "latestKO", 1)
+	require.NoError(err)
+	require.Contains(before, "latestKO.Spec.Logging.LoggingEnabled.TargetBucketRef")
+
+	// Drop the `Logging` ancestor, leaving the reference field that walks through
+	// it. No generator.yaml can produce this -- the model always registers the
+	// ancestors of a field it registers -- so reaching the guard means breaking
+	// that invariant directly. The guard is what turns an inconsistent model into
+	// a build failure naming the path instead of a nil dereference. The model is
+	// built fresh per test, so the mutation cannot leak.
+	require.Contains(crd.Fields, "Logging")
+	delete(crd.Fields, "Logging")
+
+	got, err := code.EnsureReferences(crd, "desiredKO", "latestKO", 1)
+	require.Error(err)
+	assert.Contains(err.Error(), `unable to find field with path "Logging"`)
+	assert.Contains(err.Error(), `resource "Bucket"`)
+	assert.Equal("", got, "nothing may be emitted when generation fails")
+}
+
+func Test_EnsureReferences_MaterialisesMissingContainerOnTarget(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "s3",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-nested-references.yaml",
+		})
+
+	// Generated set-output code rebuilds a struct from the response and nils it
+	// when the response omits it, so the target can be missing a container the
+	// source has. Restoring only the leaf would then be a no-op and the spec patch
+	// would delete the whole declared block, which is the case the hand-maintained
+	// hooks in eks/cluster, lambda/function and opensearchservice/domain exist to
+	// prevent. Every container on the path must therefore be constructed.
+	crd := testutil.GetCRDByName(t, g, "Bucket")
+	require.NotNil(crd)
+
+	got, err := code.EnsureReferences(crd, "desiredKO", "latestKO", 1)
+	require.NoError(err)
+
+	// Both levels of the path, not just the innermost.
+	assert.Contains(got, "if latestKO.Spec.Logging == nil {\n")
+	assert.Contains(got, "latestKO.Spec.Logging = &svcapitypes.BucketLoggingStatus{}")
+	assert.Contains(got, "if latestKO.Spec.Logging.LoggingEnabled == nil {\n")
+	assert.Contains(got, "latestKO.Spec.Logging.LoggingEnabled = &svcapitypes.LoggingEnabled{}")
+
+	// A container is only constructed once it is known the source holds a
+	// reference to put in it, so a source that declares the container but no
+	// reference leaves the target untouched. That ordering is what keeps an empty
+	// container out of the patch.
+	srcGuard := strings.Index(got, "if desiredKO.Spec.Logging.LoggingEnabled.TargetBucketRef != nil {")
+	materialise := strings.Index(got, "if latestKO.Spec.Logging == nil {")
+	require.NotEqual(-1, srcGuard)
+	require.NotEqual(-1, materialise)
+	assert.Less(srcGuard, materialise,
+		"the source-side reference guard must enclose the materialisation")
+}
+
+func Test_EnsureReferences_GuardsAreNestedNotConcatenated(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "s3",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-nested-references.yaml",
+		})
+
+	// A single combined condition reaches several hundred characters on a deep
+	// path -- 661 on ecs/CapacityProvider's three-level path -- and gofmt does not
+	// wrap it. Nesting keeps every guard readable and mirrors
+	// ClearResolvedReferences, which walks the same paths.
+	crd := testutil.GetCRDByName(t, g, "Bucket")
+	require.NotNil(crd)
+
+	got, err := code.EnsureReferences(crd, "desiredKO", "latestKO", 1)
+	require.NoError(err)
+
+	assert.NotContains(got, " && ", "guards must be nested, not concatenated")
+	assert.NotContains(got, " || ", "guards must be nested, not concatenated")
+
+	// The length bound is on the GUARD lines, which is what nesting controls. An
+	// assignment line is as long as its two field paths and gofmt wraps neither
+	// form, so it is deliberately not bounded: ecs/CapacityProvider's deepest
+	// reference produces a 210-character one, as the hand-written hooks this
+	// replaces already do.
+	guards := 0
+	for _, line := range strings.Split(got, "\n") {
+		if !strings.HasPrefix(strings.TrimSpace(line), "if ") {
+			continue
+		}
+		guards++
+		assert.LessOrEqual(len(line), 120,
+			"guard should stay readable, got %d chars: %s", len(line), line)
+	}
+	require.NotZero(guards, "no guard lines found; the assertion above is vacuous")
 }
