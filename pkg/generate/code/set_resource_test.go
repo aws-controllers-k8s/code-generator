@@ -1869,17 +1869,17 @@ func TestSetResource_OpensearchServerless_SecurityPolicy_MutuallyExclusiveIdenti
 	if _, ok := fields["name"]; ok {
 		exclusiveIdentifierCount++
 	}
-	if _, ok := fields["type_"]; ok {
+	if _, ok := fields["type"]; ok {
 		exclusiveIdentifierCount++
 	}
 	if exclusiveIdentifierCount != 1 {
-		return ackerrors.NewTerminalError(fmt.Errorf("adoption requires exactly one of: name, type_"))
+		return ackerrors.NewTerminalError(fmt.Errorf("adoption requires exactly one of: name, type"))
 	}
 	f0, ok := fields["name"]
 	if ok {
 		r.ko.Spec.Name = &f0
 	}
-	f1, ok := fields["type_"]
+	f1, ok := fields["type"]
 	if ok {
 		r.ko.Spec.Type = &f1
 	}
@@ -1905,9 +1905,9 @@ func TestSetResource_OpensearchServerless_SecurityPolicy_PopulateResourceFromAnn
 		return ackerrors.NewTerminalError(fmt.Errorf("required field missing: name"))
 	}
 	r.ko.Spec.Name = &f0
-	f1, ok := fields["type_"]
+	f1, ok := fields["type"]
 	if !ok {
-		return ackerrors.NewTerminalError(fmt.Errorf("required field missing: type_"))
+		return ackerrors.NewTerminalError(fmt.Errorf("required field missing: type"))
 	}
 	r.ko.Spec.Type = &f1
 

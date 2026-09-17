@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/aws-controllers-k8s/code-generator/pkg/api"
+	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/config"
 	"github.com/aws-controllers-k8s/pkg/names"
 
 	"github.com/stretchr/testify/assert"
@@ -401,4 +402,101 @@ func TestFieldWithPattern(t *testing.T) {
 		"// The name of your cluster.\n//\n// Regex Pattern: `^[0-9A-Za-z][A-Za-z0-9\\-_]*$`",
 		ltdField.GetDocumentation(),
 	)
+}
+
+func TestGetCRDJSONFieldName(t *testing.T) {
+	require := require.New(t)
+	assert := assert.New(t)
+
+	// Model-backed cases reuse the eks Cluster CRD (same fixture as
+	// TestGetGoTag) to exercise the real default and go_tag-override paths.
+	g := testutil.NewModelForServiceWithOptions(t, "eks",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-gotag.yaml",
+		},
+	)
+	crds, err := g.GetCRDs()
+	require.Nil(err)
+	crd := getCRDByName("Cluster", crds)
+	require.NotNil(crd)
+
+	// helper to build a bare Field carrying only a go_tag override. Fields with
+	// a go_tag set return early from GetGoTag before any CRD deref, so a nil CRD
+	// is safe here.
+	fieldWithGoTag := func(fieldName, goTag string) *model.Field {
+		tag := goTag
+		return &model.Field{
+			Names:       names.New(fieldName),
+			FieldConfig: &ackgenconfig.FieldConfig{GoTag: &tag},
+		}
+	}
+
+	testCases := []struct {
+		name         string
+		field        *model.Field
+		expectedName string
+	}{
+		{
+			// default path: lower-camel of the SDK member name, omitempty stripped
+			name:         "not required spec field (default, omitempty stripped)",
+			field:        crd.SpecFields["Logging"],
+			expectedName: "logging",
+		},
+		{
+			name:         "required spec field (default, no omitempty)",
+			field:        crd.SpecFields["Name"],
+			expectedName: "name",
+		},
+		{
+			// go_tag override that itself carries ,omitempty -> option stripped
+			name:         "spec field with go_tag override and omitempty",
+			field:        crd.SpecFields["Version"],
+			expectedName: "myCustomVersionName",
+		},
+		{
+			name:         "status field (default, omitempty stripped)",
+			field:        crd.StatusFields["Endpoint"],
+			expectedName: "endpoint",
+		},
+		{
+			// go_tag override with a trailing second tag key (yaml:...) -> only
+			// the json name is returned
+			name:         "status field with multi-key go_tag override",
+			field:        crd.StatusFields["Status"],
+			expectedName: "clusterState",
+		},
+		{
+			// reserved-word escape: names.New("Type").CamelLower == "type_",
+			// but a go_tag json:"type" override yields the clean CRD name.
+			name:         "reserved-word field with go_tag override",
+			field:        fieldWithGoTag("Type", `json:"type"`),
+			expectedName: "type",
+		},
+		{
+			// go_tag override with no json key at all -> fall back to the
+			// default lower-camel name.
+			name:         "go_tag override without a json key",
+			field:        fieldWithGoTag("MyField", `yaml:"my_field"`),
+			expectedName: "myField",
+		},
+		{
+			// json:"-" means "do not serialize"; treated as not a real name, so
+			// fall back to the default lower-camel name.
+			name:         "go_tag override json dash",
+			field:        fieldWithGoTag("MyField", `json:"-"`),
+			expectedName: "myField",
+		},
+		{
+			// json:",omitempty" (empty name, options only) -> Go serializes
+			// under the field's default name, so fall back to lower-camel.
+			name:         "go_tag override empty json name with options",
+			field:        fieldWithGoTag("MyField", `json:",omitempty"`),
+			expectedName: "myField",
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(tc.expectedName, tc.field.GetCRDJSONFieldName())
+		})
+	}
 }

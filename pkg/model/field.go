@@ -15,6 +15,7 @@ package model
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 
 	awssdkmodel "github.com/aws-controllers-k8s/code-generator/pkg/api"
@@ -259,6 +260,35 @@ func (f *Field) GetGoTag() string {
 	}
 
 	return fmt.Sprintf("`json:\"%s\"`", f.Names.CamelLower)
+}
+
+// GetCRDJSONFieldName returns the JSON name this field is serialized as in the
+// generated CRD type, i.e. the name a Kubernetes user sees in the resource's
+// YAML. It derives the name by parsing the field's own struct tag as produced
+// by GetGoTag, so it always agrees with what the generated Go struct actually
+// serializes -- including any `go_tag` override from generator.yaml and the
+// default lower-camel/omitempty handling. Prefer this over Names.CamelLower
+// anywhere the CRD-visible field name is required (adoption annotation keys,
+// documentation, etc.).
+//
+// GetGoTag is the single source of truth for the serialized name; this helper
+// only extracts the name portion from it, so future changes to the tag logic
+// are reflected automatically.
+func (f *Field) GetCRDJSONFieldName() string {
+	// GetGoTag returns the tag wrapped in backticks, e.g. `+"`"+`json:"type,omitempty"`+"`"+`.
+	// reflect.StructTag expects the unwrapped body, so strip the backticks
+	// before parsing.
+	tag := strings.Trim(f.GetGoTag(), "`")
+	jsonTag := reflect.StructTag(tag).Get("json")
+	if jsonTag != "" {
+		name := strings.SplitN(jsonTag, ",", 2)[0]
+		if name != "" && name != "-" {
+			return name
+		}
+	}
+	// GetGoTag always emits a json key with a non-empty name today, so this
+	// fallback is defensive (e.g. a future go_tag override without a json key).
+	return f.Names.CamelLower
 }
 
 // HasReference returns true if the supplied field *path* refers to a Field
