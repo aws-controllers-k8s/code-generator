@@ -41,7 +41,7 @@ func TestFieldDocumentation(t *testing.T) {
 	require.NotNil(ltdField.ShapeRef)
 
 	require.Equal(
-		"// The desired Kubernetes version for your cluster. If you don't specify a value\n// here, the default version available in Amazon EKS is used.\n// \n// The default version might not be the latest version available.",
+		"\t// The desired Kubernetes version for your cluster. If you don't specify a value\n\t// here, the default version available in Amazon EKS is used.\n\t// \n\t// The default version might not be the latest version available.",
 		ltdField.GetDocumentation(),
 	)
 
@@ -50,7 +50,7 @@ func TestFieldDocumentation(t *testing.T) {
 	require.NotNil(prependField.ShapeRef)
 
 	require.True(
-		strings.HasPrefix(prependField.GetDocumentation(), "// !!! Let's take it from the top"),
+		strings.HasPrefix(prependField.GetDocumentation(), "\t// !!! Let's take it from the top"),
 	)
 
 	appendField := crd.Fields["RoleARN"]
@@ -66,9 +66,9 @@ func TestFieldDocumentation(t *testing.T) {
 	require.NotNil(overrideField.ShapeRef)
 
 	require.Equal(
-		"// !!! All your docs has become mine\n"+
-			"// \n"+
-			"// That whitespace is entirely on purpose",
+		"\t// !!! All your docs has become mine\n"+
+			"\t// \n"+
+			"\t// That whitespace is entirely on purpose",
 		overrideField.GetDocumentation(),
 	)
 
@@ -399,7 +399,7 @@ func TestFieldWithPattern(t *testing.T) {
 	require.NotEmpty(ltdField.ShapeRef.Shape.Pattern)
 
 	require.Equal(
-		"// The name of your cluster.\n//\n// Regex Pattern: `^[0-9A-Za-z][A-Za-z0-9\\-_]*$`",
+		"\t// The name of your cluster.\n\t//\n\t// Regex Pattern: `^[0-9A-Za-z][A-Za-z0-9\\-_]*$`",
 		ltdField.GetDocumentation(),
 	)
 }
