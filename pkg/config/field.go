@@ -466,6 +466,11 @@ type FieldConfig struct {
 	// IsSecret instructs the code generator that this field should be a
 	// SecretKeyReference.
 	IsSecret bool `json:"is_secret"`
+	// IsTLSSecret instructs the code generator that this field should be a
+	// name/namespace-only TlsSecretReference. Use this when the controller
+	// owns the kubernetes.io/tls data key convention instead of accepting a
+	// user-selected key.
+	IsTLSSecret bool `json:"is_tls_secret"`
 	// IsImmutable indicates that the field is enforced as immutable at the
 	// admission layer. The code generator will add kubebuilder:validation:XValidation
 	// lines to the CRD, preventing changes to this field after it’s set.
