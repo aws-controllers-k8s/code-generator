@@ -1208,7 +1208,16 @@ func SetResourceIdentifiers(
 			return "", nil
 		}
 	}
-	inputShape := op.InputRef.Shape
+	// Use the wrapper-aware input shape so that a ReadMany operation configured
+	// with input_wrapper_field_path (whose input nests the per-item identifier
+	// fields inside a list/struct wrapper, e.g. a BatchGet* request) surfaces
+	// the unwrapped identifier members to the discovery loop below. When no
+	// wrapper is configured GetInputShape returns the raw input shape, so this
+	// is a no-op for every existing resource.
+	inputShape, err := r.GetInputShape(op)
+	if err != nil {
+		return "", err
+	}
 	if inputShape == nil {
 		return "", nil
 	}
@@ -1452,7 +1461,16 @@ func PopulateResourceFromAnnotation(
 			return "", nil
 		}
 	}
-	inputShape := op.InputRef.Shape
+	// Use the wrapper-aware input shape so that a ReadMany operation configured
+	// with input_wrapper_field_path (whose input nests the per-item identifier
+	// fields inside a list/struct wrapper, e.g. a BatchGet* request) surfaces
+	// the unwrapped identifier members to the discovery loop below. When no
+	// wrapper is configured GetInputShape returns the raw input shape, so this
+	// is a no-op for every existing resource.
+	inputShape, err := r.GetInputShape(op)
+	if err != nil {
+		return "", err
+	}
 	if inputShape == nil {
 		return "", nil
 	}
