@@ -1,0 +1,37 @@
+# Baseline companion to generator-with-input-wrapper-field-path.yaml. Identical
+# except it does NOT set input_wrapper_field_path on the promoted
+# BatchGetLifecyclePolicy ReadMany op. Because the batch input nests the
+# identifier fields inside the "identifiers" list-of-structure member, the
+# identifier-discovery codegen sees only that nested member (filtered out) and
+# drops the composite key's Type handling, keeping only the primary key Name.
+# Used to assert the regression that input_wrapper_field_path fixes.
+ignore:
+  resource_names:
+      - AccessPolicy
+      - Collection
+      - SecurityConfig
+      - SecurityPolicy
+      - VpcEndpoint
+  field_paths:
+      - CreateSecurityPolicyOutput.SecurityPolicyDetail.Policy
+      - CreateSecurityPolicyOutput.SecurityPolicyDetail.ClientToken
+      - CreateSecurityPolicyInput.ClientToken
+      - CreateCollectionInput.ClientToken
+operations:
+  CreateLifecyclePolicy:
+    output_wrapper_field_path: LifecyclePolicyDetail
+  BatchGetLifecyclePolicy:
+    operation_type:
+    - List
+    output_wrapper_field_path: LifecyclePolicyDetails
+    resource_name: LifecyclePolicy
+resources:
+  LifecyclePolicy:
+    fields:
+      Name:
+        is_primary_key: true
+        is_immutable: true
+        go_tag: json:"name"
+      Type:
+        is_immutable: true
+        go_tag: json:"type"

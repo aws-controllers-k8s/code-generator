@@ -5849,3 +5849,130 @@ func TestSetResource_MWAAServerless_Workflow_ReadOne(t *testing.T) {
 	require.NoError(err)
 	assert.Equal(expected, got)
 }
+
+// TestSetResource_OpenSearchServerless_LifecyclePolicy_SetResourceIdentifiers_InputWrapper
+// exercises input_wrapper_field_path applied to a ReadMany operation. The
+// BatchGetLifecyclePolicy op is promoted to ReadMany and its input nests the
+// per-item identifier fields (name, type) inside a list-of-structure wrapper
+// member, "identifiers". With input_wrapper_field_path: Identifiers configured,
+// the identifier-discovery codegen unwraps that member and surfaces BOTH the
+// primary key (Name) and the additional composite key (Type).
+func TestSetResource_OpenSearchServerless_LifecyclePolicy_SetResourceIdentifiers_InputWrapper(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "opensearchserverless",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-input-wrapper-field-path.yaml",
+		})
+
+	crd := testutil.GetCRDByName(t, g, "LifecyclePolicy")
+	require.NotNil(crd)
+
+	// Name is the primary key (NameOrID) and Type is discovered as an
+	// additional key from the unwrapped LifecyclePolicyIdentifier shape.
+	expected := `
+	if identifier.NameOrID == "" {
+		return ackerrors.MissingNameIdentifier
+	}
+	r.ko.Spec.Name = &identifier.NameOrID
+
+	f1, f1ok := identifier.AdditionalKeys["type"]
+	if f1ok {
+		r.ko.Spec.Type = aws.String(f1)
+	}
+`
+	got, err := code.SetResourceIdentifiers(crd.Config(), crd, "identifier", "r.ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
+}
+
+// TestSetResource_OpenSearchServerless_LifecyclePolicy_SetResourceIdentifiers_NoInputWrapper
+// is the regression baseline for the test above: identical config EXCEPT it
+// omits input_wrapper_field_path. Without the unwrap, the discovery loop only
+// sees the nested "identifiers" list member (which it filters out), so the
+// composite key's Type handling is dropped and only the primary key Name is
+// emitted. This is the bug that input_wrapper_field_path fixes.
+func TestSetResource_OpenSearchServerless_LifecyclePolicy_SetResourceIdentifiers_NoInputWrapper(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "opensearchserverless",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-batchget-readmany-no-wrapper.yaml",
+		})
+
+	crd := testutil.GetCRDByName(t, g, "LifecyclePolicy")
+	require.NotNil(crd)
+
+	// Only the primary key Name is set; Type is dropped because it is buried
+	// in the un-unwrapped nested identifiers member.
+	expected := `
+	if identifier.NameOrID == "" {
+		return ackerrors.MissingNameIdentifier
+	}
+	r.ko.Spec.Name = &identifier.NameOrID
+
+`
+	got, err := code.SetResourceIdentifiers(crd.Config(), crd, "identifier", "r.ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
+	// Guard the specific property under test: Type must NOT appear.
+	assert.NotContains(got, "Spec.Type")
+}
+
+// TestSetResource_OpenSearchServerless_LifecyclePolicy_PopulateResourceFromAnnotation_InputWrapper
+// asserts that, with input_wrapper_field_path on the ReadMany batch op,
+// adoption via annotation requires BOTH the primary key (name) and the
+// composite key (type), each emitting a terminal-error guard.
+func TestSetResource_OpenSearchServerless_LifecyclePolicy_PopulateResourceFromAnnotation_InputWrapper(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "opensearchserverless",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-input-wrapper-field-path.yaml",
+		})
+
+	crd := testutil.GetCRDByName(t, g, "LifecyclePolicy")
+	require.NotNil(crd)
+
+	expected := `
+	primaryKey, ok := fields["name"]
+	if !ok {
+		return ackerrors.NewTerminalError(fmt.Errorf("required field missing: name"))
+	}
+	r.ko.Spec.Name = &primaryKey
+	f1, ok := fields["type"]
+	if !ok {
+		return ackerrors.NewTerminalError(fmt.Errorf("required field missing: type"))
+	}
+	r.ko.Spec.Type = &f1
+
+`
+	got, err := code.PopulateResourceFromAnnotation(crd.Config(), crd, "fields", "r.ko", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
+}
+
+// TestSetResource_OpenSearchServerless_LifecyclePolicy_PopulateResourceFromAnnotation_NoInputWrapper
+// is the regression baseline: without input_wrapper_field_path, adoption drops
+// the required "type" guard and only requires "name".
+func TestSetResource_OpenSearchServerless_LifecyclePolicy_PopulateResourceFromAnnotation_NoInputWrapper(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "opensearchserverless",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-batchget-readmany-no-wrapper.yaml",
+		})
+
+	crd := testutil.GetCRDByName(t, g, "LifecyclePolicy")
+	require.NotNil(crd)
+
+	got, err := code.PopulateResourceFromAnnotation(crd.Config(), crd, "fields", "r.ko", 1)
+	require.NoError(err)
+	assert.Contains(got, `required field missing: name`)
+	assert.NotContains(got, `required field missing: type`)
+	assert.NotContains(got, "Spec.Type")
+}
