@@ -1935,18 +1935,37 @@ func SetResourceForStruct(
 	indent := strings.Repeat("\t", indentLevel)
 	sourceShape := sourceShapeRef.Shape
 	targetShape := targetShapeRef.Shape
+	operation := operationForType(r, op)
 
 	var sourceMemberShapeRef *awssdkmodel.ShapeRef
 	var sourceAdaptedVarName, qualifiedTargetVar string
 
 	for _, targetMemberName := range targetShape.MemberNames() {
+		targetMemberFieldName := names.New(targetMemberName).Camel
+		if operation != nil {
+			fullPath := targetFieldPath + "." + targetMemberName
+			renamed := cfg.GetResourceFieldName(r.Names.Original, operation.ExportedName, fullPath)
+			if renamed != fullPath {
+				targetMemberFieldName = names.New(renamed).Camel
+			}
+		}
+
+		// Look up the source (SDK) field name for this renamed CRD field
+		sourceMemberName := targetMemberName
+		if operation != nil {
+			sourceMemberName = getSourceFieldNameForRename(
+				cfg, r.Names.Original, operation.ExportedName,
+				targetFieldPath, targetMemberFieldName,
+			)
+		}
 		// To check if the field member has `ignore` set to `true`.
 		// This condition currently applies only for members of a field whose shape is `structure`.
 		var setCfg *ackgenconfig.SetFieldConfig
 		f, ok := r.Fields[targetFieldPath]
 		if ok {
-			mf, ok := f.MemberFields[names.New(targetMemberName).Camel]
+			mf, ok := f.MemberFields[targetMemberFieldName]
 			if ok {
+				targetMemberFieldName = mf.Names.Camel
 				setCfg = mf.GetSetterConfig(op)
 				if setCfg != nil && setCfg.IgnoreResourceSetter() {
 					continue
@@ -1957,7 +1976,8 @@ func SetResourceForStruct(
 			}
 		}
 
-		sourceMemberShapeRef = sourceShape.MemberRefs[targetMemberName]
+		sourceMemberName = resolveSourceMemberName(sourceShape, sourceMemberName)
+		sourceMemberShapeRef = sourceShape.MemberRefs[sourceMemberName]
 		if sourceMemberShapeRef == nil {
 			continue
 		}
@@ -1966,7 +1986,7 @@ func SetResourceForStruct(
 		}
 		// Upstream logic iterates over sourceShape members and therefore uses
 		// the sourceShape's index; continue using sourceShape's index here for consistency.
-		sourceMemberIndex, err := GetMemberIndex(sourceShape, targetMemberName)
+		sourceMemberIndex, err := GetMemberIndex(sourceShape, sourceMemberName)
 		if err != nil {
 			return "", fmt.Errorf(
 				"resource %q, field %q: could not determine source shape index: %w",
@@ -1977,8 +1997,8 @@ func SetResourceForStruct(
 		targetMemberShapeRef := targetShape.MemberRefs[targetMemberName]
 		indexedVarName := fmt.Sprintf("%sf%d", targetVarName, sourceMemberIndex)
 		sourceMemberShape := sourceMemberShapeRef.Shape
-		targetMemberCleanNames := names.New(targetMemberName)
-		sourceAdaptedVarName = sourceVarName + "." + targetMemberName
+		targetMemberCleanNames := names.New(targetMemberFieldName)
+		sourceAdaptedVarName = sourceVarName + "." + sourceMemberName
 
 		// Enum types are just strings at the end of the day
 		// so we want to check if they are empty before deciding
@@ -2006,7 +2026,7 @@ func SetResourceForStruct(
 		// if lists are made of strings, or maps are made of string-to-string, we want to leverage
 		// the aws-sdk-go-v2 provided function to convert from pointer to non-pointer collection
 		case "list", "structure", "map", "union":
-			adaption := setResourceAdaptPrimitiveCollection(sourceMemberShape, qualifiedTargetVar, sourceAdaptedVarName, indent, r.IsSecretField(targetMemberName))
+			adaption := setResourceAdaptPrimitiveCollection(sourceMemberShape, qualifiedTargetVar, sourceAdaptedVarName, indent, r.IsSecretField(targetFieldPath+"."+targetMemberFieldName))
 			out += adaption
 			if adaption != "" {
 				break
@@ -2591,6 +2611,7 @@ func setResourceForUnion(
 
 	var sourceMemberShapeRef *awssdkmodel.ShapeRef
 	var sourceAdaptedVarName, qualifiedTargetVar string
+	operation := operationForType(r, op)
 
 	sdkGoType := sourceShape.GoTypeWithPkgName()
 	sdkGoType = model.ReplacePkgName(sdkGoType, r.SDKAPIPackageName(), "svcsdktypes", true)
@@ -2602,11 +2623,29 @@ func setResourceForUnion(
 
 	out += fmt.Sprintf("%sswitch %s.(type) {\n", indent, sourceVarName)
 	for _, targetMemberName := range targetShape.MemberNames() {
+		targetMemberFieldName := names.New(targetMemberName).Camel
+		if operation != nil {
+			fullPath := targetFieldPath + "." + targetMemberName
+			renamed := cfg.GetResourceFieldName(r.Names.Original, operation.ExportedName, fullPath)
+			if renamed != fullPath {
+				targetMemberFieldName = names.New(renamed).Camel
+			}
+		}
+
+		sourceMemberName := targetMemberName
+		if operation != nil {
+			sourceMemberName = getSourceFieldNameForRename(
+				cfg, r.Names.Original, operation.ExportedName,
+				targetFieldPath, targetMemberFieldName,
+			)
+		}
+
 		var setCfg *ackgenconfig.SetFieldConfig
 		f, ok := r.Fields[targetFieldPath]
 		if ok {
-			mf, ok := f.MemberFields[targetMemberName]
+			mf, ok := f.MemberFields[targetMemberFieldName]
 			if ok {
+				targetMemberFieldName = mf.Names.Camel
 				setCfg = mf.GetSetterConfig(op)
 				if setCfg != nil && setCfg.IgnoreResourceSetter() {
 					continue
@@ -2617,7 +2656,8 @@ func setResourceForUnion(
 			}
 		}
 
-		sourceMemberShapeRef = sourceShape.MemberRefs[targetMemberName]
+		sourceMemberName = resolveSourceMemberName(sourceShape, sourceMemberName)
+		sourceMemberShapeRef = sourceShape.MemberRefs[sourceMemberName]
 		if sourceMemberShapeRef == nil {
 			continue
 		}
@@ -2625,7 +2665,7 @@ func setResourceForUnion(
 			sourceMemberShapeRef.Shape.Type = "union"
 		}
 
-		sourceMemberIndex, err := GetMemberIndex(sourceShape, targetMemberName)
+		sourceMemberIndex, err := GetMemberIndex(sourceShape, sourceMemberName)
 		if err != nil {
 			return "", fmt.Errorf(
 				"resource %q, field %q: could not determine source shape index: %w",
@@ -2638,16 +2678,16 @@ func setResourceForUnion(
 		indexedVarName := fmt.Sprintf("%sf%df%d", targetVarName, sourceMemberIndex, sourceMemberIndex)
 		elemVarName := fmt.Sprintf("%sf%d", targetVarName, sourceMemberIndex)
 		sourceMemberShape := sourceMemberShapeRef.Shape
-		targetMemberCleanNames := names.New(targetMemberName)
+		targetMemberCleanNames := names.New(targetMemberFieldName)
 
-		out += fmt.Sprintf("%scase %sMember%s:\n", indent, sdkGoType, targetMemberName)
+		out += fmt.Sprintf("%scase %sMember%s:\n", indent, sdkGoType, sourceMemberName)
 		out += fmt.Sprintf(
 			"%s\t%s := %s.(%sMember%s)\n",
 			indent,
 			elemVarName,
 			sourceVarName,
 			sdkGoType,
-			targetMemberName,
+			sourceMemberName,
 		)
 		out += fmt.Sprintf(
 			"%s\tif %s != nil {\n",
@@ -2663,7 +2703,7 @@ func setResourceForUnion(
 
 		switch sourceMemberShape.Type {
 		case "list", "structure", "map", "union":
-			adaption := setResourceAdaptPrimitiveCollection(sourceMemberShape, qualifiedTargetVar, sourceAdaptedVarName, indent, r.IsSecretField(targetMemberName))
+			adaption := setResourceAdaptPrimitiveCollection(sourceMemberShape, qualifiedTargetVar, sourceAdaptedVarName, indent, r.IsSecretField(targetFieldPath+"."+targetMemberFieldName))
 			out += adaption
 			if adaption != "" {
 				break
@@ -2720,4 +2760,91 @@ func setResourceForUnion(
 	out += fmt.Sprintf("%s}\n", indent)
 
 	return out, nil
+}
+
+// getSourceFieldNameForRename finds the original SDK field name for a renamed CRD field
+// by searching through the renames configuration for a matching path
+func getSourceFieldNameForRename(
+	cfg *ackgenconfig.Config,
+	resourceName string,
+	opID string,
+	targetFieldPath string,
+	targetMemberName string,
+) string {
+	if cfg == nil {
+		return targetMemberName
+	}
+	rConfig, ok := cfg.Resources[resourceName]
+	if !ok {
+		return targetMemberName
+	}
+	if rConfig.Renames == nil {
+		return targetMemberName
+	}
+	oRenames, ok := rConfig.Renames.Operations[opID]
+	if !ok {
+		return targetMemberName
+	}
+
+	// The renames map is: originalPath -> renamedName
+	// We need to find: renamedName -> originalPath to get the SDK field name
+	// e.g., "Rules.Statement.IPSetReferenceStatement.ARN" -> "IPSetARN"
+	// Given: targetFieldPath="Rules.Statement.IPSetReferenceStatement", targetMemberName="IPSetARN"
+	// We want to find: "ARN"
+	for originalPath, renamedField := range oRenames.OutputFields {
+		if renamedField == targetMemberName &&
+			strings.HasPrefix(originalPath, targetFieldPath+".") {
+			pathParts := strings.Split(originalPath, ".")
+			return pathParts[len(pathParts)-1]
+		}
+	}
+
+	return targetMemberName
+}
+
+// resolveSourceMemberName returns the concrete member key present in sourceShape
+// for a preferred member name, handling acronym/casing differences such as
+// JSONBody<->JsonBody and URIPath<->UriPath.
+func resolveSourceMemberName(
+	sourceShape *awssdkmodel.Shape,
+	preferred string,
+) string {
+	if sourceShape == nil {
+		return preferred
+	}
+	if _, ok := sourceShape.MemberRefs[preferred]; ok {
+		return preferred
+	}
+	preferredCamel := names.New(preferred).Camel
+	for memberName := range sourceShape.MemberRefs {
+		if strings.EqualFold(memberName, preferred) {
+			return memberName
+		}
+		if names.New(memberName).Camel == preferredCamel {
+			return memberName
+		}
+	}
+	return preferred
+}
+
+// operationForType returns the CRD operation that corresponds to the supplied
+// OpType. Returns nil when the OpType is unknown or unsupported.
+func operationForType(
+	r *model.CRD,
+	opType model.OpType,
+) *awssdkmodel.Operation {
+	switch opType {
+	case model.OpTypeCreate:
+		return r.Ops.Create
+	case model.OpTypeGet:
+		return r.Ops.ReadOne
+	case model.OpTypeList:
+		return r.Ops.ReadMany
+	case model.OpTypeUpdate:
+		return r.Ops.Update
+	case model.OpTypeDelete:
+		return r.Ops.Delete
+	default:
+		return nil
+	}
 }

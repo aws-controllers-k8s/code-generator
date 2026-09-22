@@ -7,7 +7,6 @@ ignore:
     - SSES3
   field_paths:
     - CreateBucketInput.ObjectOwnership
-    - CreateBucketConfiguration.Bucket
     - CreateBucketConfiguration.Location
     - BucketLoggingStatus.LoggingEnabled.TargetObjectKeyFormat
 resources:
