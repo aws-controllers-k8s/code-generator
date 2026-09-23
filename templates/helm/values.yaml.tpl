@@ -95,6 +95,14 @@ aws:
 {{- if eq .ControllerName "s3" }}
   endpoint_use_path_style: false
 {{- end }}
+  # Client-side rate limiting for AWS SDK API calls.
+  # Limits the maximum request rate to the AWS service API.
+  # Useful for services with low account-level rate limits.
+  # For example, Route53 enforces 5 req/s account-wide — setting sdkMaxTPS: 3
+  # leaves headroom for other consumers (external-dns, Terraform, etc.).
+  # Set to 0 or leave commented to disable (default).
+  # sdkMaxTPS: 3
+  # sdkMaxBurst: 5
   credentials:
     # If specified, Secret with shared credentials file to use.
     secretName: ""
