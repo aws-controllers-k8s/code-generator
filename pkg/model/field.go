@@ -244,17 +244,31 @@ func (f *Field) IsImmutable() bool {
 	return false
 }
 
+// IsLateInitialized returns true if the field is configured with
+// late_initialize, i.e. the controller populates it after creation from whatever
+// the AWS API reports.
+func (f *Field) IsLateInitialized() bool {
+	return f.FieldConfig != nil && f.FieldConfig.LateInitialize != nil
+}
+
 // ImmutabilityCELRule returns the CEL expression that the containing Spec
 // struct must carry in order to freeze this field. It is only meaningful when
 // IsImmutable returns true, and is consumed by the apis/crd.go.tpl template,
 // which renders the rule as an XValidation marker on the <Kind>Spec struct
 // rather than on the field itself.
 //
-// See immutabilityCELRule for why the rule lives on the parent. For a top-level
-// Spec field the parent is the Spec struct, so the only way to dodge the rule is
-// to create the resource with no `spec` at all and add one later.
+// See immutabilityCELRule for why the rule lives on the parent, and why a
+// late-initialized field gets the weaker once-set form. For a top-level Spec
+// field the parent is the Spec struct, so the only way to dodge the rule is to
+// create the resource with no `spec` at all and add one later.
 func (f *Field) ImmutabilityCELRule() string {
-	return immutabilityCELRule(f.GetCRDJSONFieldName())
+	return immutabilityCELRule(f.GetCRDJSONFieldName(), f.IsLateInitialized())
+}
+
+// ImmutabilityCELFieldPath returns the XValidation fieldPath that attributes an
+// immutability rejection to this field rather than to the Spec struct.
+func (f *Field) ImmutabilityCELFieldPath() string {
+	return immutabilityCELFieldPath(f.GetCRDJSONFieldName())
 }
 
 // GetSetterConfig returns the SetFieldConfig object associated with this field

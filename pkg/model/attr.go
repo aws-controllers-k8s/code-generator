@@ -26,6 +26,14 @@ type Attr struct {
 	Shape       *awssdkmodel.Shape
 	GoTag       string
 	IsImmutable bool
+	// ImmutabilityAllowsFirstWrite selects the weaker once-set immutability
+	// rule for this member, because the controller itself may legitimately
+	// perform the member's first write. Only meaningful alongside IsImmutable.
+	//
+	// Two configurations cause it, both set in setTypeDefAttributeImmutable:
+	// late_initialize, and a nested reference whose resolved value the
+	// controller can materialize into the stored spec. See immutabilityCELRule.
+	ImmutabilityAllowsFirstWrite bool
 }
 
 func NewAttr(
@@ -68,7 +76,14 @@ func (a *Attr) GetCRDJSONFieldName() string {
 // which renders the rule as an XValidation marker on the struct that owns this
 // attribute rather than on the attribute itself.
 //
-// See immutabilityCELRule for why the rule lives on the parent.
+// See immutabilityCELRule for why the rule lives on the parent, and why a
+// late-initialized attribute gets the weaker once-set form.
 func (a *Attr) ImmutabilityCELRule() string {
-	return immutabilityCELRule(a.GetCRDJSONFieldName())
+	return immutabilityCELRule(a.GetCRDJSONFieldName(), a.ImmutabilityAllowsFirstWrite)
+}
+
+// ImmutabilityCELFieldPath returns the XValidation fieldPath that attributes an
+// immutability rejection to this attribute rather than to its containing struct.
+func (a *Attr) ImmutabilityCELFieldPath() string {
+	return immutabilityCELFieldPath(a.GetCRDJSONFieldName())
 }

@@ -858,7 +858,7 @@ func (m *Model) processNestedFieldTypeDefs(
 				}
 			}
 			if field.IsImmutable() {
-				if err := setTypeDefAttributeImmutable(crd, fieldPath, tdefs); err != nil {
+				if err := setTypeDefAttributeImmutable(crd, fieldPath, field, tdefs); err != nil {
 					return fmt.Errorf("resource %q, field %q: %w", crd.Names.Original, fieldPath, err)
 				}
 			}
@@ -999,13 +999,29 @@ func setTypeDefAttributeGoTag(crd *CRD, fieldPath string, f *Field, tdefs []*Typ
 
 // setTypeDefAttributeImmutable sets the IsImmutable flag for the corresponding
 // attribute represented by fieldPath of nested field.
-func setTypeDefAttributeImmutable(crd *CRD, fieldPath string, tdefs []*TypeDef) error {
+//
+// The attribute is looked up on its *parent* TypeDef, which is what renders the
+// immutability marker: the rule has to be evaluated from the containing struct
+// so that it can observe the member being absent. IsLateInitialized is carried
+// across too, since it selects which of the two rule forms is emitted.
+func setTypeDefAttributeImmutable(crd *CRD, fieldPath string, f *Field, tdefs []*TypeDef) error {
 	_, fieldAttr, err := getAttributeFromPath(crd, fieldPath, tdefs)
 	if err != nil {
 		return err
 	}
 	if fieldAttr != nil {
 		fieldAttr.IsImmutable = true
+		// A nested reference is the second reason the controller may perform
+		// the member's first write. Rebuilding the containing struct from an
+		// AWS response drops the sibling *Ref, which disables
+		// ClearResolvedReferences and lets the resolved value be stored in the
+		// Ref's place -- see the note in
+		// templates/pkg/resource/references.go.tpl. Freezing presence would
+		// reject that patch. ecs CapacityProvider
+		// AutoScalingGroupProvider.AutoScalingGroupArn and mwaa Environment
+		// NetworkConfiguration.SubnetIds are configured this way today.
+		fieldAttr.ImmutabilityAllowsFirstWrite = f.IsLateInitialized() ||
+			(f.FieldConfig != nil && f.FieldConfig.References != nil)
 	}
 	return nil
 }

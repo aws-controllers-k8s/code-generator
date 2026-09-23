@@ -79,11 +79,16 @@ func TestAPIs_ImmutableFieldsRenderOnContainingStruct(t *testing.T) {
 	assert.NotContains(recordSet, `rule="self == oldSelf"`)
 	assert.NotContains(types, `rule="self == oldSelf"`)
 
+	// The message text is deliberately the original "Value is immutable once
+	// set": controller e2e suites assert on that literal string. Field
+	// attribution is carried by fieldPath instead, which the API server reports
+	// with the rejection -- without it, moving the rule to the parent struct
+	// would leave several members sharing one indistinguishable message.
 	specMarker := func(jsonName string) string {
 		return `// +kubebuilder:validation:XValidation:rule="` +
 			`has(self.` + jsonName + `) == has(oldSelf.` + jsonName + `) && ` +
 			`(!has(self.` + jsonName + `) || self.` + jsonName + ` == oldSelf.` + jsonName + `)",` +
-			`message="` + jsonName + ` is immutable once set"`
+			`message="Value is immutable once set",fieldPath=".` + jsonName + `"`
 	}
 
 	// --- optional, top-level: the case the old rule missed entirely ---
@@ -129,6 +134,95 @@ func TestAPIs_ImmutableFieldsRenderOnContainingStruct(t *testing.T) {
 		assert.True(strings.HasPrefix(line, "//"),
 			"unexpected non-comment line %q between the marker and AliasTarget", line)
 	}
+}
+
+// TestAPIs_LateInitializedImmutableFieldRendersOnceSetRule asserts the rendered
+// marker for a field configured with both late_initialize and is_immutable uses
+// the once-set rule, so the controller's own late-init patch is not rejected.
+func TestAPIs_LateInitializedImmutableFieldRendersOnceSetRule(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	m := testutil.NewModelForService(t, "rds")
+	rendered := renderAPIs(t, m)
+
+	dbInstance, found := rendered["db_instance.go"]
+	require.True(found, "expected a rendered db_instance.go, got %v", keys(rendered))
+
+	assert.Contains(dbInstance,
+		`rule="!has(oldSelf.availabilityZone) || (has(self.availabilityZone) && self.availabilityZone == oldSelf.availabilityZone)"`,
+		"late-initialized immutable field must use the once-set rule")
+	assert.NotContains(dbInstance,
+		`rule="has(self.availabilityZone) == has(oldSelf.availabilityZone)`,
+		"late-initialized immutable field must not freeze presence")
+	// Message and attribution are unchanged between the two forms.
+	assert.Contains(dbInstance, `message="Value is immutable once set",fieldPath=".availabilityZone"`)
+}
+
+// TestAPIs_ImmutableReferenceCompanionIsNotEnforced pins the documented non-goal
+// that immutability is NOT propagated to a field's generated reference
+// companion.
+//
+// route53 RecordSet.HostedZoneId is is_immutable and reference-backed, so the
+// CRD gets both `hostedZoneID` and a `hostedZoneRef`. Only the concrete field
+// carries a rule. Because the runtime strips resolved reference values out of
+// the stored spec (ClearResolvedReferences), a CR authored through the reference
+// keeps `hostedZoneID` absent, so editing only `hostedZoneRef` is not caught.
+//
+// This test exists to make that gap visible and to fail loudly if the reference
+// companion ever starts carrying a rule without the hazard being reconsidered --
+// a rule on a *nested* reference companion would reject the controller's own
+// patch, since rebuilding the containing struct from an AWS response drops the
+// Ref and materializes the resolved value.
+func TestAPIs_ImmutableReferenceCompanionIsNotEnforced(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	m := testutil.NewModelForService(t, "route53")
+	rendered := renderAPIs(t, m)
+
+	recordSet, found := rendered["record_set.go"]
+	require.True(found)
+
+	// The concrete field is frozen.
+	assert.Contains(recordSet, `fieldPath=".hostedZoneID"`)
+	// Its reference companion is generated...
+	require.Contains(recordSet, "HostedZoneRef",
+		"fixture is expected to generate a reference companion")
+	// ...but deliberately carries no rule.
+	assert.NotContains(recordSet, `fieldPath=".hostedZoneRef"`)
+	assert.NotContains(recordSet, "oldSelf.hostedZoneRef")
+}
+
+// TestAPIs_NestedImmutableParentIsNotGuarded pins the documented gap that a
+// nested immutable member is only protected while its containing struct is
+// present in both the old and the new object.
+//
+// The rule for AliasTarget.DNSName lives on the AliasTarget struct, so an
+// `aliasTarget` absent->present transition skips it entirely (Kubernetes skips a
+// transition rule when oldSelf is absent). Guarding that would need a rule on
+// the Spec root naming the full path; this PR does not emit one, and the 22
+// nested immutable paths in the fleet -- 20 of them in fsx -- therefore still
+// need their controller-side runtime guard.
+func TestAPIs_NestedImmutableParentIsNotGuarded(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	m := testutil.NewModelForService(t, "route53")
+	rendered := renderAPIs(t, m)
+
+	recordSet, found := rendered["record_set.go"]
+	require.True(found)
+	types, found := rendered["types.go"]
+	require.True(found)
+
+	// The rule is on the nested struct...
+	assert.Contains(types, `fieldPath=".dnsName"`)
+	// ...and there is deliberately no Spec-root rule covering the full path, so
+	// adding `aliasTarget` wholesale after creation is not rejected.
+	assert.NotContains(recordSet, "aliasTarget.dnsName")
+	assert.NotContains(recordSet, `fieldPath=".dnsName"`)
+	assert.NotContains(recordSet, "oldSelf.aliasTarget")
 }
 
 func keys(m map[string]string) []string {

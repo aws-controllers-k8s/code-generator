@@ -25,7 +25,7 @@ import (
 {{- range $fieldName := .CRD.SpecFieldNames }}
 {{- $field := (index $.CRD.SpecFields $fieldName) }}
 {{- if $field.IsImmutable }}
-// +kubebuilder:validation:XValidation:rule="{{ $field.ImmutabilityCELRule }}",message="{{ $field.GetCRDJSONFieldName }} is immutable once set"
+// +kubebuilder:validation:XValidation:rule="{{ $field.ImmutabilityCELRule }}",message="Value is immutable once set",fieldPath="{{ $field.ImmutabilityCELFieldPath }}"
 {{- end }}
 {{- end }}
 type {{ .CRD.Kind }}Spec struct {

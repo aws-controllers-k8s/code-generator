@@ -12,7 +12,7 @@
 {{- range $attrName := .SortedAttrNames }}
 {{- $attr := (index $.Attrs $attrName) }}
 {{- if $attr.IsImmutable }}
-// +kubebuilder:validation:XValidation:rule="{{ $attr.ImmutabilityCELRule }}",message="{{ $attr.GetCRDJSONFieldName }} is immutable once set"
+// +kubebuilder:validation:XValidation:rule="{{ $attr.ImmutabilityCELRule }}",message="Value is immutable once set",fieldPath="{{ $attr.ImmutabilityCELFieldPath }}"
 {{- end }}
 {{- end }}
 type {{ .Names.Camel }} struct {

@@ -67,7 +67,12 @@ func escapeCELPropertyName(jsonName string) string {
 // is absent, so a field-level `self == oldSelf` rule never fires for an
 // optional field that was unset at creation -- the field could be added later
 // and silently accepted. Evaluating from the parent lets the rule observe the
-// member's absence, so it can freeze presence as well as value:
+// member's absence.
+//
+// There are two forms, because "immutable" means something weaker for a field
+// the controller itself fills in.
+//
+// lateInitialized == false -- freeze presence and value:
 //
 //	has(self.x) == has(oldSelf.x) && (!has(self.x) || self.x == oldSelf.x)
 //
@@ -75,12 +80,88 @@ func escapeCELPropertyName(jsonName string) string {
 // second compares values only when the member is present, so it never
 // dereferences an absent field.
 //
-// Note that this only holds while the containing struct itself is present in
-// both the old and the new object: if the parent struct goes absent->present,
-// Kubernetes skips this rule too, exactly as it skipped the field-level one.
-// See the package documentation on is_immutable for that remaining gap.
-func immutabilityCELRule(jsonName string) string {
+// lateInitialized == true -- freeze value once set, but permit the first write:
+//
+//	!has(oldSelf.x) || (has(self.x) && self.x == oldSelf.x)
+//
+// A late-initialized field is populated by the controller after creation, from
+// whatever the AWS API reports. That patch is an absent->present transition and
+// the strict form rejects it, leaving the resource stuck in a reconcile error.
+// CEL cannot tell a controller late-init write from a user edit -- both arrive
+// as an UPDATE adding the field -- so absent->present has to stay permitted for
+// these fields. Change-after-set and remove-after-set are still rejected, which
+// is strictly more than the old field-level rule caught (it skipped removals
+// entirely).
+//
+// Neither form holds while the containing struct itself is absent: if the parent
+// struct goes absent->present, Kubernetes skips this rule too, exactly as it
+// skipped the field-level one. See the is_immutable documentation for that
+// remaining gap.
+//
+// KNOWN LIMITATION -- the strict form is not safe for every is_immutable field,
+// because the ACK reconciler itself moves spec fields in and out of the stored
+// object and its patches go through admission like any other update:
+//
+//   - Adoption materializes the whole spec from the ReadOne response
+//     (runtime reconciler, the AdoptionPolicy_Adopt branch calls
+//     patchResourceMetadataAndSpec with the sdkFind output as the target), so
+//     any immutable non-required field the Describe returns is an
+//     absent->present transition the strict form rejects. acm Certificate
+//     domainName is exactly this shape.
+//   - Generated SetResource emits an unconditional `else { ko.Spec.X = nil }`
+//     for read/create/update output members, so a user-set field the AWS
+//     response omits is deleted from the stored spec -- a present->absent
+//     transition that BOTH forms reject.
+//
+// late_initialize is the one cause of this that is visible in generator.yaml and
+// so can be handled here. The others depend on per-field AWS response behaviour
+// and cannot be determined statically, which is why freezing presence by default
+// for every is_immutable field is not obviously correct. Treat this as the open
+// design question it is rather than as settled.
+// immutabilityCELFieldPath returns the value for the XValidation marker's
+// fieldPath, which is what the API server attributes the rejection to.
+//
+// Moving the rule from the member to the containing struct would otherwise lose
+// that attribution: with several members of one struct frozen, every rejection
+// would report the struct and share an identical message, and the user would
+// have no way to tell which member they touched. fieldPath restores it without
+// changing the message text.
+//
+// Unlike the rule, this is a JSONPath and not CEL, so it uses the raw JSON name.
+// Names that are not simple identifiers take the documented bracket form,
+// e.g. `.['deployment-type']`.
+func immutabilityCELFieldPath(jsonName string) string {
+	if isSimpleJSONPathIdent(jsonName) {
+		return "." + jsonName
+	}
+	return fmt.Sprintf(".['%s']", jsonName)
+}
+
+// isSimpleJSONPathIdent reports whether name can be used with dot notation in a
+// fieldPath.
+func isSimpleJSONPathIdent(name string) bool {
+	if name == "" {
+		return false
+	}
+	for i, r := range name {
+		switch {
+		case r >= 'a' && r <= 'z', r >= 'A' && r <= 'Z', r == '_':
+		case i > 0 && r >= '0' && r <= '9':
+		default:
+			return false
+		}
+	}
+	return true
+}
+
+func immutabilityCELRule(jsonName string, lateInitialized bool) string {
 	n := escapeCELPropertyName(jsonName)
+	if lateInitialized {
+		return fmt.Sprintf(
+			"!has(oldSelf.%[1]s) || (has(self.%[1]s) && self.%[1]s == oldSelf.%[1]s)",
+			n,
+		)
+	}
 	return fmt.Sprintf(
 		"has(self.%[1]s) == has(oldSelf.%[1]s) && (!has(self.%[1]s) || self.%[1]s == oldSelf.%[1]s)",
 		n,
