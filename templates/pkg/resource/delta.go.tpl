@@ -7,6 +7,9 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	ackcompare "github.com/aws-controllers-k8s/runtime/pkg/compare"
+{{- if HasSecretFields .CRD }}
+	acksecret "github.com/aws-controllers-k8s/runtime/pkg/secret"
+{{- end }}
 	acktags "github.com/aws-controllers-k8s/runtime/pkg/tags"
 )
 
