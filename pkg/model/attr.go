@@ -49,3 +49,26 @@ func (a *Attr) GetGoTag() string {
 	}
 	return fmt.Sprintf("`json:\"%s,omitempty\"`", a.Names.CamelLower)
 }
+
+// GetCRDJSONFieldName returns the JSON name this attribute is serialized as in
+// the generated CRD type, i.e. the name a Kubernetes user sees in the
+// resource's YAML. It derives the name by parsing the attribute's own struct
+// tag as produced by GetGoTag, so it always agrees with what the generated Go
+// struct actually serializes -- including any `go_tag` override from
+// generator.yaml.
+//
+// This is the Attr analogue of Field.GetCRDJSONFieldName.
+func (a *Attr) GetCRDJSONFieldName() string {
+	return jsonNameFromGoTag(a.GetGoTag(), a.Names.CamelLower)
+}
+
+// ImmutabilityCELRule returns the CEL expression that a containing struct must
+// carry in order to freeze this attribute. It is only meaningful when
+// IsImmutable is true, and is consumed by the apis/type_def.go.tpl template,
+// which renders the rule as an XValidation marker on the struct that owns this
+// attribute rather than on the attribute itself.
+//
+// See immutabilityCELRule for why the rule lives on the parent.
+func (a *Attr) ImmutabilityCELRule() string {
+	return immutabilityCELRule(a.GetCRDJSONFieldName())
+}

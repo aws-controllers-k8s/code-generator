@@ -15,15 +15,24 @@ import (
 )
 
 {{ .CRD.Documentation }}
+{{- /*
+  Immutability is enforced from the Spec struct, not from the field.
+  Kubernetes skips a transition rule when the old value is absent, so a
+  field-level "self == oldSelf" rule never fires for an optional field that was
+  unset at creation. Evaluating from here lets the rule see the field's absence
+  and freeze presence as well as value.
+*/ -}}
+{{- range $fieldName := .CRD.SpecFieldNames }}
+{{- $field := (index $.CRD.SpecFields $fieldName) }}
+{{- if $field.IsImmutable }}
+// +kubebuilder:validation:XValidation:rule="{{ $field.ImmutabilityCELRule }}",message="{{ $field.GetCRDJSONFieldName }} is immutable once set"
+{{- end }}
+{{- end }}
 type {{ .CRD.Kind }}Spec struct {
 {{ range $fieldName := .CRD.SpecFieldNames }}
 {{- $field := (index $.CRD.SpecFields $fieldName) }}
 {{ if $field.GetDocumentation -}}
     {{ $field.GetDocumentation }}
-{{ end -}}
-
-{{- if $field.IsImmutable -}}
-    // +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable once set"
 {{ end -}}
 
 {{- if and ($field.IsRequired) (not $field.HasReference) -}}

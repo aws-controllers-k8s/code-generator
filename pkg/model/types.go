@@ -14,6 +14,7 @@
 package model
 
 import (
+	"reflect"
 	"strings"
 
 	awssdkmodel "github.com/aws-controllers-k8s/code-generator/pkg/api"
@@ -21,6 +22,26 @@ import (
 
 	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/config"
 )
+
+// jsonNameFromGoTag extracts the serialized JSON name from a Go struct tag as
+// produced by Field.GetGoTag or Attr.GetGoTag, falling back to fallback when the
+// tag carries no usable json key.
+//
+// The tag arrives wrapped in backticks, e.g. `json:"type,omitempty"`;
+// reflect.StructTag expects the unwrapped body.
+func jsonNameFromGoTag(goTag string, fallback string) string {
+	tag := strings.Trim(goTag, "`")
+	jsonTag := reflect.StructTag(tag).Get("json")
+	if jsonTag != "" {
+		name := strings.SplitN(jsonTag, ",", 2)[0]
+		if name != "" && name != "-" {
+			return name
+		}
+	}
+	// GetGoTag always emits a json key with a non-empty name today, so this
+	// fallback is defensive (e.g. a `go_tag` override without a json key).
+	return fallback
+}
 
 // CleanGoType returns a tuple of three strings representing the normalized Go
 // types in "element", "normal" and "with package name" format for a particular

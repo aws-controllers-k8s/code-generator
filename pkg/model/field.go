@@ -15,7 +15,6 @@ package model
 
 import (
 	"fmt"
-	"reflect"
 	"strings"
 
 	awssdkmodel "github.com/aws-controllers-k8s/code-generator/pkg/api"
@@ -245,6 +244,19 @@ func (f *Field) IsImmutable() bool {
 	return false
 }
 
+// ImmutabilityCELRule returns the CEL expression that the containing Spec
+// struct must carry in order to freeze this field. It is only meaningful when
+// IsImmutable returns true, and is consumed by the apis/crd.go.tpl template,
+// which renders the rule as an XValidation marker on the <Kind>Spec struct
+// rather than on the field itself.
+//
+// See immutabilityCELRule for why the rule lives on the parent. For a top-level
+// Spec field the parent is the Spec struct, so the only way to dodge the rule is
+// to create the resource with no `spec` at all and add one later.
+func (f *Field) ImmutabilityCELRule() string {
+	return immutabilityCELRule(f.GetCRDJSONFieldName())
+}
+
 // GetSetterConfig returns the SetFieldConfig object associated with this field
 // and a supplied operation type, or nil if none exists.
 func (f *Field) GetSetterConfig(opType OpType) *ackgenconfig.SetFieldConfig {
@@ -310,20 +322,7 @@ func (f *Field) GetGoTag() string {
 // only extracts the name portion from it, so future changes to the tag logic
 // are reflected automatically.
 func (f *Field) GetCRDJSONFieldName() string {
-	// GetGoTag returns the tag wrapped in backticks, e.g. `+"`"+`json:"type,omitempty"`+"`"+`.
-	// reflect.StructTag expects the unwrapped body, so strip the backticks
-	// before parsing.
-	tag := strings.Trim(f.GetGoTag(), "`")
-	jsonTag := reflect.StructTag(tag).Get("json")
-	if jsonTag != "" {
-		name := strings.SplitN(jsonTag, ",", 2)[0]
-		if name != "" && name != "-" {
-			return name
-		}
-	}
-	// GetGoTag always emits a json key with a non-empty name today, so this
-	// fallback is defensive (e.g. a future go_tag override without a json key).
-	return f.Names.CamelLower
+	return jsonNameFromGoTag(f.GetGoTag(), f.Names.CamelLower)
 }
 
 // HasReference returns true if the supplied field *path* refers to a Field

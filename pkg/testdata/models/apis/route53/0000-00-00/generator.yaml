@@ -24,6 +24,11 @@ resources:
         from:
           operation: ListResourceRecordSets
           path: ResourceRecordSets.AliasTarget
+      # An optional immutable field nested inside an optional struct. Exercises
+      # the immutability rule being emitted on the containing AliasTarget
+      # struct rather than on the member itself.
+      AliasTarget.DNSName:
+        is_immutable: true
       CidrRoutingConfig:
         from:
           operation: ListResourceRecordSets
