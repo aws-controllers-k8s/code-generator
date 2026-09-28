@@ -1184,13 +1184,13 @@ func (m *Model) processFields(crds []*CRD) error {
 	return nil
 }
 
-// mergedFieldRenames collects field rename mappings across all configured
+// mergedFieldRenames collects nested field rename mappings across all configured
 // operations for a resource and returns a single lookup map keyed by original
-// field path.
+// field path. Top-level renames are handled per operation and may differ.
 //
-// Renames must be globally consistent per resource: if two operations rename
-// the same original path to different target names, this function panics to
-// surface an invalid generator configuration early.
+// Nested renames must be globally consistent per resource: if two operations
+// rename the same nested path to different target names, this function panics
+// to surface an invalid generator configuration early.
 func mergedFieldRenames(crd *CRD) map[string]string {
 	renames := map[string]string{}
 	if crd == nil || crd.Config() == nil {
@@ -1202,6 +1202,9 @@ func mergedFieldRenames(crd *CRD) map[string]string {
 			op.ExportedName: op,
 		})
 		for orig, renamed := range opRenames {
+			if !strings.Contains(orig, ".") {
+				continue
+			}
 			if existing, ok := renames[orig]; ok && existing != renamed {
 				panic(fmt.Sprintf(
 					"conflicting field renames for resource %q field %q: %q vs %q",
