@@ -203,6 +203,12 @@ var (
 		"GoCodeIncompleteLateInitialization": func(r *ackmodel.CRD, resVarName string, indentLevel int) string {
 			return code.IncompleteLateInitialization(r.Config(), r, resVarName, indentLevel)
 		},
+		"GoCodeMergeLateInitializedFields": func(r *ackmodel.CRD, sourceResVarName string, targetResVarName string, indentLevel int) string {
+			return code.MergeLateInitializedFields(r.Config(), r, sourceResVarName, targetResVarName, indentLevel)
+		},
+		"HasLateInitializedFields": func(r *ackmodel.CRD) bool {
+			return code.HasLateInitializedFields(r.Config(), r)
+		},
 		"GoCodeReferencesValidation": func(f *ackmodel.Field, sourceVarName string, indentLevel int) (string, error) {
 			return code.ReferenceFieldsValidation(f, sourceVarName, indentLevel)
 		},

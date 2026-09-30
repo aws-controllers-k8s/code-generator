@@ -21,7 +21,15 @@ func (rm *resourceManager) sdkUpdate(
 		return updated, err
 	}
 {{- end }}
+{{- if HasLateInitializedFields .CRD }}
+	// Build the payload from a copy of 'desired' carrying the observed value of
+	// any late initialized field the user has not set, so those fields are not
+	// sent as absent. Only the payload is affected; 'desired' itself, and
+	// therefore the returned resource, is left untouched.
+	input, err := rm.newUpdateRequestPayload(ctx, rm.mergeLateInitializedFields(latest, desired), delta)
+{{- else }}
 	input, err := rm.newUpdateRequestPayload(ctx, desired, delta)
+{{- end }}
 	if err != nil {
 		return nil, err
 	}

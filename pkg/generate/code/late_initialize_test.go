@@ -266,3 +266,103 @@ func Test_LateInitializeFromReadOne_UnpackedAttributeField(t *testing.T) {
 	return &resource{latestKo}`
 	assert.Equal(expected, code.LateInitializeFromReadOne(crd.Config(), crd, "observed", "latest", 1))
 }
+
+func Test_MergeLateInitializedFields_NoFieldsToLateInitialize(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "ecr")
+
+	crd := testutil.GetCRDByName(t, g, "Repository")
+	require.NotNil(crd)
+	assert.Empty(crd.Config().GetFieldConfigs(crd.Names.Original))
+	expected := "	return desired"
+	assert.Equal(expected, code.MergeLateInitializedFields(crd.Config(), crd, "latest", "desired", 1))
+}
+
+func Test_MergeLateInitializedFields_NonNestedPath(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "ecr", &testutil.TestingModelOptions{GeneratorConfigFile: "generator-with-late-initialize.yaml"})
+
+	crd := testutil.GetCRDByName(t, g, "Repository")
+	require.NotNil(crd)
+	expected :=
+		`	latestKo := latest.ko.DeepCopy()
+	desiredKo := desired.ko.DeepCopy()
+	if latestKo.Spec.ImageTagMutability != nil && desiredKo.Spec.ImageTagMutability == nil {
+		desiredKo.Spec.ImageTagMutability = latestKo.Spec.ImageTagMutability
+	}
+	if latestKo.Spec.Name != nil && desiredKo.Spec.Name == nil {
+		desiredKo.Spec.Name = latestKo.Spec.Name
+	}
+	return &resource{desiredKo}`
+	assert.Equal(expected, code.MergeLateInitializedFields(crd.Config(), crd, "latest", "desired", 1))
+}
+
+func Test_MergeLateInitializedFields_NestedPath(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "ecr", &testutil.TestingModelOptions{GeneratorConfigFile: "generator-with-nested-path-late-initialize.yaml"})
+
+	crd := testutil.GetCRDByName(t, g, "Repository")
+	require.NotNil(crd)
+	expected :=
+		`	latestKo := latest.ko.DeepCopy()
+	desiredKo := desired.ko.DeepCopy()
+	if latestKo.Spec.ImageScanningConfiguration != nil && desiredKo.Spec.ImageScanningConfiguration != nil {
+		if latestKo.Spec.ImageScanningConfiguration.ScanOnPush != nil && desiredKo.Spec.ImageScanningConfiguration.ScanOnPush == nil {
+			desiredKo.Spec.ImageScanningConfiguration.ScanOnPush = latestKo.Spec.ImageScanningConfiguration.ScanOnPush
+		}
+	}
+	if latestKo.Spec.Name != nil && desiredKo.Spec.Name == nil {
+		desiredKo.Spec.Name = latestKo.Spec.Name
+	}
+	if latestKo.Spec.another != nil && desiredKo.Spec.another != nil {
+		if latestKo.Spec.another.map != nil && desiredKo.Spec.another.map != nil {
+			if latestKo.Spec.another.map["lastfield"] != nil && desiredKo.Spec.another.map["lastfield"] == nil {
+				desiredKo.Spec.another.map["lastfield"] = latestKo.Spec.another.map["lastfield"]
+			}
+		}
+	}
+	if latestKo.Spec.map != nil && desiredKo.Spec.map != nil {
+		if latestKo.Spec.map["subfield"] != nil && desiredKo.Spec.map["subfield"] != nil {
+			if latestKo.Spec.map["subfield"].x != nil && desiredKo.Spec.map["subfield"].x == nil {
+				desiredKo.Spec.map["subfield"].x = latestKo.Spec.map["subfield"].x
+			}
+		}
+	}
+	if latestKo.Spec.some != nil && desiredKo.Spec.some != nil {
+		if latestKo.Spec.some.list != nil && desiredKo.Spec.some.list == nil {
+			desiredKo.Spec.some.list = latestKo.Spec.some.list
+		}
+	}
+	if latestKo.Spec.structA != nil && desiredKo.Spec.structA != nil {
+		if latestKo.Spec.structA.mapB != nil && desiredKo.Spec.structA.mapB != nil {
+			if latestKo.Spec.structA.mapB["structC"] != nil && desiredKo.Spec.structA.mapB["structC"] != nil {
+				if latestKo.Spec.structA.mapB["structC"].valueD != nil && desiredKo.Spec.structA.mapB["structC"].valueD == nil {
+					desiredKo.Spec.structA.mapB["structC"].valueD = latestKo.Spec.structA.mapB["structC"].valueD
+				}
+			}
+		}
+	}
+	return &resource{desiredKo}`
+	assert.Equal(expected, code.MergeLateInitializedFields(crd.Config(), crd, "latest", "desired", 1))
+}
+
+func Test_HasLateInitializedFields(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "ecr")
+	crd := testutil.GetCRDByName(t, g, "Repository")
+	require.NotNil(crd)
+	assert.False(code.HasLateInitializedFields(crd.Config(), crd))
+
+	g = testutil.NewModelForServiceWithOptions(t, "ecr", &testutil.TestingModelOptions{GeneratorConfigFile: "generator-with-late-initialize.yaml"})
+	crd = testutil.GetCRDByName(t, g, "Repository")
+	require.NotNil(crd)
+	assert.True(code.HasLateInitializedFields(crd.Config(), crd))
+}

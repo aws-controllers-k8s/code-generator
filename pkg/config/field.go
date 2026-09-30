@@ -353,6 +353,13 @@ type CustomFieldConfig struct {
 
 // LateInitializeConfig contains instructions for how to handle the
 // retrieval and setting of server-side defaulted fields.
+//
+// Marking a field `late_initialize` also changes what a nil value on that field
+// means: it is read as "server-defaulted, don't care" rather than "absent". The
+// generated delta therefore records no difference while the desired value is
+// nil, and the generated update request payload carries the observed value for
+// the field instead of sending it as absent.
+//
 // NOTE: Currently the members of this have no effect on late initialization of fields.
 // Currently the late initialization is requeued with static delay of 5 second.
 // TODO: (vijat@) Add support of retry/backoff for late initialization.

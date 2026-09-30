@@ -255,6 +255,20 @@ func (rm *resourceManager) lateInitializeFromReadOneOutput(
 ) acktypes.AWSResource {
 {{ GoCodeLateInitializeFromReadOne .CRD "observed" "latest" 1 }}
 }
+{{- if HasLateInitializedFields .CRD }}
+
+// mergeLateInitializedFields returns a copy of 'desired' with every late
+// initialized field that is unset on 'desired' populated from 'latest'. It is
+// used to build the update request payload: a server-defaulted field the user
+// never set must be sent with its observed value, because an absent field is a
+// reset for APIs whose update semantics replace the whole configuration.
+func (rm *resourceManager) mergeLateInitializedFields(
+	latest *resource,
+	desired *resource,
+) *resource {
+{{ GoCodeMergeLateInitializedFields .CRD "latest" "desired" 1 }}
+}
+{{- end }}
 
 // IsSynced returns true if the resource is synced.
 func (rm *resourceManager) IsSynced(ctx context.Context, res acktypes.AWSResource) (bool, error) {

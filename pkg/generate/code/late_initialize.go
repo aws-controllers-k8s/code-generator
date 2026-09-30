@@ -32,6 +32,91 @@ func fieldGoName(r *model.CRD, configName string) string {
 	return configName
 }
 
+// sortedLateInitFieldNames returns the field paths configured with
+// `late_initialize` for a resource, in deterministic sorted order.
+func sortedLateInitFieldNames(
+	cfg *ackgenconfig.Config,
+	r *model.CRD,
+) []string {
+	lateInitConfigs := cfg.GetLateInitConfigs(r.Names.Original)
+	fieldNames := make([]string, 0, len(lateInitConfigs))
+	for fieldName := range lateInitConfigs {
+		fieldNames = append(fieldNames, fieldName)
+	}
+	sort.Strings(fieldNames)
+	return fieldNames
+}
+
+// lateInitFieldCopies returns the Go code that copies each of the supplied
+// field paths from srcKoVarName to tgtKoVarName, but only where the field is
+// set on the source and unset on the target.
+//
+// Field path separated by '.' indicates members in a struct.
+// Field path separated by '..' indicates member/key in a map.
+func lateInitFieldCopies(
+	r *model.CRD,
+	lateInitFieldNames []string,
+	srcKoVarName string,
+	tgtKoVarName string,
+	// Number of levels of indentation to use
+	indentLevel int,
+) string {
+	out := ""
+	// TODO(vijat@): Add validation for correct field path in lateInitializedFieldNames
+	for _, fName := range lateInitFieldNames {
+		// split the field name by period
+		// each substring represents a field.
+		fNameParts := strings.Split(fName, ".")
+		// fNameIndentLevel tracks the indentation level for every new line added
+		// This variable is incremented when building nested if blocks and decremented when closing those if blocks.
+		fNameIndentLevel := indentLevel
+		// fParentPath keeps track of parent path for any fNamePart
+		fParentPath := ""
+		mapShapedParent := false
+		// for every part except last, perform the nil check
+		// entries in both source and target koVarName should not be nil
+		for i, fNamePart := range fNameParts {
+			if fNamePart == "" {
+				mapShapedParent = true
+				continue
+			}
+			indent := strings.Repeat("\t", fNameIndentLevel)
+			goName := fieldGoName(r, fNamePart)
+			fNamePartAccesor := fmt.Sprintf("Spec%s.%s", fParentPath, goName)
+			if mapShapedParent {
+				fNamePartAccesor = fmt.Sprintf("Spec%s[%q]", fParentPath, fNamePart)
+			}
+			// Handling for all parts except last one
+			if i != len(fNameParts)-1 {
+				out += fmt.Sprintf("%sif %s.%s != nil && %s.%s != nil {\n", indent, srcKoVarName, fNamePartAccesor, tgtKoVarName, fNamePartAccesor)
+				// update fParentPath and fNameIndentLevel for next iteration
+				if mapShapedParent {
+					fParentPath = fmt.Sprintf("%s[%q]", fParentPath, fNamePart)
+					mapShapedParent = false
+				} else {
+					fParentPath = fmt.Sprintf("%s.%s", fParentPath, goName)
+				}
+				fNameIndentLevel = fNameIndentLevel + 1
+			} else {
+				// handle last part here
+				// for last part, set the lateInitialized field if user did not specify field value and readOne has server side defaulted value.
+				// i.e. field is not nil in srcKoVarName but is nil in tgtKoVarName
+				out += fmt.Sprintf("%sif %s.%s != nil && %s.%s == nil {\n", indent, srcKoVarName, fNamePartAccesor, tgtKoVarName, fNamePartAccesor)
+				fNameIndentLevel = fNameIndentLevel + 1
+				indent = strings.Repeat("\t", fNameIndentLevel)
+				out += fmt.Sprintf("%s%s.%s = %s.%s\n", indent, tgtKoVarName, fNamePartAccesor, srcKoVarName, fNamePartAccesor)
+			}
+		}
+		// Close all if blocks with proper indentation
+		fNameIndentLevel = fNameIndentLevel - 1
+		for fNameIndentLevel >= indentLevel {
+			out += fmt.Sprintf("%s}\n", strings.Repeat("\t", fNameIndentLevel))
+			fNameIndentLevel = fNameIndentLevel - 1
+		}
+	}
+	return out
+}
+
 // FindLateInitializedFieldNames outputs the code to create a sorted slice of fieldNames to
 // late initialize. This slice helps with short circuiting the AWSResourceManager.LateInitialize()
 // method if there are no fields to late initialize.
@@ -47,16 +132,11 @@ func FindLateInitializedFieldNames(
 ) string {
 	out := ""
 	indent := strings.Repeat("\t", indentLevel)
-	var lateInitFieldNames []string
-	lateInitConfigs := cfg.GetLateInitConfigs(r.Names.Original)
-	for fieldName := range lateInitConfigs {
-		lateInitFieldNames = append(lateInitFieldNames, fieldName)
-	}
+	// the slice is sorted to help with short circuiting AWSResourceManager.LateInitialize()
+	lateInitFieldNames := sortedLateInitFieldNames(cfg, r)
 	if len(lateInitFieldNames) == 0 {
 		return fmt.Sprintf("%svar %s = []string{}\n", indent, resVarName)
 	}
-	// sort the slice to help with short circuiting AWSResourceManager.LateInitialize()
-	sort.Strings(lateInitFieldNames)
 	out += fmt.Sprintf("%svar %s = []string{", indent, resVarName)
 	for _, fName := range lateInitFieldNames {
 		out += fmt.Sprintf("%q,", fieldGoName(r, fName))
@@ -143,71 +223,71 @@ func LateInitializeFromReadOne(
 ) string {
 	out := ""
 	indent := strings.Repeat("\t", indentLevel)
-	var lateInitFieldNames []string
-	lateInitConfigs := cfg.GetLateInitConfigs(r.Names.Original)
-	for fieldName := range lateInitConfigs {
-		lateInitFieldNames = append(lateInitFieldNames, fieldName)
-	}
+	lateInitFieldNames := sortedLateInitFieldNames(cfg, r)
 	if len(lateInitFieldNames) == 0 {
 		return fmt.Sprintf("%sreturn %s", indent, targetResVarName)
 	}
-	sort.Strings(lateInitFieldNames)
 	out += fmt.Sprintf("%sobservedKo := rm.concreteResource(%s).ko.DeepCopy()\n", indent, sourceResVarName)
 	out += fmt.Sprintf("%slatestKo := rm.concreteResource(%s).ko.DeepCopy()\n", indent, targetResVarName)
-	// TODO(vijat@): Add validation for correct field path in lateInitializedFieldNames
-	for _, fName := range lateInitFieldNames {
-		// split the field name by period
-		// each substring represents a field.
-		fNameParts := strings.Split(fName, ".")
-		// fNameIndentLevel tracks the indentation level for every new line added
-		// This variable is incremented when building nested if blocks and decremented when closing those if blocks.
-		fNameIndentLevel := indentLevel
-		// fParentPath keeps track of parent path for any fNamePart
-		fParentPath := ""
-		mapShapedParent := false
-		// for every part except last, perform the nil check
-		// entries in both source and target koVarName should not be nil
-		for i, fNamePart := range fNameParts {
-			if fNamePart == "" {
-				mapShapedParent = true
-				continue
-			}
-			indent := strings.Repeat("\t", fNameIndentLevel)
-			goName := fieldGoName(r, fNamePart)
-			fNamePartAccesor := fmt.Sprintf("Spec%s.%s", fParentPath, goName)
-			if mapShapedParent {
-				fNamePartAccesor = fmt.Sprintf("Spec%s[%q]", fParentPath, fNamePart)
-			}
-			// Handling for all parts except last one
-			if i != len(fNameParts)-1 {
-				out += fmt.Sprintf("%sif observedKo.%s != nil && latestKo.%s != nil {\n", indent, fNamePartAccesor, fNamePartAccesor)
-				// update fParentPath and fNameIndentLevel for next iteration
-				if mapShapedParent {
-					fParentPath = fmt.Sprintf("%s[%q]", fParentPath, fNamePart)
-					mapShapedParent = false
-				} else {
-					fParentPath = fmt.Sprintf("%s.%s", fParentPath, goName)
-				}
-				fNameIndentLevel = fNameIndentLevel + 1
-			} else {
-				// handle last part here
-				// for last part, set the lateInitialized field if user did not specify field value and readOne has server side defaulted value.
-				// i.e. field is not nil in sourceKoVarName but is nil in targetkoVarName
-				out += fmt.Sprintf("%sif observedKo.%s != nil && latestKo.%s == nil {\n", indent, fNamePartAccesor, fNamePartAccesor)
-				fNameIndentLevel = fNameIndentLevel + 1
-				indent = strings.Repeat("\t", fNameIndentLevel)
-				out += fmt.Sprintf("%slatestKo.%s = observedKo.%s\n", indent, fNamePartAccesor, fNamePartAccesor)
-			}
-		}
-		// Close all if blocks with proper indentation
-		fNameIndentLevel = fNameIndentLevel - 1
-		for fNameIndentLevel >= indentLevel {
-			out += fmt.Sprintf("%s}\n", strings.Repeat("\t", fNameIndentLevel))
-			fNameIndentLevel = fNameIndentLevel - 1
-		}
-	}
+	out += lateInitFieldCopies(r, lateInitFieldNames, "observedKo", "latestKo", indentLevel)
 	out += fmt.Sprintf("%sreturn &resource{latestKo}", indent)
 	return out
+}
+
+// MergeLateInitializedFields returns the gocode that copies every
+// late-initialized field that is unset on the target resource from the source
+// resource. It is used to build the Update request payload from the desired
+// resource without dropping server-defaulted fields the user never set: an
+// absent field is treated as a reset by APIs whose update semantics replace the
+// whole configuration.
+//
+// Unlike LateInitializeFromReadOne, both resources are concrete so no
+// conversion through acktypes.AWSResource is needed.
+//
+// Sample output:
+//
+//	latestKo := latest.ko.DeepCopy()
+//	desiredKo := desired.ko.DeepCopy()
+//	if latestKo.Spec.ImageScanningConfiguration != nil && desiredKo.Spec.ImageScanningConfiguration != nil {
+//		if latestKo.Spec.ImageScanningConfiguration.ScanOnPush != nil && desiredKo.Spec.ImageScanningConfiguration.ScanOnPush == nil {
+//			desiredKo.Spec.ImageScanningConfiguration.ScanOnPush = latestKo.Spec.ImageScanningConfiguration.ScanOnPush
+//		}
+//	}
+//	return &resource{desiredKo}
+func MergeLateInitializedFields(
+	cfg *ackgenconfig.Config,
+	r *model.CRD,
+	// String representing the name of the variable holding the resource to copy
+	// late-initialized values FROM, typically "latest".
+	sourceResVarName string,
+	// String representing the name of the variable holding the resource to copy
+	// late-initialized values TO, typically "desired".
+	targetResVarName string,
+	// Number of levels of indentation to use
+	indentLevel int,
+) string {
+	out := ""
+	indent := strings.Repeat("\t", indentLevel)
+	lateInitFieldNames := sortedLateInitFieldNames(cfg, r)
+	if len(lateInitFieldNames) == 0 {
+		return fmt.Sprintf("%sreturn %s", indent, targetResVarName)
+	}
+	srcKoVarName := sourceResVarName + "Ko"
+	tgtKoVarName := targetResVarName + "Ko"
+	out += fmt.Sprintf("%s%s := %s.ko.DeepCopy()\n", indent, srcKoVarName, sourceResVarName)
+	out += fmt.Sprintf("%s%s := %s.ko.DeepCopy()\n", indent, tgtKoVarName, targetResVarName)
+	out += lateInitFieldCopies(r, lateInitFieldNames, srcKoVarName, tgtKoVarName, indentLevel)
+	out += fmt.Sprintf("%sreturn &resource{%s}", indent, tgtKoVarName)
+	return out
+}
+
+// HasLateInitializedFields returns true if any field of the resource is
+// configured with `late_initialize`.
+func HasLateInitializedFields(
+	cfg *ackgenconfig.Config,
+	r *model.CRD,
+) bool {
+	return len(cfg.GetLateInitConfigs(r.Names.Original)) > 0
 }
 
 // IncompleteLateInitialization returns the go code which checks whether all the fields are late initialized.
