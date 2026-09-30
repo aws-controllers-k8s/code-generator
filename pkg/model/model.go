@@ -848,7 +848,9 @@ func (m *Model) processNestedFieldTypeDefs(
 				}
 			}
 			if field.FieldConfig.References != nil {
-				if err := updateTypeDefAttributeWithReference(crd, fieldPath, tdefs); err != nil {
+				if err := updateTypeDefAttributeWithReference(
+					crd, fieldPath, tdefs, field.FieldConfig,
+				); err != nil {
 					return fmt.Errorf("resource %q, field %q: %w", crd.Names.Original, fieldPath, err)
 				}
 			}
@@ -1012,13 +1014,18 @@ func setTypeDefAttributeImmutable(crd *CRD, fieldPath string, tdefs []*TypeDef) 
 
 // updateTypeDefAttributeWithReference adds a new AWSResourceReference attribute
 // for the corresponding attribute represented by fieldPath of nested field
-func updateTypeDefAttributeWithReference(crd *CRD, fieldPath string, tdefs []*TypeDef) error {
+func updateTypeDefAttributeWithReference(
+	crd *CRD,
+	fieldPath string,
+	tdefs []*TypeDef,
+	fieldConfig *ackgenconfig.FieldConfig,
+) error {
 	parentFieldTypeDef, fieldAttr, err := getAttributeFromPath(crd, fieldPath, tdefs)
 	if err != nil {
 		return err
 	}
 	if fieldAttr != nil && parentFieldTypeDef != nil {
-		if err := addReferenceAttribute(parentFieldTypeDef, fieldAttr); err != nil {
+		if err := addReferenceAttribute(parentFieldTypeDef, fieldAttr, fieldConfig); err != nil {
 			return err
 		}
 	}
@@ -1027,13 +1034,18 @@ func updateTypeDefAttributeWithReference(crd *CRD, fieldPath string, tdefs []*Ty
 
 // addReferenceAttribute creates a corresponding reference attribute for
 // "attr" attribute and adds it to "td" TypeDef
-func addReferenceAttribute(td *TypeDef, attr *Attr) error {
+func addReferenceAttribute(
+	td *TypeDef,
+	attr *Attr,
+	fieldConfig *ackgenconfig.FieldConfig,
+) error {
 	// Create a custom "model.Field" to generate ReferenceFieldName and reuse
 	// the existing method for generating top-level reference fields
 	fieldShapeRef := awssdkmodel.ShapeRef{Shape: attr.Shape}
 	field := &Field{
-		Names:    attr.Names,
-		ShapeRef: &fieldShapeRef,
+		Names:       attr.Names,
+		ShapeRef:    &fieldShapeRef,
+		FieldConfig: fieldConfig,
 	}
 	refAttrName, err := field.GetReferenceFieldName()
 	if err != nil {

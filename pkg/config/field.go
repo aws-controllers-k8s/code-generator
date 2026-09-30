@@ -410,7 +410,8 @@ type ReferencesConfig struct {
 	// which contains generator.yaml
 	ServiceName string `json:"service_name,omitempty"`
 	// Resource mentions the K8s resource which is read to resolve the
-	// reference
+	// reference. It is used as the reference field name prefix when the
+	// field name consists of an identifier suffix only.
 	Resource string `json:"resource"`
 	// SkipResourceStateValidations if true, skips state validations performed during
 	// ResolveReferences step, that ensure the referenced resource exists in AWS and is synced.
