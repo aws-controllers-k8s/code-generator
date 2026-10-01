@@ -25,6 +25,12 @@ var BadDefaultsAssignment = map[string]map[string]bool{
 		//https://github.com/aws/aws-sdk-go-v2/blob/dfcf25b6d15674848f71bd7e5ee8ed22b115c6a2/codegen/sdk-codegen/aws-models/emr-serverless.json#L2111
 		"WorkerCount": true,
 	},
+	"NetworkManager": {
+		"VpcOptions.Ipv6Support":                     true,
+		"VpcOptions.ApplianceModeSupport":            true,
+		"VpcOptions.DnsSupport":                      true,
+		"VpcOptions.SecurityGroupReferencingSupport": true,
+	},
 	"imagebuilder": {
 		"setDefaultVersion": true,
 	},
@@ -33,11 +39,15 @@ var BadDefaultsAssignment = map[string]map[string]bool{
 	},
 }
 
-func hasBadDefualtAssignment(serviceName, shapeName string) bool {
+func hasBadDefualtAssignment(serviceName, shapeName, memberName string) bool {
 	service, found := BadDefaultsAssignment[serviceName]
 	if !found {
 		return false
 	}
 
-	return service[shapeName]
+	// Prefer a shape-qualified exception when the same member name appears in
+	// multiple structures with different SDK pointer semantics. Keep the
+	// unqualified lookup for existing entries whose member names are unique
+	// within their service model.
+	return service[shapeName+"."+memberName] || service[memberName]
 }

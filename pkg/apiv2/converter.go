@@ -427,10 +427,10 @@ func addEnumValues(shape *awssdkmodel.Shape, val interface{}) {
 }
 
 func cleanUpBadDefaultValueAssignment(api *awssdkmodel.API) {
-	for _, shape := range api.Shapes {
+	for shapeName, shape := range api.Shapes {
 		if shape.Type == "structure" {
 			for memberName, member := range shape.MemberRefs {
-				if hasBadDefualtAssignment(api.Metadata.APIVersion, memberName) {
+				if hasBadDefualtAssignment(api.Metadata.APIVersion, shapeName, memberName) {
 					member.DefaultValue = "<nil>"
 				}
 			}
