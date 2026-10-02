@@ -1,0 +1,33 @@
+ignore:
+  resource_names:
+  - Listener
+  - Rule
+  - TargetGroup
+  - TrustStore
+  field_paths:
+  - DescribeLoadBalancersOutput.NextMarker
+  - MutualAuthenticationAttributes.AdvertiseTrustStoreCaNames
+  - MutualAuthenticationAttributes.TrustStoreAssociationStatus
+  - AvailabilityZone.SourceNatIpv6Prefixes
+  - SubnetMapping.SourceNatIpv6Prefix
+sdk_names:
+  model_name: elastic-load-balancing-v2
+  package_name: elasticloadbalancingv2
+operations:
+  DescribeLoadBalancers:
+    operation_type:
+    - ReadMany
+    resource_name: LoadBalancer
+    output_wrapper_field_path: LoadBalancers
+  CreateLoadBalancer:
+    operation_type:
+    - Create
+    resource_name: LoadBalancer
+    output_wrapper_field_path: LoadBalancers
+resources:
+  LoadBalancer:
+    synced:
+      when:
+      - path: Status.State.Code
+        in:
+        - active
