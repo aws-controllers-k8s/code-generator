@@ -24,6 +24,7 @@ type Attr struct {
 	Names       names.Names
 	GoType      string
 	Shape       *awssdkmodel.Shape
+	ShapeRef    *awssdkmodel.ShapeRef
 	GoTag       string
 	IsImmutable bool
 }
@@ -32,12 +33,28 @@ func NewAttr(
 	names names.Names,
 	goType string,
 	shape *awssdkmodel.Shape,
+	shapeRef *awssdkmodel.ShapeRef,
 ) *Attr {
 	return &Attr{
-		Names:  names,
-		GoType: goType,
-		Shape:  shape,
+		Names:    names,
+		GoType:   goType,
+		Shape:    shape,
+		ShapeRef: shapeRef,
 	}
+}
+
+// Documentation returns the godoc-formatted documentation for this attribute.
+// It checks the Shape documentation first (type-level docs), then falls back
+// to the ShapeRef documentation (member-specific docs for fields like
+// primitives where the Shape is shared).
+func (a *Attr) Documentation() string {
+	if a.Shape != nil && a.Shape.Documentation != "" {
+		return a.Shape.Documentation
+	}
+	if a.ShapeRef != nil && a.ShapeRef.Documentation != "" {
+		return a.ShapeRef.Documentation
+	}
+	return ""
 }
 
 // GetGoTag returns the Go Tag to inject for this attribute. If the GoTag
