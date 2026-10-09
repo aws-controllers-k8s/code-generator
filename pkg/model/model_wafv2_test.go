@@ -79,3 +79,51 @@ func TestWAFv2_SharedShape_CustomNestedFields(t *testing.T) {
 			"%s.Rules.Statement.AndStatement should be string type", crd.name)
 	}
 }
+
+// TestWAFv2_NestedReferences verifies that references configured on nested
+// ARN fields generate the expected reference field names for RuleGroup and
+// WebACL.
+func TestWAFv2_NestedReferences(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForService(t, "wafv2")
+
+	crds, err := g.GetCRDs()
+	require.NoError(err)
+
+	testCases := []struct {
+		resource  string
+		fieldPath string
+		refName   string
+	}{
+		{
+			resource:  "RuleGroup",
+			fieldPath: "Rules.Statement.IPSetReferenceStatement.ARN",
+			refName:   "IPSetRef",
+		},
+		{
+			resource:  "WebACL",
+			fieldPath: "Rules.Statement.IPSetReferenceStatement.ARN",
+			refName:   "IPSetRef",
+		},
+		{
+			resource:  "WebACL",
+			fieldPath: "Rules.Statement.RuleGroupReferenceStatement.ARN",
+			refName:   "RuleGroupRef",
+		},
+	}
+
+	for _, tc := range testCases {
+		crd := getCRDByName(tc.resource, crds)
+		require.NotNil(crd, "CRD %s not found", tc.resource)
+
+		field := crd.Fields[tc.fieldPath]
+		require.NotNil(field, "field %s.%s not found", tc.resource, tc.fieldPath)
+		assert.True(field.HasReference(), "field %s.%s should have a reference", tc.resource, tc.fieldPath)
+
+		refName, err := field.GetReferenceFieldName()
+		require.NoError(err)
+		assert.Equal(tc.refName, refName.Camel)
+	}
+}

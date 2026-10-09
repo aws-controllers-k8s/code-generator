@@ -402,10 +402,7 @@ func (f *Field) GetReferenceFieldName() (names.Names, error) {
 		}
 	}
 	if refNamePrefix == "" {
-		return names.Names{}, fmt.Errorf(
-			"reference field name cannot be just an identifier suffix (id/arn/name) — field: %s",
-			f.Names.Original,
-		)
+		refNamePrefix = f.FieldConfig.References.Resource
 	}
 	refName := refNamePrefix
 	// If the shape of corresponding field is a list, singularize the refNamePrefix
