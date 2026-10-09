@@ -1236,3 +1236,164 @@ func TestCompareResource_DynamoDB_Table_NestedIAMPolicyAndDocument(t *testing.T)
 	// fields.
 	assert.Contains(got, `			if *a.ko.Spec.StreamSpecification.StreamEnabled != *b.ko.Spec.StreamSpecification.StreamEnabled {`)
 }
+
+func TestCompareResource_ECR_Repository_LateInitialize(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "ecr", &testutil.TestingModelOptions{
+		GeneratorConfigFile: "generator-with-late-initialize.yaml",
+	})
+
+	crd := testutil.GetCRDByName(t, g, "Repository")
+	require.NotNil(crd)
+
+	// ImageTagMutability has late_initialize, so its comparison is wrapped in a
+	// desired-side nil check: the value is server-defaulted, and a CR that never
+	// set it must not report drift against the value AWS returns. Every other
+	// field is compared unconditionally.
+	expected := `
+	if ackcompare.HasNilDifference(a.ko.Spec.EncryptionConfiguration, b.ko.Spec.EncryptionConfiguration) {
+		delta.Add("Spec.EncryptionConfiguration", a.ko.Spec.EncryptionConfiguration, b.ko.Spec.EncryptionConfiguration)
+	} else if a.ko.Spec.EncryptionConfiguration != nil && b.ko.Spec.EncryptionConfiguration != nil {
+		if ackcompare.HasNilDifference(a.ko.Spec.EncryptionConfiguration.EncryptionType, b.ko.Spec.EncryptionConfiguration.EncryptionType) {
+			delta.Add("Spec.EncryptionConfiguration.EncryptionType", a.ko.Spec.EncryptionConfiguration.EncryptionType, b.ko.Spec.EncryptionConfiguration.EncryptionType)
+		} else if a.ko.Spec.EncryptionConfiguration.EncryptionType != nil && b.ko.Spec.EncryptionConfiguration.EncryptionType != nil {
+			if *a.ko.Spec.EncryptionConfiguration.EncryptionType != *b.ko.Spec.EncryptionConfiguration.EncryptionType {
+				delta.Add("Spec.EncryptionConfiguration.EncryptionType", a.ko.Spec.EncryptionConfiguration.EncryptionType, b.ko.Spec.EncryptionConfiguration.EncryptionType)
+			}
+		}
+		if ackcompare.HasNilDifference(a.ko.Spec.EncryptionConfiguration.KMSKey, b.ko.Spec.EncryptionConfiguration.KMSKey) {
+			delta.Add("Spec.EncryptionConfiguration.KMSKey", a.ko.Spec.EncryptionConfiguration.KMSKey, b.ko.Spec.EncryptionConfiguration.KMSKey)
+		} else if a.ko.Spec.EncryptionConfiguration.KMSKey != nil && b.ko.Spec.EncryptionConfiguration.KMSKey != nil {
+			if *a.ko.Spec.EncryptionConfiguration.KMSKey != *b.ko.Spec.EncryptionConfiguration.KMSKey {
+				delta.Add("Spec.EncryptionConfiguration.KMSKey", a.ko.Spec.EncryptionConfiguration.KMSKey, b.ko.Spec.EncryptionConfiguration.KMSKey)
+			}
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.ImageScanningConfiguration, b.ko.Spec.ImageScanningConfiguration) {
+		delta.Add("Spec.ImageScanningConfiguration", a.ko.Spec.ImageScanningConfiguration, b.ko.Spec.ImageScanningConfiguration)
+	} else if a.ko.Spec.ImageScanningConfiguration != nil && b.ko.Spec.ImageScanningConfiguration != nil {
+		if ackcompare.HasNilDifference(a.ko.Spec.ImageScanningConfiguration.ScanOnPush, b.ko.Spec.ImageScanningConfiguration.ScanOnPush) {
+			delta.Add("Spec.ImageScanningConfiguration.ScanOnPush", a.ko.Spec.ImageScanningConfiguration.ScanOnPush, b.ko.Spec.ImageScanningConfiguration.ScanOnPush)
+		} else if a.ko.Spec.ImageScanningConfiguration.ScanOnPush != nil && b.ko.Spec.ImageScanningConfiguration.ScanOnPush != nil {
+			if *a.ko.Spec.ImageScanningConfiguration.ScanOnPush != *b.ko.Spec.ImageScanningConfiguration.ScanOnPush {
+				delta.Add("Spec.ImageScanningConfiguration.ScanOnPush", a.ko.Spec.ImageScanningConfiguration.ScanOnPush, b.ko.Spec.ImageScanningConfiguration.ScanOnPush)
+			}
+		}
+	}
+	if a.ko.Spec.ImageTagMutability != nil {
+		if ackcompare.HasNilDifference(a.ko.Spec.ImageTagMutability, b.ko.Spec.ImageTagMutability) {
+			delta.Add("Spec.ImageTagMutability", a.ko.Spec.ImageTagMutability, b.ko.Spec.ImageTagMutability)
+		} else if a.ko.Spec.ImageTagMutability != nil && b.ko.Spec.ImageTagMutability != nil {
+			if *a.ko.Spec.ImageTagMutability != *b.ko.Spec.ImageTagMutability {
+				delta.Add("Spec.ImageTagMutability", a.ko.Spec.ImageTagMutability, b.ko.Spec.ImageTagMutability)
+			}
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.RegistryID, b.ko.Spec.RegistryID) {
+		delta.Add("Spec.RegistryID", a.ko.Spec.RegistryID, b.ko.Spec.RegistryID)
+	} else if a.ko.Spec.RegistryID != nil && b.ko.Spec.RegistryID != nil {
+		if *a.ko.Spec.RegistryID != *b.ko.Spec.RegistryID {
+			delta.Add("Spec.RegistryID", a.ko.Spec.RegistryID, b.ko.Spec.RegistryID)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.RepositoryName, b.ko.Spec.RepositoryName) {
+		delta.Add("Spec.RepositoryName", a.ko.Spec.RepositoryName, b.ko.Spec.RepositoryName)
+	} else if a.ko.Spec.RepositoryName != nil && b.ko.Spec.RepositoryName != nil {
+		if *a.ko.Spec.RepositoryName != *b.ko.Spec.RepositoryName {
+			delta.Add("Spec.RepositoryName", a.ko.Spec.RepositoryName, b.ko.Spec.RepositoryName)
+		}
+	}
+	desiredACKTags, _ := convertToOrderedACKTags(a.ko.Spec.Tags)
+	latestACKTags, _ := convertToOrderedACKTags(b.ko.Spec.Tags)
+	if !ackcompare.MapStringStringEqual(desiredACKTags, latestACKTags) {
+		delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
+	}
+`
+	got, err := code.CompareResource(
+		crd.Config(), crd, "delta", "a.ko", "b.ko", 1,
+	)
+	require.NoError(err)
+	assert.Equal(expected, got)
+}
+
+func TestCompareResource_ECR_Repository_LateInitializeNested(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "ecr", &testutil.TestingModelOptions{
+		GeneratorConfigFile: "generator-with-nested-path-late-initialize.yaml",
+	})
+
+	crd := testutil.GetCRDByName(t, g, "Repository")
+	require.NotNil(crd)
+
+	// Only ImageScanningConfiguration.ScanOnPush is marked late_initialize, so
+	// the guard is emitted at that member and NOT at its unmarked parent
+	// ImageScanningConfiguration, whose own nil difference is still reported.
+	expected := `
+	if ackcompare.HasNilDifference(a.ko.Spec.EncryptionConfiguration, b.ko.Spec.EncryptionConfiguration) {
+		delta.Add("Spec.EncryptionConfiguration", a.ko.Spec.EncryptionConfiguration, b.ko.Spec.EncryptionConfiguration)
+	} else if a.ko.Spec.EncryptionConfiguration != nil && b.ko.Spec.EncryptionConfiguration != nil {
+		if ackcompare.HasNilDifference(a.ko.Spec.EncryptionConfiguration.EncryptionType, b.ko.Spec.EncryptionConfiguration.EncryptionType) {
+			delta.Add("Spec.EncryptionConfiguration.EncryptionType", a.ko.Spec.EncryptionConfiguration.EncryptionType, b.ko.Spec.EncryptionConfiguration.EncryptionType)
+		} else if a.ko.Spec.EncryptionConfiguration.EncryptionType != nil && b.ko.Spec.EncryptionConfiguration.EncryptionType != nil {
+			if *a.ko.Spec.EncryptionConfiguration.EncryptionType != *b.ko.Spec.EncryptionConfiguration.EncryptionType {
+				delta.Add("Spec.EncryptionConfiguration.EncryptionType", a.ko.Spec.EncryptionConfiguration.EncryptionType, b.ko.Spec.EncryptionConfiguration.EncryptionType)
+			}
+		}
+		if ackcompare.HasNilDifference(a.ko.Spec.EncryptionConfiguration.KMSKey, b.ko.Spec.EncryptionConfiguration.KMSKey) {
+			delta.Add("Spec.EncryptionConfiguration.KMSKey", a.ko.Spec.EncryptionConfiguration.KMSKey, b.ko.Spec.EncryptionConfiguration.KMSKey)
+		} else if a.ko.Spec.EncryptionConfiguration.KMSKey != nil && b.ko.Spec.EncryptionConfiguration.KMSKey != nil {
+			if *a.ko.Spec.EncryptionConfiguration.KMSKey != *b.ko.Spec.EncryptionConfiguration.KMSKey {
+				delta.Add("Spec.EncryptionConfiguration.KMSKey", a.ko.Spec.EncryptionConfiguration.KMSKey, b.ko.Spec.EncryptionConfiguration.KMSKey)
+			}
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.ImageScanningConfiguration, b.ko.Spec.ImageScanningConfiguration) {
+		delta.Add("Spec.ImageScanningConfiguration", a.ko.Spec.ImageScanningConfiguration, b.ko.Spec.ImageScanningConfiguration)
+	} else if a.ko.Spec.ImageScanningConfiguration != nil && b.ko.Spec.ImageScanningConfiguration != nil {
+		if a.ko.Spec.ImageScanningConfiguration.ScanOnPush != nil {
+			if ackcompare.HasNilDifference(a.ko.Spec.ImageScanningConfiguration.ScanOnPush, b.ko.Spec.ImageScanningConfiguration.ScanOnPush) {
+				delta.Add("Spec.ImageScanningConfiguration.ScanOnPush", a.ko.Spec.ImageScanningConfiguration.ScanOnPush, b.ko.Spec.ImageScanningConfiguration.ScanOnPush)
+			} else if a.ko.Spec.ImageScanningConfiguration.ScanOnPush != nil && b.ko.Spec.ImageScanningConfiguration.ScanOnPush != nil {
+				if *a.ko.Spec.ImageScanningConfiguration.ScanOnPush != *b.ko.Spec.ImageScanningConfiguration.ScanOnPush {
+					delta.Add("Spec.ImageScanningConfiguration.ScanOnPush", a.ko.Spec.ImageScanningConfiguration.ScanOnPush, b.ko.Spec.ImageScanningConfiguration.ScanOnPush)
+				}
+			}
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.ImageTagMutability, b.ko.Spec.ImageTagMutability) {
+		delta.Add("Spec.ImageTagMutability", a.ko.Spec.ImageTagMutability, b.ko.Spec.ImageTagMutability)
+	} else if a.ko.Spec.ImageTagMutability != nil && b.ko.Spec.ImageTagMutability != nil {
+		if *a.ko.Spec.ImageTagMutability != *b.ko.Spec.ImageTagMutability {
+			delta.Add("Spec.ImageTagMutability", a.ko.Spec.ImageTagMutability, b.ko.Spec.ImageTagMutability)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.RegistryID, b.ko.Spec.RegistryID) {
+		delta.Add("Spec.RegistryID", a.ko.Spec.RegistryID, b.ko.Spec.RegistryID)
+	} else if a.ko.Spec.RegistryID != nil && b.ko.Spec.RegistryID != nil {
+		if *a.ko.Spec.RegistryID != *b.ko.Spec.RegistryID {
+			delta.Add("Spec.RegistryID", a.ko.Spec.RegistryID, b.ko.Spec.RegistryID)
+		}
+	}
+	if ackcompare.HasNilDifference(a.ko.Spec.RepositoryName, b.ko.Spec.RepositoryName) {
+		delta.Add("Spec.RepositoryName", a.ko.Spec.RepositoryName, b.ko.Spec.RepositoryName)
+	} else if a.ko.Spec.RepositoryName != nil && b.ko.Spec.RepositoryName != nil {
+		if *a.ko.Spec.RepositoryName != *b.ko.Spec.RepositoryName {
+			delta.Add("Spec.RepositoryName", a.ko.Spec.RepositoryName, b.ko.Spec.RepositoryName)
+		}
+	}
+	desiredACKTags, _ := convertToOrderedACKTags(a.ko.Spec.Tags)
+	latestACKTags, _ := convertToOrderedACKTags(b.ko.Spec.Tags)
+	if !ackcompare.MapStringStringEqual(desiredACKTags, latestACKTags) {
+		delta.Add("Spec.Tags", a.ko.Spec.Tags, b.ko.Spec.Tags)
+	}
+`
+	got, err := code.CompareResource(
+		crd.Config(), crd, "delta", "a.ko", "b.ko", 1,
+	)
+	require.NoError(err)
+	assert.Equal(expected, got)
+}
