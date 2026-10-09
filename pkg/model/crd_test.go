@@ -17,6 +17,8 @@ import (
 	"testing"
 
 	awssdkmodel "github.com/aws-controllers-k8s/code-generator/pkg/api"
+	ackgenconfig "github.com/aws-controllers-k8s/code-generator/pkg/config"
+	"github.com/aws-controllers-k8s/pkg/names"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -42,6 +44,23 @@ func TestAddMemberShapRef_Structure(t *testing.T) {
 	require.NoError(err)
 	require.Contains(structShape.MemberRefs, "NewField")
 	assert.Equal(memberShapeRef, structShape.MemberRefs["NewField"])
+}
+
+func TestCRDSpecValidations(t *testing.T) {
+	validation := ackgenconfig.XValidationConfig{
+		Rule:    "!has(self.importFrom) || !has(self.certificate)",
+		Message: "fields are mutually exclusive",
+	}
+	crd := &CRD{
+		cfg: &ackgenconfig.Config{
+			Resources: map[string]ackgenconfig.ResourceConfig{
+				"Certificate": {SpecValidations: []ackgenconfig.XValidationConfig{validation}},
+			},
+		},
+		Names: names.New("Certificate"),
+	}
+
+	assert.Equal(t, []ackgenconfig.XValidationConfig{validation}, crd.SpecValidations())
 }
 
 func TestAddMemberShapRef_List(t *testing.T) {

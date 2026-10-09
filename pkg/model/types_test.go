@@ -3,6 +3,8 @@ package model_test
 import (
 	"testing"
 
+	"github.com/aws-controllers-k8s/code-generator/pkg/api"
+	"github.com/aws-controllers-k8s/code-generator/pkg/config"
 	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 	"github.com/stretchr/testify/assert"
 )
@@ -76,4 +78,17 @@ func TestReplacePkgName(t *testing.T) {
 		)
 		assert.Equal(tc.want, result)
 	}
+}
+
+func TestCleanGoTypeTlsSecretReference(t *testing.T) {
+	gte, gt, gtwp := model.CleanGoType(
+		nil,
+		nil,
+		&api.Shape{Type: "blob"},
+		&config.FieldConfig{IsTLSSecret: true},
+	)
+
+	assert.Equal(t, "TlsSecretReference", gte)
+	assert.Equal(t, "*ackv1alpha1.TlsSecretReference", gt)
+	assert.Equal(t, "*ackv1alpha1.TlsSecretReference", gtwp)
 }
