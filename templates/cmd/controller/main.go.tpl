@@ -20,6 +20,7 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrlrt "sigs.k8s.io/controller-runtime"
 	ctrlrtcache "sigs.k8s.io/controller-runtime/pkg/cache"
+	ctrlrtconfig "sigs.k8s.io/controller-runtime/pkg/config"
 	ctrlrthealthz "sigs.k8s.io/controller-runtime/pkg/healthz"
 	ctrlrtmetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
@@ -144,6 +145,11 @@ func main() {
 				Port: port,
 				Host: host,
 			},
+		},
+		Controller: ctrlrtconfig.Controller{
+			// EnableWarmup allows controllers to start their sources (watches/informers) before
+			// leader election is won. This pre-populates caches and improves leader failover time.
+			EnableWarmup: &ackCfg.EnableControllerWarmup,
 		},
 		Metrics:                 metricsserver.Options{BindAddress: ackCfg.MetricsAddr},
 		LeaderElection:          ackCfg.EnableLeaderElection,
