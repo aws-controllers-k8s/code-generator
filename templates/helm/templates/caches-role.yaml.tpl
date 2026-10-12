@@ -1,3 +1,4 @@
+{{ VarIncludeTemplate "featuregates" "feature-gates" }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -10,6 +11,16 @@ metadata:
     k8s-app: {{ IncludeTemplate "app.name" }}
     helm.sh/chart: {{ IncludeTemplate "chart.name-version" }}
 rules:
+{{ "{{ if contains \"IAMRoleSelector=true\" $featuregates }}" }}
+- apiGroups:
+  - services.k8s.aws
+  resources:
+  - iamroleselectors
+  verbs:
+  - get
+  - list
+  - watch
+{{ "{{ end }}" }}
 - apiGroups:
   - ""
   resources:
@@ -19,6 +30,7 @@ rules:
   - list
   - watch
 ---
+{{ "{{ if eq .Values.enableCARM true }}" }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
@@ -40,3 +52,4 @@ rules:
   - get
   - list
   - watch
+{{ "{{ end }}" }}
