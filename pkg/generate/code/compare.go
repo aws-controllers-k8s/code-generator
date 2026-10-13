@@ -64,6 +64,21 @@ func sortedSpecFieldNames(r *model.CRD) []string {
 // (which may be nil) and returns true if the field should be included.
 type fieldFilter func(compareConfig *ackgenconfig.CompareFieldConfig) bool
 
+// isLateInitialized returns true when the field at fieldPath is configured with
+// `late_initialize`. The value of such a field is server-defaulted, so a nil on
+// the desired side means "don't care" rather than "absent", and the generated
+// comparison for the field is wrapped in a desired-side nil check.
+//
+// fieldPath is relative to the Spec struct, e.g. "Name" or
+// "EncryptionConfiguration.KMSKey".
+func isLateInitialized(
+	cfg *ackgenconfig.Config,
+	r *model.CRD,
+	fieldPath string,
+) bool {
+	return cfg.GetLateInitConfigByPath(r.Names.Original, fieldPath) != nil
+}
+
 // compareResourceFields is the shared implementation for generating Go code
 // that compares spec fields between two resources. The includeField callback
 // controls which fields are included in the output.
@@ -115,132 +130,61 @@ func compareResourceFields(
 			cfg.PrefixConfig.SpecField+"."+specField.Names.Camel, ".",
 		)
 
-		// Use equality.Semantic.Equalities.DeepEqual for comparing Reference fields because
-		// some of reference fields are list of pointer to structs and
-		// DeepEqual is easy way to compare them
-		if specField.IsReference() {
-			out += fmt.Sprintf("%sif !equality.Semantic.Equalities.DeepEqual(%s, %s) {\n",
-				indent, firstResAdaptedVarName, secondResAdaptedVarName)
-			out += fmt.Sprintf("%s\t%s.Add(\"%s\", %s, %s)\n", indent,
+		// A `late_initialize` field is server-defaulted, so a nil desired value
+		// means "don't care" and the comparison is skipped entirely.
+		lateInit := isLateInitialized(cfg, r, fieldName)
+		fieldIndentLevel := indentLevel
+		if lateInit {
+			fieldIndentLevel++
+		}
+		fieldIndent := strings.Repeat("\t", fieldIndentLevel)
+
+		var fieldOut string
+		switch {
+		case specField.IsReference():
+			// Use equality.Semantic.Equalities.DeepEqual for comparing Reference
+			// fields because some of reference fields are list of pointer to
+			// structs and DeepEqual is easy way to compare them
+			fieldOut = fmt.Sprintf("%sif !equality.Semantic.Equalities.DeepEqual(%s, %s) {\n",
+				fieldIndent, firstResAdaptedVarName, secondResAdaptedVarName)
+			fieldOut += fmt.Sprintf("%s\t%s.Add(\"%s\", %s, %s)\n", fieldIndent,
 				deltaVarName, fieldPath, firstResAdaptedVarName,
 				secondResAdaptedVarName)
-			out += fmt.Sprintf("%s}\n", indent)
-			continue
-		}
-
-		// Use a special comparison model for tags, since they need to be
-		// converted into the common ACK tag type before doing a map delta
-		if tagField != nil && specField == tagField {
-			out += compareTags(deltaVarName, firstResAdaptedVarName, secondResAdaptedVarName, fieldPath, indentLevel)
-			continue
-		}
-
-		// Use semantic IAM policy comparison for fields marked as IAM policies
-		if fieldConfig != nil && fieldConfig.IsIAMPolicy {
-			out += compareIAMPolicy(deltaVarName, firstResAdaptedVarName, secondResAdaptedVarName, fieldPath, indentLevel)
-			continue
-		}
-
-		// Use semantic document comparison for fields marked as documents
-		if fieldConfig != nil && fieldConfig.IsDocument {
-			out += compareDocument(deltaVarName, firstResAdaptedVarName, secondResAdaptedVarName, fieldPath, indentLevel)
-			continue
-		}
-
-		memberShapeRef := specField.ShapeRef
-		memberShape := memberShapeRef.Shape
-
-		// Use len, bytes.Equal and HasNilDifference to fast compare types, and
-		// try to avoid deep comparison as much as possible.
-		fastComparisonOutput, needToCloseBlock, err := fastCompareTypes(
-			compareConfig,
-			memberShape,
-			deltaVarName,
-			fieldPath,
-			firstResAdaptedVarName,
-			secondResAdaptedVarName,
-			indentLevel,
-		)
-		if err != nil {
-			return "", err
-		}
-		out += fastComparisonOutput
-
-		switch memberShape.Type {
-		case "blob":
-			// We already handled the case of blobs above, so we can skip it here.
-		case "structure":
-			// Recurse through all the struct's fields and subfields, building
-			// nested conditionals and calls to `delta.Add()`...
-			structOut, err := CompareStruct(
-				cfg, r,
-				compareConfig,
-				memberShape,
-				deltaVarName,
-				firstResAdaptedVarName,
-				secondResAdaptedVarName,
-				fieldPath,
-				indentLevel+1,
-			)
-			if err != nil {
-				return "", err
-			}
-			out += structOut
-		case "list":
-			// Returns Go code that compares all the elements of the slice fields...
-			sliceOut, err := compareSlice(
-				cfg, r,
-				compareConfig,
-				memberShape,
-				deltaVarName,
-				firstResAdaptedVarName,
-				secondResAdaptedVarName,
-				fieldPath,
-				indentLevel+1,
-			)
-			if err != nil {
-				return "", err
-			}
-			out += sliceOut
-		case "map":
-			// Returns Go code that compares all the elements of the map fields...
-			mapOut, err := compareMap(
-				cfg, r,
-				compareConfig,
-				memberShape,
-				deltaVarName,
-				firstResAdaptedVarName,
-				secondResAdaptedVarName,
-				fieldPath,
-				indentLevel+1,
-			)
-			if err != nil {
-				return "", err
-			}
-			out += mapOut
+			fieldOut += fmt.Sprintf("%s}\n", fieldIndent)
+		case tagField != nil && specField == tagField:
+			// Use a special comparison model for tags, since they need to be
+			// converted into the common ACK tag type before doing a map delta
+			fieldOut = compareTags(deltaVarName, firstResAdaptedVarName, secondResAdaptedVarName, fieldPath, fieldIndentLevel)
+		case fieldConfig != nil && fieldConfig.IsIAMPolicy:
+			// Use semantic IAM policy comparison for fields marked as IAM policies
+			fieldOut = compareIAMPolicy(deltaVarName, firstResAdaptedVarName, secondResAdaptedVarName, fieldPath, fieldIndentLevel)
+		case fieldConfig != nil && fieldConfig.IsDocument:
+			// Use semantic document comparison for fields marked as documents
+			fieldOut = compareDocument(deltaVarName, firstResAdaptedVarName, secondResAdaptedVarName, fieldPath, fieldIndentLevel)
 		default:
-			//   if *a.ko.Spec.Name != *b.ko.Spec.Name) {
-			//     delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
-			//   }
-			scalarOut, err := compareScalar(
+			fieldOut, err = compareByShape(
+				cfg, r,
 				compareConfig,
-				memberShape,
+				specField.ShapeRef.Shape,
 				deltaVarName,
 				firstResAdaptedVarName,
 				secondResAdaptedVarName,
 				fieldPath,
-				indentLevel+1,
+				fieldIndentLevel,
 			)
 			if err != nil {
 				return "", err
 			}
-			out += scalarOut
 		}
-		if needToCloseBlock {
+
+		if lateInit {
+			// if a.ko.Spec.Name != nil {
+			out += fmt.Sprintf("%sif %s != nil {\n", indent, firstResAdaptedVarName)
+		}
+		out += fieldOut
+		if lateInit {
 			// }
-			out += fmt.Sprintf(
-				"%s}\n", indent,
-			)
+			out += fmt.Sprintf("%s}\n", indent)
 		}
 	}
 	return out, nil
@@ -872,115 +816,176 @@ func CompareStruct(
 			continue
 		}
 
-		memberShape := memberShapeRef.Shape
-
-		// Use a special comparison model for tags, since they need to be
-		// converted into the common ACK tag type before doing a map delta
-		if tagField != nil && tagField.Path == trimmedFieldPath {
-			out += compareTags(deltaVarName, firstResAdaptedVarName, secondResAdaptedVarName, fieldPath, indentLevel)
-			continue
+		// A `late_initialize` field is server-defaulted, so a nil desired value
+		// means "don't care" and the comparison is skipped entirely.
+		lateInit := isLateInitialized(cfg, r, trimmedFieldPath)
+		fieldIndentLevel := indentLevel
+		if lateInit {
+			fieldIndentLevel++
 		}
 
-		if fieldConfig != nil && fieldConfig.IsIAMPolicy {
-			out += compareIAMPolicy(deltaVarName, firstResAdaptedVarName, secondResAdaptedVarName, memberFieldPath, indentLevel)
-			continue
+		var fieldOut string
+		switch {
+		case tagField != nil && tagField.Path == trimmedFieldPath:
+			// Use a special comparison model for tags, since they need to be
+			// converted into the common ACK tag type before doing a map delta
+			fieldOut = compareTags(deltaVarName, firstResAdaptedVarName, secondResAdaptedVarName, fieldPath, fieldIndentLevel)
+		case fieldConfig != nil && fieldConfig.IsIAMPolicy:
+			fieldOut = compareIAMPolicy(deltaVarName, firstResAdaptedVarName, secondResAdaptedVarName, memberFieldPath, fieldIndentLevel)
+		case fieldConfig != nil && fieldConfig.IsDocument:
+			fieldOut = compareDocument(deltaVarName, firstResAdaptedVarName, secondResAdaptedVarName, memberFieldPath, fieldIndentLevel)
+		default:
+			fieldOut, err = compareByShape(
+				cfg, r,
+				compareConfig,
+				memberShapeRef.Shape,
+				deltaVarName,
+				firstResAdaptedVarName,
+				secondResAdaptedVarName,
+				memberFieldPath,
+				fieldIndentLevel,
+			)
+			if err != nil {
+				return "", err
+			}
 		}
 
-		if fieldConfig != nil && fieldConfig.IsDocument {
-			out += compareDocument(deltaVarName, firstResAdaptedVarName, secondResAdaptedVarName, memberFieldPath, indentLevel)
-			continue
+		if lateInit {
+			// if a.ko.Spec.Struct.Name != nil {
+			out += fmt.Sprintf("%sif %s != nil {\n", indent, firstResAdaptedVarName)
 		}
+		out += fieldOut
+		if lateInit {
+			// }
+			out += fmt.Sprintf("%s}\n", indent)
+		}
+	}
+	return out, nil
+}
 
-		fastComparisonOutput, needToCloseBlock, err := fastCompareTypes(
+// compareByShape outputs Go code that compares two values of the supplied
+// shape, dispatching to the comparator for the shape's type and prefixing it
+// with the fast nil/length pre-check emitted by fastCompareTypes.
+func compareByShape(
+	cfg *ackgenconfig.Config,
+	r *model.CRD,
+	// struct informing code generator how to compare the field values
+	compareConfig *ackgenconfig.CompareFieldConfig,
+	// struct describing the SDK type of the field being compared
+	memberShape *awssdkmodel.Shape,
+	// String representing the name of the variable that is of type
+	// `*ackcompare.Delta`. We will generate Go code that calls the `Add()`
+	// method of this variable when differences between fields are detected.
+	deltaVarName string,
+	// String representing the name of the variable that represents the first
+	// CR under comparison. This will typically be something like
+	// "a.ko.Spec.Name". See `templates/pkg/resource/delta.go.tpl`.
+	firstResVarName string,
+	// String representing the name of the variable that represents the second
+	// CR under comparison. This will typically be something like
+	// "b.ko.Spec.Name". See `templates/pkg/resource/delta.go.tpl`.
+	secondResVarName string,
+	// String indicating the current field path being evaluated, e.g.
+	// "Author.Name". This does not include the top-level Spec or Status
+	// struct.
+	fieldPath string,
+	// Number of levels of indentation to use
+	indentLevel int,
+) (string, error) {
+	out := ""
+	indent := strings.Repeat("\t", indentLevel)
+
+	// Use len, bytes.Equal and HasNilDifference to fast compare types, and
+	// try to avoid deep comparison as much as possible.
+	fastComparisonOutput, needToCloseBlock, err := fastCompareTypes(
+		compareConfig,
+		memberShape,
+		deltaVarName,
+		fieldPath,
+		firstResVarName,
+		secondResVarName,
+		indentLevel,
+	)
+	if err != nil {
+		return "", err
+	}
+	out += fastComparisonOutput
+
+	switch memberShape.Type {
+	case "blob":
+		// We already handled the case of blobs above, so we can skip it here.
+	case "structure":
+		// Recurse through all the struct's fields and subfields, building
+		// nested conditionals and calls to `delta.Add()`...
+		structOut, err := CompareStruct(
+			cfg, r,
 			compareConfig,
 			memberShape,
 			deltaVarName,
-			memberFieldPath,
-			firstResAdaptedVarName,
-			secondResAdaptedVarName,
-			indentLevel,
+			firstResVarName,
+			secondResVarName,
+			fieldPath,
+			indentLevel+1,
 		)
 		if err != nil {
 			return "", err
 		}
-		out += fastComparisonOutput
-
-		switch memberShape.Type {
-		case "blob":
-			// We already handled the case of blobs above, so we can skip it here.
-		case "structure":
-			// Recurse through all the struct's fields and subfields, building
-			// nested conditionals and calls to `delta.Add()`...
-			structOut, err := CompareStruct(
-				cfg, r,
-				compareConfig,
-				memberShape,
-				deltaVarName,
-				firstResAdaptedVarName,
-				secondResAdaptedVarName,
-				memberFieldPath,
-				indentLevel+1,
-			)
-			if err != nil {
-				return "", err
-			}
-			out += structOut
-		case "list":
-			// Returns Go code that compares all the elements of the slice fields...
-			sliceOut, err := compareSlice(
-				cfg, r,
-				compareConfig,
-				memberShape,
-				deltaVarName,
-				firstResAdaptedVarName,
-				secondResAdaptedVarName,
-				memberFieldPath,
-				indentLevel+1,
-			)
-			if err != nil {
-				return "", err
-			}
-			out += sliceOut
-		case "map":
-			// Returns Go code that compares all the elements of the map fields...
-			mapOut, err := compareMap(
-				cfg, r,
-				compareConfig,
-				memberShape,
-				deltaVarName,
-				firstResAdaptedVarName,
-				secondResAdaptedVarName,
-				memberFieldPath,
-				indentLevel+1,
-			)
-			if err != nil {
-				return "", err
-			}
-			out += mapOut
-		default:
-			//   if *a.ko.Spec.Name != *b.ko.Spec.Name {
-			//     delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
-			//   }
-			scalarOut, err := compareScalar(
-				compareConfig,
-				memberShape,
-				deltaVarName,
-				firstResAdaptedVarName,
-				secondResAdaptedVarName,
-				memberFieldPath,
-				indentLevel+1,
-			)
-			if err != nil {
-				return "", err
-			}
-			out += scalarOut
+		out += structOut
+	case "list":
+		// Returns Go code that compares all the elements of the slice fields...
+		sliceOut, err := compareSlice(
+			cfg, r,
+			compareConfig,
+			memberShape,
+			deltaVarName,
+			firstResVarName,
+			secondResVarName,
+			fieldPath,
+			indentLevel+1,
+		)
+		if err != nil {
+			return "", err
 		}
-		if needToCloseBlock {
-			// }
-			out += fmt.Sprintf(
-				"%s}\n", indent,
-			)
+		out += sliceOut
+	case "map":
+		// Returns Go code that compares all the elements of the map fields...
+		mapOut, err := compareMap(
+			cfg, r,
+			compareConfig,
+			memberShape,
+			deltaVarName,
+			firstResVarName,
+			secondResVarName,
+			fieldPath,
+			indentLevel+1,
+		)
+		if err != nil {
+			return "", err
 		}
+		out += mapOut
+	default:
+		//   if *a.ko.Spec.Name != *b.ko.Spec.Name) {
+		//     delta.Add("Spec.Name", a.ko.Spec.Name, b.ko.Spec.Name)
+		//   }
+		scalarOut, err := compareScalar(
+			compareConfig,
+			memberShape,
+			deltaVarName,
+			firstResVarName,
+			secondResVarName,
+			fieldPath,
+			indentLevel+1,
+		)
+		if err != nil {
+			return "", err
+		}
+		out += scalarOut
+	}
+	if needToCloseBlock {
+		// }
+		out += fmt.Sprintf(
+			"%s}\n", indent,
+		)
 	}
 	return out, nil
 }
