@@ -21,7 +21,9 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -192,6 +194,8 @@ func TestEnsureModel_PerServiceFailure(t *testing.T) {
 	defer ts.Close()
 	cleanup := patchTransport(ts.URL)
 	defer cleanup()
+	// 500 is retried; keep the backoff out of the test's runtime.
+	defer sdk.SetFetchRetryDelays(time.Millisecond, time.Millisecond)()
 
 	cacheDir := t.TempDir()
 	_, err := sdk.EnsureModel(context.Background(), cacheDir, "v1.41.5", "s3files", "s3files", "v1.0.0")
@@ -440,4 +444,126 @@ func TestEnsureModel_PerServiceCacheHit(t *testing.T) {
 	data, err := os.ReadFile(cachedFile)
 	require.NoError(t, err)
 	assert.Equal(t, modelBody, string(data))
+}
+
+// newCountingServer returns a test server that answers every request with
+// statuses[i] for the i-th request (repeating the last entry once the list is
+// exhausted), followed by body on a 200. The returned counter reports how many
+// requests were served.
+func newCountingServer(statuses []int, body string) (*httptest.Server, *atomic.Int32) {
+	var count atomic.Int32
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		i := int(count.Add(1)) - 1
+		if i >= len(statuses) {
+			i = len(statuses) - 1
+		}
+		w.WriteHeader(statuses[i])
+		if statuses[i] == http.StatusOK {
+			fmt.Fprint(w, body)
+		}
+	}))
+	return ts, &count
+}
+
+// TestEnsureModel_RetriesThrottledFetch verifies that a model download that is
+// rate limited (429) or hits a server error is retried until it succeeds, and
+// the model is cached.
+func TestEnsureModel_RetriesThrottledFetch(t *testing.T) {
+	modelBody := `{"metadata":{"apiVersion":"2023-01-01"}}`
+	ts, count := newCountingServer(
+		[]int{http.StatusTooManyRequests, http.StatusServiceUnavailable, http.StatusOK}, modelBody,
+	)
+	defer ts.Close()
+	defer patchTransport(ts.URL)()
+	defer sdk.SetFetchRetryDelays(time.Millisecond, time.Millisecond)()
+
+	cacheDir := t.TempDir()
+	basePath, err := sdk.EnsureModel(context.Background(), cacheDir, "v1.41.5", "s3files", "s3files", "")
+	require.NoError(t, err)
+	assert.Equal(t, int32(3), count.Load())
+
+	data, err := os.ReadFile(filepath.Join(basePath, "codegen", "sdk-codegen", "aws-models", "s3files.json"))
+	require.NoError(t, err)
+	assert.Equal(t, modelBody, string(data))
+}
+
+// TestEnsureModel_RetryLimit verifies that a download that keeps failing with a
+// retryable status is attempted a bounded number of times, then reports the
+// status as before.
+func TestEnsureModel_RetryLimit(t *testing.T) {
+	ts, count := newCountingServer([]int{http.StatusTooManyRequests}, "")
+	defer ts.Close()
+	defer patchTransport(ts.URL)()
+	defer sdk.SetFetchRetryDelays(time.Millisecond, time.Millisecond)()
+
+	cacheDir := t.TempDir()
+	_, err := sdk.EnsureModel(context.Background(), cacheDir, "v1.41.5", "s3files", "s3files", "v1.0.0")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "HTTP 429")
+	assert.Equal(t, int32(sdk.MaxFetchAttempts), count.Load())
+}
+
+// TestEnsureModel_NoRetryOnClientError verifies that a non-retryable status
+// such as 404 is not retried.
+func TestEnsureModel_NoRetryOnClientError(t *testing.T) {
+	ts, count := newCountingServer([]int{http.StatusNotFound}, "")
+	defer ts.Close()
+	defer patchTransport(ts.URL)()
+	defer sdk.SetFetchRetryDelays(time.Millisecond, time.Millisecond)()
+
+	cacheDir := t.TempDir()
+	_, err := sdk.EnsureModel(context.Background(), cacheDir, "v1.41.5", "s3files", "s3files", "")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "--aws-service-sdk-version")
+	assert.Equal(t, int32(1), count.Load())
+}
+
+// TestEnsureModel_RetryStopsOnContextCancel verifies that cancelling the
+// context ends the backoff instead of waiting it out.
+func TestEnsureModel_RetryStopsOnContextCancel(t *testing.T) {
+	ts, count := newCountingServer([]int{http.StatusTooManyRequests}, "")
+	defer ts.Close()
+	defer patchTransport(ts.URL)()
+	defer sdk.SetFetchRetryDelays(time.Hour, time.Hour)()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	time.AfterFunc(50*time.Millisecond, cancel)
+
+	start := time.Now()
+	cacheDir := t.TempDir()
+	_, err := sdk.EnsureModel(ctx, cacheDir, "v1.41.5", "s3files", "s3files", "")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), context.Canceled.Error())
+	assert.Less(t, time.Since(start), 10*time.Second)
+	assert.Equal(t, int32(1), count.Load())
+}
+
+// TestParseRetryAfter covers both Retry-After forms and the values that fall
+// back to the default backoff.
+func TestParseRetryAfter(t *testing.T) {
+	now := time.Date(2026, 10, 13, 12, 0, 0, 0, time.UTC)
+	tests := []struct {
+		name   string
+		value  string
+		want   time.Duration
+		wantOK bool
+	}{
+		{name: "empty", value: "", wantOK: false},
+		{name: "seconds", value: "7", want: 7 * time.Second, wantOK: true},
+		{name: "zero seconds", value: "0", wantOK: false},
+		{name: "negative seconds", value: "-3", wantOK: false},
+		{name: "malformed", value: "soon", wantOK: false},
+		{name: "future date", value: now.Add(30 * time.Second).Format(http.TimeFormat), want: 30 * time.Second, wantOK: true},
+		{name: "past date", value: now.Add(-30 * time.Second).Format(http.TimeFormat), wantOK: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, ok := sdk.ParseRetryAfter(tt.value, now)
+			assert.Equal(t, tt.wantOK, ok)
+			if tt.wantOK {
+				assert.Equal(t, tt.want, got)
+			}
+		})
+	}
 }

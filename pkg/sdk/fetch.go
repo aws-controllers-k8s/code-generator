@@ -20,6 +20,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/aws-controllers-k8s/code-generator/pkg/util"
@@ -29,6 +30,18 @@ const (
 	sdkModelURLTemplate        = "https://raw.githubusercontent.com/aws/aws-sdk-go-v2/%s/codegen/sdk-codegen/aws-models/%s.json"
 	perServiceModelURLTemplate = "https://raw.githubusercontent.com/aws/aws-sdk-go-v2/service/%s/%s/codegen/sdk-codegen/aws-models/%s.json"
 	defaultHTTPFetchTimeout    = 60 * time.Second
+	// maxFetchAttempts bounds how many times a model file is requested when
+	// GitHub answers with a transient status (429 or 5xx).
+	maxFetchAttempts = 6
+)
+
+// Backoff between model fetch attempts. The delay doubles after each attempt,
+// starting at fetchRetryBaseDelay, and never exceeds fetchRetryMaxDelay, even
+// when the server's Retry-After asks for longer. These are variables so tests
+// can shorten them.
+var (
+	fetchRetryBaseDelay = 2 * time.Second
+	fetchRetryMaxDelay  = 60 * time.Second
 )
 
 // EnsureModel ensures that we have a locally-cached copy of the AWS SDK model
@@ -105,7 +118,7 @@ func ensureModelPerService(
 	util.Tracef("EnsureModel: fetching %s\n", perSvcURL)
 
 	fetchStart := time.Now()
-	status, body, err := httpGet(ctx, perSvcURL)
+	status, body, err := httpGetWithRetry(ctx, perSvcURL)
 	if err != nil {
 		return "", fmt.Errorf("cannot fetch model file from %s: %v", perSvcURL, err)
 	}
@@ -154,7 +167,7 @@ func ensureModelCore(
 	util.Tracef("EnsureModel: fetching %s\n", coreURL)
 
 	fetchStart := time.Now()
-	status, body, err := httpGet(ctx, coreURL)
+	status, body, err := httpGetWithRetry(ctx, coreURL)
 	if err != nil {
 		return "", fmt.Errorf("cannot fetch model file from %s: %v", coreURL, err)
 	}
@@ -179,29 +192,94 @@ func ensureModelCore(
 	return "", fmt.Errorf("failed to fetch model file from %s: HTTP %d", coreURL, status)
 }
 
-// httpGet performs an HTTP GET request and returns the status code, response body,
-// and any error. The caller is responsible for the body bytes.
-func httpGet(ctx context.Context, url string) (int, []byte, error) {
+// httpGetWithRetry performs an HTTP GET request like httpGet, retrying with
+// backoff while the server answers 429 or 5xx. raw.githubusercontent.com
+// throttles unauthenticated clients, and jobs that regenerate many controllers
+// in a row otherwise fail whichever model happened to be throttled.
+//
+// It returns the status and body of the last attempt, so the caller's handling
+// of a non-200 status is unchanged once the attempts run out. Transport errors
+// and other statuses are returned straight away.
+func httpGetWithRetry(ctx context.Context, url string) (int, []byte, error) {
+	delay := fetchRetryBaseDelay
+	for attempt := 1; ; attempt++ {
+		status, body, header, err := httpGet(ctx, url)
+		if err != nil || !isRetryableStatus(status) || attempt == maxFetchAttempts {
+			return status, body, err
+		}
+
+		wait := delay
+		if retryAfter, ok := parseRetryAfter(header.Get("Retry-After"), time.Now()); ok {
+			wait = retryAfter
+		}
+		if wait > fetchRetryMaxDelay {
+			wait = fetchRetryMaxDelay
+		}
+		util.Warnf("EnsureModel: %s returned HTTP %d, retrying in %s (attempt %d of %d)\n",
+			url, status, wait, attempt+1, maxFetchAttempts)
+
+		timer := time.NewTimer(wait)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return status, body, ctx.Err()
+		case <-timer.C:
+		}
+		delay *= 2
+	}
+}
+
+// isRetryableStatus reports whether an HTTP status is worth retrying: rate
+// limiting, or a server-side error.
+func isRetryableStatus(status int) bool {
+	return status == http.StatusTooManyRequests || status >= http.StatusInternalServerError
+}
+
+// parseRetryAfter parses a Retry-After header value, which is either a number
+// of seconds or an HTTP date. It returns false when the value is missing,
+// malformed, or not in the future.
+func parseRetryAfter(value string, now time.Time) (time.Duration, bool) {
+	if value == "" {
+		return 0, false
+	}
+	if seconds, err := strconv.Atoi(value); err == nil {
+		if seconds <= 0 {
+			return 0, false
+		}
+		return time.Duration(seconds) * time.Second, true
+	}
+	if at, err := http.ParseTime(value); err == nil {
+		if wait := at.Sub(now); wait > 0 {
+			return wait, true
+		}
+	}
+	return 0, false
+}
+
+// httpGet performs an HTTP GET request and returns the status code, response
+// body, response headers, and any error. The caller is responsible for the body
+// bytes.
+func httpGet(ctx context.Context, url string) (int, []byte, http.Header, error) {
 	ctx, cancel := context.WithTimeout(ctx, defaultHTTPFetchTimeout)
 	defer cancel()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
-		return 0, nil, fmt.Errorf("cannot create HTTP request: %v", err)
+		return 0, nil, nil, fmt.Errorf("cannot create HTTP request: %v", err)
 	}
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return 0, nil, err
+		return 0, nil, nil, err
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return resp.StatusCode, nil, fmt.Errorf("cannot read response body: %v", err)
+		return resp.StatusCode, nil, resp.Header, fmt.Errorf("cannot read response body: %v", err)
 	}
 
-	return resp.StatusCode, body, nil
+	return resp.StatusCode, body, resp.Header, nil
 }
 
 // writeModelToCache writes model data to the cache directory atomically.
