@@ -156,7 +156,15 @@ func FindPrimaryIdentifierFieldNames(
 	r *model.CRD,
 	op *awssdkmodel.Operation,
 ) (crField string, shapeField string, err error) {
-	shape := op.InputRef.Shape
+	// Use the wrapper-aware input shape so that operations configured with
+	// input_wrapper_field_path (e.g. a batch ReadMany whose input nests the
+	// per-item identifier fields inside a list/struct wrapper) surface the
+	// unwrapped identifier members here. Falls back to the raw input shape
+	// when no wrapper is configured.
+	shape, err := r.GetInputShape(op)
+	if err != nil {
+		return "", "", err
+	}
 
 	if shapeField == "" {
 		// For ReadOne, search for a direct identifier

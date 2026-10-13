@@ -885,6 +885,29 @@ func setSDKReadMany(
 	out := "\n"
 	indent := strings.Repeat("\t", indentLevel)
 
+	// When the ReadMany op is configured with input_wrapper_field_path pointing
+	// at a LIST member (e.g. a BatchGet* request whose input nests the per-item
+	// identifier fields inside an "identifiers" list-of-structure member), the
+	// top-level input member cannot be populated from a single Spec/Status field
+	// by the generic loop below. Instead we build one wrapper element from the
+	// unwrapped identifier fields and assign it as a one-element slice. A CR
+	// reconciles exactly one resource, so a single element is the correct and
+	// sufficient shaping of the batch identifier list. GetInputShape() returns
+	// the unwrapped element structure when the wrapper is configured.
+	if wrapperFieldPath := r.GetInputWrapperFieldPath(op); wrapperFieldPath != nil {
+		if wrapperMemberRef, ok := inputShape.MemberRefs[*wrapperFieldPath]; ok &&
+			wrapperMemberRef.Shape != nil && wrapperMemberRef.Shape.Type == "list" {
+			elemShape, gisErr := r.GetInputShape(op)
+			if gisErr != nil {
+				return "", gisErr
+			}
+			return setSDKReadManyListWrapper(
+				cfg, r, op, *wrapperFieldPath, elemShape,
+				sourceVarName, targetVarName, indentLevel,
+			)
+		}
+	}
+
 	resVarPath := ""
 	opConfig, override := cfg.GetOverrideValues(op.ExportedName)
 	var err error
@@ -994,6 +1017,89 @@ func setSDKReadMany(
 			"%s}\n", indent,
 		)
 	}
+
+	return out, nil
+}
+
+// setSDKReadManyListWrapper generates the Go code that populates a ReadMany
+// (List) request payload whose input nests the per-item identifier fields
+// inside a list-of-structure wrapper member configured via
+// input_wrapper_field_path. It builds a single wrapper element from the CR's
+// identifier fields and assigns it to the outer list member as a one-element
+// slice, e.g. for BatchGetLifecyclePolicy:
+//
+//\tfw := &svcsdktypes.LifecyclePolicyIdentifier{}
+//\tif r.ko.Spec.Name != nil {
+//\t\tfw.Name = r.ko.Spec.Name
+//\t}
+//\tif r.ko.Spec.Type != nil {
+//\t\tfw.Type = r.ko.Spec.Type
+//\t}
+//\tres.Identifiers = []svcsdktypes.LifecyclePolicyIdentifier{*fw}
+//
+// elemShape is the unwrapped element structure returned by GetInputShape.
+func setSDKReadManyListWrapper(
+	cfg *ackgenconfig.Config,
+	r *model.CRD,
+	op *awssdkmodel.Operation,
+	wrapperFieldPath string,
+	elemShape *awssdkmodel.Shape,
+	sourceVarName string,
+	targetVarName string,
+	indentLevel int,
+) (string, error) {
+	out := "\n"
+	indent := strings.Repeat("\t", indentLevel)
+
+	// Construct the wrapper element struct: fw := &svcsdktypes.<Element>{}
+	wrapperVarName := "fw"
+	out += varEmptyConstructorSDKType(cfg, r, wrapperVarName, elemShape, indentLevel)
+
+	// Populate each scalar member of the element from the corresponding CR
+	// identifier field, guarded by a nil-check so an unset field is not
+	// dereferenced.
+	for _, memberName := range elemShape.MemberNames() {
+		memberShapeRef := elemShape.MemberRefs[memberName]
+		if memberShapeRef == nil || memberShapeRef.Shape == nil {
+			continue
+		}
+		// Only scalar identifier members are supported inside the wrapper
+		// element; a nested non-scalar identifier is not a shape ACK models as
+		// an adoption/identifier key.
+		switch memberShapeRef.Shape.Type {
+		case "list", "structure", "map", "union":
+			continue
+		}
+		sourceVarPath, err := r.GetSanitizedMemberPath(memberName, op, sourceVarName)
+		if err != nil {
+			// The element member has no corresponding Spec/Status field; skip
+			// it rather than fail, mirroring the generic ReadMany loop.
+			continue
+		}
+		out += fmt.Sprintf("%sif %s != nil {\n", indent, sourceVarPath)
+		out += setSDKForScalar(
+			memberName,
+			wrapperVarName,
+			elemShape.Type,
+			sourceVarName,
+			sourceVarPath,
+			false,
+			memberShapeRef,
+			indentLevel+1,
+		)
+		out += fmt.Sprintf("%s}\n", indent)
+	}
+
+	// Assign the single populated element as a one-element slice on the outer
+	// list member.
+	elemGoType := elemShape.GoTypeWithPkgName()
+	elemGoType = model.ReplacePkgName(elemGoType, r.SDKAPIPackageName(), "svcsdktypes", false)
+	if (elemShape.Type == "structure" || elemShape.RealType == "union") &&
+		elemShape.OriginalShapeName != "" {
+		elemGoType = "svcsdktypes." + elemShape.OriginalShapeName
+	}
+	out += fmt.Sprintf("%s%s.%s = []%s{*%s}\n",
+		indent, targetVarName, wrapperFieldPath, elemGoType, wrapperVarName)
 
 	return out, nil
 }
@@ -1596,17 +1702,20 @@ func varEmptyConstructorSDKType(
 	return out
 }
 
-func varEmptyConstructorK8sType(
-	cfg *ackgenconfig.Config,
+// K8sGoTypeName returns the name of the Go type that the K8s-side (apis/)
+// representation of the supplied shape is generated as, qualified with the
+// `svcapitypes` package alias where the shape lives in the service's API
+// package.
+//
+// It is the type name a caller needs in order to construct that shape, e.g. the
+// `svcapitypes.VPCConfig` in `&svcapitypes.VPCConfig{}`. Kept separate from
+// varEmptyConstructorK8sType so that a caller which emits an assignment rather
+// than a `:=` declaration resolves the name identically, and the two cannot
+// disagree about what a shape is called.
+func K8sGoTypeName(
 	r *model.CRD,
-	varName string,
-	// The shape we want to construct a new thing for
 	shape *awssdkmodel.Shape,
-	// Number of levels of indentation to use
-	indentLevel int,
 ) string {
-	out := ""
-	indent := strings.Repeat("\t", indentLevel)
 	goType := shape.GoTypeWithPkgName()
 	keepPointer := (shape.Type == "list" || shape.Type == "map")
 	goType = model.ReplacePkgName(goType, r.SDKAPIPackageName(), "svcapitypes", keepPointer)
@@ -1631,6 +1740,21 @@ func varEmptyConstructorK8sType(
 	if hadPkg {
 		goType = goPkg + "." + goType
 	}
+	return goType
+}
+
+func varEmptyConstructorK8sType(
+	cfg *ackgenconfig.Config,
+	r *model.CRD,
+	varName string,
+	// The shape we want to construct a new thing for
+	shape *awssdkmodel.Shape,
+	// Number of levels of indentation to use
+	indentLevel int,
+) string {
+	out := ""
+	indent := strings.Repeat("\t", indentLevel)
+	goType := K8sGoTypeName(r, shape)
 
 	switch shape.Type {
 	case "structure", "union":

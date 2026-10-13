@@ -76,8 +76,15 @@ func CheckRequiredFieldsMissingFromShape(
 		op = r.Ops.ReadOne
 	case model.OpTypeList:
 		op = r.Ops.ReadMany
+		// Use the wrapper-aware input shape so a ReadMany op configured with
+		// input_wrapper_field_path surfaces the unwrapped identifier members
+		// to the required-fields check. No-op when no wrapper is configured.
+		readManyShape, err := r.GetInputShape(op)
+		if err != nil {
+			return "", err
+		}
 		return checkRequiredFieldsMissingFromShapeReadMany(
-			r, koVarName, indentLevel, op, op.InputRef.Shape)
+			r, koVarName, indentLevel, op, readManyShape)
 	case model.OpTypeGetAttributes:
 		op = r.Ops.GetAttributes
 	case model.OpTypeSetAttributes:
@@ -263,8 +270,36 @@ func checkRequiredFieldsMissingFromShapeReadMany(
 		return result, nil
 	}
 
-	result = fmt.Sprintf("%s == nil", resVarPath)
-	return fmt.Sprintf("%sreturn %s\n", indent, result), nil
+	// Start the incomplete-input condition with the primary pluralized
+	// identifier. For a composite key the read input has additional REQUIRED
+	// members beyond the primary identifier (e.g. a BatchGet* op unwrapped via
+	// input_wrapper_field_path whose element structure requires both Name and
+	// Type). AND each such required member that resolves to a CR field into the
+	// condition, so sdkFind returns NotFound unless EVERY required identifier
+	// component is present. Members are deduplicated against the primary
+	// identifier and skipped when they have no corresponding Spec/Status field,
+	// preserving the single-identifier output for existing ReadMany resources
+	// whose input shape has no required members.
+	conditions := []string{fmt.Sprintf("%s == nil", resVarPath)}
+	seen := map[string]bool{resVarPath: true}
+	for _, memberName := range shape.Required {
+		fieldName := r.Config().GetResourceFieldName(
+			r.Names.Original, op.ExportedName, memberName,
+		)
+		memberPath, findErr := r.GetSanitizedMemberPath(fieldName, op, koVarName)
+		if findErr != nil {
+			// Required member has no corresponding CR field; the payload/read
+			// path handles it, so it is not part of the identity gate.
+			continue
+		}
+		if seen[memberPath] {
+			continue
+		}
+		seen[memberPath] = true
+		conditions = append(conditions, fmt.Sprintf("%s == nil", memberPath))
+	}
+
+	return fmt.Sprintf("%sreturn %s\n", indent, strings.Join(conditions, " || ")), nil
 }
 
 // CheckNilFieldPath returns the condition statement for Nil check

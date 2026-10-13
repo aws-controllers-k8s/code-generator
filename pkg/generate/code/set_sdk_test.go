@@ -7071,3 +7071,60 @@ func TestSetSDK_MWAAServerless_Workflow_Create(t *testing.T) {
 	require.NoError(err)
 	assert.Equal(expected, got)
 }
+
+// Test_SetSDK_OpenSearchServerless_LifecyclePolicy_newListRequestPayload_InputWrapper
+// exercises input_wrapper_field_path applied to a ReadMany op whose input
+// nests the per-item identifier fields inside a list-of-structure wrapper
+// member ("identifiers"). SetSDK for the List op builds a single wrapper
+// element from the CR's identifier fields and assigns it to the outer list
+// member as a one-element slice — this is what newListRequestPayload emits.
+func Test_SetSDK_OpenSearchServerless_LifecyclePolicy_newListRequestPayload_InputWrapper(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "opensearchserverless",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-input-wrapper-field-path.yaml",
+		})
+
+	crd := testutil.GetCRDByName(t, g, "LifecyclePolicy")
+	require.NotNil(crd)
+
+	expected := `
+	fw := &svcsdktypes.LifecyclePolicyIdentifier{}
+	if r.ko.Spec.Name != nil {
+		fw.Name = r.ko.Spec.Name
+	}
+	if r.ko.Spec.Type != nil {
+		fw.Type = svcsdktypes.LifecyclePolicyType(*r.ko.Spec.Type)
+	}
+	res.Identifiers = []svcsdktypes.LifecyclePolicyIdentifier{*fw}
+`
+	got, err := code.SetSDK(crd.Config(), crd, model.OpTypeList, "r.ko", "res", 1)
+	require.NoError(err)
+	assert.Equal(expected, got)
+}
+
+// Test_SetSDK_OpenSearchServerless_LifecyclePolicy_newListRequestPayload_NoInputWrapper
+// is the regression baseline: without input_wrapper_field_path, SetSDK for the
+// List op cannot populate the nested identifiers list member from a single
+// Spec field, so it emits an empty body (the shipped controller relies on a
+// hand-written sdk_read_many_post_build_request hook to build it). The wrapper
+// support above removes the need for that hook.
+func Test_SetSDK_OpenSearchServerless_LifecyclePolicy_newListRequestPayload_NoInputWrapper(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "opensearchserverless",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-batchget-readmany-no-wrapper.yaml",
+		})
+
+	crd := testutil.GetCRDByName(t, g, "LifecyclePolicy")
+	require.NotNil(crd)
+
+	got, err := code.SetSDK(crd.Config(), crd, model.OpTypeList, "r.ko", "res", 1)
+	require.NoError(err)
+	assert.Equal("\n", got)
+	assert.NotContains(got, "res.Identifiers")
+}

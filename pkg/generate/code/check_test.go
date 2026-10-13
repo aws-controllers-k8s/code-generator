@@ -264,3 +264,60 @@ func TestCheckNilReferencesPath(t *testing.T) {
 		"obj.Status.ACKResourceMetadata == nil || obj.Status.ACKResourceMetadata.ARN == nil",
 		code.CheckNilReferencesPath(&field, "obj"))
 }
+
+// TestCheckRequiredFields_OpenSearchServerless_LifecyclePolicy_ReadMany_InputWrapper
+// exercises input_wrapper_field_path on a ReadMany operation. Promoting
+// BatchGetLifecyclePolicy to ReadMany makes its input the source for the
+// required-fields check. That input nests the identifier fields inside the
+// "identifiers" list-of-structure wrapper; with input_wrapper_field_path
+// configured, the check sees the unwrapped identifier members and emits a real
+// nil-check on EVERY required identifier component of the composite key (Name
+// AND Type), rather than the permissive "return false" fallback it would
+// otherwise produce or a partial check that guards only the primary key.
+func TestCheckRequiredFields_OpenSearchServerless_LifecyclePolicy_ReadMany_InputWrapper(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "opensearchserverless",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-input-wrapper-field-path.yaml",
+		})
+
+	crd := testutil.GetCRDByName(t, g, "LifecyclePolicy")
+	require.NotNil(crd)
+
+		expReqFieldsInShape := `
+	return r.ko.Spec.Name == nil || r.ko.Spec.Type == nil
+`
+	gotCode, err := code.CheckRequiredFieldsMissingFromShape(
+		crd, model.OpTypeList, "r.ko", 1,
+	)
+	require.NoError(err)
+	assert.Equal(
+		strings.TrimSpace(expReqFieldsInShape),
+		strings.TrimSpace(gotCode),
+	)
+}
+
+// TestCheckRequiredFields_OpenSearchServerless_LifecyclePolicy_ReadMany_NoInputWrapper
+// is the regression baseline: without input_wrapper_field_path the nested
+// identifiers member matches no scalar identifier, so the required-fields check
+// falls back to the permissive "return false".
+func TestCheckRequiredFields_OpenSearchServerless_LifecyclePolicy_ReadMany_NoInputWrapper(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "opensearchserverless",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile: "generator-with-batchget-readmany-no-wrapper.yaml",
+		})
+
+	crd := testutil.GetCRDByName(t, g, "LifecyclePolicy")
+	require.NotNil(crd)
+
+	gotCode, err := code.CheckRequiredFieldsMissingFromShape(
+		crd, model.OpTypeList, "r.ko", 1,
+	)
+	require.NoError(err)
+	assert.Equal("return false", strings.TrimSpace(gotCode))
+}

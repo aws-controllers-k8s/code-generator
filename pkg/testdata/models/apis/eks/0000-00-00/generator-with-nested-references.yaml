@@ -1,0 +1,32 @@
+resources:
+  Cluster:
+    fields:
+      # Two references in the SAME container, which is the shape
+      # aws-controllers-k8s/community#2431 was filed for. Generated
+      # EnsureReferences must guard ResourcesVpcConfig once and restore both
+      # references inside that one guard.
+      ResourcesVpcConfig.SecurityGroupIds:
+        references:
+          service_name: ec2
+          resource: SecurityGroup
+          path: Status.ID
+      ResourcesVpcConfig.SubnetIds:
+        references:
+          service_name: ec2
+          resource: Subnet
+          path: Status.SubnetID
+      # A container nested inside another container that also holds a reference.
+      # Both are nonsense references, present only so that one guard
+      # (OutpostConfig) encloses both a reference of its own and a deeper
+      # container's guard. EnsureReferences must emit the OutpostConfig guard once
+      # and nest the ControlPlanePlacement guard inside it.
+      OutpostConfig.ControlPlaneInstanceType:
+        references:
+          service_name: ec2
+          resource: SecurityGroup
+          path: Status.ID
+      OutpostConfig.ControlPlanePlacement.GroupName:
+        references:
+          service_name: ec2
+          resource: SecurityGroup
+          path: Status.ID

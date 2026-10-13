@@ -227,6 +227,9 @@ var (
 		"GoCodeClearResolvedReferences": func(f *ackmodel.Field, targetVarName string, indentLevel int) (string, error) {
 			return code.ClearResolvedReferencesForField(f, targetVarName, indentLevel)
 		},
+		"GoCodeEnsureReferences": func(r *ackmodel.CRD, sourceVarName string, targetVarName string, indentLevel int) (string, error) {
+			return code.EnsureReferences(r, sourceVarName, targetVarName, indentLevel)
+		},
 		"GoCodeConvertToACKTags": func(r *ackmodel.CRD, sourceVarName string, targetVarName string, keyOrderVarName string, indentLevel int) (string, error) {
 			return code.GoCodeConvertToACKTags(r, sourceVarName, targetVarName, keyOrderVarName, indentLevel)
 		},

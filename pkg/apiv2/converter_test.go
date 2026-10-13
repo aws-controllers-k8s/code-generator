@@ -110,6 +110,132 @@ func TestBuildAPI_UnionMemberTargetingUnit(t *testing.T) {
 	assert.Empty(t, allPorts.Shape.MemberRefs, "resolved Unit shape should be an empty structure")
 }
 
+func TestBuildAPI_NetworkManagerVpcOptionsBadDefaults(t *testing.T) {
+	const alias = "networkmanager"
+	prefix := func(name string) string {
+		return "com.amazonaws." + alias + "#" + name
+	}
+
+	booleanMembers := map[string]*ShapeRef{}
+	for _, name := range []string{
+		"Ipv6Support",
+		"ApplianceModeSupport",
+		"DnsSupport",
+		"SecurityGroupReferencingSupport",
+		"UnrelatedDefaultedBoolean",
+	} {
+		booleanMembers[name] = &ShapeRef{
+			ShapeName: prefix("Boolean"),
+			Traits: map[string]interface{}{
+				"smithy.api#default": false,
+			},
+		}
+	}
+
+	shapes := map[string]Shape{
+		prefix("NetworkManager"): {
+			Type: "service",
+			Traits: map[string]interface{}{
+				"aws.api#service": map[string]interface{}{
+					"sdkId": "NetworkManager",
+				},
+				"smithy.api#documentation": "Network Manager service.",
+			},
+		},
+		prefix("CreateVpcAttachment"): {
+			Type:      "operation",
+			InputRef:  ShapeRef{ShapeName: prefix("CreateVpcAttachmentRequest")},
+			OutputRef: ShapeRef{ShapeName: prefix("CreateVpcAttachmentResponse")},
+		},
+		prefix("CreateVpcAttachmentRequest"): {
+			Type: "structure",
+			MemberRefs: map[string]*ShapeRef{
+				"Options": {ShapeName: prefix("VpcOptions")},
+			},
+		},
+		prefix("CreateVpcAttachmentResponse"): {
+			Type: "structure",
+			MemberRefs: map[string]*ShapeRef{
+				"VpcAttachment": {ShapeName: prefix("VpcAttachment")},
+			},
+		},
+		prefix("VpcAttachment"): {
+			Type: "structure",
+			MemberRefs: map[string]*ShapeRef{
+				"Options":      {ShapeName: prefix("VpcOptions")},
+				"ChangeValues": {ShapeName: prefix("CoreNetworkChangeValues")},
+			},
+		},
+		prefix("VpcOptions"): {
+			Type:       "structure",
+			MemberRefs: booleanMembers,
+		},
+		// These two names also occur in VpcOptions, but the generated SDK
+		// correctly uses plain bool fields in CoreNetworkChangeValues. The
+		// exception must therefore be shape-qualified, not service-wide by
+		// member name.
+		prefix("CoreNetworkChangeValues"): {
+			Type: "structure",
+			MemberRefs: map[string]*ShapeRef{
+				"DnsSupport": {
+					ShapeName: prefix("Boolean"),
+					Traits: map[string]interface{}{
+						"smithy.api#default": false,
+					},
+				},
+				"SecurityGroupReferencingSupport": {
+					ShapeName: prefix("Boolean"),
+					Traits: map[string]interface{}{
+						"smithy.api#default": false,
+					},
+				},
+			},
+		},
+		prefix("Boolean"): {
+			Type: "boolean",
+		},
+	}
+
+	api, serviceAlias, err := buildAPI(shapes)
+	require.NoError(t, err)
+	assert.Equal(t, alias, serviceAlias)
+	assert.Equal(t, "NetworkManager", api.Metadata.APIVersion)
+
+	require.NoError(t, api.Setup())
+	cleanUpBadDefaultValueAssignment(api)
+
+	vpcOptions := api.Shapes["VpcOptions"]
+	require.NotNil(t, vpcOptions)
+	for _, name := range []string{
+		"Ipv6Support",
+		"ApplianceModeSupport",
+		"DnsSupport",
+		"SecurityGroupReferencingSupport",
+	} {
+		member := vpcOptions.MemberRefs[name]
+		require.NotNil(t, member, name)
+		assert.Equal(t, "<nil>", member.DefaultValue, name)
+		assert.False(t, member.HasDefaultValue(), name)
+		assert.False(t, member.IsNonPointerInSDK(), name)
+	}
+
+	control := vpcOptions.MemberRefs["UnrelatedDefaultedBoolean"]
+	require.NotNil(t, control)
+	assert.Equal(t, "false", control.DefaultValue)
+	assert.True(t, control.HasDefaultValue())
+	assert.True(t, control.IsNonPointerInSDK())
+
+	coreNetworkChangeValues := api.Shapes["CoreNetworkChangeValues"]
+	require.NotNil(t, coreNetworkChangeValues)
+	for _, name := range []string{"DnsSupport", "SecurityGroupReferencingSupport"} {
+		member := coreNetworkChangeValues.MemberRefs[name]
+		require.NotNil(t, member, name)
+		assert.Equal(t, "false", member.DefaultValue, name)
+		assert.True(t, member.HasDefaultValue(), name)
+		assert.True(t, member.IsNonPointerInSDK(), name)
+	}
+}
+
 // TestCreateApiShape_IntEnum verifies a Smithy `intEnum` shape is preserved
 // as-is (Type stays "intEnum", no DefaultValue injected). Downstream code
 // (IsNonPointerInSDK, setSDKForScalar, etc.) recognizes "intEnum" directly.
