@@ -3,8 +3,8 @@
 type {{ .Names.Camel }} struct {
 {{- range $attrName := .SortedAttrNames }}
 {{- $attr := (index $.Attrs $attrName) }}
-	{{- if $attr.Shape }}
-	{{ $attr.Shape.Documentation }}
+	{{- if $attr.Documentation }}
+	{{ $attr.Documentation }}
 	{{- end }}
 	{{ $attr.Names.Camel }} {{ $attr.GoType }} `json:"{{ $attr.Names.CamelLower }},omitempty"`
 {{- end }}
