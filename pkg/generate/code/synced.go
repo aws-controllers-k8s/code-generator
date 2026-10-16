@@ -189,20 +189,31 @@ func fieldPathSafeEqual(
 	condCfg ackgenconfig.SyncedCondition,
 ) (string, error) {
 	out := ""
-	rootPath := fmt.Sprintf("%s.%s", resVarName, strings.Split(*condCfg.Path, ".")[0])
-	knownShapesPath := strings.Join(strings.Split(*condCfg.Path, ".")[1:], ".")
+	// parts[0] is Spec or Status and parts[1] is the top-level field. Each
+	// later part names a member of the shape before it.
+	parts := strings.Split(*condCfg.Path, ".")
 
-	fp := fieldpath.FromString(knownShapesPath)
-	shapes := fp.IterShapeRefs(field.ShapeRef)
+	// IterShapeRefs matches the first part of the path against the name of
+	// the shape it starts from. A top-level field's shape name can differ
+	// from the field name (the ELBv2 LoadBalancer field State has the shape
+	// LoadBalancerState), so the walk starts from the shape name.
+	shapesPath := strings.Join(append([]string{field.ShapeRef.ShapeName}, parts[2:]...), ".")
+	shapes := fieldpath.FromString(shapesPath).IterShapeRefs(field.ShapeRef)
 
-	subFieldPath := rootPath
+	subFieldPath := fmt.Sprintf("%s.%s", resVarName, parts[0])
 	for index, shape := range shapes {
+		if shape == nil {
+			return "", fmt.Errorf(
+				"cannot find a shape for %q in sync condition path %q",
+				parts[index+1], *condCfg.Path,
+			)
+		}
 		if index == len(shapes)-1 {
 			// We would check for nil in scalarFieldEqual method so no need to loop anymore
 			break
-		} else {
-			subFieldPath += "." + shape.Shape.ShapeName
 		}
+		// The generated code names fields as the path does, not by shape name.
+		subFieldPath += "." + parts[index+1]
 		// if r.ko.Spec.ProvisionedThroughput == nil
 		out += fmt.Sprintf("\tif %s == nil {\n", subFieldPath)
 		// return false, nil

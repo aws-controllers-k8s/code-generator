@@ -103,3 +103,34 @@ func TestSyncedDynamodbTable(t *testing.T) {
 	require.NoError(err)
 	assert.Equal(expectedSyncedConditions, got)
 }
+
+func TestSyncedELBv2LoadBalancer(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "elastic-load-balancing-v2", &testutil.TestingModelOptions{
+		GeneratorConfigFile: "generator-synced-nested-path.yaml",
+	})
+
+	crd := testutil.GetCRDByName(t, g, "LoadBalancer")
+	require.NotNil(crd)
+
+	// The State field's shape is named LoadBalancerState, not State.
+	expectedSyncedConditions := `
+	if r.ko.Status.State == nil {
+		return false, nil
+	}
+	if r.ko.Status.State.Code == nil {
+		return false, nil
+	}
+	stateCandidates := []string{"active"}
+	if !ackutil.InStrings(*r.ko.Status.State.Code, stateCandidates) {
+		return false, nil
+	}
+`
+	got, err := code.ResourceIsSynced(
+		crd.Config(), crd, "r.ko", 1,
+	)
+	require.NoError(err)
+	assert.Equal(expectedSyncedConditions, got)
+}
