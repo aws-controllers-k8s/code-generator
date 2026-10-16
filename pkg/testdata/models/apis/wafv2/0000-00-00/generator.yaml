@@ -21,11 +21,18 @@ empty_shapes:
   - RateLimitHTTPMethod
   - NoneAction
 operations:
+  GetIPSet:
+    output_wrapper_field_path: IPSet
   GetRuleGroup:
     output_wrapper_field_path: RuleGroup
   GetWebACL:
     output_wrapper_field_path: WebACL
 resources:
+  IPSet:
+    fields:
+      Name:
+        is_primary_key: true
+        is_immutable: true
   RuleGroup:
     fields:
       Name:
@@ -51,6 +58,10 @@ resources:
         type: string
         set:
           - ignore: "all"
+      Rules.Statement.IPSetReferenceStatement.ARN:
+        references:
+          resource: IPSet
+          path: Status.ACKResourceMetadata.ARN
   WebACL:
     fields:
       Name:
@@ -76,3 +87,11 @@ resources:
         type: string
         set:
           - ignore: "all"
+      Rules.Statement.IPSetReferenceStatement.ARN:
+        references:
+          resource: IPSet
+          path: Status.ACKResourceMetadata.ARN
+      Rules.Statement.RuleGroupReferenceStatement.ARN:
+        references:
+          resource: RuleGroup
+          path: Status.ACKResourceMetadata.ARN

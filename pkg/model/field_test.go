@@ -254,27 +254,34 @@ func TestGetReferenceFieldName(t *testing.T) {
 		fieldName                  string
 		expectedReferenceFieldName string
 		shapeRef                   *api.ShapeRef
+		references                 *ackgenconfig.ReferencesConfig
 	}{
-		{"ClusterName", "ClusterRef", &stringShape},
-		{"ClusterNames", "ClusterRefs", &listShape},
-		{"ClusterARN", "ClusterRef", &stringShape},
-		{"ClusterARNs", "ClusterRefs", &listShape},
-		{"ClusterID", "ClusterRef", &stringShape},
-		{"ClusterId", "ClusterRef", &stringShape},
-		{"ClusterIds", "ClusterRefs", &listShape},
-		{"ClusterIDs", "ClusterRefs", &listShape},
-		{"Cluster", "ClusterRef", &stringShape},
-		{"Clusters", "ClusterRefs", &listShape},
+		{"ClusterName", "ClusterRef", &stringShape, nil},
+		{"ClusterNames", "ClusterRefs", &listShape, nil},
+		{"ClusterARN", "ClusterRef", &stringShape, nil},
+		{"ClusterARNs", "ClusterRefs", &listShape, nil},
+		{"ClusterID", "ClusterRef", &stringShape, nil},
+		{"ClusterId", "ClusterRef", &stringShape, nil},
+		{"ClusterIds", "ClusterRefs", &listShape, nil},
+		{"ClusterIDs", "ClusterRefs", &listShape, nil},
+		{"Cluster", "ClusterRef", &stringShape, nil},
+		{"Clusters", "ClusterRefs", &listShape, nil},
 		// When the resource name indicates plural but it is singular. Ex: DHCPOptions
-		{"Clusters", "ClustersRef", &stringShape},
-		{"BlueDeploymentId", "BlueDeploymentRef", &stringShape},
-		{"GreenDeploymentId", "GreenDeploymentRef", &stringShape},
+		{"Clusters", "ClustersRef", &stringShape, nil},
+		{"BlueDeploymentId", "BlueDeploymentRef", &stringShape, nil},
+		{"GreenDeploymentId", "GreenDeploymentRef", &stringShape, nil},
+		{"Name", "ClusterRef", &stringShape, &ackgenconfig.ReferencesConfig{Resource: "Cluster"}},
+		{"Names", "ClusterRefs", &listShape, &ackgenconfig.ReferencesConfig{Resource: "Cluster"}},
+		{"Names", "ClusterRefs", &listShape, &ackgenconfig.ReferencesConfig{Resource: "Clusters"}},
+		// The resource name is only used when the field name does not contain a prefix itself.
+		{"ClusterName", "ClusterRef", &stringShape, &ackgenconfig.ReferencesConfig{Resource: "Other"}},
 	}
 
 	for _, tc := range testCases {
 		f := model.Field{}
 		f.ShapeRef = tc.shapeRef
 		f.Names = names.New(tc.fieldName)
+		f.FieldConfig = &ackgenconfig.FieldConfig{References: tc.references}
 		refNames, err := f.GetReferenceFieldName()
 		assert.NoError(err)
 		referenceFieldName := refNames.Camel
