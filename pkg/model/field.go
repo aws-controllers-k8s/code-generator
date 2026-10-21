@@ -500,7 +500,20 @@ func NewField(
 	shapeRef *awssdkmodel.ShapeRef,
 	cfg *ackgenconfig.FieldConfig,
 ) (*Field, error) {
-	return newFieldRecurse(crd, path, make(map[string]struct{}, 0), fieldNames, shapeRef, cfg)
+	return NewFieldWithRenames(crd, path, fieldNames, shapeRef, cfg, nil)
+}
+
+// NewFieldWithRenames returns a pointer to a new Field object and applies the
+// supplied field renames while recursively walking nested members.
+func NewFieldWithRenames(
+	crd *CRD,
+	path string,
+	fieldNames names.Names,
+	shapeRef *awssdkmodel.ShapeRef,
+	cfg *ackgenconfig.FieldConfig,
+	renames map[string]string,
+) (*Field, error) {
+	return newFieldRecurse(crd, path, make(map[string]struct{}, 0), fieldNames, shapeRef, cfg, renames)
 }
 
 // newFieldRecurse recursively calls itself with protection against infinite
@@ -516,6 +529,7 @@ func newFieldRecurse(
 	fieldNames names.Names,
 	shapeRef *awssdkmodel.ShapeRef,
 	cfg *ackgenconfig.FieldConfig,
+	renames map[string]string,
 ) (*Field, error) {
 	memberFields := map[string]*Field{}
 	var gte, gt, gtwp string
@@ -568,9 +582,14 @@ func newFieldRecurse(
 		if containerShape.Type == "structure" {
 			// "unpack" the member fields composing this struct field...
 			for _, memberName := range containerShape.MemberNames() {
+				originalMemberName := memberName
+				originalMemberPath := path + "." + names.New(originalMemberName).Camel
+				if renamed, ok := renames[originalMemberPath]; ok {
+					memberName = renamed
+				}
 				cleanMemberNames := names.New(memberName)
 				memberPath := path + "." + cleanMemberNames.Camel
-				memberShape := containerShape.MemberRefs[memberName]
+				memberShape := containerShape.MemberRefs[originalMemberName]
 
 				// Check to see if we have seen this shape before in the stack.
 				// Cyclic references are not supported.
@@ -583,7 +602,7 @@ func newFieldRecurse(
 
 				fConfigs := crd.cfg.GetFieldConfigs(crd.Names.Original)
 				memberField, err := newFieldRecurse(
-					crd, memberPath, nestedParentFields, cleanMemberNames, memberShape, fConfigs[memberPath],
+					crd, memberPath, nestedParentFields, cleanMemberNames, memberShape, fConfigs[memberPath], renames,
 				)
 				if err != nil {
 					return nil, err
