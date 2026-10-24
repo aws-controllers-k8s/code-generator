@@ -831,6 +831,15 @@ func (m *Model) processNestedFieldTypeDefs(
 				// field paths contains a dot (".")
 				continue
 			}
+			if field.GetFieldDocsConfig() != nil {
+				_, attr, err := getAttributeFromPath(crd, fieldPath, tdefs)
+				if err != nil {
+					return fmt.Errorf("resource %q, field %q: %w", crd.Names.Original, fieldPath, err)
+				}
+				if attr != nil {
+					attr.Documentation = field.GetDocumentation()
+				}
+			}
 			if field.FieldConfig == nil {
 				// Likewise, we don't need to transform any TypeDef if the
 				// nested field doesn't have a FieldConfig instructing us to

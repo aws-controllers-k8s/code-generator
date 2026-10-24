@@ -14,11 +14,14 @@
 package model_test
 
 import (
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	ackgenerate "github.com/aws-controllers-k8s/code-generator/pkg/generate/ack"
+	"github.com/aws-controllers-k8s/code-generator/pkg/model"
 	"github.com/aws-controllers-k8s/code-generator/pkg/testutil"
 )
 
@@ -126,4 +129,43 @@ func TestWAFv2_NestedReferences(t *testing.T) {
 		require.NoError(err)
 		assert.Equal(tc.refName, refName.Camel)
 	}
+}
+
+func TestWAFv2_NestedFieldDocumentationOverride(t *testing.T) {
+	require := require.New(t)
+
+	g := testutil.NewModelForServiceWithOptions(t, "wafv2",
+		&testutil.TestingModelOptions{
+			GeneratorConfigFile:     "generator.yaml",
+			DocumentationConfigFile: "documentation.yaml",
+		},
+	)
+
+	typeDefs, err := g.GetTypeDefs()
+	require.NoError(err)
+
+	var resourceARN *model.Attr
+	for _, typeDef := range typeDefs {
+		for _, attr := range typeDef.Attrs {
+			if attr.Names.Original == "ResourceArn" && attr.Documentation != "" {
+				resourceARN = attr
+				break
+			}
+		}
+	}
+	require.NotNil(resourceARN)
+	require.Equal(
+		"\t// The Amazon Resource Name (ARN) of the resource to associate with the web ACL.",
+		resourceARN.Documentation,
+	)
+
+	templatePath, err := filepath.Abs("../../templates")
+	require.NoError(err)
+	apiTemplates, err := ackgenerate.APIs(g, []string{templatePath})
+	require.NoError(err)
+	require.NoError(apiTemplates.Execute())
+
+	typesFile, ok := apiTemplates.Executed()["types.go"]
+	require.True(ok)
+	require.Contains(typesFile.String(), resourceARN.Documentation)
 }
