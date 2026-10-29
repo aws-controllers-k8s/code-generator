@@ -14,7 +14,11 @@
 package model_test
 
 import (
+	"go/ast"
+	"go/parser"
+	"go/token"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -49,7 +53,7 @@ func TestWAFv2_SharedShape_CustomNestedFields(t *testing.T) {
 	// NotStatement) into the shared Statement shape. Verify they were injected
 	// successfully on both CRDs.
 	for _, crd := range []struct {
-		name string
+		name   string
 		fields map[string]*struct{}
 	}{
 		{name: "RuleGroup"},
@@ -134,6 +138,7 @@ func TestWAFv2_NestedReferences(t *testing.T) {
 func TestWAFv2_NestedFieldDocumentationOverride(t *testing.T) {
 	require := require.New(t)
 
+	// Load the override configured for the custom Associations.ResourceARN field.
 	g := testutil.NewModelForServiceWithOptions(t, "wafv2",
 		&testutil.TestingModelOptions{
 			GeneratorConfigFile:     "generator.yaml",
@@ -144,6 +149,7 @@ func TestWAFv2_NestedFieldDocumentationOverride(t *testing.T) {
 	typeDefs, err := g.GetTypeDefs()
 	require.NoError(err)
 
+	// Verify the nested field override reaches the generated type's attribute.
 	var resourceARN *model.Attr
 	for _, typeDef := range typeDefs {
 		for _, attr := range typeDef.Attrs {
@@ -154,6 +160,8 @@ func TestWAFv2_NestedFieldDocumentationOverride(t *testing.T) {
 		}
 	}
 	require.NotNil(resourceARN)
+
+	// An override must replace the SDK documentation rather than extend it.
 	require.Equal(
 		"\t// The Amazon Resource Name (ARN) of the resource to associate with the web ACL.",
 		resourceARN.Documentation,
@@ -161,6 +169,8 @@ func TestWAFv2_NestedFieldDocumentationOverride(t *testing.T) {
 
 	templatePath, err := filepath.Abs("../../templates")
 	require.NoError(err)
+
+	// Render the real API templates in memory to verify the override is emitted as a Go comment.
 	apiTemplates, err := ackgenerate.APIs(g, []string{templatePath})
 	require.NoError(err)
 	require.NoError(apiTemplates.Execute())
@@ -168,4 +178,102 @@ func TestWAFv2_NestedFieldDocumentationOverride(t *testing.T) {
 	typesFile, ok := apiTemplates.Executed()["types.go"]
 	require.True(ok)
 	require.Contains(typesFile.String(), resourceARN.Documentation)
+}
+
+func TestWAFv2_NestedFieldDocumentationAppendPrepend(t *testing.T) {
+	assertions := require.New(t)
+
+	// Use a model without documentation configuration to obtain the original SDK docs.
+	baseline := testutil.NewModelForService(t, "wafv2")
+	baselineCRDs, err := baseline.GetCRDs()
+	assertions.NoError(err)
+	baselineWebACL := getCRDByName("WebACL", baselineCRDs)
+	assertions.NotNil(baselineWebACL)
+
+	testCases := []struct {
+		name    string
+		config  string
+		prepend string
+		append  string
+	}{
+		{
+			name:   "append",
+			config: "documentation-append.yaml",
+			append: "\t// Additional associated resource ARN documentation.",
+		},
+		{
+			name:    "prepend",
+			config:  "documentation-prepend.yaml",
+			prepend: "\t// Additional associated resource ARN documentation.",
+		},
+		{
+			name:    "append and prepend",
+			config:  "documentation-append-prepend.yaml",
+			prepend: "\t// Before the associated resource ARN documentation.",
+			append:  "\t// After the associated resource ARN documentation.",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			require := require.New(t)
+			field := baselineWebACL.Fields["Associations.ResourceARN"]
+			require.NotNil(field)
+			require.NotEmpty(field.ShapeRef.Documentation)
+
+			// Build the expected ordering independently of the configured model.
+			expected := field.GetDocumentation()
+			if tc.prepend != "" {
+				expected = tc.prepend + "\n\t//\n" + expected
+			}
+			if tc.append != "" {
+				expected += "\n\t//\n" + tc.append
+			}
+
+			g := testutil.NewModelForServiceWithOptions(t, "wafv2",
+				&testutil.TestingModelOptions{
+					GeneratorConfigFile:     "generator.yaml",
+					DocumentationConfigFile: tc.config,
+				},
+			)
+			templatePath, err := filepath.Abs("../../templates")
+			require.NoError(err)
+
+			// Render the real API templates in memory, including the custom AssociateWebACLInput type.
+			apiTemplates, err := ackgenerate.APIs(g, []string{templatePath})
+			require.NoError(err)
+			require.NoError(apiTemplates.Execute())
+			typesFile, ok := apiTemplates.Executed()["types.go"]
+			require.True(ok)
+			generated, err := parser.ParseFile(token.NewFileSet(), "types.go", typesFile.Bytes(), parser.ParseComments)
+			require.NoError(err)
+
+			// Check the comment attached to this generated field, not a match elsewhere in types.go.
+			var resourceARN *ast.Field
+			ast.Inspect(generated, func(node ast.Node) bool {
+				typeSpec, ok := node.(*ast.TypeSpec)
+				if !ok || typeSpec.Name.Name != "AssociateWebACLInput" {
+					return true
+				}
+				structType, ok := typeSpec.Type.(*ast.StructType)
+				require.True(ok)
+				for _, field := range structType.Fields.List {
+					if len(field.Names) == 1 && field.Names[0].Name == "ResourceARN" {
+						resourceARN = field
+					}
+				}
+				return false
+			})
+			require.NotNil(resourceARN)
+			require.NotNil(resourceARN.Doc)
+			var comments []string
+
+			// The parser omits leading indentation; restore the tab used by GetDocumentation.
+			for _, comment := range resourceARN.Doc.List {
+				comments = append(comments, "\t"+comment.Text)
+			}
+
+			require.Equal(expected, strings.Join(comments, "\n"))
+		})
+	}
 }
