@@ -733,7 +733,7 @@ func (m *Model) GetTypeDefs() ([]*TypeDef, error) {
 			if err != nil {
 				return nil, err
 			}
-			attrs[memberName] = NewAttr(memberNames, gt, memberShape)
+			attrs[memberName] = NewAttr(memberNames, gt, memberShape, memberRef)
 		}
 		if len(attrs) == 0 {
 			// Just ignore these...
@@ -1058,7 +1058,7 @@ func addReferenceAttribute(
 	if attr.Shape.Type == "list" {
 		refAttrGoType = fmt.Sprintf("[]%s", refAttrGoType)
 	}
-	refAttr := NewAttr(refAttrName, refAttrGoType, refAttrShape)
+	refAttr := NewAttr(refAttrName, refAttrGoType, refAttrShape, nil)
 	// Add reference attribute to the parent field typedef
 	td.Attrs[refAttrName.Original] = refAttr
 	return nil
