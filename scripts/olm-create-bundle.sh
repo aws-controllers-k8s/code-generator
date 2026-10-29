@@ -133,4 +133,17 @@ pushd "$BUNDLE_OUTPUT_PATH" 1> /dev/null
 kustomize build "$tmp_kustomize_config_dir/manifests" | "${OPERATOR_SDK_BIN_PATH}/operator-sdk" generate bundle "${opsdk_gen_bundle_args[@]}"
 popd 1> /dev/null
 
+# operator-sdk matches objects by kind only, so samples whose kind collides
+# with a core kind (e.g. ECS Service, IAM Role, Secrets Manager Secret) are
+# written to manifests/ in addition to alm-examples. OLM then applies them
+# as the core kind, which breaks or pollutes the install. Remove any custom
+# resource of the service API group from manifests/; samples stay in
+# alm-examples and CRDs are unaffected (apiextensions.k8s.io).
+for manifest in "$BUNDLE_OUTPUT_PATH"/bundle/manifests/*.yaml; do
+    if grep -qE '^apiVersion: [a-z0-9.-]+\.services\.k8s\.aws/' "$manifest"; then
+        echo "Removing sample custom resource from bundle manifests: $(basename "$manifest")"
+        rm "$manifest"
+    fi
+done
+
 "${OPERATOR_SDK_BIN_PATH}/operator-sdk" bundle validate "$BUNDLE_OUTPUT_PATH/bundle"
