@@ -1,0 +1,6 @@
+resources:
+  WebACL:
+    fields:
+      Associations.ResourceARN:
+        prepend: |-
+          Additional associated resource ARN documentation.

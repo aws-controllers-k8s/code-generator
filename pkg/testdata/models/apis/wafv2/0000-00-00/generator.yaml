@@ -1,5 +1,6 @@
 ignore:
   field_paths:
+    - AssociateWebACLInput.WebACLArn
     - RuleGroup.Rules.Statement.AndStatement
     - RuleGroup.Rules.Statement.OrStatement
     - RuleGroup.Rules.Statement.NotStatement
@@ -64,6 +65,9 @@ resources:
           path: Status.ACKResourceMetadata.ARN
   WebACL:
     fields:
+      Associations:
+        custom_field:
+          list_of: AssociateWebACLInput
       Name:
         is_primary_key: true
         is_immutable: true

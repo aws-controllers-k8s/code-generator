@@ -5,7 +5,9 @@
 type {{ .Names.Camel }} struct {
 {{- range $attrName := .SortedAttrNames }}
 {{- $attr := (index $.Attrs $attrName) }}
-	{{- if $attr.Shape.Documentation }}
+	{{- if $attr.Documentation }}
+	{{ $attr.Documentation }}
+	{{- else if $attr.Shape.Documentation }}
 	{{ $attr.Shape.Documentation }}
 	{{- end }}
 	{{- if $attr.IsImmutable }}
