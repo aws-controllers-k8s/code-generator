@@ -14,10 +14,6 @@ FROM $builder_image:$golang_version as builder
 
 ARG service_alias
 ARG target_arch=amd64
-# The tuple of controller image version information
-ARG service_controller_git_version
-ARG service_controller_git_commit
-ARG build_date
 # The directory within the builder container into which we will copy our
 # service controller code.
 ARG work_dir=/github.com/aws-controllers-k8s/$service_alias-controller
@@ -42,6 +38,13 @@ RUN go mod download
 COPY $service_alias-controller/apis $work_dir/apis
 COPY $service_alias-controller/cmd $work_dir/cmd
 COPY $service_alias-controller/pkg $work_dir/pkg
+# The tuple of controller image version information. Declared here, not at
+# the top of the stage: every RUN after an ARG sees it, and these change on
+# every build, so declaring them above `go mod download` reran the download
+# each time.
+ARG service_controller_git_version
+ARG service_controller_git_commit
+ARG build_date
 # Build
 RUN GIT_VERSION=$service_controller_git_version && \
     GIT_COMMIT=$service_controller_git_commit && \
