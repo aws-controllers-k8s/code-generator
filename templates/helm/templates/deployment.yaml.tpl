@@ -95,6 +95,14 @@ spec:
         - --reconcile-default-max-concurrent-syncs
         - "$(RECONCILE_DEFAULT_MAX_CONCURRENT_SYNCS)"
 {{ "{{- end }}" }}
+{{ "{{- if .Values.aws.sdkMaxTPS }}" }}
+        - --sdk-max-tps
+        - "$(ACK_SDK_MAX_TPS)"
+{{ "{{- end }}" }}
+{{ "{{- if .Values.aws.sdkMaxBurst }}" }}
+        - --sdk-max-burst
+        - "$(ACK_SDK_MAX_BURST)"
+{{ "{{- end }}" }}
 {{ "{{- range $key, $value := .Values.reconcile.resourceMaxConcurrentSyncs }}" }}
         - --reconcile-resource-max-concurrent-syncs
         - {{ "\"$(RECONCILE_RESOURCE_MAX_CONCURRENT_SYNCS_{{ $key | upper }})\"" }}
@@ -124,6 +132,14 @@ spec:
           value: {{ "{{ .Values.aws.endpoint_url | quote }}" }}
         - name: AWS_IDENTITY_ENDPOINT_URL
           value: {{ "{{ .Values.aws.identity_endpoint_url | quote }}" }}
+{{ "{{- if .Values.aws.sdkMaxTPS }}" }}
+        - name: ACK_SDK_MAX_TPS
+          value: {{ "{{ .Values.aws.sdkMaxTPS | quote }}" }}
+{{ "{{- end }}" }}
+{{ "{{- if .Values.aws.sdkMaxBurst }}" }}
+        - name: ACK_SDK_MAX_BURST
+          value: {{ "{{ .Values.aws.sdkMaxBurst | quote }}" }}
+{{ "{{- end }}" }}
         - name: ACK_WATCH_NAMESPACE
           value: {{ IncludeTemplate "watch-namespace" }}
         - name: ACK_WATCH_SELECTORS
