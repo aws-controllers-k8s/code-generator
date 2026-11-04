@@ -153,3 +153,14 @@ func (d *resourceDescriptor) MarkAdopted(
 	curr[ackv1alpha1.AnnotationAdopted] = "true"
 	obj.SetAnnotations(curr)
 }
+
+// UnsetMeansEmptyPaths returns the Spec field paths for which an unset
+// desired value means "must be empty" even when the UnsetFieldsUnmanaged
+// feature gate is enabled. Read by the ACK runtime.
+func (d *resourceDescriptor) UnsetMeansEmptyPaths() []string {
+	return []string{
+{{- range $p := .CRD.UnsetMeansEmptyPaths }}
+		"{{ $p }}",
+{{- end }}
+	}
+}
