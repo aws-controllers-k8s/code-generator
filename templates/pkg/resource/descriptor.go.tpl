@@ -153,10 +153,17 @@ func (d *resourceDescriptor) MarkAdopted(
 	curr[ackv1alpha1.AnnotationAdopted] = "true"
 	obj.SetAnnotations(curr)
 }
+{{- if .CRD.UnsetFieldsUnmanaged }}
+
+// UnsetFieldsUnmanaged returns true: generator.yaml enables
+// unset_fields_unmanaged for this controller, so the ACK runtime does not let
+// a Spec field the user never set drive an Update.
+func (d *resourceDescriptor) UnsetFieldsUnmanaged() bool {
+	return true
+}
 
 // UnsetMeansEmptyPaths returns the Spec field paths for which an unset
-// desired value means "must be empty" even when the UnsetFieldsUnmanaged
-// feature gate is enabled. Read by the ACK runtime.
+// desired value still means "must be empty". Read by the ACK runtime.
 func (d *resourceDescriptor) UnsetMeansEmptyPaths() []string {
 	return []string{
 {{- range $p := .CRD.UnsetMeansEmptyPaths }}
@@ -164,3 +171,4 @@ func (d *resourceDescriptor) UnsetMeansEmptyPaths() []string {
 {{- end }}
 	}
 }
+{{- end }}

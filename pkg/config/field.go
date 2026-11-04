@@ -270,12 +270,13 @@ type CompareFieldConfig struct {
 	// NilEqualsZeroValue indicates a nil pointer and zero-value pointed-to
 	// value should be considered equal for the purposes of comparison
 	NilEqualsZeroValue bool `json:"nil_equals_zero_value"`
-	// UnsetMeansEmpty opts a field out of the runtime's UnsetFieldsUnmanaged
-	// behavior: when the user does not set the field, it still means "must be
-	// empty", so a value added outside the controller is removed. Use it for
-	// policies, permissions and similar fields whose removal is enforced.
-	// The resource's tag field is always treated this way. The path must not
-	// go through a list.
+	// UnsetMeansEmpty opts a field out of the controller-level
+	// `unset_fields_unmanaged` behavior: when the user does not set the field,
+	// it still means "must be empty", so a value added outside the controller
+	// is removed. Use it for policies, permissions and similar fields whose
+	// removal is enforced. The resource's tag field is always treated this
+	// way. The path must not go through a list. Has no effect unless
+	// `unset_fields_unmanaged` is enabled.
 	UnsetMeansEmpty bool `json:"unset_means_empty,omitempty"`
 	// PreDeleteInclude indicates the field should be included in the
 	// pre-delete delta comparison even if IsIgnored is true

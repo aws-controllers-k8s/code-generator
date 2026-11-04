@@ -30,6 +30,7 @@ func TestUnsetMeansEmptyPaths_Configured(t *testing.T) {
 	crd := getCRDByName("SecurityGroup", crds)
 	require.NotNil(t, crd)
 
+	assert.True(t, crd.UnsetFieldsUnmanaged())
 	paths, err := crd.UnsetMeansEmptyPaths()
 	require.NoError(t, err)
 	assert.Equal(t, []string{"Spec.Description"}, paths)
@@ -54,6 +55,7 @@ func TestUnsetMeansEmptyPaths_NotConfigured(t *testing.T) {
 	crd := getCRDByName("DhcpOptions", crds)
 	require.NotNil(t, crd)
 
+	assert.False(t, crd.UnsetFieldsUnmanaged(), "off unless generator.yaml enables it")
 	paths, err := crd.UnsetMeansEmptyPaths()
 	require.NoError(t, err)
 	assert.Empty(t, paths, "tags are ignored for this resource in the test model")

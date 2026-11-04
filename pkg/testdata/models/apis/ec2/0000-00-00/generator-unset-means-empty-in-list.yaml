@@ -1,3 +1,4 @@
+unset_fields_unmanaged: true
 ignore:
   field_paths:
     - CreateDhcpOptionsInput.DryRun

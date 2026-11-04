@@ -22,9 +22,17 @@ import (
 	"github.com/aws-controllers-k8s/pkg/names"
 )
 
+// UnsetFieldsUnmanaged returns true when the controller's generator.yaml
+// enables `unset_fields_unmanaged`. The generated resource descriptor then
+// tells the ACK runtime to treat Spec fields the user never set as not
+// managed.
+func (r *CRD) UnsetFieldsUnmanaged() bool {
+	return r.cfg != nil && r.cfg.UnsetFieldsUnmanaged
+}
+
 // UnsetMeansEmptyPaths returns the runtime paths of the Spec fields for which
-// an unset desired value still means "must be empty" when the runtime's
-// UnsetFieldsUnmanaged feature gate is enabled: the fields configured with
+// an unset desired value still means "must be empty" when
+// `unset_fields_unmanaged` is enabled: the fields configured with
 // `compare.unset_means_empty`, plus the resource's tag field. A runtime path
 // uses Go field names and starts with "Spec", e.g. "Spec.Policy". It is
 // emitted into the generated resource descriptor and read by the ACK runtime.
