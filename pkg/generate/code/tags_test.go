@@ -100,7 +100,13 @@ func TestFromACKTagsForListShape(t *testing.T) {
 			delete(tags, k)
 		}
 	}
-	for k, v := range tags {
+	sortedKeys := make([]string, 0, len(tags))
+	for k := range tags {
+		sortedKeys = append(sortedKeys, k)
+	}
+	sort.Strings(sortedKeys)
+	for _, k := range sortedKeys {
+		v := tags[k]
 		tag := svcapitypes.Tag{Key: &k, Value: &v}
 		result = append(result, &tag)
 	}

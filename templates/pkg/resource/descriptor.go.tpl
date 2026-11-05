@@ -153,3 +153,12 @@ func (d *resourceDescriptor) MarkAdopted(
 	curr[ackv1alpha1.AnnotationAdopted] = "true"
 	obj.SetAnnotations(curr)
 }
+{{- if .CRD.SkipRepeatedUpdates }}
+
+// SkipRepeatedUpdates returns true: generator.yaml enables
+// skip_repeated_updates for this controller, so the ACK runtime may skip an
+// Update that would repeat the last successful one.
+func (d *resourceDescriptor) SkipRepeatedUpdates() bool {
+	return true
+}
+{{- end }}
