@@ -107,7 +107,13 @@ func GoCodeConvertToACKTags(r *model.CRD, sourceVarName string, targetVarName st
 //	 		delete(tags, k)
 //	 	}
 //	 }
-//	 for k, v := range tags {
+//	 sortedKeys := make([]string, 0, len(tags))
+//	 for k := range tags {
+//	 	sortedKeys = append(sortedKeys, k)
+//	 }
+//	 sort.Strings(sortedKeys)
+//	 for _, k := range sortedKeys {
+//	 	v := tags[k]
 //	 	tag := svcapitypes.Tag{Key: &k, Value: &v}
 //	 	result = append(result, &tag)
 //	 }
@@ -141,12 +147,22 @@ func GoCodeFromACKTags(r *model.CRD, tagsSourceVarName string, orderVarName stri
 		return "", fmt.Errorf("resource %q: tag type can only be a list or a map, got %q", r.Names.Original, tagFieldShapeType)
 	}
 
-	out += fmt.Sprintf("%sfor k, v := range %s {\n", indent, tagsSourceVarName)
 	switch tagFieldShapeType {
 	case "list":
+		// Tags missing from the key order, such as the controller's default
+		// tags, are appended in sorted key order, so the result is the same
+		// on every call rather than following map iteration order.
+		out += fmt.Sprintf("%ssortedKeys := make([]string, 0, len(%s))\n", indent, tagsSourceVarName)
+		out += fmt.Sprintf("%sfor k := range %s {\n", indent, tagsSourceVarName)
+		out += fmt.Sprintf("%s\tsortedKeys = append(sortedKeys, k)\n", indent)
+		out += fmt.Sprintf("%s}\n", indent)
+		out += fmt.Sprintf("%ssort.Strings(sortedKeys)\n", indent)
+		out += fmt.Sprintf("%sfor _, k := range sortedKeys {\n", indent)
+		out += fmt.Sprintf("%s\tv := %s[k]\n", indent, tagsSourceVarName)
 		out += fmt.Sprintf("%s\ttag := svcapitypes.%s{%s: &k, %s: &v}\n", indent, tagFieldGoType, keyMemberName, valueMemberName)
 		out += fmt.Sprintf("%s\t%s = append(%s, &tag)\n", indent, targetVarName, targetVarName)
 	case "map":
+		out += fmt.Sprintf("%sfor k, v := range %s {\n", indent, tagsSourceVarName)
 		out += fmt.Sprintf("%s\t%s[k] = &v\n", indent, targetVarName)
 	}
 	out += fmt.Sprintf("%s}\n", indent)

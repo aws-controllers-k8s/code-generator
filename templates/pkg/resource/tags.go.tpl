@@ -3,12 +3,15 @@
 package {{ .CRD.Names.Snake }}
 
 import(
+    "sort"
+
     acktags "github.com/aws-controllers-k8s/runtime/pkg/tags"
 
     svcapitypes "github.com/aws-controllers-k8s/{{ .ControllerName }}-controller/apis/{{ .APIVersion }}"
 )
 
 var (
+	_ = sort.Strings
 	_ = svcapitypes.{{ .CRD.Kind }}{}
 	_ = acktags.NewTags()
 )

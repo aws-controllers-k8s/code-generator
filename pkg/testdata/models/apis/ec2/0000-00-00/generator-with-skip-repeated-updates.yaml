@@ -1,4 +1,4 @@
-unset_fields_unmanaged: true
+skip_repeated_updates: true
 ignore:
   field_paths:
     - CreateDhcpOptionsInput.DryRun
@@ -115,10 +115,6 @@ resources:
         set:
           - from: GroupName
   SecurityGroup:
-    fields:
-      Description:
-        compare:
-          unset_means_empty: true
     renames:
       operations:
         CreateSecurityGroup:

@@ -153,22 +153,12 @@ func (d *resourceDescriptor) MarkAdopted(
 	curr[ackv1alpha1.AnnotationAdopted] = "true"
 	obj.SetAnnotations(curr)
 }
-{{- if .CRD.UnsetFieldsUnmanaged }}
+{{- if .CRD.SkipRepeatedUpdates }}
 
-// UnsetFieldsUnmanaged returns true: generator.yaml enables
-// unset_fields_unmanaged for this controller, so the ACK runtime does not let
-// a Spec field the user never set drive an Update.
-func (d *resourceDescriptor) UnsetFieldsUnmanaged() bool {
+// SkipRepeatedUpdates returns true: generator.yaml enables
+// skip_repeated_updates for this controller, so the ACK runtime may skip an
+// Update that would repeat the last successful one.
+func (d *resourceDescriptor) SkipRepeatedUpdates() bool {
 	return true
-}
-
-// UnsetMeansEmptyPaths returns the Spec field paths for which an unset
-// desired value still means "must be empty". Read by the ACK runtime.
-func (d *resourceDescriptor) UnsetMeansEmptyPaths() []string {
-	return []string{
-{{- range $p := .CRD.UnsetMeansEmptyPaths }}
-		"{{ $p }}",
-{{- end }}
-	}
 }
 {{- end }}

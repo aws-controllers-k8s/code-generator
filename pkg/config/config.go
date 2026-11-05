@@ -37,16 +37,15 @@ type Config struct {
 	// IncludeACKMetadata lets you specify whether ACK Metadata should be included
 	// in the status. Default is true.
 	IncludeACKMetadata bool `json:"include_ack_metadata,omitempty"`
-	// UnsetFieldsUnmanaged makes every resource of the controller treat a
-	// Spec field the user never set as not managed: when the AWS API reports
-	// a value for it (typically a server-side default), that difference does
-	// not drive an Update. A field the user set before and removed is still a
-	// difference. Fields whose unset value must keep meaning "empty" are
-	// listed with the field-level `compare.unset_means_empty`; the tag field
-	// always is. This is a maintainer setting, not a user-facing feature
-	// gate: it is enabled per controller once its resources have been
-	// reviewed for fields that need `compare.unset_means_empty`.
-	UnsetFieldsUnmanaged bool `json:"unset_fields_unmanaged,omitempty"`
+	// SkipRepeatedUpdates makes every resource of the controller skip an
+	// Update that would repeat the last successful one: when the spec, the
+	// values AWS reports and the resource's synced state are all unchanged
+	// since the last sync that ended Synced and Ready, a non-empty delta does
+	// not drive an Update. This stops perpetual deltas such as server
+	// defaults on unset fields, values AWS rewrites and lists AWS reorders.
+	// It is a maintainer setting, not a user-facing feature gate, enabled per
+	// controller.
+	SkipRepeatedUpdates bool `json:"skip_repeated_updates,omitempty"`
 	// SetManyOutputNotFoundErrReturn is the return statement when generated
 	// SetManyOutput function fails with NotFound error.
 	// Default is "return nil, ackerr.NotFound"
