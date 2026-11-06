@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"slices"
+	"sort"
 	"strings"
 	"time"
 
@@ -141,6 +142,7 @@ func buildAPI(shapes map[string]Shape) (*awssdkmodel.API, string, error) {
 			newApi.Documentation = awssdkmodel.AppendDocstring("", doc.(string))
 		case "operation":
 			newApi.Operations[name] = createApiOperation(shape, name, serviceAlias)
+			newApi.Waiters = append(newApi.Waiters, operationWaiters(shape, name)...)
 		case "structure":
 			addMemberRefs(newApi.Shapes[name], shape, serviceAlias)
 		case "list":
@@ -166,7 +168,23 @@ func buildAPI(shapes map[string]Shape) (*awssdkmodel.API, string, error) {
 
 	}
 
+	sort.Slice(newApi.Waiters, func(i, j int) bool { return newApi.Waiters[i].Name < newApi.Waiters[j].Name })
 	return &newApi, serviceAlias, nil
+}
+
+// operationWaiters returns the waiters an operation's smithy.waiters#waitable
+// trait defines, e.g. NatGatewayDeleted on DescribeNatGateways, by name only:
+// their acceptors aren't converted.
+func operationWaiters(shape Shape, operationName string) []awssdkmodel.Waiter {
+	waitable, ok := shape.Traits["smithy.waiters#waitable"].(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	waiters := make([]awssdkmodel.Waiter, 0, len(waitable))
+	for name := range waitable {
+		waiters = append(waiters, awssdkmodel.Waiter{Name: name, OperationName: operationName})
+	}
+	return waiters
 }
 
 // createApiOperation creates an awssdkmodel type Operation
