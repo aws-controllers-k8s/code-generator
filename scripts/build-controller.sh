@@ -243,6 +243,21 @@ if ! $ACK_GENERATE_BIN_PATH "${controller_args[@]}"; then
     exit 2
 fi
 
+# A controller opts in to Chainsaw e2e tests by adding this directory, with
+# an inputs.yaml in a subdirectory per resource. The e2e runner runs them
+# instead of pytest when it exists.
+chainsaw_tests_dir="$SERVICE_CONTROLLER_SOURCE_PATH/test/e2e/chainsaw"
+if [[ -d "$chainsaw_tests_dir" ]]; then
+    echo "Generating Chainsaw e2e tests for $SERVICE"
+    chainsaw_args=(chainsaw "${ag_args[@]}" --tests-dir "$chainsaw_tests_dir")
+    if [ -n "$ACK_GENERATE_API_VERSION" ]; then
+        chainsaw_args=("${chainsaw_args[@]}" --version "$ACK_GENERATE_API_VERSION")
+    fi
+    if ! $ACK_GENERATE_BIN_PATH "${chainsaw_args[@]}"; then
+        exit 2
+    fi
+fi
+
 pushd "$SERVICE_CONTROLLER_SOURCE_PATH/pkg/resource" 1>/dev/null
 echo "Running GO mod tidy"
 go mod tidy 1>/dev/null

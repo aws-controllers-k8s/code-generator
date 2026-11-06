@@ -276,3 +276,35 @@ func TestCreateApiShape_Integer(t *testing.T) {
 	assert.Equal("", apiShape.DefaultValue)
 	assert.False(apiShape.HasDefaultValue())
 }
+
+func TestBuildAPI_Waiters(t *testing.T) {
+	const alias = "examplesvc"
+	prefix := func(name string) string {
+		return "com.amazonaws." + alias + "#" + name
+	}
+	shapes := map[string]Shape{
+		prefix("ExampleService"): {
+			Type: "service",
+			Traits: map[string]interface{}{
+				"aws.api#service":          map[string]interface{}{"sdkId": "Example"},
+				"smithy.api#documentation": "Example service.",
+			},
+		},
+		prefix("DescribeThings"): {
+			Type: "operation",
+			Traits: map[string]interface{}{
+				"smithy.waiters#waitable": map[string]interface{}{
+					"ThingDeleted":   map[string]interface{}{},
+					"ThingAvailable": map[string]interface{}{},
+				},
+			},
+		},
+		prefix("CreateThing"): {Type: "operation"},
+	}
+	api, _, err := buildAPI(shapes)
+	require.NoError(t, err)
+	require.Len(t, api.Waiters, 2)
+	assert.Equal(t, "ThingAvailable", api.Waiters[0].Name)
+	assert.Equal(t, "DescribeThings", api.Waiters[0].OperationName)
+	assert.Equal(t, "ThingDeleted", api.Waiters[1].Name)
+}
