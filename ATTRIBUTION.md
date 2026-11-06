@@ -37,6 +37,7 @@ License version 2.0, we include the full text of the package's License below.
 * `k8s.io/apimachinery`
 * `sigs.k8s.io/controller-runtime`
 * `github.com/kubernetes-sigs/kro`
+* `gopkg.in/yaml.v3`
 * `k8s.io/apiextensions-apiserver`
 * `sigs.k8s.io/yaml`
 
@@ -3891,6 +3892,8 @@ License Identifier: Apache-2.0
 #### k8s.io/component-base
 
 License Identifier: Apache-2.0
+
+
 
 
 
