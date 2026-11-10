@@ -121,9 +121,6 @@ var shamelist = persistAPITypes{
 		"CreateSnapshot": {
 			output: true,
 		},
-		"CreateVolume": {
-			output: true,
-		},
 		"DetachVolume": {
 			output: true,
 		},

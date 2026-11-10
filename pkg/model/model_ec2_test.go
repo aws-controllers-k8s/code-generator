@@ -121,6 +121,10 @@ func TestEC2_Volume(t *testing.T) {
 	assert.Equal("volume", crd.Names.CamelLower)
 	assert.Equal("volume", crd.Names.Snake)
 
+	// aws-sdk-go-v2 names CreateVolume's output CreateVolumeOutput; there is
+	// no ec2.Volume output type to return from the create call.
+	assert.Equal("CreateVolumeOutput", crd.Ops.Create.OutputRef.ShapeName)
+
 	specFields := crd.SpecFields
 	statusFields := crd.StatusFields
 
