@@ -1,0 +1,64 @@
+# Applies a change to an existing CR and waits for the controller to reconcile
+# it. Fails as soon as the CR goes ACK.Terminal.
+#
+# ACK stamps ACK.ResourceSynced's lastTransitionTime on every reconcile, so a
+# timestamp newer than the one before the apply proves the controller has
+# processed the change. Without this, ResourceSynced could still be True from
+# the previous reconcile.
+#
+# Bindings: apiVersion, kind, name, plus file: the manifest to apply. The
+# manifest can use any binding of the test, e.g. ($namespace).
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: StepTemplate
+metadata:
+  name: apply-and-wait-reconciled
+spec:
+  try:
+  - description: Record when the CR was last reconciled
+    script:
+      env:
+      - name: API_VERSION
+        value: ($apiVersion)
+      - name: KIND
+        value: ($kind)
+      - name: NAME
+        value: ($name)
+      content: |
+        set -eu
+        # e.g. vpc.ec2.services.k8s.aws
+        resource="$(echo "$KIND" | tr '[:upper:]' '[:lower:]').${API_VERSION%/*}"
+        kubectl get "$resource" "$NAME" -n "$NAMESPACE" \
+          -o jsonpath='{.status.conditions[?(@.type=="ACK.ResourceSynced")].lastTransitionTime}'
+        # The timestamp has one-second resolution, so make sure the reconcile
+        # of the change can't finish within that same second
+        sleep 1
+      outputs:
+      - name: syncedBefore
+        value: (trim_space($stdout))
+  - description: Apply the change
+    apply:
+      file: ($file)
+  - description: Wait for a reconcile after the change, or for the CR to go Terminal
+    assert:
+      resource:
+        apiVersion: ($apiVersion)
+        kind: ($kind)
+        metadata:
+          name: ($name)
+        status:
+          (length((conditions || `[]`)[?(type == 'ACK.ResourceSynced' && status == 'True' && time_after(lastTransitionTime, $syncedBefore)) || (type == 'ACK.Terminal' && status == 'True')]) > `0`): true
+  - description: Fail if the CR is Terminal
+    error:
+      resource:
+        apiVersion: ($apiVersion)
+        kind: ($kind)
+        metadata:
+          name: ($name)
+        status:
+          (conditions[?type == 'ACK.Terminal']):
+          - status: 'True'
+  catch:
+  - describe:
+      apiVersion: ($apiVersion)
+      kind: ($kind)
+      name: ($name)

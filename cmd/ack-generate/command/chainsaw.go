@@ -16,6 +16,7 @@ package command
 import (
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -47,7 +48,7 @@ func init() {
 		&optChainsawTestsDir, "tests-dir", "", "directory holding one directory per resource with an inputs.yaml (default <output>/test/e2e/chainsaw)",
 	)
 	chainsawCmd.PersistentFlags().StringVar(
-		&optChainsawTemplatesDir, "templates-dir", "", "directory of the shared Chainsaw step templates (default <output>/test/e2e/chainsaw/_templates)",
+		&optChainsawTemplatesDir, "templates-dir", "", "directory to write the shared Chainsaw step templates to (default <output>/test/e2e/chainsaw/_templates)",
 	)
 	chainsawCmd.PersistentFlags().StringVar(
 		&optChainsawNamePrefix, "name-prefix", "", "prefix for the names of the generated Chainsaw tests",
@@ -88,6 +89,12 @@ func generateChainsaw(cmd *cobra.Command, args []string) error {
 	crds, err := m.GetCRDs()
 	if err != nil {
 		return err
+	}
+
+	if _, err := os.Stat(optChainsawTestsDir); err == nil {
+		if err := writeSuiteFiles(svcAlias); err != nil {
+			return err
+		}
 	}
 
 	// A resource whose test can't be generated doesn't stop the others; the
@@ -149,6 +156,50 @@ func generateChainsaw(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("couldn't generate tests for:\n  %s", strings.Join(failed, "\n  "))
 	}
 	return nil
+}
+
+// writeSuiteFiles writes the files the service's generated tests share: the
+// step templates, to the templates directory, and the suite's Chainsaw
+// configuration, to the tests directory. A hand-written file in place of one
+// of them is kept. Generated templates the generator no longer writes are
+// removed.
+func writeSuiteFiles(service string) error {
+	files, err := ackchainsaw.SuiteFiles(service)
+	if err != nil {
+		return err
+	}
+	names := make([]string, 0, len(files))
+	for name := range files {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	templates := map[string][]byte{}
+	for _, name := range names {
+		dest := filepath.Join(optChainsawTestsDir, filepath.FromSlash(name))
+		if path.Dir(name) == ackchainsaw.TemplatesDirName {
+			dest = filepath.Join(optChainsawTemplatesDir, path.Base(name))
+			templates[path.Base(name)] = files[name]
+		}
+		if optDryRun {
+			fmt.Printf("============================= %s ======================================\n", dest)
+			fmt.Println(strings.TrimSpace(string(files[name])))
+			continue
+		}
+		if err := os.MkdirAll(filepath.Dir(dest), 0o755); err != nil {
+			return err
+		}
+		written, err := ackchainsaw.WriteGeneratedFile(dest, files[name])
+		if err != nil {
+			return err
+		}
+		if !written {
+			fmt.Printf("keeping hand-written %s\n", dest)
+		}
+	}
+	if optDryRun {
+		return nil
+	}
+	return removeStaleFiles(optChainsawTemplatesDir, templates)
 }
 
 // removeStaleFiles removes the generated files in testDir that the generator
