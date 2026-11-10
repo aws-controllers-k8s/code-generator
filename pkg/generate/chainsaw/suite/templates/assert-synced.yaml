@@ -1,0 +1,38 @@
+# Waits for a CR to be ACK.ResourceSynced=True, and fails as soon as it goes
+# ACK.Terminal instead of waiting out the timeout.
+#
+# Bindings: apiVersion, kind, name.
+#
+# After an update, ResourceSynced can still be True from the previous
+# reconcile (ACK conditions have no observedGeneration), so this doesn't prove
+# a change was applied. Check the change on the AWS side.
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: StepTemplate
+metadata:
+  name: assert-synced
+spec:
+  try:
+  - description: Wait for the resource to be Synced or Terminal
+    assert:
+      resource:
+        apiVersion: ($apiVersion)
+        kind: ($kind)
+        metadata:
+          name: ($name)
+        status:
+          (length((conditions || `[]`)[?(type == 'ACK.ResourceSynced' || type == 'ACK.Terminal') && status == 'True']) > `0`): true
+  - description: Fail if the resource is Terminal
+    error:
+      resource:
+        apiVersion: ($apiVersion)
+        kind: ($kind)
+        metadata:
+          name: ($name)
+        status:
+          (conditions[?type == 'ACK.Terminal']):
+          - status: 'True'
+  catch:
+  - describe:
+      apiVersion: ($apiVersion)
+      kind: ($kind)
+      name: ($name)

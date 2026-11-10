@@ -1,0 +1,101 @@
+# Deletes a CR, waits for it to be gone from the cluster, then waits for its
+# AWS resource to be gone, for up to the suite's exec timeout.
+#
+# Bindings: apiVersion, kind, name, idPath (kubectl JSONPath to the AWS ID in
+# the CR, e.g. {.status.vpcID}), plus
+# - describeCommand: an AWS CLI call that describes the resource, using $AWS_ID
+# - notFoundCode: the error code describeCommand fails with once the resource
+#   is gone, e.g. InvalidVpcID.NotFound. Any other error doesn't count.
+# - deletedQuery (optional): a JMESPath expression over describeCommand's
+#   output that's true once the resource is gone, for resources AWS keeps
+#   describing after deletion, e.g. a terminated instance. Either it or
+#   notFoundCode counts as gone.
+# - waitCommand (optional): an AWS CLI waiter for the resource being deleted,
+#   e.g. `aws ec2 wait nat-gateway-deleted --nat-gateway-ids $AWS_ID`, from the
+#   API model. When set, it's used instead of describeCommand.
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: StepTemplate
+metadata:
+  name: delete
+spec:
+  bindings:
+  - name: notFoundCode
+    value: ''
+  - name: deletedQuery
+    value: ''
+  - name: waitCommand
+    value: ''
+  try:
+  - description: Record the AWS ID before the CR is gone
+    script:
+      env:
+      - name: API_VERSION
+        value: ($apiVersion)
+      - name: KIND
+        value: ($kind)
+      - name: NAME
+        value: ($name)
+      - name: ID_PATH
+        value: ($idPath)
+      content: |
+        set -eu
+        # e.g. vpc.ec2.services.k8s.aws
+        resource="$(echo "$KIND" | tr '[:upper:]' '[:lower:]').${API_VERSION%/*}"
+        kubectl get "$resource" "$NAME" -n "$NAMESPACE" -o jsonpath="$ID_PATH"
+      outputs:
+      - name: awsID
+        value: (trim_space($stdout))
+  - description: Delete the CR and wait for its finalizer to come off
+    delete:
+      ref:
+        apiVersion: ($apiVersion)
+        kind: ($kind)
+        name: ($name)
+  - description: Wait for the AWS resource to be gone
+    script:
+      env:
+      - name: AWS_ID
+        value: ($awsID)
+      - name: DESCRIBE_COMMAND
+        value: ($describeCommand)
+      - name: NOT_FOUND_CODE
+        value: ($notFoundCode)
+      - name: DELETED_QUERY
+        value: ($deletedQuery)
+      - name: WAIT_COMMAND
+        value: ($waitCommand)
+      - name: AWS_DEFAULT_OUTPUT
+        value: json
+      - name: AWS_RETRY_MODE
+        value: adaptive
+      content: |
+        set -u
+        [ -n "$AWS_ID" ] || { echo "no AWS ID was recorded before deletion" >&2; exit 1; }
+        export AWS_ID DELETED_QUERY
+        if [ -n "$WAIT_COMMAND" ]; then
+          exec sh -c "$WAIT_COMMAND"
+        fi
+        # Polls until the resource is gone; the suite's exec timeout bounds it
+        while :; do
+          if [ -n "$DELETED_QUERY" ]; then
+            # The query goes through the environment, so its quotes survive
+            if out=$(sh -c "$DESCRIBE_COMMAND --query \"\$DELETED_QUERY\"" 2>&1); then
+              [ "$out" = true ] && exit 0
+            elif [ -n "$NOT_FOUND_CODE" ]; then
+              case "$out" in *"$NOT_FOUND_CODE"*) exit 0 ;; esac
+            fi
+          elif ! out=$(sh -c "$DESCRIBE_COMMAND" 2>&1); then
+            case "$out" in *"$NOT_FOUND_CODE"*) exit 0 ;; esac
+          fi
+          # The last state, in case the exec timeout ends the wait
+          printf '%s\n' "$out" > "${TMPDIR:-/tmp}/ack-delete-$NAMESPACE.last"
+          sleep 2
+        done
+  catch:
+  - script:
+      content: |
+        echo "Last describe output while waiting for the AWS resource to be gone:"
+        cat "${TMPDIR:-/tmp}/ack-delete-$NAMESPACE.last" 2>/dev/null || echo "(none)"
+  finally:
+  - script:
+      content: rm -f "${TMPDIR:-/tmp}/ack-delete-$NAMESPACE.last"
