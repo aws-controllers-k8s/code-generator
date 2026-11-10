@@ -25,10 +25,10 @@ import (
 )
 
 func TestSuiteFiles(t *testing.T) {
-	files, err := SuiteFiles("s3")
+	files, err := SuiteFiles()
 	require.NoError(t, err)
 
-	// The step templates the generated tests use, and the configuration
+	// The step templates the generated tests use
 	var names []string
 	for name := range files {
 		names = append(names, name)
@@ -37,19 +37,26 @@ func TestSuiteFiles(t *testing.T) {
 		"_templates/apply-and-wait-reconciled.yaml",
 		"_templates/assert-synced.yaml",
 		"_templates/delete.yaml",
-		".chainsaw.yaml",
 	}, names)
 
 	for name, content := range files {
 		assert.True(t, strings.HasPrefix(string(content), GeneratedHeader), name)
 		var doc map[string]interface{}
 		require.NoError(t, yaml.Unmarshal(content, &doc), name)
-		if strings.HasPrefix(name, TemplatesDirName+"/") {
-			assert.Equal(t, "StepTemplate", doc["kind"], name)
-		}
+		assert.Equal(t, "StepTemplate", doc["kind"], name)
 	}
+}
 
-	config := string(files[ConfigFileName])
+func TestScaffoldConfig(t *testing.T) {
+	b, err := ScaffoldConfig("s3")
+	require.NoError(t, err)
+	config := string(b)
+
+	// The controller's own file from the start: no generated header
+	assert.False(t, strings.HasPrefix(config, GeneratedHeader))
+	var doc map[string]interface{}
+	require.NoError(t, yaml.Unmarshal(b, &doc))
+	assert.Equal(t, "Configuration", doc["kind"])
 	assert.Contains(t, config, "name: s3-controller")
 	assert.Contains(t, config, "selector: app.kubernetes.io/name=ack-s3-controller")
 	assert.NotContains(t, config, "{{")

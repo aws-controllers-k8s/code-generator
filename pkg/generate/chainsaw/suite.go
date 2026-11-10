@@ -25,7 +25,8 @@ import (
 )
 
 // suiteFS holds the files every controller's generated tests share: the step
-// templates they use, and the suite's Chainsaw configuration.
+// templates they use, and the starting point for the suite's Chainsaw
+// configuration.
 //
 //go:embed suite/templates/*.yaml suite/chainsaw.yaml.tpl
 var suiteFS embed.FS
@@ -39,11 +40,10 @@ const (
 	ConfigFileName = ".chainsaw.yaml"
 )
 
-// SuiteFiles returns the files a service's generated tests share, by path
-// relative to the tests directory: the step templates in _templates/ and the
-// suite's .chainsaw.yaml. They're the same for every service, apart from the
-// service's name in the configuration. Each starts with GeneratedHeader.
-func SuiteFiles(service string) (map[string][]byte, error) {
+// SuiteFiles returns the step templates the generated tests share, by path
+// relative to the tests directory, e.g. _templates/delete.yaml. They're the
+// same for every service. Each starts with GeneratedHeader.
+func SuiteFiles() (map[string][]byte, error) {
 	files := map[string][]byte{}
 	templates, err := fs.Glob(suiteFS, "suite/templates/*.yaml")
 	if err != nil {
@@ -56,18 +56,23 @@ func SuiteFiles(service string) (map[string][]byte, error) {
 		}
 		files[path.Join(TemplatesDirName, path.Base(p))] = append([]byte(GeneratedHeader), b...)
 	}
+	return files, nil
+}
 
+// ScaffoldConfig returns a starting .chainsaw.yaml for the service's tests.
+// Unlike the generated files, it's written only when the controller has none,
+// and has no GeneratedHeader: it's the controller's to edit, since timeouts
+// and parallelism depend on the service's resources and the account's quotas.
+func ScaffoldConfig(service string) ([]byte, error) {
 	config, err := template.ParseFS(suiteFS, "suite/chainsaw.yaml.tpl")
 	if err != nil {
 		return nil, err
 	}
 	var b bytes.Buffer
-	b.WriteString(GeneratedHeader)
 	if err := config.Execute(&b, struct{ Service string }{service}); err != nil {
 		return nil, fmt.Errorf("rendering %s: %w", ConfigFileName, err)
 	}
-	files[ConfigFileName] = b.Bytes()
-	return files, nil
+	return b.Bytes(), nil
 }
 
 // WriteGeneratedFile writes content to path, unless path holds a file that

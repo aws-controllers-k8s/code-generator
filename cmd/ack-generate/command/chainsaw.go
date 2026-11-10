@@ -48,7 +48,7 @@ func init() {
 		&optChainsawTestsDir, "tests-dir", "", "directory holding one directory per resource with an inputs.yaml (default <output>/test/e2e/chainsaw)",
 	)
 	chainsawCmd.PersistentFlags().StringVar(
-		&optChainsawTemplatesDir, "templates-dir", "", "directory to write the shared Chainsaw step templates to (default <output>/test/e2e/chainsaw/_templates)",
+		&optChainsawTemplatesDir, "templates-dir", "", "directory to write the shared Chainsaw step templates to (default <tests-dir>/_templates)",
 	)
 	chainsawCmd.PersistentFlags().StringVar(
 		&optChainsawNamePrefix, "name-prefix", "", "prefix for the names of the generated Chainsaw tests",
@@ -71,7 +71,16 @@ func generateChainsaw(cmd *cobra.Command, args []string) error {
 		optChainsawTestsDir = filepath.Join(optOutputPath, "test", "e2e", "chainsaw")
 	}
 	if optChainsawTemplatesDir == "" {
-		optChainsawTemplatesDir = filepath.Join(optOutputPath, "test", "e2e", "chainsaw", "_templates")
+		optChainsawTemplatesDir = filepath.Join(optChainsawTestsDir, ackchainsaw.TemplatesDirName)
+	}
+	// The tests refer to the templates by a path relative to their directory,
+	// which needs both to be absolute, or both relative to the same place
+	for _, dir := range []*string{&optChainsawTestsDir, &optChainsawTemplatesDir} {
+		abs, err := filepath.Abs(*dir)
+		if err != nil {
+			return err
+		}
+		*dir = abs
 	}
 
 	cfg, err := setupGenerator(svcAlias)
@@ -158,13 +167,13 @@ func generateChainsaw(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-// writeSuiteFiles writes the files the service's generated tests share: the
-// step templates, to the templates directory, and the suite's Chainsaw
-// configuration, to the tests directory. A hand-written file in place of one
-// of them is kept. Generated templates the generator no longer writes are
-// removed.
+// writeSuiteFiles writes the step templates the service's generated tests
+// share, to the templates directory, keeping a hand-written file in place of
+// one, and removes generated templates the generator no longer writes. It also
+// writes a starting .chainsaw.yaml if the tests directory has none; an
+// existing one is the controller's, and is left as it is.
 func writeSuiteFiles(service string) error {
-	files, err := ackchainsaw.SuiteFiles(service)
+	files, err := ackchainsaw.SuiteFiles()
 	if err != nil {
 		return err
 	}
@@ -175,11 +184,8 @@ func writeSuiteFiles(service string) error {
 	sort.Strings(names)
 	templates := map[string][]byte{}
 	for _, name := range names {
-		dest := filepath.Join(optChainsawTestsDir, filepath.FromSlash(name))
-		if path.Dir(name) == ackchainsaw.TemplatesDirName {
-			dest = filepath.Join(optChainsawTemplatesDir, path.Base(name))
-			templates[path.Base(name)] = files[name]
-		}
+		dest := filepath.Join(optChainsawTemplatesDir, path.Base(name))
+		templates[path.Base(name)] = files[name]
 		if optDryRun {
 			fmt.Printf("============================= %s ======================================\n", dest)
 			fmt.Println(strings.TrimSpace(string(files[name])))
@@ -199,7 +205,25 @@ func writeSuiteFiles(service string) error {
 	if optDryRun {
 		return nil
 	}
-	return removeStaleFiles(optChainsawTemplatesDir, templates)
+	if err := removeStaleFiles(optChainsawTemplatesDir, templates); err != nil {
+		return err
+	}
+
+	config := filepath.Join(optChainsawTestsDir, ackchainsaw.ConfigFileName)
+	if _, err := os.Stat(config); err == nil {
+		return nil
+	} else if !os.IsNotExist(err) {
+		return err
+	}
+	scaffold, err := ackchainsaw.ScaffoldConfig(service)
+	if err != nil {
+		return err
+	}
+	if err := os.WriteFile(config, scaffold, 0o644); err != nil {
+		return err
+	}
+	fmt.Printf("wrote a starting %s; it's this controller's to edit, and won't be regenerated\n", config)
+	return nil
 }
 
 // removeStaleFiles removes the generated files in testDir that the generator
