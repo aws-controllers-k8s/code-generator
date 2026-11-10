@@ -66,7 +66,7 @@ func loadModelWithLatestAPIVersion(svcAlias string, metadata *ackmetadata.Servic
 	if err != nil {
 		return nil, err
 	}
-	return loadModel(svcAlias, latestAPIVersion, "", cfg)
+	return loadModel(svcAlias, latestAPIVersion, optAPIGroupSuffix, cfg)
 }
 
 // loadModel finds the AWS SDK for a given service alias and creates a new model
