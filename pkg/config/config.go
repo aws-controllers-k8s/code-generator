@@ -37,6 +37,15 @@ type Config struct {
 	// IncludeACKMetadata lets you specify whether ACK Metadata should be included
 	// in the status. Default is true.
 	IncludeACKMetadata bool `json:"include_ack_metadata,omitempty"`
+	// SkipRepeatedUpdates makes every resource of the controller skip an
+	// Update that would repeat the last successful one: when the spec, the
+	// values AWS reports and the resource's synced state are all unchanged
+	// since the last sync that ended Synced and Ready, a non-empty delta does
+	// not drive an Update. This stops perpetual deltas such as server
+	// defaults on unset fields, values AWS rewrites and lists AWS reorders.
+	// It is a maintainer setting, not a user-facing feature gate, enabled per
+	// controller.
+	SkipRepeatedUpdates bool `json:"skip_repeated_updates,omitempty"`
 	// SetManyOutputNotFoundErrReturn is the return statement when generated
 	// SetManyOutput function fails with NotFound error.
 	// Default is "return nil, ackerr.NotFound"
