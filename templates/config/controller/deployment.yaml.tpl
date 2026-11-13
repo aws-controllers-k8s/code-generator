@@ -44,6 +44,9 @@ spec:
         - --feature-gates
         - "$(FEATURE_GATES)"
         - --enable-carm=$(ENABLE_CARM)
+        - --lazy-bind-reconcilers=$(LAZY_BIND_RECONCILERS)
+        - --lazy-bind-retry-interval
+        - "$(LAZY_BIND_RETRY_INTERVAL)"
         image: controller:latest
         name: controller
         ports:
@@ -83,6 +86,10 @@ spec:
           value: ""
         - name: "ENABLE_CARM"
           value: "true"
+        - name: "LAZY_BIND_RECONCILERS"
+          value: "false"
+        - name: "LAZY_BIND_RETRY_INTERVAL"
+          value: "10"
         securityContext:
           allowPrivilegeEscalation: false
           privileged: false
