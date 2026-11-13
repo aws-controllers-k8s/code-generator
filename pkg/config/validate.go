@@ -47,6 +47,7 @@ func ValidateConfig(
 	errs = append(errs, validateRenameOperations(cfg, sdkOperations)...)
 	errs = append(errs, validateIgnoredOperations(cfg, sdkOperations)...)
 	errs = append(errs, validateMutuallyExclusiveIdentifiers(cfg)...)
+	errs = append(errs, validateSpecValidations(cfg)...)
 
 	return errs
 }
@@ -92,6 +93,27 @@ func validateMutuallyExclusiveIdentifiers(cfg *Config) []error {
 				"resources.%s.mutually_exclusive_identifiers: cannot be combined with is_arn_primary_key",
 				resName,
 			))
+		}
+	}
+	return errs
+}
+
+func validateSpecValidations(cfg *Config) []error {
+	var errs []error
+	for resourceName, resourceConfig := range cfg.Resources {
+		for index, validation := range resourceConfig.SpecValidations {
+			if strings.TrimSpace(validation.Rule) == "" {
+				errs = append(errs, fmt.Errorf(
+					"resources.%s.spec_validations[%d].rule: must not be empty",
+					resourceName, index,
+				))
+			}
+			if strings.TrimSpace(validation.Message) == "" {
+				errs = append(errs, fmt.Errorf(
+					"resources.%s.spec_validations[%d].message: must not be empty",
+					resourceName, index,
+				))
+			}
 		}
 	}
 	return errs
