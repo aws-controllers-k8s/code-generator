@@ -330,3 +330,16 @@ func TestUncomparedMarshalFailureIsAChange(t *testing.T) {
 	assert.Equal(t, "spec.x", c.Field)
 	assert.Contains(t, c.New, "cannot serialize")
 }
+
+// kro reports a version no longer served, not one newly served.
+func TestUncomparedServedTurnedOn(t *testing.T) {
+	off := crd(map[string]v1.JSONSchemaProps{"x": str()})
+	off.Spec.Versions[0].Served = false
+	on := crd(map[string]v1.JSONSchemaProps{"x": str()})
+	c := uncomparedOnly(t, off, on)
+	assert.Equal(t, "version.served", c.Path)
+	assert.Equal(t, BucketOther, c.Bucket)
+	assert.Equal(t, ChangeUncomparedChanged, c.ChangeType)
+	assert.False(t, c.Breaking)
+	assert.Empty(t, Uncompared("f.yaml", "Widget", on, off), "kro reports it")
+}

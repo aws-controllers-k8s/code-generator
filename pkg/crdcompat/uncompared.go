@@ -104,6 +104,10 @@ func (u *uncompared) crd(old, new *v1.CustomResourceDefinition) {
 
 // version compares a version's settings other than the ones kro compares.
 func (u *uncompared) version(old, new v1.CustomResourceDefinitionVersion) {
+	if !old.Served && new.Served {
+		// kro reports only served going away.
+		u.emit("version.served", BucketOther, "served", false)
+	}
 	osub, nsub := old.Subresources, new.Subresources
 	for _, v := range []*v1.CustomResourceDefinitionVersion{&old, &new} {
 		v.Name, v.Served, v.Schema, v.Subresources = "", false, nil, nil
