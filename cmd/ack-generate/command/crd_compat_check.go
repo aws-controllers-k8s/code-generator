@@ -21,6 +21,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 
@@ -48,6 +49,14 @@ changes are detected.
 
 By default it checks config/crd/bases and helm/crds against the
 main branch. Run it from the repository root.
+
+Besides what kro's compat library compares (description, type, pattern,
+properties, required, enum, items, version name/served/status), any other
+difference in a CRD present on both sides is reported as
+UNCOMPARED_CHANGED: other schema keywords (maxLength, default, CEL rules,
+an enum added where there was none, map value schemas), and CRD or version
+settings (group, scope, names, conversion, printer columns, ...). A change
+to group, scope, names.kind or names.plural is breaking.
 
 --output json prints one ack.crd-compat/v1 document to stdout: every
 change sorted into buckets (added_optional_spec, added_status,
@@ -183,27 +192,40 @@ func runCRDCompat(w io.Writer, baseRef string, dirs []string, output string) (bo
 		}
 
 		checked++
-		changes := crdcompat.Classify(file, kind, report)
+		// kro compares only some of a CRD; residual is everything else.
+		residual := crdcompat.Uncompared(file, kind, &oldCRD, &newCRD)
+		changes := append(crdcompat.Classify(file, kind, report), residual...)
 		res.AddChanges(changes...)
 		res.AddSensitive(crdcompat.SensitiveFields(file, kind, firstSchema(newCRD), changes)...)
 		status := crdcompat.FileUnchanged
-		if report.HasChanges() {
+		if len(changes) > 0 {
 			status = crdcompat.FileChanged
 		}
 		res.AddFile(crdcompat.FileResult{File: file, Kind: kind, Status: status})
 		if !text {
 			continue
 		}
+		residualBreaking := slices.ContainsFunc(residual, func(c crdcompat.Change) bool { return c.Breaking })
 		switch {
-		case report.HasBreakingChanges():
+		case report.HasBreakingChanges() || residualBreaking:
 			fmt.Fprintf(w, "FAIL %s\n", file)
 			for _, c := range report.BreakingChanges {
 				fmt.Fprintf(w, "  BREAKING: [%s] %s\n", c.Path, c.Description())
 			}
+			for _, c := range residual {
+				if c.Breaking {
+					fmt.Fprintf(w, "  BREAKING: [%s] %s\n", c.Path, c.Description())
+				}
+			}
 			for _, c := range report.NonBreakingChanges {
 				fmt.Fprintf(w, "  ok:       [%s] %s\n", c.Path, c.Description())
 			}
-		case report.HasChanges():
+			for _, c := range residual {
+				if !c.Breaking {
+					fmt.Fprintf(w, "  ok:       [%s] %s\n", c.Path, c.Description())
+				}
+			}
+		case len(changes) > 0:
 			fmt.Fprintf(w, "OK   %s (non-breaking changes only)\n", file)
 		default:
 			fmt.Fprintf(w, "OK   %s (no changes)\n", file)

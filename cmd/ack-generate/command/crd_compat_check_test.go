@@ -62,6 +62,13 @@ func str() v1.JSONSchemaProps { return v1.JSONSchemaProps{Type: "string"} }
 // writeCRD writes a one-version CRD for kind with the given spec properties.
 func writeCRD(t *testing.T, file, kind string, spec map[string]v1.JSONSchemaProps) {
 	t.Helper()
+	writeCRDWith(t, file, kind, spec, nil)
+}
+
+// writeCRDWith is writeCRD with mutate applied to the CRD before writing.
+func writeCRDWith(t *testing.T, file, kind string, spec map[string]v1.JSONSchemaProps,
+	mutate func(*v1.CustomResourceDefinition)) {
+	t.Helper()
 	crd := v1.CustomResourceDefinition{}
 	crd.APIVersion = "apiextensions.k8s.io/v1"
 	crd.Kind = "CustomResourceDefinition"
@@ -77,6 +84,9 @@ func writeCRD(t *testing.T, file, kind string, spec map[string]v1.JSONSchemaProp
 			},
 		}},
 	}}
+	if mutate != nil {
+		mutate(&crd)
+	}
 	data, err := yaml.Marshal(crd)
 	require.NoError(t, err)
 	require.NoError(t, os.MkdirAll(filepath.Dir(file), 0o755))
@@ -228,4 +238,58 @@ func TestCRDCompatHeadFileNoLongerACRDIsRemoved(t *testing.T) {
 			assert.Contains(t, text.String(), "FAIL "+file+"\n  BREAKING: CRD removed ("+tc.reason)
 		})
 	}
+}
+
+// Changes kro does not compare still make a file changed, and land in a
+// bucket a gate cannot pass as additive.
+func TestCRDCompatReportsUncomparedChanges(t *testing.T) {
+	newRepo(t)
+	file := crdDir + "/widgets.yaml"
+	max := func(n int64) v1.JSONSchemaProps { s := str(); s.MaxLength = &n; return s }
+	writeCRD(t, file, "Widget", map[string]v1.JSONSchemaProps{"name": max(5)})
+	commitAll(t)
+	writeCRD(t, file, "Widget", map[string]v1.JSONSchemaProps{"name": max(10)})
+
+	res, breaking := runJSON(t, "main")
+	assert.False(t, breaking)
+	assert.Equal(t, []crdcompat.FileResult{{File: file, Kind: "Widget", Status: crdcompat.FileChanged}}, res.Files)
+	require.Len(t, res.Buckets[crdcompat.BucketOther], 1)
+	c := res.Buckets[crdcompat.BucketOther][0]
+	assert.Equal(t, "spec.name", c.Field)
+	assert.Equal(t, crdcompat.ChangeUncomparedChanged, c.ChangeType)
+	assert.Equal(t, "maxLength", c.New)
+
+	var text bytes.Buffer
+	breaking, err := runCRDCompat(&text, "main", []string{crdDir}, "text")
+	require.NoError(t, err)
+	assert.False(t, breaking)
+	assert.Contains(t, text.String(), "OK   "+file+" (non-breaking changes only)\n")
+}
+
+func TestCRDCompatUncomparedBreakingScope(t *testing.T) {
+	newRepo(t)
+	file := crdDir + "/widgets.yaml"
+	spec := map[string]v1.JSONSchemaProps{"name": str()}
+	writeCRDWith(t, file, "Widget", spec, func(c *v1.CustomResourceDefinition) { c.Spec.Scope = v1.NamespaceScoped })
+	commitAll(t)
+	writeCRDWith(t, file, "Widget", spec, func(c *v1.CustomResourceDefinition) {
+		c.Spec.Scope = v1.ClusterScoped
+		c.Spec.Versions[0].AdditionalPrinterColumns = []v1.CustomResourceColumnDefinition{
+			{Name: "ARN", Type: "string", JSONPath: ".status.arn"}}
+	})
+
+	res, breaking := runJSON(t, "main")
+	assert.True(t, breaking)
+	assert.True(t, res.Breaking)
+	assert.Equal(t, crdcompat.FileChanged, res.Files[0].Status)
+	require.Len(t, res.Buckets[crdcompat.BucketOther], 2)
+
+	var text bytes.Buffer
+	breaking, err := runCRDCompat(&text, "main", []string{crdDir}, "text")
+	require.NoError(t, err)
+	assert.True(t, breaking)
+	assert.Contains(t, text.String(), "FAIL "+file+"\n")
+	assert.Contains(t, text.String(), "  BREAKING: [spec.scope] Uncompared change: scope\n")
+	assert.Contains(t, text.String(),
+		"  ok:       [version.additionalPrinterColumns] Uncompared change: additionalPrinterColumns\n")
 }

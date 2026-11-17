@@ -24,6 +24,11 @@ import (
 
 // Change buckets. A change type this package does not know goes to
 // BucketOther, which a gate must not treat as additive.
+//
+// BucketDefaultChanged holds schema nodes whose only uncompared difference is
+// default (kro declares DEFAULT_CHANGED but never emits it). BucketOther also
+// holds every other UNCOMPARED_CHANGED change (see Uncompared): schema
+// keywords kro does not compare, and CRD or version settings.
 const (
 	BucketAddedOptionalSpec   = "added_optional_spec"
 	BucketAddedStatus         = "added_status"
@@ -73,7 +78,8 @@ type Change struct {
 	Breaking bool `json:"breaking"`
 }
 
-// Classify converts kro's report for one CRD file into bucketed changes.
+// Classify converts kro's report for one CRD file into bucketed changes. kro
+// does not compare everything; Uncompared reports the rest.
 func Classify(file, kind string, r *kro.Report) []Change {
 	out := make([]Change, 0, len(r.BreakingChanges)+len(r.NonBreakingChanges))
 	for _, c := range r.BreakingChanges {
@@ -147,7 +153,8 @@ func under(field, top string) bool {
 }
 
 // FieldPath turns kro's schema path into a field path:
-// ".properties.spec.properties.tags.items.properties.key" is "spec.tags[].key".
+// ".properties.spec.properties.tags.items.properties.key" is "spec.tags[].key",
+// and a map's values, ".additionalProperties", are "{}" ("spec.labels{}").
 // A change to an attribute (description, type, pattern, enum) names its
 // property, and a required-list change names the member that changed. Paths
 // kro builds outside the schema ("version.served") are returned unchanged.
@@ -173,6 +180,13 @@ func FieldPath(c kro.Change) string {
 				parts[len(parts)-1] += "[]"
 			} else {
 				parts = append(parts, "[]")
+			}
+		case "additionalProperties":
+			// kro never builds this; Uncompared does, for a map's values.
+			if len(parts) > 0 {
+				parts[len(parts)-1] += "{}"
+			} else {
+				parts = append(parts, "{}")
 			}
 		case "required":
 			member := c.NewValue
