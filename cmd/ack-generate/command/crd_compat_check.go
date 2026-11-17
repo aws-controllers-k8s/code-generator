@@ -14,6 +14,7 @@
 package command
 
 import (
+	"bufio"
 	"bytes"
 	"errors"
 	"fmt"
@@ -27,6 +28,7 @@ import (
 
 	"github.com/spf13/cobra"
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	k8syaml "k8s.io/apimachinery/pkg/util/yaml"
 	"sigs.k8s.io/yaml"
 
 	"github.com/aws-controllers-k8s/code-generator/pkg/crdcompat"
@@ -161,6 +163,10 @@ func runCRDCompat(w io.Writer, baseRef string, dirs []string, output string) (bo
 			}
 			return nil
 		}
+		newData, err = onlyDocument(file, newData)
+		if err != nil {
+			return false, err
+		}
 		var newCRD v1.CustomResourceDefinition
 		if err := yaml.Unmarshal(newData, &newCRD); err != nil {
 			if err := skip(fmt.Sprintf("not a valid CRD (%v)", err)); err != nil {
@@ -189,6 +195,9 @@ func runCRDCompat(w io.Writer, baseRef string, dirs []string, output string) (bo
 		oldData, err := gitShow(baseRef, file)
 		if err != nil {
 			return false, err
+		}
+		if oldData, err = onlyDocument(file, oldData); err != nil {
+			return false, fmt.Errorf("%w at %s", err, baseRef)
 		}
 		var oldCRD v1.CustomResourceDefinition
 		if err := yaml.Unmarshal(oldData, &oldCRD); err != nil {
@@ -378,10 +387,50 @@ func baseCRD(ref, file string) (v1.CustomResourceDefinition, bool, error) {
 	if err != nil {
 		return crd, false, err
 	}
+	if data, err = onlyDocument(file, data); err != nil {
+		return crd, false, fmt.Errorf("%w at %s", err, ref)
+	}
 	if err := yaml.Unmarshal(data, &crd); err != nil || crd.Kind != "CustomResourceDefinition" {
 		return crd, false, nil
 	}
 	return crd, true, nil
+}
+
+// onlyDocument returns the one non-empty YAML document in data (or an empty
+// one). yaml.Unmarshal reads only the first document, so a second CRD in a
+// file would go unchecked: more than one non-empty document is an error.
+// A document holding only comments or whitespace is empty.
+func onlyDocument(file string, data []byte) ([]byte, error) {
+	r := k8syaml.NewYAMLReader(bufio.NewReader(bytes.NewReader(data)))
+	var found []byte
+	n := 0
+	for {
+		doc, err := r.Read()
+		if errors.Is(err, io.EOF) {
+			break
+		}
+		if err != nil {
+			return nil, fmt.Errorf("reading %s: %w", file, err)
+		}
+		if emptyDocument(doc) {
+			continue
+		}
+		if n++; n > 1 {
+			return nil, fmt.Errorf("multiple YAML documents in %s; one CRD per file is required", file)
+		}
+		found = doc
+	}
+	return found, nil
+}
+
+func emptyDocument(doc []byte) bool {
+	for _, line := range strings.Split(string(doc), "\n") {
+		line = strings.TrimSpace(line)
+		if line != "" && line != "---" && !strings.HasPrefix(line, "#") {
+			return false
+		}
+	}
+	return true
 }
 
 // verifyCommit fails unless ref names a commit. Without this check a typo in

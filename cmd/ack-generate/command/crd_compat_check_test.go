@@ -394,3 +394,56 @@ func TestCRDCompatHelpStatesExitAndJSONContract(t *testing.T) {
 	assert.Contains(t, crdCompatCheckCmd.Long, "Exits 1 when breaking changes are detected or on an error.")
 	assert.Contains(t, crdCompatCheckCmd.Long, "printed if and only if the analysis completed")
 }
+
+// yaml.Unmarshal reads only a file's first document, so anything after it
+// would go unchecked. One CRD per file is required.
+func TestCRDCompatMultipleDocuments(t *testing.T) {
+	spec := map[string]v1.JSONSchemaProps{"name": str()}
+	appendDoc := func(t *testing.T, file string) {
+		t.Helper()
+		data, err := os.ReadFile(file)
+		require.NoError(t, err)
+		require.NoError(t, os.WriteFile(file, append(data, []byte("---\nkind: ConfigMap\n")...), 0o644))
+	}
+	t.Run("head", func(t *testing.T) {
+		newRepo(t)
+		file := crdDir + "/widgets.yaml"
+		writeCRD(t, file, "Widget", spec)
+		commitAll(t)
+		appendDoc(t, file)
+		_, err := runCRDCompat(&bytes.Buffer{}, "main", []string{crdDir}, "json")
+		assert.ErrorContains(t, err, "multiple YAML documents in "+file+"; one CRD per file is required")
+	})
+	t.Run("base", func(t *testing.T) {
+		newRepo(t)
+		file := crdDir + "/widgets.yaml"
+		writeCRD(t, file, "Widget", spec)
+		appendDoc(t, file)
+		commitAll(t)
+		writeCRD(t, file, "Widget", spec)
+		_, err := runCRDCompat(&bytes.Buffer{}, "main", []string{crdDir}, "json")
+		assert.ErrorContains(t, err, "multiple YAML documents in "+file+"; one CRD per file is required")
+	})
+	t.Run("base, deleted on disk", func(t *testing.T) {
+		newRepo(t)
+		file := crdDir + "/widgets.yaml"
+		writeCRD(t, file, "Widget", spec)
+		appendDoc(t, file)
+		writeCRD(t, crdDir+"/other.yaml", "Other", spec)
+		commitAll(t)
+		require.NoError(t, os.Remove(file))
+		_, err := runCRDCompat(&bytes.Buffer{}, "main", []string{crdDir}, "json")
+		assert.ErrorContains(t, err, "multiple YAML documents in "+file)
+	})
+	t.Run("empty documents are fine", func(t *testing.T) {
+		newRepo(t)
+		file := crdDir + "/widgets.yaml"
+		writeCRD(t, file, "Widget", spec)
+		data, err := os.ReadFile(file)
+		require.NoError(t, err)
+		require.NoError(t, os.WriteFile(file, append([]byte("---\n# comment\n---\n"), append(data, "---\n"...)...), 0o644))
+		commitAll(t)
+		res := runJSONDirs(t, crdDir)
+		assert.Equal(t, []crdcompat.FileResult{{File: file, Kind: "Widget", Status: crdcompat.FileUnchanged}}, res.Files)
+	})
+}
