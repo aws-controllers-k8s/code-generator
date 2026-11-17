@@ -56,6 +56,7 @@ func Uncompared(file, kind string, old, new *v1.CustomResourceDefinition) []Chan
 			u.version(ov, nv)
 			if ov.Schema != nil && nv.Schema != nil {
 				u.schema("", ov.Schema.OpenAPIV3Schema, nv.Schema.OpenAPIV3Schema)
+				tightenUnderOpenParents(u.out, ov.Schema.OpenAPIV3Schema)
 			}
 		}
 	}

@@ -211,7 +211,7 @@ func runCRDCompat(w io.Writer, baseRef string, dirs []string, output string) (bo
 		checked++
 		// kro compares only some of a CRD; residual is everything else.
 		residual := crdcompat.Uncompared(file, kind, &oldCRD, &newCRD)
-		changes := append(crdcompat.Classify(file, kind, report), residual...)
+		changes := append(crdcompat.ClassifyWithBase(file, kind, report, firstSchema(oldCRD)), residual...)
 		res.AddChanges(changes...)
 		res.AddSensitive(crdcompat.SensitiveFields(file, kind, firstSchema(newCRD), changes)...)
 		status := crdcompat.FileUnchanged

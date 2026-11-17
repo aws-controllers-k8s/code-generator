@@ -134,10 +134,13 @@ func lastName(field string) string {
 	return field
 }
 
-// schemaAt resolves kro's schema path in root, or returns nil when the path
-// does not lead to a schema node.
+// schemaAt resolves kro's schema path in root ("" is root itself), or
+// returns nil when the path does not lead to a schema node.
 func schemaAt(root *v1.JSONSchemaProps, path string) *v1.JSONSchemaProps {
-	if root == nil || !strings.HasPrefix(path, ".") {
+	if root == nil || path == "" {
+		return root
+	}
+	if !strings.HasPrefix(path, ".") {
 		return nil
 	}
 	s := root

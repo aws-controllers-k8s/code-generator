@@ -181,3 +181,49 @@ func TestCRDFileChanges(t *testing.T) {
 	assert.Equal(t, Change{File: "r.yaml", Kind: "Gadget", Bucket: BucketCRDRemoved, ChangeType: ChangeCRDRemoved,
 		Breaking: true}, removed)
 }
+
+// A property added under a parent that kept unknown fields (or was an
+// embedded resource) constrains values that may already be stored there.
+func TestClassifyWithBaseOpenParent(t *testing.T) {
+	yes := true
+	open := func(s v1.JSONSchemaProps) v1.JSONSchemaProps { s.XPreserveUnknownFields = &yes; return s }
+	embedded := func(s v1.JSONSchemaProps) v1.JSONSchemaProps { s.XEmbeddedResource = true; return s }
+	status := obj(nil)
+	cases := []struct {
+		name     string
+		old, new *v1.JSONSchemaProps
+		field    string
+	}{
+		{"preserve-unknown spec", root(open(obj(nil)), status),
+			root(open(obj(map[string]v1.JSONSchemaProps{"x": str()})), status), "spec.x"},
+		{"embedded resource", root(obj(map[string]v1.JSONSchemaProps{"r": embedded(open(obj(nil)))}), status),
+			root(obj(map[string]v1.JSONSchemaProps{"r": embedded(open(obj(map[string]v1.JSONSchemaProps{
+				"kind": str()})))}), status), "spec.r.kind"},
+		{"embedded only", root(obj(map[string]v1.JSONSchemaProps{"r": embedded(obj(nil))}), status),
+			root(obj(map[string]v1.JSONSchemaProps{"r": embedded(obj(map[string]v1.JSONSchemaProps{
+				"kind": str()}))}), status), "spec.r.kind"},
+		{"preserve-unknown status", root(obj(nil), open(obj(nil))),
+			root(obj(nil), open(obj(map[string]v1.JSONSchemaProps{"y": str()}))), "status.y"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			r := kro.Compare(tc.old, tc.new)
+			got := ClassifyWithBase("f.yaml", "Widget", r, tc.old)
+			require.Len(t, got, 1, "%+v", got)
+			assert.Equal(t, BucketValidationTightened, got[0].Bucket)
+			assert.Equal(t, tc.field, got[0].Field)
+			assert.False(t, got[0].Breaking, "kro's verdict")
+
+			plain := Classify("f.yaml", "Widget", r)
+			require.Len(t, plain, 1)
+			assert.NotEqual(t, BucketValidationTightened, plain[0].Bucket, "Classify has no base")
+		})
+	}
+
+	// A closed parent is the ordinary additive case.
+	old := root(obj(nil), status)
+	new := root(obj(map[string]v1.JSONSchemaProps{"x": str()}), status)
+	got := ClassifyWithBase("f.yaml", "Widget", kro.Compare(old, new), old)
+	require.Len(t, got, 1)
+	assert.Equal(t, BucketAddedOptionalSpec, got[0].Bucket)
+}

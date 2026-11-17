@@ -447,3 +447,22 @@ func TestCRDCompatMultipleDocuments(t *testing.T) {
 		assert.Equal(t, []crdcompat.FileResult{{File: file, Kind: "Widget", Status: crdcompat.FileUnchanged}}, res.Files)
 	})
 }
+
+func TestCRDCompatAddedUnderPreserveUnknownFields(t *testing.T) {
+	newRepo(t)
+	file := crdDir + "/widgets.yaml"
+	yes := true
+	open := func(c *v1.CustomResourceDefinition) {
+		s := c.Spec.Versions[0].Schema.OpenAPIV3Schema.Properties["spec"]
+		s.XPreserveUnknownFields = &yes
+		c.Spec.Versions[0].Schema.OpenAPIV3Schema.Properties["spec"] = s
+	}
+	writeCRDWith(t, file, "Widget", nil, open)
+	commitAll(t)
+	writeCRDWith(t, file, "Widget", map[string]v1.JSONSchemaProps{"x": str()}, open)
+
+	res, _ := runJSON(t, "main")
+	require.Len(t, res.Buckets[crdcompat.BucketValidationTightened], 1)
+	assert.Equal(t, "spec.x", res.Buckets[crdcompat.BucketValidationTightened][0].Field)
+	assert.Empty(t, res.Buckets[crdcompat.BucketAddedOptionalSpec])
+}

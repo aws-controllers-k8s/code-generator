@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	kro "github.com/kubernetes-sigs/kro/pkg/graph/crd/compat"
+	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 )
 
 // Change buckets. A change type this package does not know goes to
@@ -36,7 +37,7 @@ const (
 	BucketTypeChanged         = "type_changed"
 	BucketRemoved             = "removed"
 	BucketEnumChanged         = "enum_changed"
-	BucketValidationTightened = "validation_tightened" // includes a list gaining an items schema
+	BucketValidationTightened = "validation_tightened" // also: list gains items; field added under an open parent
 	BucketValidationRelaxed   = "validation_relaxed"
 	BucketDefaultChanged      = "default_changed"
 	BucketDescriptionOnly     = "description_only"
@@ -79,8 +80,18 @@ type Change struct {
 }
 
 // Classify converts kro's report for one CRD file into bucketed changes. kro
-// does not compare everything; Uncompared reports the rest.
+// does not compare everything; Uncompared reports the rest. Without the old
+// schema it cannot see open parents; prefer ClassifyWithBase.
 func Classify(file, kind string, r *kro.Report) []Change {
+	return ClassifyWithBase(file, kind, r, nil)
+}
+
+// ClassifyWithBase is Classify knowing oldRoot, the base version's
+// openAPIV3Schema. A property added under a parent that had
+// x-kubernetes-preserve-unknown-fields or x-kubernetes-embedded-resource is
+// validation_tightened: objects already stored may hold that name with any
+// value, which the new schema can now reject.
+func ClassifyWithBase(file, kind string, r *kro.Report, oldRoot *v1.JSONSchemaProps) []Change {
 	out := make([]Change, 0, len(r.BreakingChanges)+len(r.NonBreakingChanges))
 	for _, c := range r.BreakingChanges {
 		out = append(out, newChange(file, kind, c, true))
@@ -88,7 +99,37 @@ func Classify(file, kind string, r *kro.Report) []Change {
 	for _, c := range r.NonBreakingChanges {
 		out = append(out, newChange(file, kind, c, false))
 	}
+	tightenUnderOpenParents(out, oldRoot)
 	return out
+}
+
+// tightenUnderOpenParents rebuckets additive PROPERTY_ADDED changes whose
+// parent in oldRoot kept unknown fields or was an embedded resource.
+func tightenUnderOpenParents(cs []Change, oldRoot *v1.JSONSchemaProps) {
+	if oldRoot == nil {
+		return
+	}
+	for i, c := range cs {
+		if c.ChangeType != string(kro.PropertyAdded) {
+			continue
+		}
+		switch c.Bucket {
+		case BucketAddedOptionalSpec, BucketAddedStatus, BucketOther:
+		default:
+			continue
+		}
+		at := strings.LastIndex(c.Path, ".properties.")
+		if at < 0 {
+			continue
+		}
+		parent := schemaAt(oldRoot, c.Path[:at])
+		if parent == nil {
+			continue
+		}
+		if (parent.XPreserveUnknownFields != nil && *parent.XPreserveUnknownFields) || parent.XEmbeddedResource {
+			cs[i].Bucket = BucketValidationTightened
+		}
+	}
 }
 
 // CRDAdded is the change for a CRD file the base ref does not have.

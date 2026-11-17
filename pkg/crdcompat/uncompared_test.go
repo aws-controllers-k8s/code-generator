@@ -282,3 +282,17 @@ func TestUncomparedRequiredNameWithoutProperty(t *testing.T) {
 
 	assert.Empty(t, Uncompared("f.yaml", "Widget", new, new.DeepCopy()), "already required")
 }
+
+func TestUncomparedMapValueOpenParent(t *testing.T) {
+	yes := true
+	value := func(props map[string]v1.JSONSchemaProps) v1.JSONSchemaProps {
+		s := obj(props)
+		s.XPreserveUnknownFields = &yes
+		return s
+	}
+	old := crd(map[string]v1.JSONSchemaProps{"m": strMap(value(nil))})
+	new := crd(map[string]v1.JSONSchemaProps{"m": strMap(value(map[string]v1.JSONSchemaProps{"b": str()}))})
+	c := uncomparedOnly(t, old, new)
+	assert.Equal(t, BucketValidationTightened, c.Bucket)
+	assert.Equal(t, "spec.m{}.b", c.Field)
+}
