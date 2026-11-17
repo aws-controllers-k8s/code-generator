@@ -259,3 +259,26 @@ func TestFieldPathMapValues(t *testing.T) {
 	assert.Equal(t, "spec.x[]{}",
 		FieldPath(kro.Change{Path: ".properties.spec.properties.x.items.additionalProperties"}))
 }
+
+// A required name that is a property on neither side: kro checks only
+// existing properties, and every object lacking the name stops validating.
+func TestUncomparedRequiredNameWithoutProperty(t *testing.T) {
+	old := crd(map[string]v1.JSONSchemaProps{"x": str()})
+	new := crd(map[string]v1.JSONSchemaProps{"x": str()})
+	spec := new.Spec.Versions[0].Schema.OpenAPIV3Schema.Properties["spec"]
+	spec.Required = []string{"ghost"}
+	new.Spec.Versions[0].Schema.OpenAPIV3Schema.Properties["spec"] = spec
+	report, err := kro.CompareVersions(old.Spec.Versions, new.Spec.Versions)
+	require.NoError(t, err)
+	require.False(t, report.HasChanges(), "kro misses it")
+
+	c := uncomparedOnly(t, old, new)
+	assert.Equal(t, BucketValidationTightened, c.Bucket)
+	assert.Equal(t, string(kro.RequiredAdded), c.ChangeType)
+	assert.Equal(t, ".properties.spec.required", c.Path)
+	assert.Equal(t, "spec.ghost", c.Field)
+	assert.Equal(t, "ghost", c.New)
+	assert.True(t, c.Breaking)
+
+	assert.Empty(t, Uncompared("f.yaml", "Widget", new, new.DeepCopy()), "already required")
+}

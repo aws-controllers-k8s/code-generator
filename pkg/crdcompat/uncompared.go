@@ -40,6 +40,8 @@ const ChangeUncomparedChanged = "UNCOMPARED_CHANGED"
 // when default is the only one, else in other. kro never enters
 // additionalProperties, so where both sides have a map value schema that
 // subtree is also run through kro, and its changes are classified as kro's.
+// A newly required name that is a property on neither side, which kro does
+// not check, is a breaking REQUIRED_ADDED (validation_tightened).
 // CRD-level differences are one change per spec or version key (New names
 // the key, or for spec.names the members that differ), all in
 // other, and breaking when they change the CRD's identity (group, scope,
@@ -159,6 +161,24 @@ func (u *uncompared) schema(path string, old, new *v1.JSONSchemaProps) {
 			desc = "(not serialized)"
 		}
 		u.emit(path, bucket, desc, false)
+	}
+
+	// kro checks a newly required name only when the property existed, and
+	// an added property only when it is a property now. A name that is a
+	// property on neither side is still required of every object.
+	oldRequired := map[string]bool{}
+	for _, name := range old.Required {
+		oldRequired[name] = true
+	}
+	ghosts := map[string]bool{}
+	for _, name := range new.Required {
+		_, inOld := old.Properties[name]
+		_, inNew := new.Properties[name]
+		if !oldRequired[name] && !inOld && !inNew && !ghosts[name] {
+			ghosts[name] = true
+			u.out = append(u.out, newChange(u.file, u.kind,
+				kro.Change{Path: path + ".required", ChangeType: kro.RequiredAdded, NewValue: name}, true))
+		}
 	}
 
 	names := make([]string, 0, len(old.Properties))
