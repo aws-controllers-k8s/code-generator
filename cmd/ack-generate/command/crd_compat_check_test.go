@@ -192,3 +192,40 @@ func TestCRDCompatNoFilesIsAnError(t *testing.T) {
 	_, err := runCRDCompat(&bytes.Buffer{}, "main", []string{crdDir}, "json")
 	assert.ErrorContains(t, err, "no CRD files found")
 }
+
+// A head file that no longer parses as a CRD, but was one at the base, is a
+// removed CRD: the cluster loses the kind.
+func TestCRDCompatHeadFileNoLongerACRDIsRemoved(t *testing.T) {
+	cases := []struct {
+		name, content, reason string
+	}{
+		{"emptied", "", "not a CRD (kind=)"},
+		{"kustomization", "resources: []\n", "not a CRD (kind=)"},
+		{"unparsable", "a: [\n", "not a valid CRD"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			newRepo(t)
+			file := crdDir + "/widgets.yaml"
+			writeCRD(t, file, "Widget", map[string]v1.JSONSchemaProps{"name": str()})
+			commitAll(t)
+			require.NoError(t, os.WriteFile(file, []byte(tc.content), 0o644))
+
+			res, breaking := runJSON(t, "main")
+			assert.True(t, breaking)
+			require.Len(t, res.Files, 1)
+			assert.Equal(t, file, res.Files[0].File)
+			assert.Equal(t, "Widget", res.Files[0].Kind)
+			assert.Equal(t, crdcompat.FileDeleted, res.Files[0].Status)
+			assert.Contains(t, res.Files[0].Reason, tc.reason)
+			assert.Equal(t, []crdcompat.Change{crdcompat.CRDRemoved(file, "Widget")},
+				res.Buckets[crdcompat.BucketCRDRemoved])
+
+			var text bytes.Buffer
+			breaking, err := runCRDCompat(&text, "main", []string{crdDir}, "text")
+			require.NoError(t, err)
+			assert.True(t, breaking)
+			assert.Contains(t, text.String(), "FAIL "+file+"\n  BREAKING: CRD removed ("+tc.reason)
+		})
+	}
+}

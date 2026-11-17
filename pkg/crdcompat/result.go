@@ -36,7 +36,8 @@ type FileResult struct {
 	File   string `json:"file"`
 	Kind   string `json:"kind,omitempty"`
 	Status string `json:"status"`
-	// Reason says why a file was skipped.
+	// Reason says why a file was skipped, or why a file still on disk is
+	// deleted: it was a CRD at the base and is not one now.
 	Reason string `json:"reason,omitempty"`
 }
 

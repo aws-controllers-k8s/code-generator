@@ -43,7 +43,7 @@ var crdCompatCheckCmd = &cobra.Command{
 	Short: "Check CRDs for breaking changes against a git base ref",
 	Long: `Compares CRD files on disk against the same files at a given git ref
 and reports any breaking schema changes. A CRD file that exists at the
-ref but not on disk is a breaking change. Exits non-zero if breaking
+ref but not on disk, or no longer parses as a CRD, is a breaking change. Exits non-zero if breaking
 changes are detected.
 
 By default it checks config/crd/bases and helm/crds against the
@@ -120,20 +120,40 @@ func runCRDCompat(w io.Writer, baseRef string, dirs []string, output string) (bo
 		if err != nil {
 			return false, fmt.Errorf("reading %s: %w", file, err)
 		}
-		var newCRD v1.CustomResourceDefinition
-		if err := yaml.Unmarshal(newData, &newCRD); err != nil {
-			reason := fmt.Sprintf("not a valid CRD (%v)", err)
+		// skip records a file that is not a CRD on disk. If it was a CRD at
+		// the base, the kind is gone: that is a removed CRD, not a skip.
+		skip := func(reason string) error {
+			if base[file] {
+				oldCRD, ok, err := baseCRD(baseRef, file)
+				if err != nil {
+					return err
+				}
+				if ok {
+					kind := oldCRD.Spec.Names.Kind
+					res.AddFile(crdcompat.FileResult{File: file, Kind: kind, Status: crdcompat.FileDeleted, Reason: reason})
+					res.AddChanges(crdcompat.CRDRemoved(file, kind))
+					if text {
+						fmt.Fprintf(w, "FAIL %s\n  BREAKING: CRD removed (%s; a CRD in %s)\n", file, reason, baseRef)
+					}
+					return nil
+				}
+			}
 			res.AddFile(crdcompat.FileResult{File: file, Status: crdcompat.FileSkipped, Reason: reason})
 			if text {
 				fmt.Fprintf(w, "SKIP %s: %s\n", file, reason)
 			}
+			return nil
+		}
+		var newCRD v1.CustomResourceDefinition
+		if err := yaml.Unmarshal(newData, &newCRD); err != nil {
+			if err := skip(fmt.Sprintf("not a valid CRD (%v)", err)); err != nil {
+				return false, err
+			}
 			continue
 		}
 		if newCRD.Kind != "CustomResourceDefinition" {
-			reason := fmt.Sprintf("not a CRD (kind=%s)", newCRD.Kind)
-			res.AddFile(crdcompat.FileResult{File: file, Status: crdcompat.FileSkipped, Reason: reason})
-			if text {
-				fmt.Fprintf(w, "SKIP %s: %s\n", file, reason)
+			if err := skip(fmt.Sprintf("not a CRD (kind=%s)", newCRD.Kind)); err != nil {
+				return false, err
 			}
 			continue
 		}
@@ -194,12 +214,11 @@ func runCRDCompat(w io.Writer, baseRef string, dirs []string, output string) (bo
 		if onDisk[file] {
 			continue
 		}
-		oldData, err := gitShow(baseRef, file)
+		oldCRD, ok, err := baseCRD(baseRef, file)
 		if err != nil {
 			return false, err
 		}
-		var oldCRD v1.CustomResourceDefinition
-		if err := yaml.Unmarshal(oldData, &oldCRD); err != nil || oldCRD.Kind != "CustomResourceDefinition" {
+		if !ok {
 			// It was not a CRD at the base either, so nothing was lost.
 			continue
 		}
@@ -260,6 +279,19 @@ func baseCRDFiles(ref string, dirs []string) (map[string]bool, error) {
 		}
 	}
 	return files, nil
+}
+
+// baseCRD reads file at ref and reports whether it is a CRD there.
+func baseCRD(ref, file string) (v1.CustomResourceDefinition, bool, error) {
+	var crd v1.CustomResourceDefinition
+	data, err := gitShow(ref, file)
+	if err != nil {
+		return crd, false, err
+	}
+	if err := yaml.Unmarshal(data, &crd); err != nil || crd.Kind != "CustomResourceDefinition" {
+		return crd, false, nil
+	}
+	return crd, true, nil
 }
 
 // verifyCommit fails unless ref names a commit. Without this check a typo in
