@@ -31,8 +31,9 @@ import (
 
 const crdDir = "config/crd/bases"
 
-// newRepo makes a git repository in a temp dir and changes into it.
-func newRepo(t *testing.T) {
+// newRepo makes a git repository in a temp dir, changes into it, and
+// returns its path as created (on macOS, unresolved: /var, not /private/var).
+func newRepo(t *testing.T) string {
 	t.Helper()
 	if _, err := exec.LookPath("git"); err != nil {
 		t.Skip("git not installed")
@@ -43,6 +44,7 @@ func newRepo(t *testing.T) {
 	git(t, "config", "user.email", "test@example.com")
 	git(t, "config", "user.name", "test")
 	git(t, "config", "commit.gpgsign", "false")
+	return dir
 }
 
 func git(t *testing.T, args ...string) {
@@ -292,4 +294,64 @@ func TestCRDCompatUncomparedBreakingScope(t *testing.T) {
 	assert.Contains(t, text.String(), "  BREAKING: [spec.scope] Uncompared change: scope\n")
 	assert.Contains(t, text.String(),
 		"  ok:       [version.additionalPrinterColumns] Uncompared change: additionalPrinterColumns\n")
+}
+
+func runJSONDirs(t *testing.T, dirs ...string) crdcompat.Result {
+	t.Helper()
+	var buf bytes.Buffer
+	_, err := runCRDCompat(&buf, "main", dirs, "json")
+	require.NoError(t, err)
+	var res crdcompat.Result
+	require.NoError(t, json.Unmarshal(buf.Bytes(), &res), buf.String())
+	return res
+}
+
+func TestCRDCompatAbsoluteCRDPath(t *testing.T) {
+	dir := newRepo(t)
+	file := crdDir + "/widgets.yaml"
+	writeCRD(t, file, "Widget", map[string]v1.JSONSchemaProps{"name": str()})
+	commitAll(t)
+
+	res := runJSONDirs(t, filepath.Join(dir, crdDir))
+	assert.Equal(t, []crdcompat.FileResult{{File: file, Kind: "Widget", Status: crdcompat.FileUnchanged}}, res.Files)
+	assert.Empty(t, res.Buckets[crdcompat.BucketCRDAdded])
+}
+
+func TestCRDCompatRejectsPathsOutsideRepo(t *testing.T) {
+	newRepo(t)
+	writeCRD(t, crdDir+"/widgets.yaml", "Widget", map[string]v1.JSONSchemaProps{"name": str()})
+	commitAll(t)
+	outside := t.TempDir()
+	for _, dir := range []string{outside, "../elsewhere", crdDir + "/../../../.."} {
+		_, err := runCRDCompat(&bytes.Buffer{}, "main", []string{dir}, "json")
+		assert.ErrorContains(t, err, "outside the repository", dir)
+	}
+}
+
+func TestCRDCompatDedupesDirs(t *testing.T) {
+	newRepo(t)
+	writeCRD(t, crdDir+"/widgets.yaml", "Widget", map[string]v1.JSONSchemaProps{"name": str()})
+	writeCRD(t, crdDir+"/gadgets.yaml", "Gadget", map[string]v1.JSONSchemaProps{"name": str()})
+	commitAll(t)
+	require.NoError(t, os.Remove(crdDir+"/gadgets.yaml"))
+	writeCRD(t, crdDir+"/gizmos.yaml", "Gizmo", map[string]v1.JSONSchemaProps{"name": str()})
+
+	res := runJSONDirs(t, crdDir, crdDir+"/", "./"+crdDir)
+	assert.Len(t, res.Files, 3)
+	assert.Len(t, res.Buckets[crdcompat.BucketCRDAdded], 1)
+	assert.Len(t, res.Buckets[crdcompat.BucketCRDRemoved], 1)
+
+	var text bytes.Buffer
+	_, err := runCRDCompat(&text, "main", []string{crdDir, crdDir + "/"}, "text")
+	require.NoError(t, err)
+	assert.Contains(t, text.String(), "\nChecked 1 CRD(s) across 2 file(s).\n")
+}
+
+func TestCRDCompatMustRunFromRepoRoot(t *testing.T) {
+	newRepo(t)
+	writeCRD(t, crdDir+"/widgets.yaml", "Widget", map[string]v1.JSONSchemaProps{"name": str()})
+	commitAll(t)
+	t.Chdir(crdDir)
+	_, err := runCRDCompat(&bytes.Buffer{}, "main", []string{"."}, "json")
+	assert.ErrorContains(t, err, "run crd-compat-check from the repository root")
 }

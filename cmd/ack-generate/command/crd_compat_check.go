@@ -48,7 +48,8 @@ ref but not on disk, or no longer parses as a CRD, is a breaking change. Exits n
 changes are detected.
 
 By default it checks config/crd/bases and helm/crds against the
-main branch. Run it from the repository root.
+main branch. It must run from the repository root; --crd-paths must be
+inside the repository (absolute paths are made root-relative).
 
 Besides what kro's compat library compares (description, type, pattern,
 properties, required, enum, items, version name/served/status), any other
@@ -102,6 +103,10 @@ func runCRDCompat(w io.Writer, baseRef string, dirs []string, output string) (bo
 		return false, fmt.Errorf(`--output must be "text" or "json", got %q`, output)
 	}
 	text := output == "text"
+	dirs, err := repoDirs(dirs)
+	if err != nil {
+		return false, err
+	}
 	if err := verifyCommit(baseRef); err != nil {
 		return false, err
 	}
@@ -266,6 +271,60 @@ func runCRDCompat(w io.Writer, baseRef string, dirs []string, output string) (bo
 	return res.Breaking, nil
 }
 
+// repoDirs checks that the command runs from the repository root, where
+// paths on disk and paths at the base ref agree, and returns dirs relative
+// to the root, cleaned and without duplicates. An absolute dir inside the
+// repository is made relative; a dir outside it is an error.
+func repoDirs(dirs []string) ([]string, error) {
+	prefix, err := gitOutput("rev-parse", "--show-prefix")
+	if err != nil {
+		return nil, err
+	}
+	if strings.TrimSpace(string(prefix)) != "" {
+		return nil, fmt.Errorf("run crd-compat-check from the repository root")
+	}
+	top, err := gitOutput("rev-parse", "--show-toplevel")
+	if err != nil {
+		return nil, err
+	}
+	root := resolvePath(strings.TrimSpace(string(top)))
+	var out []string
+	seen := map[string]bool{}
+	for _, dir := range dirs {
+		rel := filepath.Clean(dir)
+		if filepath.IsAbs(rel) {
+			// Compare with symlinks resolved: on macOS git reports
+			// /private/var for a directory under /var.
+			if rel, err = filepath.Rel(root, resolvePath(rel)); err != nil {
+				return nil, fmt.Errorf("--crd-paths %q is outside the repository", dir)
+			}
+		}
+		rel = filepath.ToSlash(rel)
+		if rel == ".." || strings.HasPrefix(rel, "../") {
+			return nil, fmt.Errorf("--crd-paths %q is outside the repository", dir)
+		}
+		if !seen[rel] {
+			seen[rel] = true
+			out = append(out, rel)
+		}
+	}
+	return out, nil
+}
+
+// resolvePath resolves symlinks in the longest prefix of path that exists.
+func resolvePath(path string) string {
+	rest := ""
+	for p := path; ; p = filepath.Dir(p) {
+		if r, err := filepath.EvalSymlinks(p); err == nil {
+			return filepath.Join(r, rest)
+		}
+		if filepath.Dir(p) == p {
+			return path
+		}
+		rest = filepath.Join(filepath.Base(p), rest)
+	}
+}
+
 // headCRDFiles returns the YAML files directly in dirs, sorted.
 func headCRDFiles(dirs []string) ([]string, error) {
 	var files []string
@@ -284,13 +343,16 @@ func headCRDFiles(dirs []string) ([]string, error) {
 	return files, nil
 }
 
-// baseCRDFiles returns the YAML files directly in dirs at ref. A directory
-// missing at ref has none.
+// baseCRDFiles returns the YAML files directly in dirs (root-relative, from
+// repoDirs) at ref. A directory missing at ref has none.
 func baseCRDFiles(ref string, dirs []string) (map[string]bool, error) {
 	files := map[string]bool{}
 	for _, dir := range dirs {
-		dir = filepath.ToSlash(filepath.Clean(dir))
-		out, err := gitOutput("ls-tree", "--name-only", ref, "--", dir+"/")
+		pathspec := dir + "/"
+		if dir == "." {
+			pathspec = "."
+		}
+		out, err := gitOutput("ls-tree", "--name-only", ref, "--", pathspec)
 		if err != nil {
 			return nil, fmt.Errorf("listing %s at %s: %w", dir, ref, err)
 		}
