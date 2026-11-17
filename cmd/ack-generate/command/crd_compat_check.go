@@ -44,8 +44,8 @@ var crdCompatCheckCmd = &cobra.Command{
 	Short: "Check CRDs for breaking changes against a git base ref",
 	Long: `Compares CRD files on disk against the same files at a given git ref
 and reports any breaking schema changes. A CRD file that exists at the
-ref but not on disk, or no longer parses as a CRD, is a breaking change. Exits non-zero if breaking
-changes are detected.
+ref but not on disk, or no longer parses as a CRD, is a breaking change.
+Exits 1 when breaking changes are detected or on an error.
 
 By default it checks config/crd/bases and helm/crds against the
 main branch. It must run from the repository root; --crd-paths must be
@@ -64,7 +64,10 @@ change sorted into buckets (added_optional_spec, added_status,
 added_required, type_changed, removed, enum_changed,
 validation_tightened, validation_relaxed, default_changed,
 description_only, crd_added, crd_removed, other), and the added fields
-whose names suggest a secret (sensitive_candidates).`,
+whose names suggest a secret (sensitive_candidates). The document is
+printed if and only if the analysis completed: on exit 1 with a document
+the changes are breaking; on exit 1 without one there was an error
+(reported on stderr) and nothing was decided.`,
 	RunE: checkCRDCompat,
 }
 
@@ -325,7 +328,9 @@ func resolvePath(path string) string {
 	}
 }
 
-// headCRDFiles returns the YAML files directly in dirs, sorted.
+// headCRDFiles returns the YAML files directly in dirs: per dir, in the
+// order given, *.yaml then *.yml, each sorted. Text output keeps this order;
+// the JSON document is sorted on its own.
 func headCRDFiles(dirs []string) ([]string, error) {
 	var files []string
 	for _, dir := range dirs {
@@ -339,7 +344,6 @@ func headCRDFiles(dirs []string) ([]string, error) {
 			}
 		}
 	}
-	sort.Strings(files)
 	return files, nil
 }
 

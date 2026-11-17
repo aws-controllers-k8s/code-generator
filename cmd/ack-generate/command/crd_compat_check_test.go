@@ -371,3 +371,26 @@ func TestCRDCompatNonASCIIFileName(t *testing.T) {
 	res = runJSONDirs(t, crdDir)
 	assert.Equal(t, []crdcompat.Change{crdcompat.CRDRemoved(file, "Widget")}, res.Buckets[crdcompat.BucketCRDRemoved])
 }
+
+// Text mode keeps upstream's order: per --crd-paths dir, *.yaml then *.yml.
+func TestCRDCompatTextOrder(t *testing.T) {
+	newRepo(t)
+	spec := map[string]v1.JSONSchemaProps{"name": str()}
+	writeCRD(t, "config/crd/bases/b.yaml", "B", spec)
+	writeCRD(t, "helm/crds/a.yml", "A", spec)
+	writeCRD(t, "helm/crds/z.yaml", "Z", spec)
+	commitAll(t)
+
+	var text bytes.Buffer
+	_, err := runCRDCompat(&text, "main", []string{"helm/crds", "config/crd/bases"}, "text")
+	require.NoError(t, err)
+	assert.Equal(t, "OK   helm/crds/z.yaml (no changes)\n"+
+		"OK   helm/crds/a.yml (no changes)\n"+
+		"OK   config/crd/bases/b.yaml (no changes)\n"+
+		"\nChecked 3 CRD(s) across 3 file(s).\n", text.String())
+}
+
+func TestCRDCompatHelpStatesExitAndJSONContract(t *testing.T) {
+	assert.Contains(t, crdCompatCheckCmd.Long, "Exits 1 when breaking changes are detected or on an error.")
+	assert.Contains(t, crdCompatCheckCmd.Long, "printed if and only if the analysis completed")
+}
