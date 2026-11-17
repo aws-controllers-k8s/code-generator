@@ -58,8 +58,13 @@ properties, required, enum, items, version name/served/status), any other
 difference in a CRD present on both sides is reported as
 UNCOMPARED_CHANGED: other schema keywords (maxLength, default, CEL rules,
 an enum added where there was none, map value schemas), and CRD or version
-settings (group, scope, names, conversion, printer columns, ...). A change
-to group, scope, names.kind or names.plural is breaking.
+settings (group, scope, names, conversion, printer columns, a version
+starting to be served, ...). A change to group, scope, names.kind or
+names.plural is breaking.
+
+CRD metadata (annotations, labels) is not compared: it changes with every
+regeneration (the controller-gen version annotation) and does not affect
+what the API server accepts.
 
 --output json prints one ack.crd-compat/v1 document to stdout: every
 change sorted into buckets (added_optional_spec, added_status,

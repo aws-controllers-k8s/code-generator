@@ -393,6 +393,7 @@ func TestCRDCompatTextOrder(t *testing.T) {
 func TestCRDCompatHelpStatesExitAndJSONContract(t *testing.T) {
 	assert.Contains(t, crdCompatCheckCmd.Long, "Exits 1 when breaking changes are detected or on an error.")
 	assert.Contains(t, crdCompatCheckCmd.Long, "printed if and only if the analysis completed")
+	assert.Contains(t, crdCompatCheckCmd.Long, "CRD metadata (annotations, labels) is not compared")
 }
 
 // yaml.Unmarshal reads only a file's first document, so anything after it

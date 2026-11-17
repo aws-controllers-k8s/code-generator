@@ -46,6 +46,10 @@ const ChangeUncomparedChanged = "UNCOMPARED_CHANGED"
 // the key, or for spec.names the members that differ), all in
 // other, and breaking when they change the CRD's identity (group, scope,
 // names.kind, names.plural).
+//
+// The CRD's metadata (annotations, labels, e.g. the controller-gen version
+// annotation) is deliberately not compared: it changes on every
+// regeneration and does not change what the API server accepts.
 func Uncompared(file, kind string, old, new *v1.CustomResourceDefinition) []Change {
 	u := uncompared{file: file, kind: kind}
 	u.crd(old, new)
