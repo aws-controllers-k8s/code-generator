@@ -36,7 +36,7 @@ const (
 	BucketTypeChanged         = "type_changed"
 	BucketRemoved             = "removed"
 	BucketEnumChanged         = "enum_changed"
-	BucketValidationTightened = "validation_tightened"
+	BucketValidationTightened = "validation_tightened" // includes a list gaining an items schema
 	BucketValidationRelaxed   = "validation_relaxed"
 	BucketDefaultChanged      = "default_changed"
 	BucketDescriptionOnly     = "description_only"
@@ -120,6 +120,10 @@ func bucketFor(t kro.ChangeType, field string, breaking bool) string {
 	switch t {
 	case kro.PropertyAdded:
 		switch {
+		case strings.HasSuffix(field, "[]"):
+			// An untyped list gained an items schema: values that were
+			// accepted may no longer be. kro calls it non-breaking.
+			return BucketValidationTightened
 		case breaking:
 			// Required with no default: existing manifests stop validating.
 			return BucketAddedRequired
