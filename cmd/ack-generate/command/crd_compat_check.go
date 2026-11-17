@@ -352,11 +352,13 @@ func baseCRDFiles(ref string, dirs []string) (map[string]bool, error) {
 		if dir == "." {
 			pathspec = "."
 		}
-		out, err := gitOutput("ls-tree", "--name-only", ref, "--", pathspec)
+		// -z: names raw and NUL-terminated (git otherwise quotes non-ASCII
+		// names); --full-name: root-relative whatever the cwd.
+		out, err := gitOutput("ls-tree", "-z", "--name-only", "--full-name", ref, "--", pathspec)
 		if err != nil {
 			return nil, fmt.Errorf("listing %s at %s: %w", dir, ref, err)
 		}
-		for _, name := range strings.Split(strings.TrimSpace(string(out)), "\n") {
+		for _, name := range strings.Split(string(out), "\x00") {
 			if ext := filepath.Ext(name); (ext == ".yaml" || ext == ".yml") && filepath.ToSlash(filepath.Dir(name)) == dir {
 				files[name] = true
 			}

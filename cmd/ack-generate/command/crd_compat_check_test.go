@@ -355,3 +355,19 @@ func TestCRDCompatMustRunFromRepoRoot(t *testing.T) {
 	_, err := runCRDCompat(&bytes.Buffer{}, "main", []string{"."}, "json")
 	assert.ErrorContains(t, err, "run crd-compat-check from the repository root")
 }
+
+// git quotes non-ASCII names in ls-tree output unless asked for raw names.
+func TestCRDCompatNonASCIIFileName(t *testing.T) {
+	newRepo(t)
+	file := crdDir + "/wïdgets.yaml"
+	writeCRD(t, file, "Widget", map[string]v1.JSONSchemaProps{"name": str()})
+	commitAll(t)
+
+	res := runJSONDirs(t, crdDir)
+	assert.Equal(t, []crdcompat.FileResult{{File: file, Kind: "Widget", Status: crdcompat.FileUnchanged}}, res.Files)
+
+	require.NoError(t, os.Remove(file))
+	writeCRD(t, crdDir+"/other.yaml", "Other", map[string]v1.JSONSchemaProps{"name": str()})
+	res = runJSONDirs(t, crdDir)
+	assert.Equal(t, []crdcompat.Change{crdcompat.CRDRemoved(file, "Widget")}, res.Buckets[crdcompat.BucketCRDRemoved])
+}
