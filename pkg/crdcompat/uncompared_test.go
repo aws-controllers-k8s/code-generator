@@ -296,3 +296,37 @@ func TestUncomparedMapValueOpenParent(t *testing.T) {
 	assert.Equal(t, BucketValidationTightened, c.Bucket)
 	assert.Equal(t, "spec.m{}.b", c.Field)
 }
+
+func TestUncomparedComparesSerializedBytes(t *testing.T) {
+	// enum: [] serializes like no enum.
+	empty := str()
+	empty.Enum = []v1.JSON{}
+	assert.Empty(t, Uncompared("f.yaml", "Widget",
+		crd(map[string]v1.JSONSchemaProps{"x": str()}), crd(map[string]v1.JSONSchemaProps{"x": empty})))
+
+	// Integers beyond float64 precision still differ, under the right key.
+	big := func(n int64, def string) v1.JSONSchemaProps {
+		s := v1.JSONSchemaProps{Type: "integer", Maximum: nil}
+		s.MaxLength = &n
+		s.Default = &v1.JSON{Raw: []byte(def)}
+		return s
+	}
+	c := uncomparedOnly(t, crd(map[string]v1.JSONSchemaProps{"x": big(9007199254740992, "9007199254740992")}),
+		crd(map[string]v1.JSONSchemaProps{"x": big(9007199254740993, "9007199254740992")}))
+	assert.Equal(t, "maxLength", c.New)
+	c = uncomparedOnly(t, crd(map[string]v1.JSONSchemaProps{"x": big(1, "9007199254740992")}),
+		crd(map[string]v1.JSONSchemaProps{"x": big(1, "9007199254740993")}))
+	assert.Equal(t, "default", c.New)
+	assert.Equal(t, BucketDefaultChanged, c.Bucket)
+}
+
+// What cannot be serialized cannot be shown equal.
+func TestUncomparedMarshalFailureIsAChange(t *testing.T) {
+	bad := str()
+	bad.Default = &v1.JSON{Raw: []byte("{not json")}
+	old := crd(map[string]v1.JSONSchemaProps{"x": bad})
+	c := uncomparedOnly(t, old, old.DeepCopy())
+	assert.Equal(t, BucketOther, c.Bucket)
+	assert.Equal(t, "spec.x", c.Field)
+	assert.Contains(t, c.New, "cannot serialize")
+}

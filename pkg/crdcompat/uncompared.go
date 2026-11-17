@@ -14,8 +14,8 @@
 package crdcompat
 
 import (
+	"bytes"
 	"encoding/json"
-	"reflect"
 	"sort"
 	"strings"
 
@@ -81,18 +81,24 @@ func (u *uncompared) emit(path, bucket, keys string, breaking bool) {
 func (u *uncompared) crd(old, new *v1.CustomResourceDefinition) {
 	oldSpec, newSpec := old.Spec, new.Spec
 	oldSpec.Versions, newSpec.Versions = nil, nil
-	om, nm := toMap(oldSpec), toMap(newSpec)
-	for _, key := range diffKeys(om, nm) {
-		keys := key
+	keys, err := jsonDiff(oldSpec, newSpec)
+	if err != nil {
+		u.emit("spec", BucketOther, cannotSerialize(err), false)
+		return
+	}
+	for _, key := range keys {
+		what := key
 		breaking := false
 		switch key {
 		case "group", "scope":
 			breaking = true
 		case "names":
 			breaking = old.Spec.Names.Kind != new.Spec.Names.Kind || old.Spec.Names.Plural != new.Spec.Names.Plural
-			keys = strings.Join(diffKeys(toMap(old.Spec.Names), toMap(new.Spec.Names)), ",")
+			// names serialized above, so it serializes here.
+			members, _ := jsonDiff(old.Spec.Names, new.Spec.Names)
+			what = strings.Join(members, ",")
 		}
-		u.emit("spec."+key, BucketOther, keys, breaking)
+		u.emit("spec."+key, BucketOther, what, breaking)
 	}
 }
 
@@ -102,8 +108,11 @@ func (u *uncompared) version(old, new v1.CustomResourceDefinitionVersion) {
 	for _, v := range []*v1.CustomResourceDefinitionVersion{&old, &new} {
 		v.Name, v.Served, v.Schema, v.Subresources = "", false, nil, nil
 	}
-	om, nm := toMap(old), toMap(new)
-	for _, key := range diffKeys(om, nm) {
+	keys, err := jsonDiff(old, new)
+	if err != nil {
+		u.emit("version", BucketOther, cannotSerialize(err), false)
+	}
+	for _, key := range keys {
 		u.emit("version."+key, BucketOther, key, false)
 	}
 
@@ -119,7 +128,11 @@ func (u *uncompared) version(old, new v1.CustomResourceDefinitionVersion) {
 		// both sides it has no settings.
 		oldSub.Status, newSub.Status = nil, nil
 	}
-	for _, key := range diffKeys(toMap(oldSub), toMap(newSub)) {
+	keys, err = jsonDiff(oldSub, newSub)
+	if err != nil {
+		u.emit("version.subresources", BucketOther, cannotSerialize(err), false)
+	}
+	for _, key := range keys {
 		u.emit("version.subresources."+key, BucketOther, key, false)
 	}
 }
@@ -150,18 +163,14 @@ func (u *uncompared) schema(path string, old, new *v1.JSONSchemaProps) {
 	if intoMap {
 		o.AdditionalProperties, n.AdditionalProperties = nil, nil
 	}
-	if !reflect.DeepEqual(o, n) {
-		keys := diffKeys(toMap(o), toMap(n))
-		bucket := BucketOther
-		if len(keys) == 1 && keys[0] == "default" {
-			bucket = BucketDefaultChanged
-		}
-		desc := strings.Join(keys, ",")
-		if desc == "" {
-			// Differs in memory but not once serialized (nil against empty).
-			desc = "(not serialized)"
-		}
-		u.emit(path, bucket, desc, false)
+	keys, err := jsonDiff(o, n)
+	switch {
+	case err != nil:
+		u.emit(path, BucketOther, cannotSerialize(err), false)
+	case len(keys) == 1 && keys[0] == "default":
+		u.emit(path, BucketDefaultChanged, "default", false)
+	case len(keys) > 0:
+		u.emit(path, BucketOther, strings.Join(keys, ","), false)
 	}
 
 	// kro checks a newly required name only when the property existed, and
@@ -220,36 +229,50 @@ func itemsWithoutSchema(items *v1.JSONSchemaPropsOrArray) *v1.JSONSchemaPropsOrA
 	return &v1.JSONSchemaPropsOrArray{JSONSchemas: items.JSONSchemas}
 }
 
-// toMap is v as a JSON object.
-func toMap(v any) map[string]any {
-	data, err := json.Marshal(v)
+// jsonDiff compares a and b as serialized and returns the sorted top-level
+// keys whose JSON differs, or none when the bytes are identical. Comparing
+// bytes, not decoded values, keeps nil and empty alike (both omitted) and
+// integers beyond float64 precision apart. An error means a or b cannot be
+// serialized, so they cannot be shown equal.
+func jsonDiff(a, b any) ([]string, error) {
+	aj, err := json.Marshal(a)
 	if err != nil {
-		// Unmarshalable means unknown: make every key differ.
-		return map[string]any{"(unmarshalable)": err.Error()}
+		return nil, err
 	}
-	m := map[string]any{}
-	if err := json.Unmarshal(data, &m); err != nil {
-		return map[string]any{"(unmarshalable)": err.Error()}
+	bj, err := json.Marshal(b)
+	if err != nil {
+		return nil, err
 	}
-	return m
-}
-
-// diffKeys returns the sorted keys whose values differ between a and b.
-func diffKeys(a, b map[string]any) []string {
+	if bytes.Equal(aj, bj) {
+		return nil, nil
+	}
+	var am, bm map[string]json.RawMessage
+	if err := json.Unmarshal(aj, &am); err != nil {
+		return nil, err
+	}
+	if err := json.Unmarshal(bj, &bm); err != nil {
+		return nil, err
+	}
 	var keys []string
-	for k, av := range a {
-		if bv, ok := b[k]; !ok || !reflect.DeepEqual(av, bv) {
+	for k, av := range am {
+		if bv, ok := bm[k]; !ok || !bytes.Equal(av, bv) {
 			keys = append(keys, k)
 		}
 	}
-	for k := range b {
-		if _, ok := a[k]; !ok {
+	for k := range bm {
+		if _, ok := am[k]; !ok {
 			keys = append(keys, k)
 		}
+	}
+	if len(keys) == 0 {
+		// Unreachable for objects; never call different bytes equal.
+		keys = []string{"(serialized form differs)"}
 	}
 	sort.Strings(keys)
-	return keys
+	return keys, nil
 }
+
+func cannotSerialize(err error) string { return "(cannot serialize: " + err.Error() + ")" }
 
 // Description is the change in words, as kro words its own.
 func (c Change) Description() string {
