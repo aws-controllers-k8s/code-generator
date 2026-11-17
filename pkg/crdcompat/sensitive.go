@@ -34,9 +34,11 @@ type SensitiveCandidate struct {
 	Field string `json:"field"`
 }
 
-// SensitiveFields returns each added field, and every field beneath it, whose
-// name matches. kro reports an added object once, at the object, so its
-// members are found by walking root, the new version's openAPIV3Schema.
+// SensitiveFields returns each added field, and every field beneath it
+// (list elements and map values included), whose name matches. kro reports an
+// added object once, at the object, so its members are found by walking root,
+// the new version's openAPIV3Schema. changes may include Uncompared's, which
+// report fields added inside map values.
 func SensitiveFields(file, kind string, root *v1.JSONSchemaProps, changes []Change) []SensitiveCandidate {
 	var out []SensitiveCandidate
 	emit := func(field string) { out = append(out, SensitiveCandidate{File: file, Kind: kind, Field: field}) }
@@ -76,6 +78,16 @@ func walk(field string, s *v1.JSONSchemaProps, emit func(string)) {
 	if sensitiveName.MatchString(lastName(field)) {
 		emit(field)
 	}
+	walkMembers(field, s, emit)
+}
+
+// walkMembers visits s's properties, list elements ("[]") and map values
+// ("{}"). An element or value has no name of its own, so it is not
+// re-matched against the list's or map's name, which walk already checked.
+func walkMembers(field string, s *v1.JSONSchemaProps, emit func(string)) {
+	if isSecretKeyReference(s) {
+		return
+	}
 	names := make([]string, 0, len(s.Properties))
 	for name := range s.Properties {
 		names = append(names, name)
@@ -90,47 +102,32 @@ func walk(field string, s *v1.JSONSchemaProps, emit func(string)) {
 		walk(child, &p, emit)
 	}
 	if s.Items != nil && s.Items.Schema != nil {
-		walkItems(field+"[]", s.Items.Schema, emit)
+		walkMembers(field+"[]", s.Items.Schema, emit)
 	}
-}
-
-// walkItems visits a list element's members without re-matching the list's
-// own name, which walk already checked.
-func walkItems(field string, s *v1.JSONSchemaProps, emit func(string)) {
-	if isSecretKeyReference(s) {
-		return
-	}
-	names := make([]string, 0, len(s.Properties))
-	for name := range s.Properties {
-		names = append(names, name)
-	}
-	sort.Strings(names)
-	for _, name := range names {
-		p := s.Properties[name]
-		walk(field+"."+name, &p, emit)
-	}
-	if s.Items != nil && s.Items.Schema != nil {
-		walkItems(field+"[]", s.Items.Schema, emit)
+	if s.AdditionalProperties != nil && s.AdditionalProperties.Schema != nil {
+		walkMembers(field+"{}", s.AdditionalProperties.Schema, emit)
 	}
 }
 
 // isSecretKeyReference reports whether s has exactly the members of ACK's
-// SecretKeyReference, which code-generator emits for an is_secret field.
+// SecretKeyReference, which code-generator emits for an is_secret field:
+// key, name and namespace, all strings.
 func isSecretKeyReference(s *v1.JSONSchemaProps) bool {
 	if len(s.Properties) != 3 {
 		return false
 	}
 	for _, name := range []string{"key", "name", "namespace"} {
-		if _, ok := s.Properties[name]; !ok {
+		if p, ok := s.Properties[name]; !ok || p.Type != "string" {
 			return false
 		}
 	}
 	return true
 }
 
-// lastName is the last property name in a field path, without list markers.
+// lastName is the last property name in a field path, without list or map
+// markers.
 func lastName(field string) string {
-	field = strings.TrimRight(field, "[]")
+	field = strings.TrimRight(field, "[]{}")
 	if i := strings.LastIndex(field, "."); i >= 0 {
 		return field[i+1:]
 	}
@@ -162,6 +159,11 @@ func schemaAt(root *v1.JSONSchemaProps, path string) *v1.JSONSchemaProps {
 				return nil
 			}
 			s = s.Items.Schema
+		case "additionalProperties":
+			if s.AdditionalProperties == nil || s.AdditionalProperties.Schema == nil {
+				return nil
+			}
+			s = s.AdditionalProperties.Schema
 		default:
 			return nil
 		}

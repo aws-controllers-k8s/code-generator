@@ -75,3 +75,39 @@ func TestNewCRDSensitiveFields(t *testing.T) {
 		fields(NewCRDSensitiveFields("n.yaml", "Gizmo", schema)))
 	assert.Empty(t, NewCRDSensitiveFields("n.yaml", "Gizmo", nil))
 }
+
+func mapOf(value v1.JSONSchemaProps) v1.JSONSchemaProps {
+	return v1.JSONSchemaProps{Type: "object", AdditionalProperties: &v1.JSONSchemaPropsOrBool{Allows: true,
+		Schema: &value}}
+}
+
+func TestSensitiveFieldsWalksMapValues(t *testing.T) {
+	old := root(obj(map[string]v1.JSONSchemaProps{"name": str()}), obj(nil))
+	new := root(obj(map[string]v1.JSONSchemaProps{
+		"name":   str(),
+		"labels": mapOf(obj(map[string]v1.JSONSchemaProps{"secretValue": str(), "plain": str()})),
+		"tokens": mapOf(str()),
+	}), obj(nil))
+	changes := Classify("f.yaml", "Widget", kro.Compare(old, new))
+	assert.ElementsMatch(t, []string{"spec.labels{}.secretValue", "spec.tokens"},
+		fields(SensitiveFields("f.yaml", "Widget", new, changes)))
+	assert.ElementsMatch(t, []string{"spec.labels{}.secretValue", "spec.tokens"},
+		fields(NewCRDSensitiveFields("f.yaml", "Widget", new)))
+}
+
+// A member added inside an existing map's values comes from Uncompared.
+func TestSensitiveFieldsInExistingMapValues(t *testing.T) {
+	old := crd(map[string]v1.JSONSchemaProps{"m": mapOf(obj(map[string]v1.JSONSchemaProps{"a": str()}))})
+	new := crd(map[string]v1.JSONSchemaProps{"m": mapOf(obj(map[string]v1.JSONSchemaProps{
+		"a": str(), "password": str()}))})
+	changes := Uncompared("f.yaml", "Widget", old, new)
+	assert.Equal(t, []string{"spec.m{}.password"},
+		fields(SensitiveFields("f.yaml", "Widget", new.Spec.Versions[0].Schema.OpenAPIV3Schema, changes)))
+}
+
+// Only key, name and namespace all strings make a SecretKeyReference.
+func TestSensitiveSecretKeyReferenceNeedsStrings(t *testing.T) {
+	lookalike := obj(map[string]v1.JSONSchemaProps{"key": {Type: "integer"}, "name": str(), "namespace": str()})
+	schema := root(obj(map[string]v1.JSONSchemaProps{"dbPassword": lookalike, "adminPassword": secretRef()}), obj(nil))
+	assert.Equal(t, []string{"spec.dbPassword"}, fields(NewCRDSensitiveFields("n.yaml", "Gizmo", schema)))
+}
