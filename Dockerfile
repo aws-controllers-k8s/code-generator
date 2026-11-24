@@ -10,7 +10,10 @@ ARG golang_version
 ARG eks_distro_version
 
 # Build the manager binary
-FROM $builder_image:$golang_version as builder
+# Run the builder stage on the build host platform and cross-compile with
+# GOARCH, so the Go build never runs under emulation. The final stage is
+# built for the target platform, so its layers and OCI config match it.
+FROM --platform=$BUILDPLATFORM $builder_image:$golang_version as builder
 
 ARG service_alias
 ARG target_arch=amd64
