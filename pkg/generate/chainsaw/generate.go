@@ -74,6 +74,10 @@ type Report struct {
 	ImmutableTested []string
 	// ImmutableSkipped are immutable fields the test can't try to change.
 	ImmutableSkipped []string
+	// SkippedTests are the tests the inputs skip, each with why.
+	SkippedTests []string
+	// SkippedUpdates are the update fields the inputs skip, each with why.
+	SkippedUpdates []string
 	// Notes are other gaps, e.g. no adoption test.
 	Notes []string
 }
@@ -96,6 +100,8 @@ func (r *Report) String() string {
 	line("Not immutable, but no update changes them (mark them is_immutable if the controller can't update them)", r.NotUpdated)
 	line("Immutable, tried to change", r.ImmutableTested)
 	line("Immutable, not tried (no automatic changed value)", r.ImmutableSkipped)
+	line("Skipped, so they don't run (drop them from inputs.yaml's skip.tests to run them again)", r.SkippedTests)
+	line("Skipped from updates, so they're never changed (drop them from inputs.yaml's skip.updates to change them again)", r.SkippedUpdates)
 	line("Notes", r.Notes)
 	return b.String()
 }
@@ -130,6 +136,11 @@ func Generate(
 			return nil, nil, fmt.Errorf("inputs check %q isn't a spec field", k)
 		}
 	}
+	for _, k := range sortedStringKeys(in.Skip.Updates) {
+		if !specFields[k] {
+			return nil, nil, fmt.Errorf("inputs skip.updates %q isn't a spec field", k)
+		}
+	}
 	g := &generator{
 		crd:        crd,
 		in:         in,
@@ -143,6 +154,12 @@ func Generate(
 		unchecked:  map[string]bool{},
 		immutable:  map[string]bool{},
 		skipped:    map[string]bool{},
+	}
+	// Skipped update fields come out before anything is generated, so the
+	// steps, the checks and the report all see the same updates
+	in.Updates = g.withoutSkippedUpdates(in.Updates)
+	for i := range in.Variants {
+		in.Variants[i].Updates = g.withoutSkippedUpdates(in.Variants[i].Updates)
 	}
 	tests := []test{g.lifecycleTest(lifecycle{
 		name: g.name, create: in.Create, updates: in.Updates, invalid: in.Invalid,
@@ -170,6 +187,9 @@ func Generate(
 		}
 	} else {
 		g.note("not adoptable, so there's no adoption test")
+	}
+	if err := g.applySkips(tests); err != nil {
+		return nil, nil, err
 	}
 	g.finishReport()
 
@@ -787,6 +807,83 @@ func (g *generator) specFieldsByJSON() map[string]*model.Field {
 	return out
 }
 
+// withoutSkippedUpdates takes the skip.updates fields out of each update, and
+// drops an update left with no fields, so its step isn't generated. A skipped
+// field stays in create, so it's still checked after create. It's never changed
+// by an update.
+func (g *generator) withoutSkippedUpdates(updates []map[string]interface{}) []map[string]interface{} {
+	if len(g.in.Skip.Updates) == 0 {
+		return updates
+	}
+	var kept []map[string]interface{}
+	for _, upd := range updates {
+		out := map[string]interface{}{}
+		for k, v := range upd {
+			if _, skipped := g.in.Skip.Updates[k]; !skipped {
+				out[k] = v
+			}
+		}
+		if len(out) > 0 {
+			kept = append(kept, out)
+		}
+	}
+	// Every configured skip is reported, even one no update sets, so the
+	// report shows what's held back, in name order
+	for _, field := range sortedStringKeys(g.in.Skip.Updates) {
+		g.skippedUpdate(field, g.in.Skip.Updates[field])
+	}
+	return kept
+}
+
+// skippedUpdate records a field skipped from updates, once, for the report.
+func (g *generator) skippedUpdate(field, reason string) {
+	entry := field + ": " + strings.TrimSpace(reason)
+	for _, existing := range g.report.SkippedUpdates {
+		if existing == entry {
+			return
+		}
+	}
+	g.report.SkippedUpdates = append(g.report.SkippedUpdates, entry)
+}
+
+// applySkips marks the tests the inputs skip, so Chainsaw reports them as
+// skipped and creates nothing for them in AWS. It fails on a name that isn't a
+// generated test, which would otherwise skip nothing and go unnoticed.
+func (g *generator) applySkips(tests []test) error {
+	byName := make(map[string]*test, len(tests))
+	names := make([]string, 0, len(tests))
+	for i := range tests {
+		name := strings.TrimPrefix(tests[i].Metadata.Name, g.opts.NamePrefix)
+		byName[name] = &tests[i]
+		names = append(names, name)
+	}
+	skipped := make([]string, 0, len(g.in.Skip.Tests))
+	for name := range g.in.Skip.Tests {
+		skipped = append(skipped, name)
+	}
+	sort.Strings(skipped)
+	for _, name := range skipped {
+		t, ok := byName[name]
+		if !ok {
+			sort.Strings(names)
+			return fmt.Errorf(
+				"inputs skip %q isn't one of this resource's tests (%s)",
+				name, strings.Join(names, ", "),
+			)
+		}
+		skip := true
+		t.Spec.Skip = &skip
+		reason := strings.TrimSpace(g.in.Skip.Tests[name])
+		if desc := strings.TrimSpace(t.Spec.Description); desc != "" {
+			t.Spec.Description = desc + " Skipped: " + reason
+		} else {
+			t.Spec.Description = "Skipped: " + reason
+		}
+		g.report.SkippedTests = append(g.report.SkippedTests, name+": "+reason)
+	}
+	return nil
+}
+
 func (g *generator) note(n string) {
 	for _, existing := range g.report.Notes {
 		if existing == n {
@@ -827,6 +924,10 @@ func (g *generator) finishReport() {
 	}
 	for k, f := range g.specFieldsByJSON() {
 		if f.IsImmutable() || f.IsReference() || updated[k] {
+			continue
+		}
+		// A skipped field is listed with its reason instead
+		if _, skipped := g.in.Skip.Updates[k]; skipped {
 			continue
 		}
 		// A field set through its reference counts as updated if its

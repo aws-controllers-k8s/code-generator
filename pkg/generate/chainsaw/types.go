@@ -30,9 +30,11 @@ type objectMeta struct {
 }
 
 type testSpec struct {
-	Description string    `yaml:"description,omitempty"`
-	Bindings    []binding `yaml:"bindings,omitempty"`
-	Steps       []step    `yaml:"steps"`
+	Description string `yaml:"description,omitempty"`
+	// Skip is set from the inputs' skip, for a test that must not run.
+	Skip     *bool     `yaml:"skip,omitempty"`
+	Bindings []binding `yaml:"bindings,omitempty"`
+	Steps    []step    `yaml:"steps"`
 }
 
 type binding struct {

@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"sort"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -67,6 +68,24 @@ type Inputs struct {
 	// out how, by the fields' JSON names. A check here replaces any the
 	// generator derives.
 	Checks map[string]Check `yaml:"checks,omitempty"`
+	// Skip holds back tests, and fields from updates, that must not run. Each
+	// entry has a reason, e.g. a controller bug the test found and the issue
+	// tracking it. Drop an entry to run it again.
+	Skip Skip `yaml:"skip,omitempty"`
+}
+
+// Skip holds back tests, and fields from updates, that must not run.
+type Skip struct {
+	// Tests are generated tests, each with why it's skipped. The key is the
+	// test's name without the --name-prefix: the resource's own name for its
+	// main test, <resource>-<variant> for a variant's, and <resource>-adoption
+	// for the adoption test. Chainsaw reports a skipped test as skipped rather
+	// than failed, and creates nothing for it in AWS.
+	Tests map[string]string `yaml:"tests,omitempty"`
+	// Updates are spec fields left out of every update, each with why. The
+	// field stays in create, so it's still checked after create, and it's
+	// never changed. An update left with no fields is dropped with its step.
+	Updates map[string]string `yaml:"updates,omitempty"`
 }
 
 // Check reads a spec field back from AWS.
@@ -235,6 +254,15 @@ func LoadInputs(path string) (*Inputs, error) {
 			return nil, fmt.Errorf("%s: checks.%s: where, exclude, sortBy and select only go with path", path, field)
 		}
 	}
+	// Test names are validated against the generated tests, which only Generate
+	// knows. Every reason has to say something.
+	for _, group := range []map[string]string{in.Skip.Tests, in.Skip.Updates} {
+		for _, key := range sortedStringKeys(group) {
+			if strings.TrimSpace(group[key]) == "" {
+				return nil, fmt.Errorf("%s: skip entry %s needs a reason, e.g. the bug it works around", path, key)
+			}
+		}
+	}
 	for _, field := range in.AdoptionFields {
 		if _, ok := in.Create[field].(string); !ok {
 			return nil, fmt.Errorf("%s: adoptionFields: create must set %s to a string", path, field)
@@ -258,4 +286,15 @@ func (l *stringList) UnmarshalYAML(value *yaml.Node) error {
 	}
 	*l = many
 	return nil
+}
+
+// sortedStringKeys returns a map's keys in order, so errors and reports are
+// stable.
+func sortedStringKeys(m map[string]string) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
 }
