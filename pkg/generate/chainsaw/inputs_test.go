@@ -176,3 +176,61 @@ values:
 	assert.Equal(t, "ack-$SUFFIX-x", in.Create["name"])
 	assert.Equal(t, "$BUCKET", in.Updates[0]["name"])
 }
+
+func TestLoadInputsSkipTests(t *testing.T) {
+	in, err := loadInputs(t, `
+create: {a: 1}
+skip:
+  tests:
+    launch-template: "the delete never sees the template gone, issue #123"
+    launch-template-adoption: "the read never sets spec.name, issue #124"
+`)
+	require.NoError(t, err)
+	assert.Equal(t, map[string]string{
+		"launch-template":          "the delete never sees the template gone, issue #123",
+		"launch-template-adoption": "the read never sets spec.name, issue #124",
+	}, in.Skip.Tests)
+	assert.Empty(t, in.Skip.Updates)
+}
+
+func TestLoadInputsSkipUpdates(t *testing.T) {
+	in, err := loadInputs(t, `
+create: {a: 1, b: 2}
+updates:
+- {a: 3}
+skip:
+  updates:
+    b: "AWS never returns it, so the controller can't read it back, issue #125"
+`)
+	require.NoError(t, err)
+	assert.Equal(t, map[string]string{
+		"b": "AWS never returns it, so the controller can't read it back, issue #125",
+	}, in.Skip.Updates)
+	assert.Empty(t, in.Skip.Tests)
+}
+
+func TestLoadInputsSkipNeedsReason(t *testing.T) {
+	for name, skip := range map[string]string{
+		"test empty":   "tests: {launch-template: \"\"}",
+		"test blank":   "tests: {launch-template: \"  \"}",
+		"test null":    "tests: {launch-template: null}",
+		"update empty": "updates: {b: \"\"}",
+	} {
+		_, err := loadInputs(t, "create: {a: 1, b: 2}\nskip: {"+skip+"}\n")
+		assert.ErrorContains(t, err, "needs a reason", name)
+	}
+}
+
+func TestLoadInputsSkipUpdateWithCheck(t *testing.T) {
+	in, err := loadInputs(t, `
+create: {a: 1, b: 2}
+checks:
+  b: {command: "echo 2"}
+skip:
+  updates:
+    b: "AWS never returns it, issue #125"
+`)
+	require.NoError(t, err)
+	assert.Contains(t, in.Checks, "b")
+	assert.Contains(t, in.Skip.Updates, "b")
+}
