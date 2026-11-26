@@ -56,7 +56,9 @@ type Config struct {
 	ControllerName string `json:"controller_name,omitempty"`
 	// CustomShapes defines custom structure types that can be referenced in resource fields.
 	// The outer map is keyed by shape name (e.g., "ReplicaStatus"), and the inner map
-	// is keyed by field name with string values representing field types.
+	// is keyed by field name with string values representing field types. A
+	// field type is string, boolean, integer or float, the name of another
+	// custom shape, or a list or map of either ("[]Name", "map[string]Name").
 	//
 	// Example:
 	//   custom_shapes:
@@ -64,10 +66,14 @@ type Config struct {
 	//       Status: string
 	//       Region: string
 	//       Description: string
+	//     ReplicaConfig:
+	//       Enabled: boolean
+	//       Replicas: "[]ReplicaStatus"
 	// These shapes can be referenced in a resource's fields section using:
 	//   custom_field:
 	//     list_of: ShapeName    # For arrays of the shape
 	//     map_of: ShapeName     # For maps with the shape as values
+	//   type: ShapeName         # For a single struct field
 	//
 	CustomShapes map[string]map[string]interface{} `json:"custom_shapes,omitempty"`
 }

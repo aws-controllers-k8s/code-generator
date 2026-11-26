@@ -16,9 +16,10 @@ package sdk
 import (
 	"errors"
 	"fmt"
+	"sort"
+	"strings"
 
 	simpleschema "github.com/kubernetes-sigs/kro/pkg/simpleschema"
-	apiextv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 
 	awssdkmodel "github.com/aws-controllers-k8s/code-generator/pkg/api"
 	ackmodel "github.com/aws-controllers-k8s/code-generator/pkg/model"
@@ -72,64 +73,135 @@ func (h *Helper) InjectCustomShapes(sdkapi *ackmodel.SDKAPI) error {
 
 // injectSimpleSchemaShapes processes custom shapes from the top-level custom_shapes
 // section and injects them into the SDK API model.
-// Only string types are supported - all other types will cause a panic.
+//
+// A member's type is a scalar (string, boolean, integer, float), the name of
+// another custom shape, or a list or map of either ("[]Name",
+// "map[string]Name"). Shapes are created before their members are resolved,
+// so custom shapes can refer to each other in any order.
 func (i *customShapeInjector) injectSimpleSchemaShapes(customShapes map[string]map[string]interface{}) error {
 	if len(customShapes) == 0 {
 		return nil
 	}
 
 	apiShapeNames := i.sdkAPI.API.ShapeNames()
-	for shapeName, fieldsMap := range customShapes {
-		// check for duplicates
+	shapeNames := make([]string, 0, len(customShapes))
+	for shapeName := range customShapes {
 		for _, as := range apiShapeNames {
 			if as == shapeName {
 				return fmt.Errorf("CustomType name %s already exists in the API", shapeName)
 			}
 		}
-		openAPISchema, err := simpleschema.ToOpenAPISpec(fieldsMap, nil)
-		if err != nil {
-			return err
-		}
+		shapeNames = append(shapeNames, shapeName)
+	}
+	sort.Strings(shapeNames)
 
-		// Create and register the base structure shape
-		shape, shapeRef := i.newStructureShape(shapeName, openAPISchema)
-		i.sdkAPI.API.Shapes[shape.ShapeName] = shape
+	// Validate the simpleschema syntax, with the other custom shapes as
+	// known types.
+	customTypes := make(map[string]interface{}, len(customShapes))
+	for name, fields := range customShapes {
+		customTypes[name] = fields
+	}
+	for _, shapeName := range shapeNames {
+		if _, err := simpleschema.ToOpenAPISpec(customShapes[shapeName], customTypes); err != nil {
+			return fmt.Errorf("custom shape %s: %w", shapeName, err)
+		}
+	}
+
+	shapes := make(map[string]*awssdkmodel.Shape, len(shapeNames))
+	for _, shapeName := range shapeNames {
+		shape := &awssdkmodel.Shape{
+			API:           i.sdkAPI.API,
+			ShapeName:     shapeName,
+			Type:          "structure",
+			Documentation: "// Custom ACK type for " + shapeName,
+			MemberRefs:    make(map[string]*awssdkmodel.ShapeRef),
+		}
+		shapes[shapeName] = shape
+		i.sdkAPI.API.Shapes[shapeName] = shape
 		i.sdkAPI.CustomShapes = append(i.sdkAPI.CustomShapes, &ackmodel.CustomShape{
 			Shape:           shape,
-			ShapeRef:        shapeRef,
+			ShapeRef:        i.createShapeRefForMember(shape),
 			MemberShapeName: nil,
 			ValueShapeName:  nil,
 		})
 	}
 
+	for _, shapeName := range shapeNames {
+		shape := shapes[shapeName]
+		fieldNames := make([]string, 0, len(customShapes[shapeName]))
+		for fieldName := range customShapes[shapeName] {
+			fieldNames = append(fieldNames, fieldName)
+		}
+		sort.Strings(fieldNames)
+		for _, fieldName := range fieldNames {
+			spec, ok := customShapes[shapeName][fieldName].(string)
+			if !ok {
+				return fmt.Errorf("custom shape %s, field %s: nested objects are not supported, declare a named custom shape instead", shapeName, fieldName)
+			}
+			typ := strings.TrimSpace(strings.SplitN(spec, "|", 2)[0])
+			if typ == "string" {
+				// Kept as before: string members register a named shape.
+				addStringFieldToShape(i.sdkAPI, shape, fieldName, shapeName)
+				continue
+			}
+			memberShape, err := i.memberShape(shapes, shapeName+fieldName, typ)
+			if err != nil {
+				return fmt.Errorf("custom shape %s, field %s: %w", shapeName, fieldName, err)
+			}
+			shape.MemberRefs[fieldName] = i.createShapeRefForMember(memberShape)
+		}
+	}
 	return nil
 }
 
-// newStructureShape creates a base shape with its member fields
-func (i *customShapeInjector) newStructureShape(
-	shapeName string,
-	openAPISchema *apiextv1.JSONSchemaProps,
-) (*awssdkmodel.Shape, *awssdkmodel.ShapeRef) {
-	shape := &awssdkmodel.Shape{
-		API:           i.sdkAPI.API,
-		ShapeName:     shapeName,
-		Type:          "structure",
-		Documentation: "// Custom ACK type for " + shapeName,
-		MemberRefs:    make(map[string]*awssdkmodel.ShapeRef),
-	}
+// simpleSchemaScalarTypes maps simpleschema scalar types to SDK shape types.
+var simpleSchemaScalarTypes = map[string]string{
+	"string":  "string",
+	"boolean": "boolean",
+	"integer": "long",
+	"float":   "double",
+}
 
-	properties := openAPISchema.Properties
-	for fieldName, propObj := range properties {
-		propType := propObj.Type
-		if propType != "string" {
-			panic(fmt.Sprintf("Field %s in shape %s has non-string type '%s'",
-				fieldName, shapeName, propType))
+// memberShape returns the SDK shape for a custom shape member's type. Shapes
+// built here are named name, which must be unique: the field model detects cycles
+// by shape name.
+func (i *customShapeInjector) memberShape(
+	shapes map[string]*awssdkmodel.Shape,
+	name string,
+	typ string,
+) (*awssdkmodel.Shape, error) {
+	switch {
+	case strings.HasPrefix(typ, "[]"):
+		elem, err := i.memberShape(shapes, name+"Member", typ[2:])
+		if err != nil {
+			return nil, err
 		}
-		addStringFieldToShape(i.sdkAPI, shape, fieldName, shapeName)
+		return &awssdkmodel.Shape{
+			API:       i.sdkAPI.API,
+			ShapeName: name,
+			Type:      "list",
+			MemberRef: *i.createShapeRefForMember(elem),
+		}, nil
+	case strings.HasPrefix(typ, "map[string]"):
+		elem, err := i.memberShape(shapes, name+"Value", typ[len("map[string]"):])
+		if err != nil {
+			return nil, err
+		}
+		return &awssdkmodel.Shape{
+			API:       i.sdkAPI.API,
+			ShapeName: name,
+			Type:      "map",
+			KeyRef:    *i.createShapeRefForMember(&awssdkmodel.Shape{API: i.sdkAPI.API, ShapeName: name + "Key", Type: "string"}),
+			ValueRef:  *i.createShapeRefForMember(elem),
+		}, nil
 	}
-
-	shapeRef := i.createShapeRefForMember(shape)
-	return shape, shapeRef
+	if sdkType, ok := simpleSchemaScalarTypes[typ]; ok {
+		return &awssdkmodel.Shape{API: i.sdkAPI.API, ShapeName: name, Type: sdkType}, nil
+	}
+	if shape, ok := shapes[typ]; ok {
+		return shape, nil
+	}
+	return nil, fmt.Errorf("unsupported type %q", typ)
 }
 
 // addStringFieldToShape adds a string field to the parent shape

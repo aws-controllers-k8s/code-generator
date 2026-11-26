@@ -205,7 +205,28 @@ func (a *SDKAPI) GetShapeRefFromType(
 			}, nil
 		}
 	}
-	return nil, nil
+	// Otherwise the element type names a structure shape, such as one from
+	// custom_shapes.
+	if a.API == nil {
+		return nil, nil
+	}
+	elemShape, found := a.API.Shapes[elemType]
+	if !found || elemShape.Type != "structure" {
+		return nil, nil
+	}
+	elemRef := awssdkmodel.ShapeRef{API: a.API, Shape: elemShape, ShapeName: elemShape.ShapeName}
+	switch {
+	case isSlice:
+		return &awssdkmodel.ShapeRef{Shape: &awssdkmodel.Shape{API: a.API, Type: "list", MemberRef: elemRef}}, nil
+	case isMap:
+		return &awssdkmodel.ShapeRef{Shape: &awssdkmodel.Shape{
+			API:      a.API,
+			Type:     "map",
+			KeyRef:   awssdkmodel.ShapeRef{Shape: &awssdkmodel.Shape{Type: "string"}},
+			ValueRef: elemRef,
+		}}, nil
+	}
+	return &elemRef, nil
 }
 
 // GetCustomShapeRef finds a ShapeRef for a custom shape using either its member
