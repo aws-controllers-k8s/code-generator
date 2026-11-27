@@ -95,6 +95,14 @@ func (i *customShapeInjector) injectSimpleSchemaShapes(customShapes map[string]m
 	}
 	sort.Strings(shapeNames)
 
+	for _, shapeName := range shapeNames {
+		for fieldName, spec := range customShapes[shapeName] {
+			if err := validateMemberSpec(spec, customShapes); err != nil {
+				return fmt.Errorf("custom shape %s, field %s: %w", shapeName, fieldName, err)
+			}
+		}
+	}
+
 	// Validate the simpleschema syntax, with the other custom shapes as
 	// known types.
 	customTypes := make(map[string]interface{}, len(customShapes))
@@ -134,16 +142,12 @@ func (i *customShapeInjector) injectSimpleSchemaShapes(customShapes map[string]m
 		}
 		sort.Strings(fieldNames)
 		for _, fieldName := range fieldNames {
-			spec, ok := customShapes[shapeName][fieldName].(string)
-			if !ok {
-				return fmt.Errorf("custom shape %s, field %s: nested objects are not supported, declare a named custom shape instead", shapeName, fieldName)
-			}
-			typ := strings.TrimSpace(strings.SplitN(spec, "|", 2)[0])
-			memberShape, err := i.memberShape(shapes, shapeName+fieldName, typ)
+			typ := strings.TrimSpace(customShapes[shapeName][fieldName].(string))
+			memberShape, err := i.memberShape(shapes, shapeName+"_"+fieldName, typ)
 			if err != nil {
 				return fmt.Errorf("custom shape %s, field %s: %w", shapeName, fieldName, err)
 			}
-			shape.MemberRefs[fieldName] = i.createShapeRefForMember(memberShape)
+			shape.MemberRefs[fieldName] = i.memberRef(memberShape)
 		}
 	}
 	return nil
@@ -157,6 +161,37 @@ var simpleSchemaScalarTypes = map[string]string{
 	"float":   "double",
 }
 
+// validateMemberSpec checks that a custom shape member's type is supported.
+// simpleschema markers such as "| required=true" are rejected because they
+// would be ignored.
+func validateMemberSpec(spec interface{}, customShapes map[string]map[string]interface{}) error {
+	s, ok := spec.(string)
+	if !ok {
+		return errors.New("nested objects are not supported, declare a named custom shape instead")
+	}
+	if strings.Contains(s, "|") {
+		return fmt.Errorf("type %q: markers after \"|\" are not supported", s)
+	}
+	typ := strings.TrimSpace(s)
+	elem := typ
+	for {
+		if rest, ok := strings.CutPrefix(elem, "[]"); ok {
+			elem = rest
+		} else if rest, ok := strings.CutPrefix(elem, "map[string]"); ok {
+			elem = rest
+		} else {
+			break
+		}
+	}
+	if _, ok := simpleSchemaScalarTypes[elem]; ok {
+		return nil
+	}
+	if _, ok := customShapes[elem]; ok {
+		return nil
+	}
+	return fmt.Errorf("unsupported type %q (want string, boolean, integer, float, the name of a custom shape, or a list or map of one)", typ)
+}
+
 // memberShape returns the SDK shape for a custom shape member's type. Shapes
 // built here are named name, which must be unique: the field model detects cycles
 // by shape name.
@@ -167,7 +202,7 @@ func (i *customShapeInjector) memberShape(
 ) (*awssdkmodel.Shape, error) {
 	switch {
 	case strings.HasPrefix(typ, "[]"):
-		elem, err := i.memberShape(shapes, name+"Member", typ[2:])
+		elem, err := i.memberShape(shapes, name+"_Member", typ[2:])
 		if err != nil {
 			return nil, err
 		}
@@ -175,10 +210,10 @@ func (i *customShapeInjector) memberShape(
 			API:       i.sdkAPI.API,
 			ShapeName: name,
 			Type:      "list",
-			MemberRef: *i.createShapeRefForMember(elem),
+			MemberRef: *i.memberRef(elem),
 		}, nil
 	case strings.HasPrefix(typ, "map[string]"):
-		elem, err := i.memberShape(shapes, name+"Value", typ[len("map[string]"):])
+		elem, err := i.memberShape(shapes, name+"_Value", typ[len("map[string]"):])
 		if err != nil {
 			return nil, err
 		}
@@ -186,8 +221,8 @@ func (i *customShapeInjector) memberShape(
 			API:       i.sdkAPI.API,
 			ShapeName: name,
 			Type:      "map",
-			KeyRef:    *i.createShapeRefForMember(&awssdkmodel.Shape{API: i.sdkAPI.API, ShapeName: name + "Key", Type: "string"}),
-			ValueRef:  *i.createShapeRefForMember(elem),
+			KeyRef:    *i.memberRef(&awssdkmodel.Shape{API: i.sdkAPI.API, ShapeName: name + "_Key", Type: "string"}),
+			ValueRef:  *i.memberRef(elem),
 		}, nil
 	}
 	if sdkType, ok := simpleSchemaScalarTypes[typ]; ok {
@@ -197,6 +232,17 @@ func (i *customShapeInjector) memberShape(
 		return shape, nil
 	}
 	return nil, fmt.Errorf("unsupported type %q", typ)
+}
+
+// memberRef returns a ShapeRef for a custom shape member. It leaves
+// Documentation empty, so the shape's own comment ("Custom ACK type for ...")
+// isn't repeated as the member's field documentation.
+func (i *customShapeInjector) memberRef(shape *awssdkmodel.Shape) *awssdkmodel.ShapeRef {
+	return &awssdkmodel.ShapeRef{
+		API:       i.sdkAPI.API,
+		Shape:     shape,
+		ShapeName: shape.ShapeName,
+	}
 }
 
 // createShapeRefForMember creates a minimal ShapeRef type to encapsulate a

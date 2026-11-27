@@ -59,6 +59,9 @@ type Config struct {
 	// is keyed by field name with string values representing field types. A
 	// field type is string, boolean, integer or float, the name of another
 	// custom shape, or a list or map of either ("[]Name", "map[string]Name").
+	// List and map types must be quoted, because unquoted []Name is a YAML
+	// flow sequence. simpleschema markers such as "| required=true" are not
+	// supported.
 	//
 	// Example:
 	//   custom_shapes:

@@ -38,12 +38,11 @@ func TestCustomShapesTypedMembers(t *testing.T) {
 	api, err := sdkAPIWithCustomShapes(t, map[string]map[string]interface{}{
 		// Declared before the shapes it refers to.
 		"Outer": {
-			"Inner":    "InnerShape",
-			"Enabled":  "boolean",
-			"Items":    "[]InnerShape",
-			"ByName":   "map[string]InnerShape",
-			"Tags":     "[]string",
-			"Required": "string | required=true",
+			"Inner":   "InnerShape",
+			"Enabled": "boolean",
+			"Items":   "[]InnerShape",
+			"ByName":  "map[string]InnerShape",
+			"Tags":    "[]string",
 		},
 		"InnerShape": {
 			"Name":  "string",
@@ -66,7 +65,9 @@ func TestCustomShapesTypedMembers(t *testing.T) {
 	assert.Equal("map", outer.MemberRefs["ByName"].Shape.Type)
 	assert.Same(inner, outer.MemberRefs["ByName"].Shape.ValueRef.Shape)
 	assert.Equal("string", outer.MemberRefs["Tags"].Shape.MemberRef.Shape.Type)
-	assert.Equal("string", outer.MemberRefs["Required"].Shape.Type)
+	// Member refs don't repeat the custom shape's own comment.
+	assert.Empty(outer.MemberRefs["Inner"].Documentation)
+	assert.Empty(outer.MemberRefs["Items"].Shape.MemberRef.Documentation)
 
 	assert.Equal("string", inner.MemberRefs["Name"].Shape.Type)
 	assert.Equal("long", inner.MemberRefs["Delay"].Shape.Type)
@@ -111,11 +112,42 @@ func TestCustomShapesStringMemberNameDoesNotReplaceShapes(t *testing.T) {
 	assert.Same(inner, ref.Shape.MemberRef.Shape)
 }
 
-func TestCustomShapesRejectsUnknownType(t *testing.T) {
+func TestCustomShapesRejectsUnsupportedTypes(t *testing.T) {
+	for _, typ := range []string{"NoSuchShape", "long", "int64", "bool", "timestamp", "[]long", "map[string]NoSuchShape"} {
+		t.Run(typ, func(t *testing.T) {
+			_, err := sdkAPIWithCustomShapes(t, map[string]map[string]interface{}{
+				"Outer": {"Inner": typ},
+			})
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), "custom shape Outer, field Inner: unsupported type")
+			assert.Contains(t, err.Error(), "want string, boolean, integer, float")
+		})
+	}
+}
+
+func TestCustomShapesRejectsCycles(t *testing.T) {
+	cases := map[string]map[string]map[string]interface{}{
+		"self":       {"A": {"Next": "A"}},
+		"self list":  {"A": {"Children": "[]A"}},
+		"self map":   {"A": {"Children": "map[string]A"}},
+		"two shapes": {"A": {"B": "B"}, "B": {"A": "A"}},
+	}
+	for name, shapes := range cases {
+		t.Run(name, func(t *testing.T) {
+			_, err := sdkAPIWithCustomShapes(t, shapes)
+			require.Error(t, err)
+			assert.Regexp(t, "self references are not allowed|contains a cycle", err.Error())
+		})
+	}
+}
+
+func TestCustomShapesRejectsMarkers(t *testing.T) {
 	_, err := sdkAPIWithCustomShapes(t, map[string]map[string]interface{}{
-		"Outer": {"Inner": "NoSuchShape"},
+		"Outer": {"Name": "string | required=true"},
 	})
-	assert.Error(t, err)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "custom shape Outer, field Name")
+	assert.Contains(t, err.Error(), "markers")
 }
 
 func TestCustomShapesRejectsAnonymousObject(t *testing.T) {
