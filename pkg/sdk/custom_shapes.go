@@ -96,8 +96,8 @@ func (i *customShapeInjector) injectSimpleSchemaShapes(customShapes map[string]m
 	sort.Strings(shapeNames)
 
 	for _, shapeName := range shapeNames {
-		for fieldName, spec := range customShapes[shapeName] {
-			if err := validateMemberSpec(spec, customShapes); err != nil {
+		for _, fieldName := range sortedFieldNames(customShapes[shapeName]) {
+			if err := validateMemberSpec(customShapes[shapeName][fieldName], customShapes); err != nil {
 				return fmt.Errorf("custom shape %s, field %s: %w", shapeName, fieldName, err)
 			}
 		}
@@ -136,12 +136,7 @@ func (i *customShapeInjector) injectSimpleSchemaShapes(customShapes map[string]m
 
 	for _, shapeName := range shapeNames {
 		shape := shapes[shapeName]
-		fieldNames := make([]string, 0, len(customShapes[shapeName]))
-		for fieldName := range customShapes[shapeName] {
-			fieldNames = append(fieldNames, fieldName)
-		}
-		sort.Strings(fieldNames)
-		for _, fieldName := range fieldNames {
+		for _, fieldName := range sortedFieldNames(customShapes[shapeName]) {
 			typ := strings.TrimSpace(customShapes[shapeName][fieldName].(string))
 			memberShape, err := i.memberShape(shapes, shapeName+"_"+fieldName, typ)
 			if err != nil {
@@ -151,6 +146,15 @@ func (i *customShapeInjector) injectSimpleSchemaShapes(customShapes map[string]m
 		}
 	}
 	return nil
+}
+
+func sortedFieldNames(fields map[string]interface{}) []string {
+	names := make([]string, 0, len(fields))
+	for name := range fields {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names
 }
 
 // simpleSchemaScalarTypes maps simpleschema scalar types to SDK shape types.

@@ -166,6 +166,17 @@ func TestCustomShapesRejectsCycles(t *testing.T) {
 	}
 }
 
+func TestCustomShapesValidationErrorIsDeterministic(t *testing.T) {
+	shapes := map[string]map[string]interface{}{
+		"Outer": {"A": "long", "B": "long", "C": "long", "D": "long"},
+	}
+	for range 20 {
+		_, err := sdkAPIWithCustomShapes(t, shapes)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "custom shape Outer, field A:")
+	}
+}
+
 func TestCustomShapesRejectsMarkers(t *testing.T) {
 	_, err := sdkAPIWithCustomShapes(t, map[string]map[string]interface{}{
 		"Outer": {"Name": "string | required=true"},

@@ -77,6 +77,8 @@ type Config struct {
 	//     list_of: ShapeName    # For arrays of the shape
 	//     map_of: ShapeName     # For maps with the shape as values
 	//   type: ShapeName         # For a single struct field
+	// list_of, map_of and type also accept a structure shape from the
+	// service's API model.
 	//
 	CustomShapes map[string]map[string]interface{} `json:"custom_shapes,omitempty"`
 }
