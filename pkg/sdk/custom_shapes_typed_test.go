@@ -125,6 +125,31 @@ func TestCustomShapesRejectsUnsupportedTypes(t *testing.T) {
 	}
 }
 
+func TestGetShapeRefFromTypeStructures(t *testing.T) {
+	require := require.New(t)
+	assert := assert.New(t)
+
+	api, err := sdkAPIWithCustomShapes(t, nil)
+	require.NoError(err)
+
+	// SDK structure shapes resolve.
+	ref, err := api.GetShapeRefFromType("Bucket")
+	require.NoError(err)
+	assert.Same(api.API.Shapes["Bucket"], ref.Shape)
+	ref, err = api.GetShapeRefFromType("map[string]Bucket")
+	require.NoError(err)
+	assert.Equal("map", ref.Shape.Type)
+	assert.Same(api.API.Shapes["Bucket"], ref.Shape.ValueRef.Shape)
+
+	// Unknown names and non-structure shapes are errors, not *string.
+	require.NotNil(api.API.Shapes["BucketName"])
+	require.NotEqual("structure", api.API.Shapes["BucketName"].Type)
+	for _, typ := range []string{"NoSuchShape", "[]NoSuchShape", "BucketName"} {
+		_, err := api.GetShapeRefFromType(typ)
+		assert.ErrorContains(err, "unsupported type override", typ)
+	}
+}
+
 func TestCustomShapesRejectsCycles(t *testing.T) {
 	cases := map[string]map[string]map[string]interface{}{
 		"self":       {"A": {"Next": "A"}},
