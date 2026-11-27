@@ -139,11 +139,6 @@ func (i *customShapeInjector) injectSimpleSchemaShapes(customShapes map[string]m
 				return fmt.Errorf("custom shape %s, field %s: nested objects are not supported, declare a named custom shape instead", shapeName, fieldName)
 			}
 			typ := strings.TrimSpace(strings.SplitN(spec, "|", 2)[0])
-			if typ == "string" {
-				// Kept as before: string members register a named shape.
-				addStringFieldToShape(i.sdkAPI, shape, fieldName, shapeName)
-				continue
-			}
 			memberShape, err := i.memberShape(shapes, shapeName+fieldName, typ)
 			if err != nil {
 				return fmt.Errorf("custom shape %s, field %s: %w", shapeName, fieldName, err)
@@ -202,24 +197,6 @@ func (i *customShapeInjector) memberShape(
 		return shape, nil
 	}
 	return nil, fmt.Errorf("unsupported type %q", typ)
-}
-
-// addStringFieldToShape adds a string field to the parent shape
-func addStringFieldToShape(
-	sdkapi *ackmodel.SDKAPI,
-	parentShape *awssdkmodel.Shape,
-	fieldName string,
-	shapeName string,
-) {
-	injector := customShapeInjector{sdkapi}
-	fieldShape := &awssdkmodel.Shape{
-		API:       sdkapi.API,
-		ShapeName: fieldName,
-		Type:      "string",
-	}
-
-	sdkapi.API.Shapes[fieldShape.ShapeName] = fieldShape
-	parentShape.MemberRefs[fieldName] = injector.createShapeRefForMember(fieldShape)
 }
 
 // createShapeRefForMember creates a minimal ShapeRef type to encapsulate a

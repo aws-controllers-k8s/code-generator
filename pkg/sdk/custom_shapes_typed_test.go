@@ -82,6 +82,35 @@ func TestCustomShapesTypedMembers(t *testing.T) {
 	assert.Same(inner, ref.Shape.MemberRef.Shape)
 }
 
+// String members must not register global shapes named after the member,
+// which would replace a custom or SDK shape of the same name.
+func TestCustomShapesStringMemberNameDoesNotReplaceShapes(t *testing.T) {
+	require := require.New(t)
+	assert := assert.New(t)
+
+	api, err := sdkAPIWithCustomShapes(t, map[string]map[string]interface{}{
+		"Outer": {
+			"InnerShape": "string",
+			"Bucket":     "string",
+			"Inner":      "InnerShape",
+			"Items":      "[]InnerShape",
+		},
+		"InnerShape": {"Name": "string"},
+	})
+	require.NoError(err)
+
+	inner := api.API.Shapes["InnerShape"]
+	require.NotNil(inner)
+	assert.Equal("structure", inner.Type)
+	assert.Equal("structure", api.API.Shapes["Bucket"].Type)
+	assert.Equal("string", api.API.Shapes["Outer"].MemberRefs["InnerShape"].Shape.Type)
+
+	ref, err := api.GetShapeRefFromType("[]InnerShape")
+	require.NoError(err)
+	require.NotNil(ref)
+	assert.Same(inner, ref.Shape.MemberRef.Shape)
+}
+
 func TestCustomShapesRejectsUnknownType(t *testing.T) {
 	_, err := sdkAPIWithCustomShapes(t, map[string]map[string]interface{}{
 		"Outer": {"Inner": "NoSuchShape"},
