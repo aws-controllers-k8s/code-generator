@@ -1,0 +1,23 @@
+custom_shapes:
+  # Declared before the shape it refers to.
+  TypedConfig:
+    Enabled: boolean
+    Limit: integer
+    Ratio: float
+    Inner: TypedInner
+    Items: "[]TypedInner"
+  TypedInner:
+    TableName: string
+    Labels: "map[string]string"
+
+resources:
+  Table:
+    fields:
+      TypedConfig:
+        type: TypedConfig
+      TypedConfigByName:
+        type: "map[string]TypedInner"
+      TypedConfig.Items.TableName:
+        references:
+          resource: Table
+          path: Spec.TableName

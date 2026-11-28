@@ -144,7 +144,8 @@ func (a *SDKAPI) GetOperationMap(cfg *ackgenconfig.Config) (*OperationMap, error
 }
 
 // GetShapeRefFromType returns a ShapeRef given a string representing the Go
-// type. If no shape can be determined, returns nil and a nil error.
+// type: a scalar, the name of a structure shape (from custom_shapes or the
+// SDK), or a list or map of either. It returns an error for any other type.
 func (a *SDKAPI) GetShapeRefFromType(
 	typeOverride string,
 ) (*awssdkmodel.ShapeRef, error) {
@@ -205,7 +206,31 @@ func (a *SDKAPI) GetShapeRefFromType(
 			}, nil
 		}
 	}
-	return nil, nil
+	// Otherwise the element type names a structure shape, such as one from
+	// custom_shapes.
+	var elemShape *awssdkmodel.Shape
+	if a.API != nil {
+		elemShape = a.API.Shapes[elemType]
+	}
+	if elemShape == nil || elemShape.Type != "structure" {
+		return nil, fmt.Errorf(
+			"unsupported type override %q: %q is not a scalar type or the name of a structure shape",
+			typeOverride, elemType,
+		)
+	}
+	elemRef := awssdkmodel.ShapeRef{API: a.API, Shape: elemShape, ShapeName: elemShape.ShapeName}
+	switch {
+	case isSlice:
+		return &awssdkmodel.ShapeRef{Shape: &awssdkmodel.Shape{API: a.API, Type: "list", MemberRef: elemRef}}, nil
+	case isMap:
+		return &awssdkmodel.ShapeRef{Shape: &awssdkmodel.Shape{
+			API:      a.API,
+			Type:     "map",
+			KeyRef:   awssdkmodel.ShapeRef{Shape: &awssdkmodel.Shape{Type: "string"}},
+			ValueRef: elemRef,
+		}}, nil
+	}
+	return &elemRef, nil
 }
 
 // GetCustomShapeRef finds a ShapeRef for a custom shape using either its member

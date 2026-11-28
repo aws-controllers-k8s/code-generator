@@ -523,6 +523,10 @@ type FieldConfig struct {
 	//       Policies:
 	//         type: []*string
 	//
+	// The type can also name a structure shape, either one declared in
+	// custom_shapes or one from the service's API model, or a list or map of
+	// one ("[]Name", "map[string]Name"). Any other type is an error.
+	//
 	// TODO(jaypipes,crtbry): Figure out if we can roll the CustomShape stuff
 	// into this type override...
 	Type *string `json:"type,omitempty"`
