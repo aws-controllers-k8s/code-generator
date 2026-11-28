@@ -46,6 +46,7 @@ var (
 	optDocumentationConfigPath string
 	optOutputPath              string
 	optServiceAccountName      string
+	optAPIGroupSuffix          string
 	optImageRepository         string
 )
 
@@ -130,6 +131,9 @@ func init() {
 	)
 	rootCmd.PersistentFlags().StringVar(
 		&optServiceAccountName, "service-account-name", "", "The name of the ServiceAccount used for ACK service controller",
+	)
+	rootCmd.PersistentFlags().StringVar(
+		&optAPIGroupSuffix, "api-group-suffix", "", "Suffix of the Kubernetes API group of the generated kinds, after the service name. Defaults to 'services.k8s.aws'",
 	)
 	rootCmd.PersistentFlags().StringVar(
 		&optImageRepository, "image-repository", "", "the Docker image repository to use in release artifacts. Defaults to 'public.ecr.aws/aws-controllers-k8s/$service-controller'",

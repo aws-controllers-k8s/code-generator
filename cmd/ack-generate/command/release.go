@@ -64,7 +64,7 @@ func generateRelease(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	m, err := loadModel(svcAlias, "", "", cfg)
+	m, err := loadModel(svcAlias, "", optAPIGroupSuffix, cfg)
 	if err != nil {
 		return err
 	}
